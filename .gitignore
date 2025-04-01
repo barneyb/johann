@@ -1,0 +1,5 @@
+/.idea/
+/johann.dSYM/
+/johann
+/test/*.s
+*.o
