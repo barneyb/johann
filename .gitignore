@@ -1,5 +1,3 @@
+.DS_Store
 /.idea/
-/johann.dSYM/
-/johann
-/test/*.s
-*.o
+target/
