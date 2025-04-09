@@ -16,19 +16,19 @@ not_quite_lisp:
     stp     x22, x23, [sp, #-16]!
     ; end frame
 
-    bl      _reader_instance
-    mov     x19, x0                 ; reader
+    bl      _Reader_instance
+    mov     x19, x0                 ; Reader.instance()
 
     mov     x20, #0                 ; floor
     mov     w21, #999               ; current char
     mov     x22, #0                 ; entered basement at
     mov     x23, #0                 ; chars read
 
-    _main_char_loop:
+    next_char:
     mov     x0, x19
-    bl      _reader_is_eof            ; reader.is_eof()
+    bl      _reader_is_eof          ; reader.is_eof()
     cmp     x0, FALSE
-    b.ne    _main_print_and_return
+    b.ne    print_and_return
 
     mov     x0, x19
     bl      _reader_read            ; reader.read()
@@ -36,100 +36,36 @@ not_quite_lisp:
     add     x23, x23, #1            ; count char as read
 
     cmp     w21, '('
-    b.ne    _main_p_close
+    b.ne    try_close
     add     x20, x20, #1            ; move up a floor
-    _main_p_close:
+    try_close:
     cmp     w21, ')'
-    b.ne    _main_char_loop
+    b.ne    next_char
     sub     x20, x20, #1            ; move down a floor
     cmp     x20, #0
-    b.ge    _main_char_loop         ; still above ground
+    b.ge    next_char               ; still above ground
     cmp     x22, #0
-    b.ne    _main_char_loop         ; already went underground
+    b.ne    next_char               ; already went underground
     mov     x22, x23
-    b       _main_char_loop
+    b       next_char
 
-    _main_print_and_return:
+    print_and_return:
+    bl      _Reader_destroy
     mov     x0, x20
-    bl      itoa                    ; convert to null-terminated string
+    bl      _int2str                ; convert to null-terminated string
     mov     x20, x0                 ; save the pointer
     bl      _println_z              ; println
     mov     x0, x20                 ; free the string
     bl      _mem_free
 
     mov     x0, x22
-    bl      itoa                    ; convert to null-terminated string
+    bl      _int2str                ; convert to null-terminated string
     mov     x22, x0                 ; save the pointer
     bl      _println_z              ; println
     mov     x0, x22                 ; free the string
     bl      _mem_free
 
     ; restore frame
-    ldp     x22, x23, [sp], #16
-    ldp     x20, x21, [sp], #16
-    ldp     lr, x19, [sp], #16
-    ret
-
-; The largest 64-bit integer, when decimal string-ified, has length 20. Using
-; an allocation here is silly - it's only to prove dynamic memory works.
-/* char* itoa( int num ) */
-.global _itoa
-_itoa:
-itoa:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    stp     x20, x21, [sp, #-16]!
-    stp     x22, x23, [sp, #-16]!
-    stp     x24, x25, [sp, #-16]!
-    ; end frame
-    mov     x25, x0                 ; save num
-    mov     x0, #21                 ; max len, plus room for a NULL
-    bl      _mem_alloc
-    mov     x24, x0                 ; pointer -> buffer
-    add     x19, x24, #21           ; -> tail of buffer
-    strb    wzr, [x19, #-1]!        ; put a NULL at the end
-    mov     x0, x25                 ; restore num
-
-    mov     x23, #0                 ; assume non-negative
-    cmp     x0, #0
-    b.ge    itoa_positive
-    mov     x23, #-1                ; it's negative
-    mul     x0, x0, x23
-    itoa_positive:
-
-    mov     x25, #10                ; base 10
-    itoa_loop:
-    sdiv    x21, x0, x25            ; x21 = x0 / 10
-    msub    x22, x21, x25, x0       ; x22 = x0 - (x21 * 10)
-                                    ; x22 = x0 % 10
-    add     w20, w22, 0x30          ; convert to char
-    strb    w20, [x19, #-1]!        ; add to string
-    mov     x0, x21                 ; update x0 w/ what's left
-    cmp     x0, #0
-    b.ne    itoa_loop
-
-    cmp     x23, #0
-    b.eq    itoa_move
-    mov     w20, '-'
-    strb    w20, [x19, #-1]!        ; minus sign
-
-    itoa_move:
-    cmp     x19, x24
-    b.eq    itoa_return             ; used full alloc!
-    ; move to start of allocated buffer (copy [x19] to [x24])
-    ; todo: straightforward implementation, but rather inefficient
-    mov     x25, x24
-    itoa_copy_char:
-    ldrb    w20, [x19], #1          ; load and increment
-    strb    w20, [x25], #1          ; store and increment
-    cmp     w20, #0
-    b.eq    itoa_return             ; null byte!
-    b       itoa_copy_char          ; next!
-
-    itoa_return:
-    mov     x0, x24                 ; pointer to start of string & alloc
-    ; restore frame
-    ldp     x24, x25, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16

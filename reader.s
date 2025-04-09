@@ -35,8 +35,8 @@ struct Reader {
 .set SIZEOF, CAP + 16
 
 /* Reader* instance( ) */
-.global _reader_instance
-_reader_instance:
+.global _Reader_instance
+_Reader_instance:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     str     x20, [sp, #-16]!
@@ -150,8 +150,8 @@ _reader_is_eof:
     ret
 
 /* void destroy( ) */
-.global _reader_destroy
-_reader_destroy:
+.global _Reader_destroy
+_Reader_destroy:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     str     x20, [sp, #-16]!
@@ -195,9 +195,12 @@ refill_buffer:
     b.le    refill_buffer_eof       ; EOL / zero bytes
     mov     x1, #0                  ; back to the beginning
     stp     x0, x1, [x19]           ; update this.size & .position
-;        ; print what was just read
 ;        str     x20, [sp, #-16]!    ; miniframe
 ;        mov     x20, x0             ; save size (for return)
+;        ; print how much was just read
+;        bl      _int2str
+;        bl      _println_z
+;        ; print what was just read
 ;        adrp    x0, m_read@PAGE
 ;        add     x0, x0, m_read@PAGEOFF
 ;        bl      _print_z
