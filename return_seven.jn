@@ -1,0 +1,42 @@
+# comments start with octothorpe and extend to end of line
+# identifier names are lowercase-only, and cannot exceed length 7
+# keywords are identifiers: char fn if int return while
+# all whitespace is ignored
+# no compound expressions, aside from function calls
+
+# non-local variables are mutable (and global/static, obviously)
+int two = 50;
+
+# functions are global
+fn main(): int {
+    # local variables are mutable
+    int result = 48;
+    bool nope = false;
+    if ! nope {
+        result = plthree(result);
+    }
+    while result < 55 {
+        result = sum(result, two);
+        if result > 54 { # no >= (yet)
+            done;
+        }
+        again; # pointless
+    }
+    # string literals are "anonymous constants"
+    char* greet = "Hello, ";
+    # char literals are ... not really sure yet. ints valued only 0-127?
+    greet = greet + 'W';
+    greet = greet + "orld!";
+    print(greet);
+    return result; # comments can follow non-comments
+}
+
+fn plthree(val: int): int {
+    return sum(val, 51);
+}
+
+fn sum(lhs: int, rhs: int): int {
+    int result = lhs + rhs;
+    return result;
+}
+#  oh hai

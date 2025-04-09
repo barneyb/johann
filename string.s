@@ -4,8 +4,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align 3                            ; Make sure everything is 8-byte/64-bit aligned
-
+.align  3                           ; Make sure everything is 8-byte/64-bit aligned
 
 ; The largest 64-bit integer, when decimal string-ified, has length 20.
 /* char* int2str( int num ) */
@@ -50,7 +49,7 @@ _int2str:
 
     int2str_move:
     cmp     x19, x24
-    b.eq    int2str_return             ; used full alloc!
+    b.eq    int2str_return          ; used full alloc!
     ; move to start of allocated buffer (copy [x19] to [x24])
     ; todo: straightforward implementation, but rather inefficient
     mov     x25, x24
@@ -58,8 +57,8 @@ _int2str:
     ldrb    w20, [x19], #1          ; load and increment
     strb    w20, [x25], #1          ; store and increment
     cmp     w20, #0
-    b.eq    int2str_return             ; null byte!
-    b       int2str_copy_char          ; next!
+    b.eq    int2str_return          ; null byte!
+    b       int2str_copy_char       ; next!
 
     int2str_return:
     mov     x0, x24                 ; pointer to start of string & alloc

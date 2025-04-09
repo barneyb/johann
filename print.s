@@ -1,5 +1,5 @@
 /**
- * I provide routines for printing to STDOUT.
+ * I provide routines for easing printing to STDOUT and STDERR
  */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -12,7 +12,7 @@ newline: .ascii "\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align 3                            ; Make sure everything is 8-byte/64-bit aligned
+.align  3                           ; Make sure everything is 8-byte/64-bit aligned
 
 /* void print_z( const void *buf ) */
 .global _print_z
