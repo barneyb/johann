@@ -1,4 +1,11 @@
-.text
+/**
+ * I hold thin wrappers around system calls. There are a few simplifications,
+ * such as "no file descriptors", so IO is only standard in/out/err and mapped
+ * memory is always anonymous, private, and read/write.
+ */
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
 .align 3                            ; Make sure everything is 8-byte/64-bit aligned
 .set MAP_ANON, 0x1000
 .set MAP_PRIVATE, 0x0002
