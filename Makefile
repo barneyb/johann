@@ -4,8 +4,8 @@ OBJECTS=$(LIB)/jnc.o $(LIB)/system.o
 
 all: $(BIN)/jnc
 	echo "(()))((((" | $(BIN)/jnc
-	echo "((())))((" | $(BIN)/jnc
-	@echo "WATCH OUT! Little-endian decimal results (read right-to-left)."
+	echo "((())))))" | $(BIN)/jnc
+	@echo "\nWATCH OUT!\n    Little-endian decimal results (read right-to-left).\n"
 	$(BIN)/jnc < not_quite_lisp.txt
 
 $(BIN)/jnc: $(OBJECTS)

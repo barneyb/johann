@@ -5,20 +5,20 @@
 .set PROT_READ, 0x01
 .set PROT_WRITE, 0x02
 
-/* void exit(int status) */
+/* void exit( int status ) */
 .global _os_exit
 _os_exit:
-    /* 1 - void exit(int status) */
+    /* 1 - void exit( int status ) */
     mov     x16, #1                 ; 1 = terminate system call
     svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
 
-/* ssize_t stout(const void *buf, size_t count) */
+/* ssize_t stout( const void *buf, size_t count ) */
 .global _os_stdout
 _os_stdout:
     mov     x16, #1                 ; 1 = StdOut
     b       os_write
 
-/* ssize_t stderr(const void *buf, size_t count) */
+/* ssize_t stderr( const void *buf, size_t count ) */
 .global _os_stderr
 _os_stderr:
     mov     x16, #2                 ; 2 = StdErr
@@ -26,7 +26,7 @@ _os_stderr:
 
 ; pass the file descriptor in x16
 os_write:
-    /* 4 - write(int fd, const void *buf, size_t count) */
+    /* 4 - ssize_t write( int fd, const void *buf, size_t count ) */
     mov     x2, x1                  ; number of bytes write
     mov     x1, x0                  ; buffer to print from
     mov     x0, x16                 ; file descriptor
@@ -34,10 +34,10 @@ os_write:
     svc     #0x80                   ; Call kernel
     ret                             ; transfer control back, propagating nbytes written
 
-/* ssize_t stdin(void *buf, size_t nbyte); */
+/* ssize_t stdin( void *buf, size_t nbyte ) */
 .global _os_stdin
 _os_stdin:
-    /* 3 - ssize_t read(int fd, void *buf, size_t nbyte); */
+    /* 3 - ssize_t read( int fd, void *buf, size_t nbyte ) */
     mov     x2, x1                  ; max bytes to read
     mov     x1, x0                  ; buffer to read them into
     mov     x0, #0                  ; 0 = StdIn
@@ -45,10 +45,10 @@ _os_stdin:
     svc     #0x80                   ; Call the kernel
     ret                             ; transfer control back, propagating nbytes read
 
-/* user_addr_t mmap(caddr_t addr, size_t len) */
+/* user_addr_t mmap( caddr_t addr, size_t len ) */
 .global _os_mmap
 _os_mmap:
-    /* 197 - user_addr_t mmap(caddr_t addr, size_t len, int prot, int flags, int fd, off_t pos) */
+    /* 197 - user_addr_t mmap( caddr_t addr, size_t len, int prot, int flags, int fd, off_t pos ) */
     mov     x5, #0                  ; ignored w/out a fd?
     mov     x4, #-1                 ; -1 = no file descriptor
     mov     x3, MAP_ANON ^ MAP_PRIVATE
@@ -57,7 +57,7 @@ _os_mmap:
     svc     #0x80                   ; Call kernel
     ret                             ; transfer control back, propagating address
 
-/* int munmap(caddr_t addr, size_t len) */
+/* int munmap( caddr_t addr, size_t len ) */
 .global _os_munmap
 _os_munmap:
     /* 73 - int munmap(caddr_t addr, size_t len) */
