@@ -1,13 +1,7 @@
-.set buf_len, 32
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .bss
-
-buf: .zero buf_len
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3                            ; Make sure everything is 8-byte/64-bit aligned
+.set FALSE, 0
 
 .global _main
 _main:
@@ -20,38 +14,26 @@ not_quite_lisp:
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
     stp     x22, x23, [sp, #-16]!
-    stp     x24, x27, [sp, #-16]!
-    str     x28, [sp, #-16]!
     ; end frame
-    adrp    x19, buf@PAGE
-    add     x19, x19, buf@PAGEOFF   ; where to read into
+
+    bl      _reader_instance
+    mov     x19, x0                 ; reader
+
     mov     x20, #0                 ; floor
     mov     w21, #999               ; current char
-    mov     x22, #9999              ; buffer size
-    mov     x23, #9999              ; pos in buffer
-    mov     x24, #9999              ; address of current char
-    mov     x27, #0                 ; entered basement at
-    mov     x28, #0                 ; chars read
-
-    _main_buf_loop:
-    mov     x0, x19
-    mov     x1, buf_len
-    bl      _os_stdin
-
-    cmp     x0, #0
-    b.le    _main_print_and_return  ; out of characters
-
-    mov     x22, x0                 ; save buffer size
-    mov     x23, #0                 ; reset pos
+    mov     x22, #0                 ; entered basement at
+    mov     x23, #0                 ; chars read
 
     _main_char_loop:
-    cmp     x23, x22
-    b.ge    _main_buf_loop          ; at end; read more
+    mov     x0, x19
+    bl      _reader_is_eof            ; reader.is_eof()
+    cmp     x0, FALSE
+    b.ne    _main_print_and_return
 
-    add     x24, x19, x23
-    add     x23, x23, #1
-    ldrb    w21, [x24]
-    add     x28, x28, #1            ; count char as read
+    mov     x0, x19
+    bl      _reader_read            ; reader.read()
+    mov     w21, w0
+    add     x23, x23, #1            ; count char as read
 
     cmp     w21, '('
     b.ne    _main_p_close
@@ -62,9 +44,9 @@ not_quite_lisp:
     sub     x20, x20, #1            ; move down a floor
     cmp     x20, #0
     b.ge    _main_char_loop         ; still above ground
-    cmp     x27, #0
+    cmp     x22, #0
     b.ne    _main_char_loop         ; already went underground
-    mov     x27, x28
+    mov     x22, x23
     b       _main_char_loop
 
     _main_print_and_return:
@@ -75,16 +57,14 @@ not_quite_lisp:
     mov     x0, x20                 ; free the string
     bl      _mem_free
 
-    mov     x0, x27
+    mov     x0, x22
     bl      itoa                    ; convert to null-terminated string
-    mov     x27, x0                 ; save the pointer
+    mov     x22, x0                 ; save the pointer
     bl      _println_z              ; println
-    mov     x0, x27                 ; free the string
+    mov     x0, x22                 ; free the string
     bl      _mem_free
 
     ; restore frame
-    ldr     x28, [sp], #16
-    ldp     x24, x27, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -93,6 +73,8 @@ not_quite_lisp:
 ; The largest 64-bit integer, when decimal string-ified, has length 20. Using
 ; an allocation here is silly - it's only to prove dynamic memory works.
 /* char* itoa( int num ) */
+.global _itoa
+_itoa:
 itoa:
     ; create frame
     stp     lr, x19, [sp, #-16]!

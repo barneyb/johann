@@ -6,10 +6,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-err_alloc: .ascii "Failed to allocate\n"
+err_alloc: .ascii "ERROR: Failed to allocate\n"
 .set err_alloc_len, . - err_alloc
 
-err_free: .ascii "Failed to free\n"
+err_free: .ascii "ERROR: Failed to free\n"
 .set err_free_len, . - err_free
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -27,7 +27,7 @@ _mem_alloc:
     mov     x1, PAGE_SIZE           ; every allocation gets a page
     bl      _os_mmap
     cmp     x0, #0
-    b.ge    _mem_alloc_return       ; successfully allocated
+    b.ge    alloc_return            ; successfully allocated
     mov     x19, #-1                ; FAIL. negate return value
     mul     x19, x19, x0
 
@@ -39,7 +39,7 @@ _mem_alloc:
     mov     x0, x19
     b       _os_exit                ; bye!
 
-    _mem_alloc_return:
+    alloc_return:
     ; restore frame
     ldp     lr, x19, [sp], #16      ; restore LR and x19
     ret
@@ -53,7 +53,7 @@ _mem_free:
     mov     x1, PAGE_SIZE           ; every allocation got a page
     bl      _os_munmap
     cmp     x0, #0
-    b.eq    _mem_free_return        ; success!
+    b.eq    free_return             ; success!
     mov     x19, x0                 ; stash to use as exit code
 
     adrp    x0, err_free@PAGE
@@ -64,7 +64,7 @@ _mem_free:
     mov     x0, x19
     b       _os_exit                ; bye!
 
-    _mem_free_return:
+    free_return:
     ; restore frame
     ldp     lr, x19, [sp], #16      ; restore LR and x19
     ret

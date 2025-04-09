@@ -1,8 +1,9 @@
 LIB=target/lib
 BIN=target/bin
-OBJECTS=$(LIB)/jnc.o $(LIB)/mem.o $(LIB)/print.o $(LIB)/system.o
+OBJECTS=$(LIB)/jnc.o $(LIB)/mem.o $(LIB)/print.o $(LIB)/reader.o $(LIB)/system.o
 
 all: $(BIN)/jnc
+	printf "" | $(BIN)/jnc
 	echo "(()))((((" | $(BIN)/jnc
 	echo "())())" | $(BIN)/jnc
 	$(BIN)/jnc < not_quite_lisp.txt
