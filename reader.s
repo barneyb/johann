@@ -103,7 +103,7 @@ _reader_read:
     str     x21, [x20]              ; update this.position
 
     ; restore frame
-    ldr     x20, [sp], #16
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
