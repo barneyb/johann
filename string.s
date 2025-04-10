@@ -5,6 +5,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.set    NULL, 0
 
 ; The largest 64-bit integer, when decimal string-ified, has length 20.
 /* char* int2str( int num ) */
@@ -66,5 +67,52 @@ _int2str:
     ldp     x24, x25, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* int str2int( char* str ) */
+.global _str2int
+_str2int:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    ; end frame
+    ; todo: handle leading minus!
+    mov     x20, #0                 ; n = 0
+    mov     x21, #10                ; radix
+    str2int_char:
+    ldrb    w19, [x0], #1           ; c = str[i++]
+    cmp     w19, NULL
+    b.eq    str2int_return
+    sub     x19, x19, '0'           ; convert digit to number
+    madd    x20, x21, x20, x19      ; multiply by 10 and add digit value
+    b str2int_char
+
+    str2int_return:
+    mov     x0, x20
+    ; restore frame
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* size_t strlen( char* str ) */
+.global _strlen
+_strlen:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    mov     x20, #0                 ; l = 0
+    strlen_char:
+    ldrb    w19, [x0], #1           ; c = str[i++]
+    cmp     w19, NULL
+    b.eq    strlen_return
+    add     x20, x20, #1            ; l++
+    b strlen_char
+
+    strlen_return:
+    mov     x0, x20
+    ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
