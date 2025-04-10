@@ -31,44 +31,44 @@ jnc:
     mov     x22, x0                 ; pointer -> buffer[i] to write
     mov     x23, #0                ; block depth
 
-    next_token:
+    jnc_token:
     mov     x0, x20
     bl      _lexer_token            ; lex.token()
     cmp     x0, NULL
-    b.eq    print_and_return
-    cmp     w0, T_CBRACE
-    b.ne    next_proceed
-    sub     x22, x22, INDENT        ; "remove" a layer of indent for this line
-    next_proceed:
+    b.eq    jnc_print_and_return
+;    cmp     w0, T_CBRACE
+;    b.ne    jnc_deindent
+;    sub     x22, x22, INDENT        ; "remove" a layer of indent for this line
+;    jnc_deindent:
     strb    w0, [x22], #1
     cmp     w0, T_SEMI
-    b.eq    next_newline
+    b.eq    jnc_next_line
     cmp     w0, T_OBRACE
-    b.eq    next_block
+    b.eq    jnc_enter_block
     cmp     w0, T_CBRACE
-    b.eq    next_unblock
+    b.eq    jnc_leave_block
     mov     w0, ' '
     strb    w0, [x22], #1
-    b       next_token
-    next_block:
+    b       jnc_token
+    jnc_enter_block:
     add     x23, x23, INDENT        ; indent one layer
-    b       next_newline
-    next_unblock:
+    b       jnc_next_line
+    jnc_leave_block:
     sub     x23, x23, INDENT        ; unindent one layer
-    b       next_newline
-    next_newline:
+    b       jnc_next_line
+    jnc_next_line:
     mov     w0, '\n'
     strb    w0, [x22], #1
     mov     w1, ' '
     mov     x2, x23
-    next_indent:
+    jnc_keep_indenting:
     cmp     x2, #0
-    b.eq    next_token
+    b.eq    jnc_token
     strb    w1, [x22], #1
     sub     x2, x2, #1
-    b       next_indent
+    b       jnc_keep_indenting
 
-    print_and_return:
+    jnc_print_and_return:
     mov     x0, x20
     bl      _lexer_destroy          ; lex.destroy()
     mov     x0, x19
