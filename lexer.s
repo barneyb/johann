@@ -103,55 +103,60 @@ _lexer_token:
     ; todo: record coords somewhere
 
     ; unambiguous single-character tokens are easy
-    cmp     x0, T_OBRACE
+    cmp     x0, T_AMP
     b.eq    token_punct
     cmp     x0, T_CBRACE
     b.eq    token_punct
-    cmp     x0, T_PERCENT
-    b.eq    token_punct
-    cmp     x0, T_AMP
-    b.eq    token_punct
-    cmp     x0, T_STAR
-    b.eq    token_punct
-    cmp     x0, T_OPAREN
-    b.eq    token_punct
-    cmp     x0, T_CPAREN
-    b.eq    token_punct
-    cmp     x0, T_OBRACKET
-    b.eq    token_punct
     cmp     x0, T_CBRACKET
-    b.eq    token_punct
-    cmp     x0, T_SEMI
     b.eq    token_punct
     cmp     x0, T_COLON
     b.eq    token_punct
     cmp     x0, T_COMMA
     b.eq    token_punct
+    cmp     x0, T_CPAREN
+    b.eq    token_punct
     cmp     x0, T_DOT
     b.eq    token_punct
-    cmp     x0, T_SLASH
+    cmp     x0, T_OBRACE
+    b.eq    token_punct
+    cmp     x0, T_OBRACKET
+    b.eq    token_punct
+    cmp     x0, T_OPAREN
+    b.eq    token_punct
+    cmp     x0, T_PERCENT
+    b.eq    token_punct
+    cmp     x0, T_PIPE
     b.eq    token_punct
     cmp     x0, T_QUESTION
     b.eq    token_punct
+    cmp     x0, T_SEMI
+    b.eq    token_punct
+    cmp     x0, T_SLASH
+    b.eq    token_punct
+    cmp     x0, T_STAR
+    b.eq    token_punct
     ; to-become-ambiguous characters tokens are easy as well (for now)
-    cmp     x0, T_LT
+    cmp     x0, T_ASSIGN
+    b.eq    token_punct
+    cmp     x0, T_BANG
     b.eq    token_punct
     cmp     x0, T_GT
     b.eq    token_punct
-    cmp     x0, T_ASSIGN
+    cmp     x0, T_LT
     b.eq    token_punct
     cmp     x0, T_MINUS
     b.eq    token_punct
     cmp     x0, T_PLUS
     b.eq    token_punct
+    ; multi-character tokens...
     str     xzr, [x19, OFF_POS]     ; store this.pos = 0 to "empty" the buffer
     cmp     x0, 'a'                 ; T_ID
     b.ge    token_id_ish
-    cmp     x0, '0'                 ;  T_INT
+    cmp     x0, '0'                 ; T_INT
     b.ge    token_int_ish
-    cmp     x0, '\''                ;  T_CHAR
+    cmp     x0, '\''                ; T_CHAR
     b.ge    token_char
-    cmp     x0, '"'                 ;  T_STRING
+    cmp     x0, '"'                 ; T_STRING
     b.ge    token_string
 
     token_id_ish:

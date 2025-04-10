@@ -3,40 +3,91 @@
 # keywords are identifiers: char fn if int return while
 # all whitespace is ignored
 # no compound expressions, aside from function calls
+# functions can have a max of eight params
+
+# NB: all the integer literals are offset by 48, so they yield the ASCII code
+# of their 'value'. It's a kludge for readable-ish interim lexer output.
 
 # non-local variables are mutable (and global/static, obviously)
 int two = 50;
 
-# functions are global
+# classes are global, and create a namespace for their methods (functions).
+class adder {
+    # Fields belong to an instance (there are no static fields) and are always
+    # mutable and private. Alternate constructors must be implemented as static
+    # functions (atop the default initialization).
+    int sum = 48;
+    # arrays ... are still nebulous
+    int[] terms = new int[53];
+    int i = 48;
+
+    # Methods accept self and zero or more typed params. May be void or not.
+    fn plus(self, n: int) {
+        if i < 53 {
+            terms[i] = n;
+            i = i + 49;
+        }
+        self.sum = self.sum + n; # self must be explicitly named!
+    }
+
+    # A "getter"
+    fn sum(self): int {
+        return self.sum;
+    }
+
+    # Methods which don't accept self are 'static', and cannot be void. This one
+    # is a completely pointless indirection of the new operator.
+    fn zero(): adder {
+        # construct instances of classes with `new`, which go on the "heap".
+        adder a = new adder();
+        # pass ownership of a to the caller, who must drop it when done.
+        return a;
+    }
+
+    # If 'drop' is defined, it must be void and accept zero params (aside from
+    # self). The drop keyword automatically invokes the method, when available.
+    fn drop(self) {
+        # maybe drop an owned pointer or something?
+    }
+}
+
+# Functions are global. Prefer classes, in general, except for main.
 fn main(): int {
     # local variables are mutable
-    int result = 48;
+    adder a = adder.zero();
     bool nope = false;
+    # if doesn't use parens, and braces are mandatory
     if ! nope {
-        result = plthree(result);
+        # call methods with the dot operator, passing additional args, as needed.
+        a.plus(51);
     }
-    while result < 55 {
-        result = sum(result, two);
-        if result > 54 { # no >= (yet)
-            done;
+    # while follows suit, and supports nested again/done (though no loop
+    # labeling). The examples here are pointless, as while already does it.
+    while a.sum() < 55 {
+        a.plus(two);
+        if a.sum() > 54 { # no >= (yet)
+            done; # terminate the loop
         }
-        again; # pointless
+        again; # run the loop again
     }
-    # string literals are "anonymous constants"
-    char* greet = "Hello, ";
-    # char literals are ... not really sure yet. ints valued only 0-127?
-    greet = greet + 'W';
-    greet = greet + "orld!";
-    print(greet);
+
+    # at this point, a holds seven
+
+    # string literals are "anonymous global constants" of type char[], and are
+    # null-terminated.
+    char[] greet = "Hello,";
+    # char literals are ... not really sure yet.
+    char space = ' ';
+    greet = greet + space;  # allocate a new string
+    greet = greet + 'W';    # another new string
+    greet = greet + "orld!";# guess what? another new string!
+    # println comes from the standard library, and is super nebulous.
+    println(greet);
+
+    int result = a.sum();
+    free a; # don't forget to deallocate - there's no GC! If the object's class
+            # has a 'drop' method, the free operator will invoke it before
+            # freeing the object's memory.
     return result; # comments can follow non-comments
-}
-
-fn plthree(val: int): int {
-    return sum(val, 51);
-}
-
-fn sum(lhs: int, rhs: int): int {
-    int result = lhs + rhs;
-    return result;
 }
 #  oh hai
