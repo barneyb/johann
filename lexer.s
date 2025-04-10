@@ -4,8 +4,9 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-err_bad_token: .asciz "ERROR: Unrecognized token '"
-.set    err_bad_token_len, . - err_bad_token
+err_bad_token: .asciz "# ERROR: Unrecognized token '"
+at_line: .asciz "' at line "
+at_char: .asciz ", char "
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -171,13 +172,22 @@ _lexer_token:
     mov     x23, x0                 ; save the char
     adrp    x0, err_bad_token@PAGE
     add     x0, x0, err_bad_token@PAGEOFF
-    mov     x1, err_bad_token_len
-    bl      _os_stdout              ; todo: send errors to STDERR....
+    bl      _print_z                ; todo: send errors to STDERR....
     mov     x0, x23
     bl      _print_c
-    mov     x0, '\''
-    bl      _print_c
-    bl      _println
+    adrp    x0, at_line@PAGE
+    add     x0, x0, at_line@PAGEOFF
+    bl      _print_z
+    mov     x0, x21
+    bl      _int2str
+    bl      _print_z
+    adrp    x0, at_char@PAGE
+    add     x0, x0, at_char@PAGEOFF
+    bl      _print_z
+    mov     x0, x22
+    bl      _int2str
+    bl      _print_z
+    bl      _println                ; end line
     mov     x0, #17
     b       _os_exit
 

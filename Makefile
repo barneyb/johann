@@ -14,6 +14,7 @@ all: $(BIN)/jnc \
 	$(BIN)/nql \
 	$(LIB)/return_seven.s \
 	$(LIB)/not_quite_lisp.s
+	head $(LIB)/*.s
 
 jnc: $(BIN)/jnc
 	$(BIN)/jnc < return_seven.jn
@@ -51,3 +52,5 @@ clean:
 .DELETE_ON_ERROR:
 # don't delete intermediate files created by pattern rules
 .SECONDARY:
+# never clean up partially-compiled assembly files (with errors)
+.PRECIOUS: $(LIB)/*.s

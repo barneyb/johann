@@ -1,9 +1,9 @@
 ; value token types             0x100
-.set    T_BOOL      , 0x100 + 'B'
-.set    T_CHAR      , 0x100 + 'C'
-.set    T_ID        , 0x100 + 'I'
-.set    T_INT       , 0x100 + 'N'   ; not 'I'
-.set    T_STRING    , 0x100 + 'S'
+.set    T_BOOL      , 0x100 + 'b'
+.set    T_CHAR      , 0x100 + 'c'
+.set    T_ID        , 0x100 + 'i'
+.set    T_INT       , 0x100 + 'n'   ; not 'i'
+.set    T_STRING    , 0x100 + 's'
 ; literal keywords never become tokens, they become value tokens.
 ; flow control keywords         0x200
 .set    T_KW_AGAIN  , 0x200 + 'A'
