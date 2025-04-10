@@ -1,31 +1,34 @@
 # comments start with octothorpe and extend to end of line
 # identifier names are lowercase-only, and cannot exceed length 7
-# keywords are identifiers: char fn if int return while
-# all whitespace is ignored
-# no compound expressions, aside from function calls
-# functions can have a max of eight params
-
-# NB: all the integer literals are offset by 48, so they yield the ASCII code
-# of their 'value'. It's a kludge for readable-ish interim lexer output.
+# all whitespace is ignored, except within char/string literals
+# no compound expressions, except one layer of:
+#       function calls accept var/literal,
+#       array indexing by var/literal, or
+#       member deref (no chaining).
+# functions can have a max of 7 params
 
 # non-local variables are mutable (and global/static, obviously)
-int two = 50;
+int two = 2;
 
-# classes are global, and create a namespace for their methods (functions).
+# literals are always positive - use subtraction if you need a negative.
+int negtwo = 0 - two;
+
+# Classes are global, and create a namespace for their methods (functions).
+# Polymorphism is not available. Traits (aka mixins) might be at some point.
 class adder {
     # Fields belong to an instance (there are no static fields) and are always
     # mutable and private. Alternate constructors must be implemented as static
     # functions (atop the default initialization).
-    int sum = 48;
+    int sum = 0;
     # arrays ... are still nebulous
-    int[] terms = new int[53];
-    int i = 48;
+    int[] terms = new int[5];
+    int i = 0;
 
     # Methods accept self and zero or more typed params. May be void or not.
     fn plus(self, n: int) {
-        if i < 53 {
+        if i < 5 {
             terms[i] = n;
-            i = i + 49;
+            i = i + 1;
         }
         self.sum = self.sum + n; # self must be explicitly named!
     }
@@ -59,13 +62,13 @@ fn main(): int {
     # if doesn't use parens, and braces are mandatory
     if ! nope {
         # call methods with the dot operator, passing additional args, as needed.
-        a.plus(51);
+        a.plus(3);
     }
     # while follows suit, and supports nested again/done (though no loop
     # labeling). The examples here are pointless, as while already does it.
-    while a.sum() < 55 {
+    while a.sum() < 7 {
         a.plus(two);
-        if a.sum() > 54 { # no >= (yet)
+        if a.sum() > 6 { # no >= (yet)
             done; # terminate the loop
         }
         again; # run the loop again

@@ -42,8 +42,9 @@ _Lexer_new:
     mov     x19, x0                 ; stash pointer -> reader
     mov     x0, SIZEOF              ; how much to allocate
     bl      _mem_alloc;_LOG              ; allocate
-    stp     x19, xzr, [x0]          ; initialize
-    str     xzr, [x0, OFF_CHAR]
+    str     x19, [x0]               ; initialize
+    mov     x19, #1
+    stp     x19, xzr, [x0, OFF_LINE]
 
     ; restore frame
     ldp     lr, x19, [sp], #16
@@ -56,6 +57,7 @@ _lexer_token:
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
     stp     x22, x23, [sp, #-16]!
+    str     x24, [sp, #-16]!
     ; end frame
 
     mov     x19, x0                 ; pointer -> this
@@ -79,8 +81,8 @@ _lexer_token:
     stp     x21, x22, [x19, OFF_LINE]   ; store this.line_num and .char_pos
     b       token_skip_char         ; NEXT!
 
-    add     x22, x22, #1            ; increment char_pos
     token_same_line:
+    add     x22, x22, #1            ; increment char_pos
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
 
     ; see if it's a space
@@ -99,8 +101,6 @@ _lexer_token:
     b       token_handle_newline
 
     token_keep_going:
-
-    ; todo: record coords somewhere
 
     ; unambiguous single-character tokens are easy
     cmp     x0, T_AMP
@@ -167,8 +167,8 @@ _lexer_token:
     cmp     x0, '9'
     b.le    token_int
 
-    ; print the token that fell through
-    mov     x23, x0                 ; save the token
+    ; print the char that fell through
+    mov     x23, x0                 ; save the char
     adrp    x0, err_bad_token@PAGE
     add     x0, x0, err_bad_token@PAGEOFF
     mov     x1, err_bad_token_len
@@ -182,13 +182,37 @@ _lexer_token:
     b       _os_exit
 
     token_punct:
+    bl      _Token_new
+    mov     x24, x0                 ; pointer -> token
+    mov     x1, x21
+    mov     x2, x22
+    bl      _token_set_coords
+    mov     x0, x24
     b       token_return
 
     token_int:
     mov     x1, x0                  ; pass first digit
     mov     x0, x20                 ; and the reader
-    bl      lex_int
-    ; todo: retain numeric value; don't convert to ASCII
+    bl      lex_digits
+    mov     x23, x0                 ; stash pointer -> name
+    mov     x0, T_INT
+    bl      _Token_new
+    mov     x24, x0                 ; pointer -> token
+    mov     x1, x21
+    mov     x2, x22
+    bl      _token_set_coords       ; set coords of start
+    mov     x0, x23                 ; unstash name
+    bl      _str2int
+    mov     x1, x0
+    mov     x0, x24
+    bl      _token_set_value        ; set value
+    mov     x0, x23                 ; unstash name
+    bl      _strlen
+    ; todo: validate len
+    sub     x0, x0, #1              ; first char was already counted
+    add     x22, x22, x0            ; add the scanned char count
+    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
+    mov     x0, x24
     b       token_return
 
     token_id:
@@ -197,9 +221,25 @@ _lexer_token:
     bl      lex_identifier
     ; todo: transmute T_ID to T_KW_XXX as appropriate
     ; todo: transmute T_ID to T_BOOL as appropriate
-    ldrb    w20, [x0]               ; todo: don't keep only first char
-    bl      _mem_free
-    mov     x0, x20
+    mov     x23, x0                 ; stash pointer -> name
+    mov     x0, T_ID
+    bl      _Token_new
+    mov     x24, x0                 ; pointer -> token
+    mov     x1, x21
+    mov     x2, x22
+    bl      _token_set_coords       ; set coords of start
+    mov     x0, x24
+    ldr     x1, [x23]               ; load first 8 bytes of name
+    bl      _token_set_value        ; set value
+    mov     x0, x23                 ; unstash name
+    bl      _strlen
+    ; todo: validate len
+    sub     x0, x0, #1              ; first char was already counted
+    add     x22, x22, x0            ; add the scanned char count
+    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
+    mov     x0, x23                 ; unstash name
+    bl      _mem_free               ; free name
+    mov     x0, x24
     b       token_return
 
     token_char:
@@ -208,23 +248,50 @@ _lexer_token:
     mov     x23, x0
     mov     x0, x20
     bl      _reader_read            ; the second single quote
-    mov     x0, x23
+    mov     x0, T_CHAR
+    bl      _Token_new
+    mov     x24, x0                 ; pointer -> token
+    mov     x1, x21
+    mov     x2, x22
+    bl      _token_set_coords       ; set coords of start
+    mov     x0, x24
+    mov     x1, x23                 ; the character
+    bl      _token_set_value        ; set value
+    add     x22, x22, #2            ; add the char and close quote
+    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
+    mov     x0, x24
     b       token_return
 
     token_string:
     mov     x0, x20                 ; pass the reader
     bl      lex_string
-    ldrb    w20, [x0]               ; todo: don't keep only first char
-    bl      _mem_free
-    mov     x0, x20
+    mov     x23, x0                 ; stash pointer -> name
+    mov     x0, T_STRING
+    bl      _Token_new
+    mov     x24, x0                 ; pointer -> token
+    mov     x1, x21
+    mov     x2, x22
+    bl      _token_set_coords       ; set coords of start
+    mov     x0, x24
+    ldr     x1, [x23]               ; load first 8 bytes of string
+    bl      _token_set_value        ; set value
+    mov     x0, x23                 ; unstash name
+    bl      _strlen
+    ; todo: validate len
+    add     x0, x0, #1              ; and close quote (open was already counted)
+    add     x22, x22, x0            ; add the scanned char count
+    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
+    mov     x0, x23                 ; unstash name
+    bl      _mem_free               ; free name
+    mov     x0, x24
     b       token_return
 
     token_null:
     mov     x0, NULL
 
     token_return:
-    ; todo: need to return a Token, not a character
     ; restore frame
+    ldr     x24, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -267,33 +334,50 @@ lex_comment:
     ldp     lr, x19, [sp], #16
     ret
 
-/* int lex_int( Reader* reader, char first_digit ) */
-lex_int:
+/* char* lex_digits( Reader* reader, char first_char ) */
+lex_digits:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
+    str     x22, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> reader
-    sub     x20, x1, '0'            ; convert digit to number
-    mov     x21, #10                ; radix
+    mov     x22, x1                 ; stash first char
+    mov     x0, #21                 ; 64-bit int max len
+    bl      _mem_alloc
+    mov     x20, x0                 ; pointer -> start of buffer
+    mov     x21, x20                ; pointer -> buffer[pos] to write
+    strb    w22, [x21], #1          ; put first char in the string
 
-    lex_int_char:
+    lex_digits_char:
     ; forgo the EOF check - there's no valid syntax for that case.
     mov     x0, x19
     bl      _reader_peek            ; reader.peek()
     cmp     x0, '0'
-    b.lt    lex_int_return
+    b.lt    lex_digits_return
     cmp     x0, '9'
-    b.gt    lex_int_return
+    b.gt    lex_digits_return
     mov     x0, x19
-    bl      _reader_read            ; consume the digit
-    sub     x0, x0, '0'             ; convert digit to number
-    madd    x20, x21, x20, x0       ; multiply by 10 and add digit value
-    b       lex_int_char
+    bl      _reader_read            ; consume the char
+    strb    w0, [x21], #1           ; add it to the string
+    b       lex_digits_char
 
-    lex_int_return:
-    mov     x0, x20
+    lex_digits_return:
+    mov     x0, NULL                ; null-terminator
+    strb    w0, [x21], #1           ; add it to the string
+
+;        ; print the number
+;        mov     x0, '('
+;        bl      _print_c
+;        mov     x0, x20
+;        bl      _print_z
+;        mov     x0, ')'
+;        bl      _print_c
+;        bl      _println
+
+    mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
+    ldr     x22, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
@@ -372,11 +456,11 @@ lex_string:
     strb    w0, [x21], #1           ; add it to the string
 
 ;        ; print the string
-;        mov     x0, '['
+;        mov     x0, '{'
 ;        bl      _print_c
 ;        mov     x0, x20
 ;        bl      _print_z
-;        mov     x0, ']'
+;        mov     x0, '}'
 ;        bl      _print_c
 ;        bl      _println
 

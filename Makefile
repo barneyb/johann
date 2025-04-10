@@ -10,7 +10,10 @@ OBJECTS=\
 	$(LIB)/system.o \
 	$(LIB)/token.o
 
-all: $(BIN)/jnc $(BIN)/nql $(LIB)/return_seven.s $(LIB)/not_quite_lisp.s
+all: $(BIN)/jnc \
+	$(BIN)/nql \
+	$(LIB)/return_seven.s \
+	$(LIB)/not_quite_lisp.s
 
 jnc: $(BIN)/jnc
 	$(BIN)/jnc < return_seven.jn
@@ -28,7 +31,7 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
 	gcc $< $(OBJECTS) -o $@
 
-# including the table here is a little draconian, but whatever
+# including the token table here is a little draconian, but whatever
 $(LIB)/%.o: %.s inc_token_table.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@

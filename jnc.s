@@ -18,6 +18,7 @@ jnc:
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
     stp     x22, x23, [sp, #-16]!
+    str     x24, [sp, #-16]!
     ; end frame
 
     bl      _Reader_instance        ; r = Reader.instance()
@@ -29,17 +30,41 @@ jnc:
     bl      _mem_alloc;_LOG
     mov     x21, x0                 ; pointer -> buffer
     mov     x22, x0                 ; pointer -> buffer[i] to write
-    mov     x23, #0                ; block depth
+    mov     x23, #0                 ; block depth
 
     jnc_token:
     mov     x0, x20
     bl      _lexer_token            ; lex.token()
     cmp     x0, NULL
     b.eq    jnc_print_and_return
-;    cmp     w0, T_CBRACE
-;    b.ne    jnc_deindent
-;    sub     x22, x22, INDENT        ; "remove" a layer of indent for this line
-;    jnc_deindent:
+
+    ; todo: print values too!
+
+    mov     x24, x0                 ; stash pointer -> token
+    mov     x0, '#'
+    bl      _print_c
+    mov     x0, ' '
+    bl      _print_c
+    ldrb    w0, [x24]
+    bl      _print_c                ; get and print token type as char
+    mov     x0, ' '
+    bl      _print_c
+    mov     x0, x24
+    bl      _token_line
+    bl      _int2str
+    bl      _print_z
+    mov     x0, ','
+    bl      _print_c
+    mov     x0, x24
+    bl      _token_char
+    bl      _int2str
+    bl      _print_z
+    bl      _println                ; end line
+    mov     x0, x24
+    ldr     x24, [x0]               ; stash token type
+    bl      _mem_free;_LOG          ; free token
+    mov     w0, w24                 ; unstash token type as char
+
     strb    w0, [x22], #1
     cmp     w0, T_SEMI
     b.eq    jnc_next_line
@@ -80,6 +105,7 @@ jnc:
     bl      _mem_free;_LOG               ; release buffer
 
     ; restore frame
+    ldr     x24, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
