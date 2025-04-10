@@ -10,16 +10,17 @@ OBJECTS=\
 	$(LIB)/system.o \
 	$(LIB)/token.o
 
-all: $(BIN)/jnc jnc $(BIN)/not_quite_lisp nql
+all: $(BIN)/jnc $(BIN)/nql $(LIB)/return_seven.s $(LIB)/not_quite_lisp.s
 
 jnc: $(BIN)/jnc
 	$(BIN)/jnc < return_seven.jn
+	$(BIN)/jnc < not_quite_lisp.jn
 
-nql: $(BIN)/not_quite_lisp
-	printf "" | $(BIN)/not_quite_lisp
-	echo "(()))((((" | $(BIN)/not_quite_lisp
-	echo "())())" | $(BIN)/not_quite_lisp
-	$(BIN)/not_quite_lisp < not_quite_lisp.txt
+nql: $(BIN)/nql
+	printf "" | $(BIN)/nql
+	echo "(()))((((" | $(BIN)/nql
+	echo "())())" | $(BIN)/nql
+	$(BIN)/nql < not_quite_lisp.txt
 
 # pattern rules
 
@@ -31,6 +32,10 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 $(LIB)/%.o: %.s inc_token_table.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
+
+$(LIB)/%.s: %.jn $(BIN)/jnc
+	@mkdir -p $(LIB)
+	$(BIN)/jnc < $< > $@
 
 # utility targets
 
