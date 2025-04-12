@@ -4,7 +4,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-err_bad_token: .asciz "# ERROR: Unrecognized token '"
+err_bad_token: .asciz "; ERROR: Unrecognized token '"
 at_line: .asciz "' at line "
 at_char: .asciz ", char "
 

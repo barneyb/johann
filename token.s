@@ -40,6 +40,18 @@ _Token_new:
     ldp     lr, x19, [sp], #16
     ret
 
+/* int type( Token* t ) */
+.global _token_type
+_token_type:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ldr     x0, [x0, OFF_TYPE]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 /* int line( Token* t ) */
 .global _token_line
 _token_line:

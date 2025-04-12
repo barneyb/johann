@@ -1,5 +1,18 @@
 fn main(): int {
-    println("oh hai");
-    char c = '?';
-    return 0; # to come...
+    f = 0;
+    c = read();
+    while c > 0 {
+        d = c = '(';
+        if d {
+            f = f + 1;
+        }
+        d = c = ')';
+        if d {
+            f = f - 1;
+        }
+        c = read();
+    }
+    a = inttostr(f);
+    println(a);
+    return floor;
 }

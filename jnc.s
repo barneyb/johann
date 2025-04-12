@@ -17,96 +17,29 @@ jnc:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
-    stp     x22, x23, [sp, #-16]!
-    str     x24, [sp, #-16]!
+    stp     x24, x25, [sp, #-16]!
+    sub     sp, sp, #80             ; Token*[10] token buffer todo: kill
     ; end frame
 
     bl      _Reader_instance        ; r = Reader.instance()
     mov     x19, x0                 ; stash pointer -> r
     bl      _Lexer_new              ; lex = Lexer.new(r)
     mov     x20, x0                 ; stash pointer -> lex
+    bl      _Parser_new             ; parser = Parser.name(lex);
+    mov     x21, x0                 ; stash pointer -> parser
 
-    mov     x0, #123
-    bl      _mem_alloc;_LOG
-    mov     x21, x0                 ; pointer -> buffer
-    mov     x22, x0                 ; pointer -> buffer[i] to write
-    mov     x23, #0                 ; block depth
+    bl      _parser_parse
 
-    jnc_token:
-    mov     x0, x20
-    bl      _lexer_token            ; lex.token()
-    cmp     x0, NULL
-    b.eq    jnc_print_and_return
-
-    ; todo: print values too!
-
-    mov     x24, x0                 ; stash pointer -> token
-    mov     x0, '#'
-    bl      _print_c
-    mov     x0, ' '
-    bl      _print_c
-    ldrb    w0, [x24]
-    bl      _print_c                ; get and print token type as char
-    mov     x0, ' '
-    bl      _print_c
-    mov     x0, x24
-    bl      _token_line
-    bl      _int2str
-    bl      _print_z
-    mov     x0, ','
-    bl      _print_c
-    mov     x0, x24
-    bl      _token_char
-    bl      _int2str
-    bl      _print_z
-    bl      _println                ; end line
-    mov     x0, x24
-    ldr     x24, [x0]               ; stash token type
-    bl      _mem_free;_LOG          ; free token
-    mov     w0, w24                 ; unstash token type as char
-
-    strb    w0, [x22], #1
-    cmp     w0, T_SEMI
-    b.eq    jnc_next_line
-    cmp     w0, T_OBRACE
-    b.eq    jnc_enter_block
-    cmp     w0, T_CBRACE
-    b.eq    jnc_leave_block
-    mov     w0, ' '
-    strb    w0, [x22], #1
-    b       jnc_token
-    jnc_enter_block:
-    add     x23, x23, INDENT        ; indent one layer
-    b       jnc_next_line
-    jnc_leave_block:
-    sub     x23, x23, INDENT        ; unindent one layer
-    b       jnc_next_line
-    jnc_next_line:
-    mov     w0, '\n'
-    strb    w0, [x22], #1
-    mov     w1, ' '
-    mov     x2, x23
-    jnc_keep_indenting:
-    cmp     x2, #0
-    b.eq    jnc_token
-    strb    w1, [x22], #1
-    sub     x2, x2, #1
-    b       jnc_keep_indenting
-
-    jnc_print_and_return:
+    mov     x0, x21
+    bl      _parser_destroy         ; lex.destroy()
     mov     x0, x20
     bl      _lexer_destroy          ; lex.destroy()
     mov     x0, x19
     bl      _Reader_destroy         ; Reader.destroy()
 
-    mov     x0, x21
-    bl      _println_z              ; print!
-    mov     x0, x21
-    bl      _mem_free;_LOG               ; release buffer
-
     ; restore frame
-    ldr     x24, [sp], #16
-    ldp     x22, x23, [sp], #16
+    add     sp, sp, #80             ; token buffer
+    ldp     x24, x25, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret

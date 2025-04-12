@@ -4,6 +4,7 @@ BIN=$(TGT)/bin
 OBJECTS=\
 	$(LIB)/mem.o \
 	$(LIB)/lexer.o \
+	$(LIB)/parser.o \
 	$(LIB)/print.o \
 	$(LIB)/reader.o \
 	$(LIB)/string.o \
