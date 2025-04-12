@@ -1,8 +1,8 @@
 fn main(): int {
-    f = 0;
-    c = read();
+    int f = 0;
+    char c = read();
     while c > 0 {
-        d = c = '(';
+        bool d = c = '(';
         if d {
             f = f + 1;
         }
@@ -12,7 +12,8 @@ fn main(): int {
         }
         c = read();
     }
-    a = inttostr(f);
+    char* a = itoa(f);
     println(a);
     return floor;
+    char* b = "oh hai"
 }

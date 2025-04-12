@@ -116,3 +116,26 @@ _strlen:
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
+
+/* int strcmp( const char* lhs, const char* rhs ) */
+.global _strcmp
+_strcmp:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    strcmp_char:
+    ldrb    w19, [x0], #1           ; l = lhs[i++]
+    ldrb    w20, [x1], #1           ; r = rhs[i++]
+    subs    w19, w19, w20
+    b.ne    strcmp_return           ; l != r
+    cmp     w20, NULL
+    b.eq    strcmp_return           ; l == r == NULL
+    b       strcmp_char             ; NEXT!
+
+    strcmp_return:
+    mov     w0, w19
+    ; restore frame
+    ldr     x20, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret

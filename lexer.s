@@ -4,9 +4,31 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
+.set    TRUE, 1
+.set    FALSE, 0
+
 err_bad_token: .asciz "; ERROR: Unrecognized token '"
+err_long_id: .asciz "; ERROR: >7 char identifier '"
+err_long_string: .asciz "; ERROR: >7 char string '"
 at_line: .asciz "' at line "
 at_char: .asciz ", char "
+
+KW_AGAIN    : .asciz    "again"
+KW_BOOL     : .asciz    "bool"
+KW_CHAR     : .asciz    "char"
+KW_CLASS    : .asciz    "class"
+KW_DONE     : .asciz    "done"
+KW_FALSE    : .asciz    "false"
+KW_FN       : .asciz    "fn"
+KW_FOR      : .asciz    "for"
+KW_FREE     : .asciz    "free"
+KW_IF       : .asciz    "if"
+KW_INT      : .asciz    "int"
+KW_NEW      : .asciz    "new"
+KW_RETURN   : .asciz    "return"
+KW_TRUE     : .asciz    "true"
+KW_VOID     : .asciz    "void"
+KW_WHILE    : .asciz    "while"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -229,8 +251,6 @@ _lexer_token:
     mov     x1, x0                  ; pass first character
     mov     x0, x20                 ; and the reader
     bl      lex_identifier
-    ; todo: transmute T_ID to T_KW_XXX as appropriate
-    ; todo: transmute T_ID to T_BOOL as appropriate
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_ID
     bl      _Token_new
@@ -243,14 +263,38 @@ _lexer_token:
     bl      _token_set_value        ; set value
     mov     x0, x23                 ; unstash name
     bl      _strlen
-    ; todo: validate len
+    cmp     x0, #7
+    b.gt    token_id_long
     sub     x0, x0, #1              ; first char was already counted
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
     mov     x0, x23                 ; unstash name
     bl      _mem_free               ; free name
     mov     x0, x24
+    bl      convert_keyword
+    mov     x0, x24
     b       token_return
+    token_id_long:
+        adrp    x0, err_long_id@PAGE
+        add     x0, x0, err_long_id@PAGEOFF
+        bl      _print_z                ; todo: send errors to STDERR....
+        mov     x0, x23
+        bl      _print_z
+        adrp    x0, at_line@PAGE
+        add     x0, x0, at_line@PAGEOFF
+        bl      _print_z
+        mov     x0, x21
+        bl      _int2str
+        bl      _print_z
+        adrp    x0, at_char@PAGE
+        add     x0, x0, at_char@PAGEOFF
+        bl      _print_z
+        mov     x0, x22
+        bl      _int2str
+        bl      _print_z
+        bl      _println                ; end line
+        mov     x0, #18
+        b       _os_exit
 
     token_char:
     mov     x0, x20
@@ -287,7 +331,8 @@ _lexer_token:
     bl      _token_set_value        ; set value
     mov     x0, x23                 ; unstash name
     bl      _strlen
-    ; todo: validate len
+    cmp     x0, #7
+    b.gt    token_string_long
     add     x0, x0, #1              ; and close quote (open was already counted)
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
@@ -295,6 +340,27 @@ _lexer_token:
     bl      _mem_free               ; free name
     mov     x0, x24
     b       token_return
+    token_string_long:
+        adrp    x0, err_long_string@PAGE
+        add     x0, x0, err_long_string@PAGEOFF
+        bl      _print_z                ; todo: send errors to STDERR....
+        mov     x0, x23
+        bl      _print_z
+        adrp    x0, at_line@PAGE
+        add     x0, x0, at_line@PAGEOFF
+        bl      _print_z
+        mov     x0, x21
+        bl      _int2str
+        bl      _print_z
+        adrp    x0, at_char@PAGE
+        add     x0, x0, at_char@PAGEOFF
+        bl      _print_z
+        mov     x0, x22
+        bl      _int2str
+        bl      _print_z
+        bl      _println                ; end line
+        mov     x0, #19
+        b       _os_exit
 
     token_null:
     mov     x0, NULL
@@ -320,7 +386,7 @@ _lexer_destroy:
     ldr     lr, [sp], #16
     ret
 
-; Eats characters from the Reader, up to and including the first newline.
+; Eats characters from the Reader, up to and including the next newline.
 /* void lex_comment( Reader* reader ) */
 lex_comment:
     ; create frame
@@ -477,5 +543,143 @@ lex_string:
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
     ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void convert_keyword( Token* token ) */
+convert_keyword:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> token
+    bl      _token_value_ptr
+    mov     x20, x0                 ; stash pointer -> token.value
+
+    convert_keyword_fn:
+    mov     x0, x20
+    adrp    x1, KW_FN@PAGE
+    add     x1, x1, KW_FN@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_int     ; next!
+    mov     x0, x19
+    mov     x1, T_KW_FN
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_int:
+    mov     x0, x20
+    adrp    x1, KW_INT@PAGE
+    add     x1, x1, KW_INT@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_char    ; next!
+    mov     x0, x19
+    mov     x1, T_KW_INT
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_char:
+    mov     x0, x20
+    adrp    x1, KW_CHAR@PAGE
+    add     x1, x1, KW_CHAR@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_bool; next!
+    mov     x0, x19
+    mov     x1, T_KW_CHAR
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_bool:
+    mov     x0, x20
+    adrp    x1, KW_BOOL@PAGE
+    add     x1, x1, KW_BOOL@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_if      ; next!
+    mov     x0, x19
+    mov     x1, T_KW_BOOL
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_if:
+    mov     x0, x20
+    adrp    x1, KW_IF@PAGE
+    add     x1, x1, KW_IF@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_while   ; next!
+    mov     x0, x19
+    mov     x1, T_KW_IF
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_while:
+    mov     x0, x20
+    adrp    x1, KW_WHILE@PAGE
+    add     x1, x1, KW_WHILE@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_return  ; next!
+    mov     x0, x19
+    mov     x1, T_KW_WHILE
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_return:
+    mov     x0, x20
+    adrp    x1, KW_RETURN@PAGE
+    add     x1, x1, KW_RETURN@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_true    ; next!
+    mov     x0, x19
+    mov     x1, T_KW_RETURN
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    ;KW_AGAIN
+    ;KW_CLASS
+    ;KW_DONE
+    ;KW_FOR
+    ;KW_FREE
+    ;KW_NEW
+    ;KW_VOID
+
+    convert_keyword_true:
+    mov     x0, x20
+    adrp    x1, KW_TRUE@PAGE
+    add     x1, x1, KW_TRUE@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_false   ; next!
+    mov     x0, x19
+    mov     x1, T_BOOL
+    bl      _token_set_type
+    mov     x0, x19
+    mov     x1, TRUE
+    bl      _token_set_value
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_false:
+    mov     x0, x20
+    adrp    x1, KW_FALSE@PAGE
+    add     x1, x1, KW_FALSE@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_done    ; next!
+    mov     x0, x19
+    mov     x1, T_BOOL
+    bl      _token_set_type
+    mov     x0, x19
+    mov     x1, FALSE
+    bl      _token_set_value
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_done:
+    ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret

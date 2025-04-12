@@ -70,7 +70,7 @@ _println_n:
 .global _print_c
 _print_c:
     ; create frame
-    stp     lr, x19, [sp, #-16]!   ; save lr and x19
+    stp     lr, x19, [sp, #-16]!    ; save lr and x19
     ; end frame
     adrp    x19, c_buf@PAGE
     add     x19, x19, c_buf@PAGEOFF
@@ -80,7 +80,7 @@ _print_c:
     bl      _os_stdout
 
     ; restore frame
-    ldp     lr, x19, [sp], #16           ; restore lr and x19
+    ldp     lr, x19, [sp], #16      ; restore lr and x19
     ret
 
 /* void println( ) */

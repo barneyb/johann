@@ -149,7 +149,8 @@ load_buffer:
             bl      _print_c
             mov     x0, ' '
             bl      _print_c
-            ldrb    w0, [x24]
+            mov     x0, x24
+            bl      _token_type
             bl      _print_c                ; get and print token type as char
             mov     x0, ' '
             bl      _print_c
@@ -163,6 +164,66 @@ load_buffer:
             bl      _token_char
             bl      _int2str
             bl      _print_z
+            ; and the value, as appropriate
+            mov     x0, x24
+            bl      _token_type
+            cmp     x0, T_INT
+            b.eq    _token_val_int
+            cmp     x0, T_ID
+            b.eq    _token_val_id
+            cmp     x0, T_CHAR
+            b.eq    _token_val_char
+            cmp     x0, T_STRING
+            b.eq    _token_val_string
+            cmp     x0, 0x100
+            b.ge    _token_val_id   ; keywords are identifiers
+            b       _token_eol
+            _token_val_int:
+            mov     x0, ':'
+            bl      _print_c
+            mov     x0, ' '
+            bl      _print_c
+            mov     x0, x24
+            bl      _token_value
+            bl      _int2str
+            bl      _print_z
+            b       _token_eol
+            _token_val_id:
+            mov     x0, ':'
+            bl      _print_c
+            mov     x0, ' '
+            bl      _print_c
+            mov     x0, x24
+            bl      _token_value_ptr
+            bl      _print_z
+            b       _token_eol
+            _token_val_char:
+            mov     x0, ':'
+            bl      _print_c
+            mov     x0, ' '
+            bl      _print_c
+            mov     x0, '\''
+            bl      _print_c
+            mov     x0, x24
+            bl      _token_value
+            bl      _print_c
+            mov     x0, '\''
+            bl      _print_c
+            b       _token_eol
+            _token_val_string:
+            mov     x0, ':'
+            bl      _print_c
+            mov     x0, ' '
+            bl      _print_c
+            mov     x0, '"'
+            bl      _print_c
+            mov     x0, x24
+            bl      _token_value_ptr
+            bl      _print_z
+            mov     x0, '"'
+            bl      _print_c
+            b       _token_eol
+            _token_eol:
             bl      _println                ; end line
 
     mov     x1, #8                  ; sizeof element

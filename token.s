@@ -52,6 +52,18 @@ _token_type:
     ldp     lr, x19, [sp], #16
     ret
 
+/* void set_type( Token* t, int type ) */
+.global _token_set_type
+_token_set_type:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    str     x1, [x0, OFF_TYPE]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 /* int line( Token* t ) */
 .global _token_line
 _token_line:
@@ -83,6 +95,30 @@ _token_set_coords:
     stp     lr, x19, [sp, #-16]!
     ; end frame
     stp     x1, x2, [x0, OFF_LINE]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* ? value( Token* t ) */
+.global _token_value
+_token_value:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ldr     x0, [x0, OFF_VALUE]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* ?* value_ptr( Token* t ) */
+.global _token_value_ptr
+_token_value_ptr:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    add     x0, x0, OFF_VALUE
 
     ; restore frame
     ldp     lr, x19, [sp], #16
