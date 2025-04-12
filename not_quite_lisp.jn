@@ -1,4 +1,6 @@
 fn main(): int {
+    char* b = "oh hai";
+    println(a);
     int f = 0;
     char c = read();
     while c > 0 {
@@ -15,5 +17,9 @@ fn main(): int {
     char* a = itoa(f);
     println(a);
     return floor;
-    char* b = "oh hai"
+}
+
+
+fn goat(): int {
+    return 7;
 }

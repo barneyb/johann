@@ -23,9 +23,9 @@ struct Parser {
 }
 */
 .set    OFF_LEX , 0
-.set    OFF_POS , 8 ; todo: needed?
+.set    OFF_POS , 8
 .set    OFF_BUF , 16
-.set    BUF_CAP , 10
+.set    BUF_CAP , 25
 .set    SIZEOF  , OFF_BUF + BUF_CAP * 8 ; buffer is always last
 
 /* Parser new( Lexer* lex ) */
@@ -45,7 +45,7 @@ _Parser_new:
     ldp     lr, x19, [sp], #16
     ret
 
-/* void parse( Parser* parser ) */
+/* void parse( Parser* self ) */
 .global _parser_parse
 _parser_parse:
     ; create frame
@@ -54,6 +54,11 @@ _parser_parse:
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> this
+
+    ; build an emitter to send "statements" to
+    bl      _Emitter_new
+    mov     x21, x0                 ; stash pointer -> emitter
+
     parse_next:
     mov     x0, x19
     bl      load_buffer             ; this.load_buffer()
@@ -65,20 +70,24 @@ _parser_parse:
 ;            bl      _println                ; end line
     cmp     x25, NULL
     b.eq    parse_return            ; zero tokens - we're done!
-    ; todo: figure out what kind of statement it is
-    ; todo: invoke some method to deal with it
+    ; figure out what kind of statement it is
+    mov     x0, x21
+    add     x1, x19, OFF_BUF        ; load pointer -> this.buffer
+    bl      _emitter_emit           ; this.emitter.emit( this.buffer )
     ; free all the tokens
     mov     x0, x19
     bl      free_buffer             ; this.free_buffer()
     b       parse_next
 
     parse_return:
+    mov     x0, x21
+    bl      _emitter_destroy        ; emitter.destroy()
     ; restore frame
     ldp     x21, x25, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
-/* void free_buffer( Parser* parser ) */
+/* void free_buffer( Parser* self ) */
 free_buffer:
     ; create frame
     stp     lr, x19, [sp, #-16]!
@@ -118,7 +127,7 @@ free_buffer:
     ldp     lr, x19, [sp], #16
     ret
 
-/* void load_buffer( Parser* parser ) */
+/* void load_buffer( Parser* self ) */
 load_buffer:
     ; create frame
     stp     lr, x19, [sp, #-16]!    ; this
@@ -224,7 +233,7 @@ load_buffer:
             bl      _print_c
             b       _token_eol
             _token_eol:
-            bl      _println                ; end line
+;            bl      _println                ; end line
 
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer
@@ -286,7 +295,7 @@ load_buffer:
     ldp     lr, x19, [sp], #16
     ret
 
-/* void destroy( Parser* parse ) */
+/* void destroy( Parser* self ) */
 .global _parser_destroy
 _parser_destroy:
     ; create frame

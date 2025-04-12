@@ -2,6 +2,7 @@ TGT=target
 LIB=$(TGT)/lib
 BIN=$(TGT)/bin
 OBJECTS=\
+	$(LIB)/emitter.o \
 	$(LIB)/mem.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \

@@ -73,7 +73,7 @@ _Lexer_new:
     ldp     lr, x19, [sp], #16
     ret
 
-/* Token token( Lexer* lex ) */
+/* Token token( Lexer* self ) */
 .global _lexer_token
 _lexer_token:
     ; create frame
@@ -373,7 +373,7 @@ _lexer_token:
     ldp     lr, x19, [sp], #16
     ret
 
-/* void destroy( Lexer* lex ) */
+/* void destroy( Lexer* self ) */
 .global _lexer_destroy
 _lexer_destroy:
     ; create frame
