@@ -28,6 +28,20 @@ nql: $(BIN)/nql
 	echo "())())" | $(BIN)/nql
 	$(BIN)/nql < not_quite_lisp.txt
 
+$(BIN)/nql: nql.s $(LIB)/jstdlib.o
+	@mkdir -p $(BIN)
+	gcc nql.s $(LIB)/jstdlib.o -o $(BIN)/nql
+
+$(LIB)/jstdlib.o: jstdlib.s mem.s print.s reader.s string.s system.s
+	@mkdir -p $(LIB)
+	cat jstdlib.s > $(LIB)/jstdlib.s
+	cat mem.s >> $(LIB)/jstdlib.s
+	cat print.s >> $(LIB)/jstdlib.s
+	cat reader.s >> $(LIB)/jstdlib.s
+	cat string.s >> $(LIB)/jstdlib.s
+	cat system.s >> $(LIB)/jstdlib.s
+	gcc -c $(LIB)/jstdlib.s -o $(LIB)/jstdlib.o
+
 # pattern rules
 
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)

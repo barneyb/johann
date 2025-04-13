@@ -48,9 +48,31 @@ struct Block {
     int id                          ; unique id num of the block
 }
 */
-.set    OFF_TYPE    , 0
-.set    OFF_ID      , 8
-.set    SIZEOF_BLOCK, OFF_ID + 8
+.set    B_OFF_TYPE    , 0
+.set    B_OFF_ID      , 8
+.set    SIZEOF_BLOCK, B_OFF_ID + 8
+
+/* int id( Block* b ) */
+block_id:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ldr     x0, [x0, B_OFF_ID]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* int type( Block* b ) */
+block_type:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ldr     x0, [x0, B_OFF_TYPE]
+
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
 
 /* Block* enter_block( Emitter* self, int type ) */
 enter_block:
@@ -77,6 +99,27 @@ enter_block:
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
+
+/* Block* leave_block( Emitter* self ) */
+leave_block:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    ldr     x20, [x19, OFF_DEPTH]   ; load depth
+    sub     x20, x20, 1             ; decrement depth
+    str     x20, [x19, OFF_DEPTH]   ; store depth
+
+    add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
+    mov     x1, SIZEOF_BLOCK        ; size of block
+    madd    x0, x20, x1, x0         ; pointer -> block
+
+    ; restore frame
+    ldr     x20, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
 
 /* void emit( Emitter* self, [Token*] stmt ) */
 .global _emitter_emit
@@ -210,12 +253,13 @@ _emitter_emit:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 s_main: .asciz "main"
-tmpl_main: .asciz ".global _main
-_main:
-    mov     x0, #0
-    bl      __j_main
-    b       _os_exit
+tmpl_main: .asciz "    .global _main
+    _main:
+        mov     x0, #0
+        bl      __j_main
+        b       _os_exit
 "
+
 .macro tmpl_sec r=x21
     mov     x0, \r
     bl      _print_z                ; print segment
@@ -225,21 +269,15 @@ _main:
     add     \r, \r, x0              ; advance to the next segment
 .endm
 
-tmpl_fn_intro: .asciz ".global __j_\0
-__j_\0:
-    stp     lr, x19, [sp, #-16]!
-    stp     x20, x21, [sp, #-16]!
-    stp     x22, x23, [sp, #-16]!
-    stp     x24, x25, [sp, #-16]!
-    stp     x26, x27, [sp, #-16]!
-"
-tmpl_fn_outro: .asciz "    _return_\0:
-    ldp     x26, x27, [sp], #16
-    ldp     x24, x25, [sp], #16
-    ldp     x22, x23, [sp], #16
-    ldp     x20, x21, [sp], #16
-    ldp     lr, x19, [sp], #16
-    ret
+tmpl_fn_intro: .asciz "    .global __j_\0
+    __j_\0:
+        ; create frame - block \0
+        stp     lr, x19, [sp, #-16]!
+        stp     x20, x21, [sp, #-16]!
+        stp     x22, x23, [sp, #-16]!
+        stp     x24, x25, [sp, #-16]!
+        stp     x26, x27, [sp, #-16]!
+        ; end frame - block \0
 "
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -282,6 +320,16 @@ do_fn:
     mov     x0, x22
     bl      _print_z
     tmpl_sec
+    mov     x0, x23
+    bl      block_id
+    bl      _int2str
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x23
+    bl      block_id
+    bl      _int2str
+    bl      _print_z
+    tmpl_sec
     bl      _println
 
     ; restore frame
@@ -294,8 +342,12 @@ do_fn:
 do_if:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -303,8 +355,12 @@ do_if:
 do_while:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -312,8 +368,12 @@ do_while:
 do_return:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -321,26 +381,95 @@ do_return:
 do_decl:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_assign: .asciz "        ; compute RHS
+        \0
+        ; compute
+"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
 
 /* void do_assign( Emitter* self, [Token*] buffer ) */
 do_assign:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    adrp    x21, tmpl_assign@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_assign@PAGEOFF
+
+
+
     ; restore frame
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_fn_outro: .asciz "        _return_\0:
+        ; restore frame - block \0
+        ldp     x26, x27, [sp], #16
+        ldp     x24, x25, [sp], #16
+        ldp     x22, x23, [sp], #16
+        ldp     x20, x21, [sp], #16
+        ldp     lr, x19, [sp], #16
+        ret
+"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
 
 /* void do_close_block( Emitter* self, [Token*] buffer ) */
 do_close_block:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    stp     x22, x23, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    adrp    x21, tmpl_fn_outro@PAGE ; pointer -> template
+    add     x21, x21, tmpl_fn_outro@PAGEOFF
+    bl      leave_block             ; this.leave_block()
+    mov     x22, x0                 ; stash pointer -> block
+    bl      block_id                ; block.id()
+    mov     x23, x0                 ; stash id
+    mov     x0, x22
+    bl      block_type              ; block.type()
+
+    cmp     x0, T_KW_FN
+    b.ne    do_close_block_return
+    tmpl_sec
+    mov     x0, x23
+    bl      _int2str
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x23
+    bl      _int2str
+    bl      _print_z
+    tmpl_sec
+    bl      _println
+    b       do_close_block_return
+
+    ; todo: close if
+    ; todo: close while
+
+    do_close_block_return:
     ; restore frame
+    ldp     x22, x23, [sp], #16
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -348,8 +477,25 @@ do_close_block:
 do_call:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
     ; restore frame
+    ldr     x20, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void do_binary_expr( Emitter* self, [Token*] buffer ) */
+do_binary_expr:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 

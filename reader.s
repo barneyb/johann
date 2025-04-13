@@ -42,13 +42,12 @@ struct Reader {
 _Reader_instance:
     ; create frame
     stp     lr, x19, [sp, #-16]!
-    str     x20, [sp, #-16]!
     ; end frame
 
     adrp    x19, instance@PAGE
     add     x19, x19, instance@PAGEOFF
-    ldr     x20, [x19]              ; get the pointer
-    cmp     x20, NULL
+    ldr     x0, [x19]              ; get the pointer
+    cmp     x0, NULL
     b.ne    instance_ret            ; already built it
     mov     x0, SIZEOF              ; how much to allocate
     bl      _mem_alloc;_LOG              ; allocate
@@ -57,7 +56,6 @@ _Reader_instance:
 
     instance_ret:
     ; restore frame
-    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -176,7 +174,7 @@ _Reader_destroy:
     mov     x0, #0
     str     x0, [x19]               ; null the instance pointer
     mov     x0, x20
-    bl      _mem_free;_LOG               ; free the memory
+    bl      _mem_free_LOG               ; free the memory
 
     destroy_return:
     ; restore frame

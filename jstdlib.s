@@ -1,0 +1,53 @@
+/**
+ * I provide the standard library of global functions Johann programs can use.
+ */
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.set    NULL    , 0
+.set    EOF     , -1
+.set    TRUE    , 1
+.set    FALSE   , 0
+
+.global __jsl_itoa
+__jsl_itoa:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _int2str
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
+.global __jsl_println
+__jsl_println:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _println_z
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
+.global __jsl_read
+__jsl_read:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _Reader_instance        ; r = Reader.instance()
+    mov     x19, x0
+    bl      _reader_is_eof          ; r.is_eof()
+    cmp     x0, FALSE
+    b.ne    read_eof
+    mov     x0, x19
+    bl      _reader_read            ; r.read()
+    b       read_return
+
+    read_eof:
+    mov     x0, EOF
+
+    read_return:
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
