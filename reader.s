@@ -174,7 +174,7 @@ _Reader_destroy:
     mov     x0, #0
     str     x0, [x19]               ; null the instance pointer
     mov     x0, x20
-    bl      _mem_free_LOG               ; free the memory
+    bl      _mem_free;_LOG               ; free the memory
 
     destroy_return:
     ; restore frame

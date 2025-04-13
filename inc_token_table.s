@@ -25,6 +25,7 @@
 .set    T_KW_NEW    , 0x500 + 'N'
 ; ambiguous character tokens    ASCII (for now)
 .set    T_ASSIGN    , '='
+.set    T_EQ        , '='           ; double-alias, for now
 .set    T_BANG      , '!'
 .set    T_GT        , '>'
 .set    T_LT        , '<'

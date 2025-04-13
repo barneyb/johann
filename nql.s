@@ -36,21 +36,21 @@
 
 ;    int f = 0;
         mov     x0, 0
-        mov     x25, x0 ; f = 102 - 77
+        mov     x25, x0 ; f = 102 - 49
 
 ;    char c = read();
         bl      __jsl_read
-        mov     x22, x0 ; c = 99 - 77
+        mov     x22, x0 ; c = 99 - 49
 
-;    int b = 0 - 1
+;    int b = 0 - 1;
         mov     x0, 0
         mov     x1, 1
         sub     x0, x0, x1
-        mov     x21, x0 ; b = 98 - 77
+        mov     x21, x0 ; b = 98 - 49
 
-;    b = c > b
-        mov     x0, x22 ; c = 99 - 77
-        mov     x1, x21 ; b = 98 - 77
+;    b = c > b;
+        mov     x0, x22 ; c = 99 - 49
+        mov     x1, x21 ; b = 98 - 49
         cmp     x0, x1
         b.gt    expr_0
         mov     x0, FALSE
@@ -58,16 +58,16 @@
         expr_0:
         mov     x0, TRUE
         expr_0_end:
-        mov     x21, x0 ; b = 98 - 77
+        mov     x21, x0 ; b = 98 - 49
 
 ;    while b { # block 1
         while_1_again:
-        mov     x0, x21 ; b = 98 - 77
+        mov     x0, x21 ; b = 98 - 49
         cmp     x0, FALSE
         b.eq    while_1_done
 
 ;        bool d = c = '(';
-        mov     x0, x22 ; c = 99 - 77
+        mov     x0, x22 ; c = 99 - 49
         mov     x1, '('
         cmp     x0, x1
         b.eq    expr_1
@@ -76,24 +76,24 @@
         expr_1:
         mov     x0, TRUE
         expr_1_end:
-        mov     x23, x0 ; d = 100 - 77
+        mov     x23, x0 ; d = 100 - 49
 
 ;        if d { # block 2
-        mov     x0, x23 ; d = 100 - 77
+        mov     x0, x23 ; d = 100 - 49
         cmp     x0, FALSE
         b.eq    if_2_done
 
 ;            f = f + 1;
-        mov     x0, x25 ; f = 102 - 77
+        mov     x0, x25 ; f = 102 - 49
         mov     x1, 1
         add     x0, x0, x1
-        mov     x25, x0 ; f = 102 - 77
+        mov     x25, x0 ; f = 102 - 49
 
 ;        } # block 2 - if
         if_2_done:
 
 ;        d = c = ')';
-        mov     x0, x22 ; c = 99 - 77
+        mov     x0, x22 ; c = 99 - 49
         mov     x1, ')'
         cmp     x0, x1
         b.eq    expr_2
@@ -102,35 +102,35 @@
         expr_2:
         mov     x0, TRUE
         expr_2_end:
-        mov     x23, x0 ; d = 100 - 77
+        mov     x23, x0 ; d = 100 - 49
 
 ;        if d { # block 3
-        mov     x0, x23 ; d = 100 - 77
+        mov     x0, x23 ; d = 100 - 49
         cmp     x0, FALSE
         b.eq    if_3_done
 
 ;            f = f - 1;
-        mov     x0, x25 ; f = 102 - 77
+        mov     x0, x25 ; f = 102 - 49
         mov     x1, 1
         sub     x0, x0, x1
-        mov     x25, x0 ; f = 102 - 77
+        mov     x25, x0 ; f = 102 - 49
 
 ;        } # block 3 - if
         if_3_done:
 
 ;        c = read();
         bl      __jsl_read
-        mov     x22, x0 ; c = 99 - 77
+        mov     x22, x0 ; c = 99 - 49
 
-;        b = 0 - 1
+;        b = 0 - 1;
         mov     x0, 0
         mov     x1, 1
         sub     x0, x0, x1
-        mov     x21, x0 ; b = 98 - 77
+        mov     x21, x0 ; b = 98 - 49
 
-;        b = c > b
-        mov     x0, x22 ; c = 99 - 77
-        mov     x1, x21 ; b = 98 - 77
+;        b = c > b;
+        mov     x0, x22 ; c = 99 - 49
+        mov     x1, x21 ; b = 98 - 49
         cmp     x0, x1
         b.gt    expr_3
         mov     x0, FALSE
@@ -138,23 +138,23 @@
         expr_3:
         mov     x0, TRUE
         expr_3_end:
-        mov     x21, x0 ; b = 98 - 77
+        mov     x21, x0 ; b = 98 - 49
 
 ;    } # block 1 - while
         b       while_1_again
         while_1_done:
 
 ;    char* a = itoa(f);
-        mov     x0, x25 ; f = 102 - 77
+        mov     x0, x25 ; f = 102 - 49
         bl      __jsl_itoa
-        mov     x20, x0 ; a = 97 - 77
+        mov     x20, x0 ; a = 97 - 49
 
 ;    println(a);
-        mov     x0, x20 ; a = 97 - 77
+        mov     x0, x20 ; a = 97 - 49
         bl      __jsl_println
 
 ;    return f;
-        mov     x0, x25 ; f = 102 - 77
+        mov     x0, x25 ; f = 102 - 49
         b       _return_0
 
 ;} # block 0 - fn

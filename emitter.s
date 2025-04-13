@@ -5,6 +5,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 err_bad_stmt: .asciz "; Bad statement at line "
+err_bad_expr: .asciz "; Bad expression at line "
 at_char: .asciz ", char "
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -346,6 +347,7 @@ do_if:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_if
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -359,6 +361,7 @@ do_while:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_while
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -372,6 +375,7 @@ do_return:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_return
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -381,12 +385,29 @@ do_return:
 do_decl:
     ; create frame
     stp     lr, x19, [sp, #-16]!
-    str     x20, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    stp     x22, x23, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+
+    ; scan until find an ASSIGN, go back one, delegate to do_assign
+    add     x21, x20, #8            ; first token is type
+    do_decl_again:
+    ldr     x0, [x21, #8]!          ; stash pointer -> next token
+    bl      _token_type             ; token.type()
+    cmp     x0, T_ASSIGN
+    b.eq    do_decl_delegate
+    b       do_decl_again
+
+    do_decl_delegate:
+    sub     x1, x21, #8            ; go back one
+    mov     x0, x19
+    bl      do_assign
+
     ; restore frame
-    ldr     x20, [sp], #16
+    ldp     x22, x23, [sp], #16
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -394,7 +415,8 @@ do_decl:
                                     .data
 tmpl_assign: .asciz "        ; compute RHS
         \0
-        ; compute
+        ; assign
+        mov     x2\0, x0
 "
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -410,7 +432,18 @@ do_assign:
     adrp    x21, tmpl_assign@PAGE   ; pointer -> template
     add     x21, x21, tmpl_assign@PAGEOFF
 
-
+    tmpl_sec
+    mov     x0, x19
+    add     x1, x20, #16            ; pointer to -> buffer[2] (the RHS)
+    bl      do_expr
+    tmpl_sec
+    ldr     x0, [x20]               ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    ldrb    w0, [x0]                ; first char of name
+    sub     w0, w0, 49              ; convert lower alpha to digit
+    bl      _print_c
+    tmpl_sec
+    bl      _println
 
     ; restore frame
     ldp     x20, x21, [sp], #16
@@ -450,7 +483,7 @@ do_close_block:
     bl      block_type              ; block.type()
 
     cmp     x0, T_KW_FN
-    b.ne    do_close_block_return
+    b.ne    do_close_block_if
     tmpl_sec
     mov     x0, x23
     bl      _int2str
@@ -463,8 +496,17 @@ do_close_block:
     bl      _println
     b       do_close_block_return
 
+    do_close_block_if:
+    cmp     x0, T_KW_IF
+    b.ne    do_close_block_while
     ; todo: close if
+    b       do_close_block_return
+
+    do_close_block_while:
+    cmp     x0, T_KW_WHILE
+    b.ne    do_close_block_return
     ; todo: close while
+    b       do_close_block_return
 
     do_close_block_return:
     ; restore frame
@@ -481,21 +523,135 @@ do_call:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_call
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
-/* void do_binary_expr( Emitter* self, [Token*] buffer ) */
-do_binary_expr:
+/* void do_expr( Emitter* self, [Token*] buffer ) */
+do_expr:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    stp     x22, x23, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    ldr     x22, [x20, #8]          ; stash pointer -> second token
+    ldr     x23, [x22]              ; type of second token
+
+    ; if second token is SEMI, it's a copy
+    cmp     x23, T_SEMI
+    b.ne    do_expr_call
+    mov     x0, x19
+    ldr     x1, [x20]               ; pointer -> first token
+    bl      do_token
+    b       do_expr_return
+    ; if second token is OPAREN, it's a function call
+    do_expr_call:
+    cmp     x23, T_OPAREN
+    b.ne    do_expr_bool
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_call
+    b       do_expr_return
+    ; if second token is EQ, LT, GT, compute a boolean
+    do_expr_bool:
+    cmp     x23, T_EQ
+    b.eq    do_expr_logical
+    cmp     x23, T_LT
+    b.eq    do_expr_logical
+    cmp     x23, T_GT
+    b.eq    do_expr_logical
+    b       do_expr_arithmetic
+    do_expr_logical:
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_logical
+    b       do_expr_return
+    ; if second token is PLUS, MINUS, SLASH, STAR, PERCENT, do arithmetic
+    do_expr_arithmetic:
+    cmp     x23, T_PLUS
+    b.eq    do_expr_math
+    cmp     x23, T_MINUS
+    b.eq    do_expr_math
+    cmp     x23, T_SLASH
+    b.eq    do_expr_math
+    cmp     x23, T_STAR
+    b.eq    do_expr_math
+    cmp     x23, T_PERCENT
+    b.eq    do_expr_math
+    b       do_expr_bad
+    do_expr_math:
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_arithmetic
+    b       do_expr_return
+
+    do_expr_bad:
+        mov     x0, x23
+        bl      _int2hex
+        bl      _println_z
+        adrp    x0, err_bad_expr@PAGE
+        add     x0, x0, err_bad_expr@PAGEOFF
+        bl      _print_z                ; todo: send errors to STDERR....
+        mov     x0, x21
+        bl      _token_line
+        bl      _int2str
+        bl      _print_z
+        adrp    x0, at_char@PAGE
+        add     x0, x0, at_char@PAGEOFF
+        bl      _print_z
+        mov     x0, x21
+        bl      _token_char
+        bl      _int2str
+        bl      _println_z
+        mov     x0, #27
+        b       _os_exit
+
+    do_expr_return:
+    ; restore frame
+    ldp     x22, x23, [sp], #16
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void do_logical( Emitter* self, [Token*] buffer ) */
+do_logical:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     str     x20, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_logical
     ; restore frame
     ldr     x20, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void do_arithmetic( Emitter* self, [Token*] buffer ) */
+do_arithmetic:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    ; todo: do_arithmetic
+    ; restore frame
+    ldr     x20, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void do_token( Emitter* self, Token* t ) */
+do_token:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ; todo: do_token
+    ; restore frame
     ldp     lr, x19, [sp], #16
     ret
 
