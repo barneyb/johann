@@ -324,7 +324,6 @@ _emitter_emit:
 s_main: .asciz "main"
 tmpl_main: .asciz "    .global _main
     _main:
-        mov     x0, #0
         bl      __j_main
         b       _os_exit
 "
@@ -403,37 +402,89 @@ do_fn:
     ldp     lr, x19, [sp], #16
     ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_if_intro: .asciz "\0
+        cmp     x0, FALSE
+        b.eq    _if_\0_done"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
 /* void do_if( Emitter* self, [Token*] buffer ) */
 do_if:
     ; create frame
     stp     lr, x19, [sp, #-16]!
-    str     x20, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    str     x22, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    adrp    x21, tmpl_if_intro@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_if_intro@PAGEOFF
     mov     x0, x19
     mov     x1, T_KW_IF
     bl      enter_block             ; this.enter_block()
-    ; todo: do_if
+    bl      block_id
+    mov     x22, x0                 ; stash current block id
+
+    tmpl_sec
+    mov     x0, x19
+    ldr     x1, [x20, #8]           ; pointer -> condition token
+    bl      do_token
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    bl      _println
+
     ; restore frame
-    ldr     x20, [sp], #16
+    ldr     x22, [sp], #16
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_while_intro: .asciz "        _while_\0_again:
+\0
+        cmp     x0, FALSE
+        b.eq    _while_\0_done"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
 
 /* void do_while( Emitter* self, [Token*] buffer ) */
 do_while:
     ; create frame
     stp     lr, x19, [sp, #-16]!
-    str     x20, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    str     x22, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
+    adrp    x21, tmpl_while_intro@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_while_intro@PAGEOFF
     mov     x0, x19
     mov     x1, T_KW_WHILE
     bl      enter_block             ; this.enter_block()
-    ; todo: do_while
+    bl      block_id
+    mov     x22, x0                 ; stash current block id
+
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x19
+    ldr     x1, [x20, #8]           ; pointer -> condition token
+    bl      do_token
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    bl      _println
+
     ; restore frame
-    ldr     x20, [sp], #16
+    ldr     x22, [sp], #16
+    ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -460,7 +511,7 @@ do_return:
     mov     x22, x0                 ; stash current block id
 
     mov     x0, x19
-    add     x1, x20, #8            ; pointer to -> buffer[1] (the value)
+    add     x1, x20, #8            ; pointer -> buffer[1] (pointer -> value token)
     bl      do_expr
     tmpl_sec
     mov     x0, x22
@@ -522,7 +573,7 @@ do_assign:
 
     tmpl_sec
     mov     x0, x19
-    add     x1, x20, #16            ; pointer to -> buffer[2] (the RHS)
+    add     x1, x20, #16            ; pointer -> buffer[2] (the RHS)
     bl      do_expr
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
@@ -548,6 +599,9 @@ tmpl_fn_outro: .asciz "        _return_\0:
         ldp     x20, x21, [sp], #16
         ldp     lr, x19, [sp], #16
         ret"
+tmpl_if_outro: .asciz "        _if_\0_done:"
+tmpl_while_outro: .asciz "        b     _while_\0_again
+        _while_\0_done:"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -560,8 +614,6 @@ do_close_block:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_fn_outro@PAGE ; pointer -> template
-    add     x21, x21, tmpl_fn_outro@PAGEOFF
     bl      leave_block             ; this.leave_block()
     mov     x22, x0                 ; stash pointer -> block
     bl      block_id                ; block.id()
@@ -571,6 +623,8 @@ do_close_block:
 
     cmp     x0, T_KW_FN
     b.ne    do_close_block_if
+    adrp    x21, tmpl_fn_outro@PAGE ; pointer -> template
+    add     x21, x21, tmpl_fn_outro@PAGEOFF
     tmpl_sec
     mov     x0, x23
     bl      _print_i
@@ -584,13 +638,28 @@ do_close_block:
     do_close_block_if:
     cmp     x0, T_KW_IF
     b.ne    do_close_block_while
-    ; todo: close if
+    adrp    x21, tmpl_if_outro@PAGE ; pointer -> template
+    add     x21, x21, tmpl_if_outro@PAGEOFF
+    tmpl_sec
+    mov     x0, x23
+    bl      _print_i
+    tmpl_sec
+    bl      _println
     b       do_close_block_return
 
     do_close_block_while:
     cmp     x0, T_KW_WHILE
     b.ne    do_close_block_return
-    ; todo: close while
+    adrp    x21, tmpl_while_outro@PAGE ; pointer -> template
+    add     x21, x21, tmpl_while_outro@PAGEOFF
+    tmpl_sec
+    mov     x0, x23
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x23
+    bl      _print_i
+    tmpl_sec
+    bl      _println
     b       do_close_block_return
 
     do_close_block_return:
@@ -908,7 +977,7 @@ do_token:
         bl      _token_char
         bl      _print_i
         bl      _println
-        mov     x0, #29
+        mov     x0, #26
         b       _os_exit
 
     do_token_id:

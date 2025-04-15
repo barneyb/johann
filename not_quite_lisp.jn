@@ -1,29 +1,26 @@
-fn main(): int { # block 0
-    int f = zero();
+fn main(): int {
+    int f = 0;
     bool d = false;
     char c = read();
     int b = 0 - 1;
     b = c > b;
     while b { # block 1
         d = c = '(';
-        if d { # block 2
+        if d {
             f = f + 1;
-        } # block 2 - if
+        }
         d = c = ')';
-        if d { # block 3
+        if d {
             f = f - 1;
-        } # block 3 - if
+        }
         c = read();
         b = 0 - 1;
         b = c > b;
-    } # block 1 - while
+    }
     f = f;
-    char* a = itoa(); # passed prior result as single arg
-    println();        # passed prior result as single arg
-    return f;
-} # block 0 - fn
-
-fn zero(): int { # block 4
-#    char* b = "oh hai";
+    char* a = itoa();   # passed prior result as single arg
+    println();          # passed prior result as single arg
+    a = a;
+    free();             # passed prior result as single arg
     return 0;
-} # block 4 - fn
+}

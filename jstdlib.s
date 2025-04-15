@@ -20,6 +20,16 @@ __j_itoa:
     ldp     lr, x19, [sp], #16
     ret
 
+.global __j_free
+__j_free:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _mem_free;_LOG
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 .global __j_println
 __j_println:
     ; create frame
