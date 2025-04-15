@@ -116,6 +116,10 @@ _int2hex:
     strb    w20, [x19, #-1]!        ; minus sign
 
     int2hex_move:
+    mov     w20, 'x'
+    strb    w20, [x19, #-1]!        ; x
+    mov     w20, '0'
+    strb    w20, [x19, #-1]!        ; 0
     cmp     x19, x24
     b.eq    int2hex_return          ; used full alloc!
     ; move to start of allocated buffer (copy [x19] to [x24])

@@ -14,13 +14,15 @@ OBJECTS=\
 
 all: $(BIN)/jnc \
 	$(BIN)/nql \
-	$(LIB)/return_seven.s \
 	$(LIB)/not_quite_lisp.s
 	head $(LIB)/*.s
 
 jnc: $(BIN)/jnc
-	$(BIN)/jnc < return_seven.jn
 	$(BIN)/jnc < not_quite_lisp.jn
+
+not_quite_lisp: $(LIB)/not_quite_lisp.s $(LIB)/jstdlib.o
+	gcc -c $(LIB)/not_quite_lisp.s -o $(LIB)/not_quite_lisp.o
+	gcc	$(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o -o $(BIN)/not_quite_lisp
 
 nql: $(BIN)/nql
 	printf "" | $(BIN)/nql

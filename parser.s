@@ -12,6 +12,8 @@ found_close_brace: .asciz "; close brace w/ "
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 .set    NULL, 0
+.set    FALSE, 0
+.set    TRUE, 1
 
 .include "inc_token_table.s"
 
@@ -184,6 +186,8 @@ load_buffer:
             b.eq    _token_val_char
             cmp     x0, T_STRING
             b.eq    _token_val_string
+            cmp     x0, T_BOOL
+            b.eq    _token_val_bool
             cmp     x0, 0x100
             b.ge    _token_val_id   ; keywords are identifiers
             b       _token_eol
@@ -230,6 +234,22 @@ load_buffer:
             bl      _token_value_ptr
             bl      _print_z
             mov     x0, '"'
+            bl      _print_c
+            b       _token_eol
+            _token_val_bool:
+            mov     x0, ':'
+            bl      _print_c
+            mov     x0, ' '
+            bl      _print_c
+            mov     x0, x24
+            bl      _token_value
+            cmp     x0, FALSE
+            b.eq    _token_val_bool_false
+            mov     x0, 'T'
+            bl      _print_c
+            b       _token_eol
+            _token_val_bool_false:
+            mov     x0, 'F'
             bl      _print_c
             b       _token_eol
             _token_eol:

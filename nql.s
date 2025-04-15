@@ -39,7 +39,7 @@
         mov     x25, x0 ; f = 102 - 49
 
 ;    char c = read();
-        bl      __jsl_read
+        bl      __j_read
         mov     x22, x0 ; c = 99 - 49
 
 ;    int b = 0 - 1;
@@ -119,7 +119,7 @@
         if_3_done:
 
 ;        c = read();
-        bl      __jsl_read
+        bl      __j_read
         mov     x22, x0 ; c = 99 - 49
 
 ;        b = 0 - 1;
@@ -146,12 +146,12 @@
 
 ;    char* a = itoa(f);
         mov     x0, x25 ; f = 102 - 49
-        bl      __jsl_itoa
+        bl      __j_itoa
         mov     x20, x0 ; a = 97 - 49
 
 ;    println(a);
         mov     x0, x20 ; a = 97 - 49
-        bl      __jsl_println
+        bl      __j_println
 
 ;    return f;
         mov     x0, x25 ; f = 102 - 49

@@ -10,8 +10,8 @@
 .set    TRUE    , 1
 .set    FALSE   , 0
 
-.global __jsl_itoa
-__jsl_itoa:
+.global __j_itoa
+__j_itoa:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     ; end frame
@@ -20,8 +20,8 @@ __jsl_itoa:
     ldp     lr, x19, [sp], #16
     ret
 
-.global __jsl_println
-__jsl_println:
+.global __j_println
+__j_println:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     ; end frame
@@ -30,8 +30,8 @@ __jsl_println:
     ldp     lr, x19, [sp], #16
     ret
 
-.global __jsl_read
-__jsl_read:
+.global __j_read
+__j_read:
     ; create frame
     stp     lr, x19, [sp, #-16]!
     ; end frame
