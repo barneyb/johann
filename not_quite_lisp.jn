@@ -1,46 +1,43 @@
 fn main(): int {
-    int f = 0;
+    int f = zero();
     int e = 0;
     int g = 0;
-    bool d = false;
     char c = read();
     int b = 0 - 1;
-    b = c > b;
-    while b {
+    while c > b {
         g = g + 1;
-        d = c = '(';
-        if d {
+        if c = '(' {
             f = f + 1;
         }
-        d = c = ')';
-        if d {
+        if c = ')' {
             f = f - 1;
         }
-        d = f + 1;
-        d = d = 0;
-        if d {
+        int d = f + 1;
+        if d = 0 {
             d = e = 0;
             if d {
                 e = g;
             }
         }
         c = read();
-        b = 0 - 1;
-        b = c > b;
     }
     char* a = "one: ";
-    print();
+    print();            # passed prior result as single arg
     f = f;
     a = itoa();         # passed prior result as single arg
     println();          # passed prior result as single arg
     a = a;
     free();             # passed prior result as single arg
     char* a = "two: ";
-    print();
+    print();            # passed prior result as single arg
     e = e;
     a = itoa();         # passed prior result as single arg
     println();          # passed prior result as single arg
     a = a;
     free();             # passed prior result as single arg
+    return 0;
+}
+
+fn zero() {
     return 0;
 }
