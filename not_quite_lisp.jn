@@ -1,10 +1,13 @@
 fn main(): int {
     int f = 0;
+    int e = 0;
+    int g = 0;
     bool d = false;
     char c = read();
     int b = 0 - 1;
     b = c > b;
-    while b { # block 1
+    while b {
+        g = g + 1;
         d = c = '(';
         if d {
             f = f + 1;
@@ -13,13 +16,28 @@ fn main(): int {
         if d {
             f = f - 1;
         }
+        d = f + 1;
+        d = d = 0;
+        if d {
+            d = e = 0;
+            if d {
+                e = g;
+            }
+        }
         c = read();
         b = 0 - 1;
         b = c > b;
     }
-    char* a = "a: ";
+    char* a = "one: ";
     print();
     f = f;
+    a = itoa();         # passed prior result as single arg
+    println();          # passed prior result as single arg
+    a = a;
+    free();             # passed prior result as single arg
+    char* a = "two: ";
+    print();
+    e = e;
     a = itoa();         # passed prior result as single arg
     println();          # passed prior result as single arg
     a = a;
