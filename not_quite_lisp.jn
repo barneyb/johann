@@ -17,8 +17,10 @@ fn main(): int {
         b = 0 - 1;
         b = c > b;
     }
+    char* a = "a: ";
+    print();
     f = f;
-    char* a = itoa();   # passed prior result as single arg
+    a = itoa();         # passed prior result as single arg
     println();          # passed prior result as single arg
     a = a;
     free();             # passed prior result as single arg

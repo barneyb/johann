@@ -100,13 +100,13 @@ enter_block:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
     ldp     x21, x22, [x19, OFF_SEQ]; load seq and depth
+    add     x21, x21, 1             ; increment seq
 
     add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x0, x22, x1, x0         ; pointer -> block
     stp     x20, x21, [x0]          ; initialize type and id
 
-    add     x21, x21, 1             ; increment seq
     add     x22, x22, 1             ; increment depth
     stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
 
@@ -429,8 +429,8 @@ do_if:
 
     tmpl_sec
     mov     x0, x19
-    ldr     x1, [x20, #8]           ; pointer -> condition token
-    bl      do_token
+    add     x1, x20, #8             ; pointer -> condition token
+    bl      do_expr
     tmpl_sec
     mov     x0, x22
     bl      _print_i
@@ -474,8 +474,8 @@ do_while:
     bl      _print_i
     tmpl_sec
     mov     x0, x19
-    ldr     x1, [x20, #8]           ; pointer -> condition token
-    bl      do_token
+    add     x1, x20, #8             ; pointer -> condition token
+    bl      do_expr
     tmpl_sec
     mov     x0, x22
     bl      _print_i
@@ -715,6 +715,14 @@ do_expr:
 
     ; if second token is SEMI, it's a copy
     cmp     x23, T_SEMI
+    b.ne    do_expr_cond
+    mov     x0, x19
+    ldr     x1, [x20]               ; pointer -> first token
+    bl      do_token
+    b       do_expr_return
+    ; if second token is OBRACE, it's a condition
+    do_expr_cond:
+    cmp     x23, T_OBRACE
     b.ne    do_expr_call
     mov     x0, x19
     ldr     x1, [x20]               ; pointer -> first token
@@ -993,11 +1001,61 @@ do_token:
     bl      do_value_literal
     b       do_token_return
     do_token_string:
-    ; todo: do_token_string
+    mov     x0, x20                 ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> value
+    mov     x1, x0
+    mov     x0, x19
+    bl      do_value_string
     b       do_token_return
 
     do_token_return:
     ; restore frame
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_token_string: .asciz "    .data
+        _j_str_\0: .asciz \"\0\"
+    .text
+        adrp    x0, _j_str_\0@PAGE
+        add     x0, x0, _j_str_\0@PAGEOFF"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
+/* void do_value_id( Emitter* self, char* name ) */
+do_value_string:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    str     x22, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> name
+    adrp    x21, tmpl_token_string@PAGE
+    add     x21, x21, tmpl_token_string@PAGEOFF
+    mov     x0, x19
+    bl      seqnum
+    mov     x22, x0                 ; stash num
+
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x20
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
+    bl      _println
+
+    ; restore frame
+    ldr     x22, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
