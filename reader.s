@@ -207,8 +207,8 @@ refill_buffer:
 ;        str     x20, [sp, #-16]!    ; miniframe
 ;        mov     x20, x0             ; save len (for return)
 ;        ; print how much was just read
-;        bl      _int2str
-;        bl      _println_z
+;        bl      _print_i
+;        bl      _println
 ;        ; print what was just read
 ;        adrp    x0, m_read@PAGE
 ;        add     x0, x0, m_read@PAGEOFF

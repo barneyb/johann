@@ -67,8 +67,7 @@ _parser_parse:
     ; see if we're done
     ldr     x25, [x19, OFF_BUF]     ; load pointer -> first token
 ;            mov     x0, x25
-;            bl      _int2str
-;            bl      _print_z
+;            bl      _print_i
 ;            bl      _println                ; end line
     cmp     x25, NULL
     b.eq    parse_return            ; zero tokens - we're done!
@@ -99,13 +98,11 @@ free_buffer:
     mov     x19, x0                 ; stash pointer -> this
     ldr     x25, [x19, OFF_POS]     ; load pos
 ;            mov     x0, x25
-;            bl      _int2str
-;            bl      _print_z
+;            bl      _print_i
 ;            bl      _println                ; end line
     add     x21, x19, OFF_BUF       ; pointer to buffer
 ;            mov     x0, x21
-;            bl      _int2str
-;            bl      _print_z
+;            bl      _print_i
 ;            bl      _println                ; end line
     free_buffer_loop:
     cmp     x25, xzr
@@ -120,8 +117,7 @@ free_buffer:
     free_buffer_done:
     str     x25, [x19, OFF_POS]     ; store
 ;            mov     x0, x25
-;            bl      _int2str
-;            bl      _print_z
+;            bl      _print_i
 ;            bl      _println                ; end line
 
     ; restore frame
@@ -143,8 +139,7 @@ load_buffer:
     mov     x25, #0                 ; start at zero
 
 ;            mov     x0, x21
-;            bl      _int2str
-;            bl      _print_z
+;            bl      _print_i
 ;            bl      _println                ; end line
 
     load_buffer_token:
@@ -167,14 +162,12 @@ load_buffer:
             bl      _print_c
             mov     x0, x24
             bl      _token_line
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             mov     x0, ','
             bl      _print_c
             mov     x0, x24
             bl      _token_char
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             ; and the value, as appropriate
             mov     x0, x24
             bl      _token_type
@@ -198,8 +191,7 @@ load_buffer:
             bl      _print_c
             mov     x0, x24
             bl      _token_value
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             b       _token_eol
             _token_val_id:
             mov     x0, ':'
@@ -278,8 +270,7 @@ load_buffer:
             add     x0, x0, found_semi@PAGEOFF
             bl      _print_z
             mov     x0, x25
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             bl      _println
             b       load_buffer_return
     load_buffer_open:
@@ -287,8 +278,7 @@ load_buffer:
             add     x0, x0, found_open_brace@PAGEOFF
             bl      _print_z
             mov     x0, x25
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             bl      _println
             b       load_buffer_return
     load_buffer_close:
@@ -296,8 +286,7 @@ load_buffer:
             add     x0, x0, found_close_brace@PAGEOFF
             bl      _print_z
             mov     x0, x25
-            bl      _int2str
-            bl      _print_z
+            bl      _print_i
             bl      _println
             b       load_buffer_return
 

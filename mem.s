@@ -55,7 +55,6 @@ _mem_alloc:
 _mem_alloc_LOG:
     ; create frame
     stp     lr, x19, [sp, #-16]!    ; save LR and x19
-    str     x20, [sp, #-16]!        ; save x20
     ; end frame
 
     bl  _mem_alloc
@@ -67,15 +66,11 @@ _mem_alloc_LOG:
     mov     x1, pre_alloc_len
     bl      _os_stdout
     mov     x0, x19
-    bl      _int2str
-    mov     x20, x0
-    bl      _println_z
-    mov     x0, x20
-    bl      _mem_free
+    bl      _print_h
+    bl      _println
 
     mov     x0, x19
     ; restore frame
-    ldr     x20, [sp], #16      ; restore x20
     ldp     lr, x19, [sp], #16      ; restore LR and x19
     ret
 
@@ -84,7 +79,6 @@ _mem_alloc_LOG:
 _mem_free_LOG:
     ; create frame
     stp     lr, x19, [sp, #-16]!    ; save LR and x19
-    str     x20, [sp, #-16]!        ; save x20
     ; end frame
 
     mov     x19, x0                 ; stash for later
@@ -95,16 +89,12 @@ _mem_free_LOG:
     mov     x1, pre_free_len
     bl      _os_stdout
     mov     x0, x19
-    bl      _int2str
-    mov     x20, x0
-    bl      _println_z
-    mov     x0, x20
-    bl      _mem_free
+    bl      _print_h
+    bl      _println
 
     mov     x0, x19
     bl      _mem_free
     ; restore frame
-    ldr     x20, [sp], #16      ; restore x20
     ldp     lr, x19, [sp], #16      ; restore LR and x19
     ret
 

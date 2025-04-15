@@ -201,14 +201,12 @@ _lexer_token:
     add     x0, x0, at_line@PAGEOFF
     bl      _print_z
     mov     x0, x21
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     adrp    x0, at_char@PAGE
     add     x0, x0, at_char@PAGEOFF
     bl      _print_z
     mov     x0, x22
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     bl      _println                ; end line
     mov     x0, #17
     b       _os_exit
@@ -284,14 +282,12 @@ _lexer_token:
         add     x0, x0, at_line@PAGEOFF
         bl      _print_z
         mov     x0, x21
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         mov     x0, x22
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         bl      _println                ; end line
         mov     x0, #18
         b       _os_exit
@@ -350,14 +346,12 @@ _lexer_token:
         add     x0, x0, at_line@PAGEOFF
         bl      _print_z
         mov     x0, x21
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         mov     x0, x22
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         bl      _println                ; end line
         mov     x0, #19
         b       _os_exit

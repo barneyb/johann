@@ -14,6 +14,30 @@ newline: .ascii "\n"
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 
+/* void print_i( int num ) */
+.global _print_i
+_print_i:
+    stp     lr, x19, [sp, #-16]!
+    bl      _int2str
+    mov     x19, x0
+    bl      _print_z
+    mov     x0, x19
+    bl      _mem_free;_LOG
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void print_h( int num ) */
+.global _print_h
+_print_h:
+    stp     lr, x19, [sp, #-16]!
+    bl      _int2hex
+    mov     x19, x0
+    bl      _print_z
+    mov     x0, x19
+    bl      _mem_free;_LOG
+    ldp     lr, x19, [sp], #16
+    ret
+
 /* void print_z( const void *buf ) */
 .global _print_z
 _print_z:

@@ -146,8 +146,8 @@ innermost_block_of:
         add     x0, x0, err_invalid_nesting@PAGEOFF
         bl      _print_z          ; todo: send errors to STDERR....
         mov     x0, x20
-        bl      _int2hex
-        bl      _println_z
+        bl      _print_h
+        bl      _println
         mov     x0, #37
         b       _os_exit
 
@@ -301,15 +301,14 @@ _emitter_emit:
         bl      _print_z                ; todo: send errors to STDERR....
         mov     x0, x21
         bl      _token_line
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         mov     x0, x21
         bl      _token_char
-        bl      _int2str
-        bl      _println_z
+        bl      _print_i
+        bl      _println
         mov     x0, #27
         b       _os_exit
 
@@ -391,13 +390,12 @@ do_fn:
     tmpl_sec
     mov     x0, x23
     bl      block_id
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     mov     x0, x23
     bl      block_id
-    bl      _int2str
-    bl      _println_z
+    bl      _print_i
+    bl      _println
 
     ; restore frame
     ldp     x22, x23, [sp], #16
@@ -466,8 +464,8 @@ do_return:
     bl      do_expr
     tmpl_sec
     mov     x0, x22
-    bl      _int2str
-    bl      _println_z
+    bl      _print_i
+    bl      _println
 
     ; restore frame
     ldp     x22, x23, [sp], #16
@@ -575,12 +573,10 @@ do_close_block:
     b.ne    do_close_block_if
     tmpl_sec
     mov     x0, x23
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     mov     x0, x23
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     bl      _println
     b       do_close_block_return
@@ -694,15 +690,14 @@ do_expr:
         bl      _print_z                ; todo: send errors to STDERR....
         mov     x0, x21
         bl      _token_line
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         mov     x0, x21
         bl      _token_char
-        bl      _int2str
-        bl      _println_z
+        bl      _print_i
+        bl      _println
         mov     x0, #28
         b       _os_exit
 
@@ -801,15 +796,14 @@ do_binary_op:
         bl      _print_z                ; todo: send errors to STDERR....
         ldr     x0, [x20, #8]
         bl      _token_line
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         ldr     x0, [x20, #8]
         bl      _token_char
-        bl      _int2str
-        bl      _println_z
+        bl      _print_i
+        bl      _println
         mov     x0, #29
         b       _os_exit
 
@@ -857,20 +851,16 @@ do_binary_op:
     mov     x20, x0
     tmpl_sec
     mov     x0, x20
-    bl      _int2str                ; todo: gotta free these allocations
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     mov     x0, x20
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     mov     x0, x20
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     mov     x0, x20
-    bl      _int2str
-    bl      _print_z
+    bl      _print_i
     tmpl_sec
     bl      _println
     b       do_binary_op_return
@@ -910,15 +900,14 @@ do_token:
         bl      _print_z                ; todo: send errors to STDERR....
         mov     x0, x21
         bl      _token_line
-        bl      _int2str
-        bl      _print_z
+        bl      _print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
         bl      _print_z
         mov     x0, x21
         bl      _token_char
-        bl      _int2str
-        bl      _println_z
+        bl      _print_i
+        bl      _println
         mov     x0, #29
         b       _os_exit
 
@@ -986,8 +975,8 @@ do_value_literal:
     add     x21, x21, tmpl_token_literal@PAGEOFF
     tmpl_sec
     mov     x0, x19
-    bl      _int2str
-    bl      _println_z
+    bl      _print_i
+    bl      _println
     ; restore frame
     ldp     lr, x19, [sp], #16
     ret
