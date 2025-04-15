@@ -23,6 +23,10 @@ jnc: $(BIN)/jnc
 not_quite_lisp: $(LIB)/not_quite_lisp.s $(LIB)/jstdlib.o
 	gcc -c $(LIB)/not_quite_lisp.s -o $(LIB)/not_quite_lisp.o
 	gcc	$(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o -o $(BIN)/not_quite_lisp
+	printf "" | $(BIN)/not_quite_lisp
+	echo "(()))((((" | $(BIN)/not_quite_lisp
+	echo "())())" | $(BIN)/not_quite_lisp
+	$(BIN)/not_quite_lisp < not_quite_lisp.txt
 
 nql: $(BIN)/nql
 	printf "" | $(BIN)/nql

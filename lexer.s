@@ -194,7 +194,7 @@ _lexer_token:
     mov     x23, x0                 ; save the char
     adrp    x0, err_bad_token@PAGE
     add     x0, x0, err_bad_token@PAGEOFF
-    bl      _print_z                ; todo: send errors to STDERR....
+    bl      _print_z
     mov     x0, x23
     bl      _print_c
     adrp    x0, at_line@PAGE
@@ -275,7 +275,7 @@ _lexer_token:
     token_id_long:
         adrp    x0, err_long_id@PAGE
         add     x0, x0, err_long_id@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x23
         bl      _print_z
         adrp    x0, at_line@PAGE
@@ -339,7 +339,7 @@ _lexer_token:
     token_string_long:
         adrp    x0, err_long_string@PAGE
         add     x0, x0, err_long_string@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x23
         bl      _print_z
         adrp    x0, at_line@PAGE

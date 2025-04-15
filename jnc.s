@@ -18,7 +18,6 @@ jnc:
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
     stp     x24, x25, [sp, #-16]!
-    sub     sp, sp, #80             ; Token*[10] token buffer todo: kill
     ; end frame
 
     bl      _Reader_instance        ; r = Reader.instance()
@@ -38,7 +37,6 @@ jnc:
     bl      _Reader_destroy         ; Reader.destroy()
 
     ; restore frame
-    add     sp, sp, #80             ; token buffer
     ldp     x24, x25, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16

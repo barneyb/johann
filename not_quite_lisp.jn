@@ -17,8 +17,9 @@ fn main(): int { # block 0
         b = 0 - 1;
         b = c > b;
     } # block 1 - while
-    char* a = itoa(f);
-    println(a);
+    f = f;
+    char* a = itoa(); # passed prior result as single arg
+    println();        # passed prior result as single arg
     return f;
 } # block 0 - fn
 

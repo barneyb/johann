@@ -144,7 +144,7 @@ innermost_block_of:
     innermost_block_of_bad:
         adrp    x0, err_invalid_nesting@PAGE
         add     x0, x0, err_invalid_nesting@PAGEOFF
-        bl      _print_z          ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x20
         bl      _print_h
         bl      _println
@@ -298,7 +298,7 @@ _emitter_emit:
     __emit_bad__:
         adrp    x0, err_bad_stmt@PAGE
         add     x0, x0, err_bad_stmt@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x21
         bl      _token_line
         bl      _print_i
@@ -687,7 +687,7 @@ do_expr:
     do_expr_bad:
         adrp    x0, err_bad_expr@PAGE
         add     x0, x0, err_bad_expr@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x21
         bl      _token_line
         bl      _print_i
@@ -793,7 +793,7 @@ do_binary_op:
     do_bin_bad:
         adrp    x0, err_bad_operator@PAGE
         add     x0, x0, err_bad_operator@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         ldr     x0, [x20, #8]
         bl      _token_line
         bl      _print_i
@@ -897,7 +897,7 @@ do_token:
     do_token_bad:
         adrp    x0, err_bad_token@PAGE
         add     x0, x0, err_bad_token@PAGEOFF
-        bl      _print_z                ; todo: send errors to STDERR....
+        bl      _print_z
         mov     x0, x21
         bl      _token_line
         bl      _print_i

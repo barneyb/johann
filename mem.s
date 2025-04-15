@@ -124,7 +124,7 @@ _mem_free:
     ret
 
 /* void* calloc( size_t num, size_t size ) */
-; todo
+; todo: calloc
 
 /* void* realloc( void* ptr, size_t new_size ) */
-; todo
+; todo: realloc

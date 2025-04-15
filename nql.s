@@ -177,8 +177,6 @@
         stp     x24, x25, [sp, #-16]!
         stp     x26, x27, [sp, #-16]!
         ; end frame - block 4
-;todo    char* b = "oh hai";
-;todo    return 7;
 
 ;} # block 4 - fn
         _return_4:
