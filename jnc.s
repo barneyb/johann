@@ -5,8 +5,6 @@
 .set    FALSE, 0
 .set    INDENT, 4
 
-.include "inc_token_table.s"
-
 .global _main
 _main:
     bl      jnc

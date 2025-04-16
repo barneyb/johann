@@ -12,9 +12,7 @@ OBJECTS=\
 	$(LIB)/system.o \
 	$(LIB)/token.o
 
-all: $(BIN)/jnc \
-	$(BIN)/nql \
-	$(LIB)/not_quite_lisp.s
+all: jnc not_quite_lisp
 	head $(LIB)/*.s
 
 jnc: $(BIN)/jnc
@@ -27,16 +25,6 @@ not_quite_lisp: $(LIB)/not_quite_lisp.s $(LIB)/jstdlib.o
 	echo "(()))((((" | $(BIN)/not_quite_lisp
 	echo "())())" | $(BIN)/not_quite_lisp
 	$(BIN)/not_quite_lisp < not_quite_lisp.txt
-
-nql: $(BIN)/nql
-	printf "" | $(BIN)/nql
-	echo "(()))((((" | $(BIN)/nql
-	echo "())())" | $(BIN)/nql
-	$(BIN)/nql < not_quite_lisp.txt
-
-$(BIN)/nql: nql.s $(LIB)/jstdlib.o
-	@mkdir -p $(BIN)
-	gcc nql.s $(LIB)/jstdlib.o -o $(BIN)/nql
 
 $(LIB)/jstdlib.o: jstdlib.s mem.s print.s reader.s string.s system.s
 	@mkdir -p $(LIB)
