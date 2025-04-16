@@ -12,6 +12,7 @@ err_invalid_nesting: .asciz "; Invalid nesting "
 at_char: .asciz ", char "
 
 tmpl_prelude: .asciz "    .text
+    .align  3
     .set NULL, 0
     .set TRUE, 1
     .set FALSE, 0"
@@ -339,13 +340,13 @@ tmpl_main: .asciz "    .global _main
 
 tmpl_fn_intro: .asciz "    .global __j_\0
     __j_\0:
-        ; create frame - block \0
+        ; create frame
         stp     lr, x19, [sp, #-16]!
         stp     x20, x21, [sp, #-16]!
         stp     x22, x23, [sp, #-16]!
         stp     x24, x25, [sp, #-16]!
         stp     x26, x27, [sp, #-16]!
-        ; end frame - block "
+        ; end frame"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -387,13 +388,6 @@ do_fn:
     mov     x0, x22
     bl      _print_z
     tmpl_sec
-    mov     x0, x23
-    bl      block_id
-    bl      _print_i
-    tmpl_sec
-    mov     x0, x23
-    bl      block_id
-    bl      _print_i
     bl      _println
 
     ; restore frame
@@ -592,7 +586,7 @@ do_assign:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_fn_outro: .asciz "        _return_\0:
-        ; restore frame - block \0
+        ; restore frame
         ldp     x26, x27, [sp], #16
         ldp     x24, x25, [sp], #16
         ldp     x22, x23, [sp], #16
@@ -625,9 +619,6 @@ do_close_block:
     b.ne    do_close_block_if
     adrp    x21, tmpl_fn_outro@PAGE ; pointer -> template
     add     x21, x21, tmpl_fn_outro@PAGEOFF
-    tmpl_sec
-    mov     x0, x23
-    bl      _print_i
     tmpl_sec
     mov     x0, x23
     bl      _print_i
