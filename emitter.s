@@ -4,11 +4,11 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-err_bad_stmt: .asciz "; Bad statement at line "
-err_bad_expr: .asciz "; Bad expression at line "
-err_bad_token: .asciz "; Bad token at line "
-err_bad_operator: .asciz "; Bad operator at line "
-err_invalid_nesting: .asciz "; Invalid nesting "
+err_bad_stmt: .asciz "; ERROR: Bad statement at line "
+err_bad_expr: .asciz "; ERROR: Bad expression at line "
+err_bad_token: .asciz "; ERROR: Bad token at line "
+err_bad_operator: .asciz "; ERROR: Bad operator at line "
+err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
 at_char: .asciz ", char "
 
 tmpl_prelude: .asciz "    .text

@@ -1,4 +1,4 @@
-fn main(): int {
+fn main() -> int {
     int f = zero();
     int e = 0;
     int g = 0;
@@ -22,19 +22,19 @@ fn main(): int {
         c = read();
     }
     char* a = "one: ";
-    print();            # passed prior result as single arg
+    print();            # implicitly passed a
     f = f;
-    a = itoa();         # passed prior result as single arg
-    println();          # passed prior result as single arg
+    a = itoa();         # implicitly passed f
+    println();          # implicitly passed a
     a = a;
-    free();             # passed prior result as single arg
+    free();             # implicitly passed a
     char* a = "two: ";
-    print();            # passed prior result as single arg
+    print();            # implicitly passed a
     e = e;
-    a = itoa();         # passed prior result as single arg
-    println();          # passed prior result as single arg
+    a = itoa();         # implicitly passed e
+    println();          # implicitly passed a
     a = a;
-    free();             # passed prior result as single arg
+    free();             # implicitly passed a
     return 0;
 }
 
