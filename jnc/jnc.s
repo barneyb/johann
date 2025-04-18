@@ -22,7 +22,7 @@ jnc:
     mov     x19, x0                 ; stash pointer -> r
     bl      _Lexer_new              ; lex = Lexer.new(r)
     mov     x20, x0                 ; stash pointer -> lex
-    bl      _Parser_new             ; parser = Parser.name(lex);
+    bl      _Parser_new             ; parser = Parser.new(lex);
     mov     x21, x0                 ; stash pointer -> parser
 
     bl      _parser_parse

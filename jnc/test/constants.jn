@@ -1,0 +1,24 @@
+fn main() {
+    cool = fred();
+    alice = chump();
+    print();
+    int dearest = 3;
+    albert = doug;
+    bob = alex - 3;
+    andrew = 1;
+    ash = itoa();
+    print();
+    andy = ali;
+    free();
+    allison = cathy;
+    println();
+    return 0;
+}
+
+fn fred() {
+    char * frank = " world!";
+}
+
+fn chump ( ) {
+    return "Hello, ";
+}

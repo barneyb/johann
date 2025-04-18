@@ -15,6 +15,7 @@ OBJECTS=\
 	$(LIB)/token.o \
 
 all: $(BIN)/jnc
+	$(MAKE) -C test all
 
 # pattern rules
 
@@ -35,6 +36,7 @@ $(LIB)/%.o: $(INCLUDE)/%.s
 
 clean:
 	rm -rf $(TGT)
+	$(MAKE) -C test clean
 
 # configuration targets
 

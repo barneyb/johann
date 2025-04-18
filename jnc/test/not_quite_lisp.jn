@@ -1,0 +1,43 @@
+fn main() -> int {
+    int f = zero();
+    int e = 0;
+    int g = 0;
+    char c = read();
+    int b = 0 - 1;
+    while c > b {
+        g = g + 1;
+        if c = '(' {
+            f = f + 1;
+        }
+        if c = ')' {
+            f = f - 1;
+        }
+        int d = f + 1;
+        if d = 0 {
+            d = e = 0;
+            if d {
+                e = g;
+            }
+        }
+        c = read();
+    }
+    char* a = "one: ";
+    print();            # implicitly passed a
+    f = f;
+    a = itoa();         # implicitly passed f
+    println();          # implicitly passed a
+    a = a;
+    free();             # implicitly passed a
+    char* a = "two: ";
+    print();            # implicitly passed a
+    e = e;
+    a = itoa();         # implicitly passed e
+    println();          # implicitly passed a
+    a = a;
+    free();             # implicitly passed a
+    return 0;
+}
+
+fn zero() {
+    return 0;
+}

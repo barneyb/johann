@@ -28,7 +28,8 @@ $(OUT)/%.s: %.jn $(BIN)/jnc
 # utility targets
 
 clean:
-	rm -rf $(TGT)
+	$(MAKE) -C jnc clean
+	$(MAKE) -C jstdlib clean
 
 # configuration targets
 
