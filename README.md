@@ -45,7 +45,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 A complete solution for Not Quite Lisp is found in `not_quite_lisp.jn`. Note that this doesn't meet the goal stated above, as the _compiler_ is not yet written in Johann. To build and run it: `make not_quite_lisp`
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Unlike C, if you let control fall off the end, you get whatever is left in `X0`; probably not what you want. The return type after the "arrow" is ignored. There is no way to receive arguments.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. If you let control fall off the end, you get `0`, just like C. The return type after the "arrow" is ignored. There is no way to receive arguments.
 
     fn main() -> int {
         return 0;

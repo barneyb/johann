@@ -585,7 +585,8 @@ do_assign:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_fn_outro: .asciz "        _return_\0:
+tmpl_fn_outro: .asciz "        mov      x0, #0             ; if no return, use zero
+        _return_\0:
         ; restore frame
         ldp     x26, x27, [sp], #16
         ldp     x24, x25, [sp], #16
