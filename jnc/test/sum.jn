@@ -1,0 +1,47 @@
+fn isdigit(c) {
+    if c < '0' {
+        return false;
+    }
+    if c > '9' {
+        return false;
+    }
+    return true;
+}
+
+# I read a series of integers and add them up, printing each number and the
+# running total as they are read.
+fn main() {
+    char* g = "0";
+    println(g);
+    int a = 0;          # answer
+    int e = 0 - 1;      # EOF
+    int f = 0;          # accumulator
+    char c = read();
+    while c > e {
+        bool d = isdigit(c);
+        if d {
+            c = c - '0'; # subtract ASCII 0 to "parse digit"
+            f = f * 10;
+            f = f + c;
+        }
+        if !d {
+            g = "+ ";
+            print(g);
+            g = itoa(f);
+            println(g);     # print number
+            free(g);
+            a = add(a, f);  # add to the answer
+            f = 0;          # reset
+            g = "= ";
+            print(g);
+            g = itoa(a);
+            println(g);     # print answer
+            free(g);
+        }
+        c = read();
+    }
+}
+
+fn add(a, b) {
+    return a + b;
+}

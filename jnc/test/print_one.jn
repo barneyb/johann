@@ -1,0 +1,23 @@
+fn main() {
+    char* c = "one: ";
+    print(c);
+    int a = -1;
+    int b = 2;
+    a = add(a, b);
+    c = itoa(a);
+    println(c);
+    free(c);        # don't leak memory
+
+    char* c = "one: ";
+    print();
+    int a = -1;
+    a = a + 2;
+    c = itoa();
+    println();
+    c = c;
+    free();        # don't leak memory
+}
+
+fn add(a, int b) {
+    return a + b;
+}

@@ -7,6 +7,8 @@ JSTDLIB=../../jstdlib/$(LIB)/jstdlib.o
 
 all: not_quite_lisp \
 	constants \
+	sum \
+	print_one \
 
 constants: $(BIN)/constants constants.expected.txt
 	$(BIN)/constants > $(OUT)/constants.actual.txt
@@ -15,6 +17,14 @@ constants: $(BIN)/constants constants.expected.txt
 not_quite_lisp: $(BIN)/not_quite_lisp not_quite_lisp.expected.txt
 	echo "()(())((()))())(()))))" | $(BIN)/not_quite_lisp > $(OUT)/not_quite_lisp.actual.txt
 	diff not_quite_lisp.expected.txt $(OUT)/not_quite_lisp.actual.txt
+
+sum: $(BIN)/sum sum.expected.txt
+	echo "1 23 456 100000 1 5" | $(BIN)/sum > $(OUT)/sum.actual.txt
+	diff sum.expected.txt $(OUT)/sum.actual.txt
+
+print_one: $(BIN)/print_one print_one.expected.txt
+	$(BIN)/print_one > $(OUT)/print_one.actual.txt
+	diff print_one.expected.txt $(OUT)/print_one.actual.txt
 
 # Pattern targets
 

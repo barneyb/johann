@@ -129,9 +129,9 @@ innermost_block_of:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
     ldr     x21, [x19, OFF_DEPTH]   ; load depth
-    sub     x21, x21, 1             ; decrement depth
 
     innermost_block_of_loop:
+    sub     x21, x21, 1             ; decrement depth
     cmp     x21, #0
     b.lt    innermost_block_of_bad  ; out of blocks!
     add     x22, x19, OFF_BLOCKS    ; pointer -> stack of blocks
@@ -358,6 +358,8 @@ tmpl_fn_intro: .asciz "    .global __j_\0
         stp     x24, x25, [sp, #-16]!
         stp     x26, x27, [sp, #-16]!
         ; end frame"
+
+tmpl_fn_arg: .asciz "        mov     x2\0, x\0 ; capture param "
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -378,7 +380,6 @@ do_fn:
     mov     x0, x19
     mov     x1, T_KW_FN
     bl      enter_block             ; this.enter_block()
-    mov     x23, x0                 ; stash pointer -> block
 
     ; see if we need to introduce main
     mov     x0, x22
@@ -401,6 +402,36 @@ do_fn:
     tmpl_sec
     bl      _println
 
+    add     x20, x20, #24           ; skip to first arg or close paren
+    mov     x22, #0                 ; index of param's register
+    do_fn_next_arg:
+    ldr     x0, [x20], #8           ; load pointer -> token to interrogate
+    mov     x23, x0                 ; stash pointer -> token
+    bl      _token_type             ; token.type()
+    cmp     x0, T_CPAREN
+    b.eq    do_fn_return            ; done!
+    cmp     x0, T_ID
+    b.ne    do_fn_next_arg          ; again!
+
+    adrp    x21, tmpl_fn_arg@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_fn_arg@PAGEOFF
+    tmpl_sec
+    mov     x0, x23                 ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    ldrb    w0, [x0]                ; first char of name
+    sub     w0, w0, C2R             ; convert lower alpha to digit
+    bl      _print_c
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i;
+    add     x22, x22, #1            ; increment register
+    tmpl_sec
+    mov     x0, x23                 ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    bl      _println_z
+    b.eq    do_fn_next_arg          ; again!
+
+    do_fn_return:
     ; restore frame
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
@@ -510,7 +541,9 @@ do_return:
     mov     x20, x1                 ; stash pointer -> buffer
     adrp    x21, tmpl_return@PAGE   ; pointer -> template
     add     x21, x21, tmpl_return@PAGEOFF
+
     mov     x1, T_KW_FN
+    mov     x0, x19
     bl      innermost_block_of
     bl      block_id
     mov     x22, x0                 ; stash current block id
@@ -653,7 +686,7 @@ do_decl:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign: .asciz "\0        mov     x2\0, x0 ; assign"
+tmpl_assign: .asciz "\0        mov     x2\0, x0 ; assign "
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -679,7 +712,9 @@ do_assign:
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      _print_c
     tmpl_sec
-    bl      _println
+    ldr     x0, [x20]               ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    bl      _println_z
 
     ; restore frame
     ldp     x20, x21, [sp], #16
@@ -766,6 +801,7 @@ do_close_block:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
+tmpl_call_param: .asciz "        mov     x\0, x2\0 ; pass "
 tmpl_call: .asciz "        bl       __j_"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -776,10 +812,42 @@ do_call:
     stp     lr, x19, [sp, #-16]!
     stp     x20, x21, [sp, #-16]!
     stp     x22, x23, [sp, #-16]!
+    str     x24, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    ; todo: call params!
+
+    ; pass parameters
+    add     x24, x20, #16           ; skip to first arg or close paren
+    mov     x22, #0                 ; index of param's register
+    do_call_next_arg:
+    ldr     x0, [x24], #8           ; load pointer -> token to interrogate
+    mov     x23, x0                 ; stash pointer -> token
+    bl      _token_type             ; token.type()
+    cmp     x0, T_CPAREN
+    b.eq    do_call_invoke          ; done!
+    cmp     x0, T_COMMA
+    b.eq    do_call_next_arg        ; again!
+
+    adrp    x21, tmpl_call_param@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_call_param@PAGEOFF
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i;
+    add     x22, x22, #1            ; increment register
+    tmpl_sec
+    mov     x0, x23                 ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    ldrb    w0, [x0]                ; first char of name
+    sub     w0, w0, C2R             ; convert lower alpha to digit
+    bl      _print_c
+    tmpl_sec
+    mov     x0, x23                 ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    bl      _println_z
+    b.eq    do_call_next_arg        ; again!
+
+    do_call_invoke:
     adrp    x21, tmpl_call@PAGE
     add     x21, x21, tmpl_call@PAGEOFF
     ldr     x0, [x20]               ; load pointer -> name token
@@ -791,6 +859,7 @@ do_call:
     bl      _println_z
 
     ; restore frame
+    ldr     x24, [sp], #16
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
@@ -1012,9 +1081,12 @@ tmpl_bin_pop_x1:.asciz "        ldr     x1, [sp], #16"
 
 tmpl_bin_add:   .asciz "        add     x0, x0, x1"
 tmpl_bin_sub:   .asciz "        sub     x0, x0, x1"
-tmpl_bin_mul:   .asciz "        cannot multiply x0 * x1"
-tmpl_bin_div:   .asciz "        cannot divide x0 / x1"
-tmpl_bin_mod:   .asciz "        cannot remainder x0 % x1"
+tmpl_bin_mul:   .asciz "        mul     x0, x0, x1"
+tmpl_bin_div:   .asciz "        sdiv    x0, x0, x1"
+tmpl_bin_mod:   .asciz "        str     x2, [sp, #-16]!
+        sdiv    x2, x0, x1
+        msub    x0, x2, x1, x0
+        ldr     x2, [sp], #16"
 tmpl_bin_gt:    .asciz "        cmp     x0, x1
         b.gt    expr_\0
         mov     x0, FALSE

@@ -41,13 +41,13 @@ The specific versions of the software I have are:
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow blocks. Type declarations are permitted, but are currently ignored.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow blocks. Type declarations are permitted, but are currently ignored except to introduce a global constant.
 
 A complete solution for Not Quite Lisp is found in `not_quite_lisp.jn`. Note that this doesn't meet the goal stated above, as the _compiler_ is not yet written in Johann. To build and run it: `make not_quite_lisp`
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. If you let control fall off the end, you get `0`. The return type after the "arrow" is ignored. There is no way to receive arguments.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a zero-arg function named `main`, which returns an exit code. If you let control fall off the end, you get `0`.
 
-    fn main() -> int {
+    fn main() {
         return 0;
     }
 
@@ -62,14 +62,6 @@ Conditionals use the `if` keyword and loops use `while`. Parentheses are not per
         c = read();
     }
 
-Functions (from the standard library) are implicitly passed a single argument: the value of the prior expression. Functions defined in Johann programs cannot (yet) accept arguments. Note that the example below has a memory leak - the string allocated by `itoa` is never `free`-d after being printed.
-
-    char* a = "one: ";
-    print();            # implicitly passed a
-    int b = 1;
-    itoa();             # implicitly passed b
-    println();          # implicitly passed the "1\0" (a char*) that itoa returned
-
 Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer.
 
 Semicolons are required to terminate statements which don't take a block.
@@ -80,7 +72,7 @@ The `bool`, `char`, and `int` keywords may be used to introduce a variable, and 
 
 Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; blocks do not introduce a new scope.
 
-Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers, `*` or not.
+Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not).
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
 
@@ -88,7 +80,34 @@ Integers are signed 64-bit values, but only unsigned literals up to 65,535 are s
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 
-It is my intention for non-pathological programs written with this primitive syntax to remain valid forever. We'll see.
+Functions can declare formal arguments within their parentheses, to create variables from passed parameters. These are normal variables, which means functions can take at most seven arguments. Per usual, type information may be provided, but is ignored:
+
+    fn add(int a, int b) {
+        return a + b;
+    }
+
+Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and most of the standard library functions:
+
+    char* c = "one: ";
+    print(c);
+    int a = -1;
+    int b = 2;
+    a = add(a, b);
+    c = itoa(a);
+    println(c);
+    free(c);        # don't leak memory
+
+Initially, if a function was called with zero parameters, it would implicitly receive the value of the last expression as its first argument.
+It is my intention for non-pathological programs written with this primitive syntax to remain valid forever. We'll see. Below is an alternate implementation of the above program using this deprecated invocation style. The `add` function takes two arguments, and so cannot be called this way. Capturing the result of `itoa` into `c` is unneeded for printing the result, but _is_ needed to `free` the allocation.
+
+    char* c = "one: ";
+    print();
+    int a = -1;
+    a = a + 2;
+    c = itoa();
+    println();
+    c = c;
+    free();        # don't leak memory
 
 ## Building Johann Programs
 
@@ -137,4 +156,4 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `29` - Bad operator
 * `37` - Some types of invalid block nesting
 
-Most errors are not yet caught, and may result in compiler crashes or the emission of incorrect/invalid assembly codes.
+Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.

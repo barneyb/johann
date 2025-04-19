@@ -19,7 +19,7 @@ _int2str:
     ; end frame
     mov     x25, x0                 ; save num
     mov     x0, #21                 ; max len, plus room for a NULL
-    bl      _mem_alloc
+    bl      _mem_alloc;_LOG
     mov     x24, x0                 ; pointer -> buffer
     add     x19, x24, #21           ; -> tail of buffer
     strb    wzr, [x19, #-1]!        ; put a NULL at the end
