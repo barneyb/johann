@@ -30,6 +30,16 @@ __j_free:
     ldp     lr, x19, [sp], #16
     ret
 
+.global __j_printc
+__j_printc:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _print_c
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 .global __j_print
 __j_print:
     ; create frame

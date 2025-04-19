@@ -21,6 +21,8 @@ tmpl_prelude: .asciz "    .text
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 .set    NULL    , 0
+.set    TRUE    , 1
+.set    FALSE   , 0
 .set    C2R     , 49                ; amount to subtract from a char to get its register #
 
 .include "inc_token_table.s"
@@ -192,6 +194,25 @@ seqnum:
     ldp     lr, x19, [sp], #16
     ret
 
+/* bool is_global( Emitter* self ) */
+is_global:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    ldr     x19, [x0, OFF_DEPTH]   ; load depth
+    cmp     x19, #0
+    b.eq    is_global_yep
+    mov     x0, FALSE
+    b       is_global_return
+
+    is_global_yep:
+    mov     x0, TRUE
+
+    is_global_return:
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 /* void emit( Emitter* self, [Token*] stmt ) */
 .global _emitter_emit
 _emitter_emit:
@@ -250,7 +271,7 @@ _emitter_emit:
 
     __emit_if:
     cmp     x22, T_KW_IF
-    b.ne    __emit_return     ; next!
+    b.ne    __emit_return           ; next!
     mov     x0, x19
     mov     x1, x20
     bl      do_if                   ; this.do_if( buffer )
@@ -298,20 +319,10 @@ _emitter_emit:
 
     __emit_bad__:
         adrp    x0, err_bad_stmt@PAGE
-        add     x0, x0, err_bad_stmt@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_line
-        bl      _print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_char
-        bl      _print_i
-        bl      _println
-        mov     x0, #27
-        b       _os_exit
+        add     x0, x0, err_bad_stmt@PAGEOFF    ; pointer -> msg
+        mov     x1, x21             ; pointer -> token
+        mov     x2, #27             ; error code
+        bl      do_panic            ; print and terminate
 
     __emit_return__:
     ; restore frame
@@ -518,6 +529,20 @@ do_return:
     ldp     lr, x19, [sp], #16
     ret
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_global_int: .asciz "    .data
+        _j_gbl_\0: .xword \0
+    .text"
+tmpl_global_char: .asciz "    .data
+        _j_gbl_\0: .xword '\0'
+    .text"
+tmpl_global_string: .asciz "    .data
+        _j_gbl_\0: .asciz \"\0\"
+    .text"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
 /* void do_decl( Emitter* self, [Token*] buffer ) */
 do_decl:
     ; create frame
@@ -528,7 +553,7 @@ do_decl:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
 
-    ; scan until find an ASSIGN, go back one, delegate to do_assign
+    ; scan until find an ASSIGN
     add     x21, x20, #8            ; first token is type
     do_decl_again:
     ldr     x0, [x21, #8]!          ; stash pointer -> next token
@@ -538,10 +563,88 @@ do_decl:
     b       do_decl_again
 
     do_decl_delegate:
-    sub     x1, x21, #8            ; go back one
+    mov     x0, x19
+    bl      is_global               ; see if its global
+    cmp     x0, FALSE
+    b.ne    do_decl_global
+
+    ; go back one and delegate to do_assign
+    sub     x1, x21, #8             ; go back one token (to the name)
     mov     x0, x19
     bl      do_assign
+    b       do_decl_return
 
+    ; go back one and set up a named data value
+    do_decl_global:
+    ldr     x20, [x21, #8]          ; stash pointer -> value token
+    ldr     x22, [x21, #-8]         ; stash pointer -> name token
+    mov     x0, x20
+    bl      _token_type             ; token.type()
+    mov     x21, x0                 ; stash token type
+
+    cmp     x21, T_BOOL
+    b.eq    do_decl_bool
+    cmp     x21, T_CHAR
+    b.eq    do_decl_char
+    cmp     x21, T_INT
+    b.eq    do_decl_int
+    cmp     x21, T_STRING
+    b.eq    do_decl_string
+
+    do_decl_bad:
+        adrp    x0, err_bad_token@PAGE
+        add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
+        mov     x1, x20             ; pointer -> token
+        mov     x2, #26             ; error code
+        bl      do_panic            ; print and terminate
+
+    do_decl_bool:                  ; these two happen to be the same
+    do_decl_int:
+    adrp    x21, tmpl_global_int@PAGE
+    add     x21, x21, tmpl_global_int@PAGEOFF
+    tmpl_sec
+    mov     x0, x22                 ; pointer -> name token
+    bl      _token_value_ptr        ; pointer -> value
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x20                 ; pointer -> value token
+    bl      _token_value            ; pointer -> value
+    bl      _print_i
+    tmpl_sec
+    bl      _println
+    b       do_decl_return
+
+    do_decl_char:
+    adrp    x21, tmpl_global_char@PAGE
+    add     x21, x21, tmpl_global_char@PAGEOFF
+    tmpl_sec
+    mov     x0, x22                 ; pointer -> name token
+    bl      _token_value_ptr        ; pointer -> value
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x20                 ; pointer -> value token
+    bl      _token_value            ; pointer -> value
+    bl      _print_c
+    tmpl_sec
+    bl      _println
+    b       do_decl_return
+
+    do_decl_string:
+    adrp    x21, tmpl_global_string@PAGE
+    add     x21, x21, tmpl_global_string@PAGEOFF
+    tmpl_sec
+    mov     x0, x22                 ; pointer -> name token
+    bl      _token_value_ptr        ; pointer -> value
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x20                 ; pointer -> value token
+    bl      _token_value_ptr        ; pointer -> value
+    bl      _print_z
+    tmpl_sec
+    bl      _println
+    b       do_decl_return
+
+    do_decl_return:
     ; restore frame
     ldp     x22, x23, [sp], #16
     ldp     x20, x21, [sp], #16
@@ -703,7 +806,9 @@ do_expr:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
     ldr     x22, [x20, #8]          ; stash pointer -> second token
-    ldr     x23, [x22]              ; type of second token
+    mov     x0, x22
+    bl      _token_type
+    mov     x23, x0                 ; type of second token
 
     ; if second token is SEMI, it's a copy
     cmp     x23, T_SEMI
@@ -746,33 +851,156 @@ do_expr:
     b.eq    do_expr_binop
     cmp     x23, T_PERCENT
     b.eq    do_expr_binop
-    b       do_expr_bad
+    b       do_expr_first_token
     do_expr_binop:
     mov     x0, x19
     mov     x1, x20
     bl      do_binary_op
     b       do_expr_return
 
+    ; now the first token
+    do_expr_first_token:
+    ldr     x22, [x20]              ; stash pointer -> first token
+    mov     x0, x22
+    bl      _token_type
+    mov     x23, x0                 ; type of first token
+;        bl _print_h
+;        bl _println
+    ; if the first token is BANG, MINUS, STAR, do unary op
+    do_expr_deref:
+    cmp     x23, T_BANG
+    b.eq    do_expr_unop
+    cmp     x23, T_MINUS
+    b.eq    do_expr_unop
+    cmp     x23, T_STAR
+    b.eq    do_expr_unop
+    b       do_expr_bad
+    do_expr_unop:
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_unary_op
+    b       do_expr_return
+
     do_expr_bad:
         adrp    x0, err_bad_expr@PAGE
-        add     x0, x0, err_bad_expr@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_line
-        bl      _print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_char
-        bl      _print_i
-        bl      _println
-        mov     x0, #28
-        b       _os_exit
+        add     x0, x0, err_bad_expr@PAGEOFF    ; pointer -> msg
+        mov     x1, x22             ; pointer -> token
+        mov     x2, #28             ; error code
+        bl      do_panic            ; print and terminate
 
     do_expr_return:
     ; restore frame
     ldp     x22, x23, [sp], #16
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+/* void do_panic( char* msg, Token* token, int code ) */
+do_panic:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    ; end frame
+    mov     x19, x1                 ; stash pointer to token
+    mov     x20, x2                 ; stash code
+
+    bl      _print_z                ; print message
+    mov     x0, x19
+    bl      _token_line
+    bl      _print_i                ; print line num
+    adrp    x0, at_char@PAGE
+    add     x0, x0, at_char@PAGEOFF
+    bl      _print_z
+    mov     x0, x19
+    bl      _token_char
+    bl      _print_i                ; print char pos
+    bl      _println
+    mov     x0, x20                 ; set status code
+    b       _os_exit                ; terminate
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_un_not:    .asciz "        cmp     x0, FALSE
+        b.ne    expr_\0_was_true
+        mov     x0, TRUE
+        b       expr_\0_end
+        expr_\0_was_true:
+        mov     x0, FALSE
+        expr_\0_end:"
+tmpl_un_negate: .asciz "        neg     x0, x0"
+tmpl_un_deref:  .asciz "        ldr     x0, [x0]"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
+/* void do_unary_op( Emitter* self, [Token*] buffer ) */
+do_unary_op:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+
+    ; second token is the operand
+    mov     x0, x19
+    ldr     x1, [x20, #8]
+    bl      do_token
+
+    ; first token is the operator
+    ldr     x0, [x20]
+    bl      _token_type             ; token.type()
+    mov     x21, x0                 ; stash token type
+
+    cmp     x21, T_BANG
+    b.eq    do_un_not
+    cmp     x21, T_MINUS
+    b.eq    do_un_neg
+    cmp     x21, T_STAR
+    b.eq    do_un_deref
+
+    do_un_bad:
+        adrp    x0, err_bad_operator@PAGE
+        add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
+        ldr     x1, [x20]           ; pointer -> token
+        mov     x2, #29             ; error code
+        bl      do_panic            ; print and terminate
+
+    do_un_not:
+    adrp    x21, tmpl_un_not@PAGE
+    add     x21, x21, tmpl_un_not@PAGEOFF
+    mov     x0, x19
+    bl      seqnum
+    mov     x20, x0
+    tmpl_sec
+    mov     x0, x20
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x20
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x20
+    bl      _print_i
+    tmpl_sec
+    mov     x0, x20
+    bl      _print_i
+    tmpl_sec
+    bl      _println
+    b       do_un_return
+    do_un_neg:
+    adrp    x21, tmpl_un_negate@PAGE
+    add     x21, x21, tmpl_un_negate@PAGEOFF
+    b       do_un_emit
+    do_un_deref:
+    adrp    x21, tmpl_un_deref@PAGE
+    add     x21, x21, tmpl_un_deref@PAGEOFF
+    b       do_un_emit
+
+    do_un_emit:
+    tmpl_sec
+    bl      _println
+
+    do_un_return:
+    ; restore frame
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
@@ -861,20 +1089,10 @@ do_binary_op:
 
     do_bin_bad:
         adrp    x0, err_bad_operator@PAGE
-        add     x0, x0, err_bad_operator@PAGEOFF
-        bl      _print_z
-        ldr     x0, [x20, #8]
-        bl      _token_line
-        bl      _print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
-        ldr     x0, [x20, #8]
-        bl      _token_char
-        bl      _print_i
-        bl      _println
-        mov     x0, #29
-        b       _os_exit
+        add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
+        ldr     x1, [x20, #8]       ; pointer -> token
+        mov     x2, #29             ; error code
+        bl      do_panic            ; print and terminate
 
     do_bin_add:
     adrp    x21, tmpl_bin_add@PAGE
@@ -939,7 +1157,7 @@ do_binary_op:
     ldp     x20, x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
-    
+
 /* void do_token( Emitter* self, Token* t ) */
 do_token:
     ; create frame
@@ -965,20 +1183,10 @@ do_token:
 
     do_token_bad:
         adrp    x0, err_bad_token@PAGE
-        add     x0, x0, err_bad_token@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_line
-        bl      _print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
-        mov     x0, x21
-        bl      _token_char
-        bl      _print_i
-        bl      _println
-        mov     x0, #26
-        b       _os_exit
+        add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
+        mov     x0, x20             ; pointer -> token
+        mov     x2, #26             ; error code
+        bl      do_panic            ; print and terminate
 
     do_token_id:
     mov     x0, x20                 ; pointer -> token
@@ -1055,6 +1263,8 @@ do_value_string:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_token_id: .asciz "        mov     x0, x2"
+tmpl_token_global: .asciz "        adrp    x0, _j_gbl_\0@PAGE
+        add     x0, x0, _j_gbl_\0@PAGEOFF"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1065,6 +1275,10 @@ do_value_id:
     str     x21, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> name
+    ldrb    w0, [x19]               ; first char of name
+    cmp     w0, 'g'
+    b.gt    do_value_id_global
+
     adrp    x21, tmpl_token_id@PAGE
     add     x21, x21, tmpl_token_id@PAGEOFF
     tmpl_sec
@@ -1072,6 +1286,21 @@ do_value_id:
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      _print_c
     bl      _println
+    b       do_value_id_return
+
+    do_value_id_global:
+    adrp    x21, tmpl_token_global@PAGE
+    add     x21, x21, tmpl_token_global@PAGEOFF
+    tmpl_sec
+    mov     x0, x19
+    bl      _print_z
+    tmpl_sec
+    mov     x0, x19
+    bl      _print_z
+    tmpl_sec
+    bl      _println
+
+    do_value_id_return:
     ; restore frame
     ldr     x21, [sp], #16
     ldp     lr, x19, [sp], #16

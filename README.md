@@ -45,7 +45,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 A complete solution for Not Quite Lisp is found in `not_quite_lisp.jn`. Note that this doesn't meet the goal stated above, as the _compiler_ is not yet written in Johann. To build and run it: `make not_quite_lisp`
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. If you let control fall off the end, you get `0`, just like C. The return type after the "arrow" is ignored. There is no way to receive arguments.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. If you let control fall off the end, you get `0`. The return type after the "arrow" is ignored. There is no way to receive arguments.
 
     fn main() -> int {
         return 0;
@@ -70,19 +70,21 @@ Functions (from the standard library) are implicitly passed a single argument: t
     itoa();             # implicitly passed b
     println();          # implicitly passed the "1\0" (a char*) that itoa returned
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`).
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer.
 
 Semicolons are required to terminate statements which don't take a block.
 
 Strings and identifiers are capped at seven characters.
 
-Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`h`. I.e., you get eight cryptic variables. Period. All variables are scoped to the function they're defined in. Blocks do not introduce a new scope.
+The `bool`, `char`, and `int` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored.
 
-The `bool`, `char`, and `int` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, and are similarly ignored.
+Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; blocks do not introduce a new scope.
 
-String are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
+Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers, `*` or not.
 
-Integers are signed 64-bit values, but only unsigned literals less than 65,535 are supported. If you need a negative or a greater magnitude, build it up with arithmetic. 
+Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
+
+Integers are signed 64-bit values, but only unsigned literals up to 65,535 are supported. If you need a greater magnitude, build it up with arithmetic. If you need a negative, unary `-` makes it look like a negative literal, but counts as an operator, so it's a full expression.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 
@@ -94,7 +96,7 @@ If your source is in `program.jn`, first compile it with `jnc < program.jn > pro
 
 Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - you can't use files!
 
-The `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
+The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
 
 ## Debugging Johann Programs
 
@@ -114,23 +116,25 @@ One nice side effect of this strategy is the OS will give you a segfault if you 
 
 Johann's standard library is minimal:
 
-* `void free( void* )` - free the allocation pointed to by the passed pointer.
+* `void free( void* )` - free the allocation pointed to by the passed pointer. May become a keyword.
 * `char* itoa( int )` - return a string version of the passed int.
 * `void print( char* )` - print the passed string to STDOUT.
-* `void println( char* )` - print the passed string and a newline to STDOUT.
+* `void printc( char )` - print the passed character to STDOUT.
+* `void println( char* )` - print the passed string and a newline to STDOUT. 
 * `char read( )` - read a single character from STDIN, or -1 to signal EOF.
 
 ## Compiler Errors
 
-A few errors are explicitly caught by the compiler, with the exit status they yield in parens:
+A few errors are explicitly caught by the compiler, with the exit status they yield:
 
-* Unrecognized token (`17`)
-* Too-long identifier (`18`)
-* Too-long string (`19`)
-* Bad token (`21`)
-* Bad statement (`27`)
-* Bad expression (`28`)
-* Bad operator (`29`)
-* Some types of invalid block nesting (`37`)
+* `17` - Unrecognized token
+* `18` - Too-long identifier
+* `19` - Too-long string
+* `21` - Bad token
+* `26` - Bad value
+* `27` - Bad statement
+* `28` - Bad expression
+* `29` - Bad operator
+* `37` - Some types of invalid block nesting
 
 Most errors are not yet caught, and may result in compiler crashes or the emission of incorrect/invalid assembly codes.

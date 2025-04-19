@@ -1,24 +1,26 @@
+char* ohhai = "Hello, ";
+int* nine = 9;
+char* space = ' ';
+bool* hidenum = false;
+int* ten = 10;
+char* world = "world!";
+
 fn main() {
-    cool = fred();
-    alice = chump();
+    c = world;
+    a = ohhai;
     print();
-    int dearest = 3;
-    albert = doug;
-    bob = alex - 3;
-    andrew = 1;
-    ash = itoa();
-    print();
-    andy = ali;
-    free();
-    allison = cathy;
+    b = *hidenum;
+    if !b {
+        a = *ten;
+        b = *nine;
+        a = a - b;
+        a = itoa();
+        print();
+        a = a;
+        free();
+        a = *space;
+        printc();
+    }
+    a = c;
     println();
-    return 0;
-}
-
-fn fred() {
-    char * frank = " world!";
-}
-
-fn chump ( ) {
-    return "Hello, ";
 }

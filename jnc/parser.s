@@ -4,9 +4,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-found_semi: .asciz "; semicolon w/ "
-found_open_brace: .asciz "; open brace w/ "
-found_close_brace: .asciz "; close brace w/ "
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -258,39 +255,15 @@ load_buffer:
     mov     x0, x24
     bl      _token_type
     cmp     w0, T_SEMI
-    b.eq    load_buffer_semi
+    b.eq    load_buffer_return
     cmp     w0, T_OBRACE
-    b.eq    load_buffer_open
+    b.eq    load_buffer_return
     cmp     w0, T_CBRACE
-    b.eq    load_buffer_close
+    b.eq    load_buffer_return
     b       load_buffer_token
 
-    load_buffer_semi:
-            adrp    x0, found_semi@PAGE
-            add     x0, x0, found_semi@PAGEOFF
-            bl      _print_z
-            mov     x0, x25
-            bl      _print_i
-            bl      _println
-            b       load_buffer_return
-    load_buffer_open:
-            adrp    x0, found_open_brace@PAGE
-            add     x0, x0, found_open_brace@PAGEOFF
-            bl      _print_z
-            mov     x0, x25
-            bl      _print_i
-            bl      _println
-            b       load_buffer_return
-    load_buffer_close:
-            adrp    x0, found_close_brace@PAGE
-            add     x0, x0, found_close_brace@PAGEOFF
-            bl      _print_z
-            mov     x0, x25
-            bl      _print_i
-            bl      _println
-            b       load_buffer_return
-
     load_buffer_return:
+            bl      _println
     ; add a null terminator
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer

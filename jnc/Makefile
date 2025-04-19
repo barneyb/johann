@@ -15,6 +15,8 @@ OBJECTS=\
 	$(LIB)/token.o \
 
 all: $(BIN)/jnc
+
+test::
 	$(MAKE) -C test all
 
 # pattern rules
