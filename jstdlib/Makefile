@@ -1,8 +1,8 @@
-TGT=../target
+TGT=target
 BIN=$(TGT)/bin
 LIB=$(TGT)/lib
 OUT=$(TGT)/out
-INCLUDE=../lib
+INCLUDE=../include
 MODULES=\
 	$(INCLUDE)/mem.s \
 	$(INCLUDE)/print.s \
@@ -20,8 +20,12 @@ $(LIB)/jstdlib.o: jstdlib.s $(MODULES)
 
 # utility targets
 
+test: all
+
 clean:
-	rm -f $(OUT)/jstdlib.s  $(LIB)/jstdlib.o
+	rm -rf $(TGT)
+
+# configuration targets
 
 # if there's an error making a target, delete the target as it's in an unknown state
 .DELETE_ON_ERROR:

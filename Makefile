@@ -6,12 +6,18 @@ OUT=$(TGT)/out
 all: $(BIN)/jnc $(LIB)/jstdlib.o
 
 $(BIN)/jnc:
-	$(MAKE) -C jnc
+	$(MAKE) -C jnc all
+	@mkdir -p $(BIN)
+	cp jnc/$(BIN)/jnc $(BIN)/jnc
 
 $(LIB)/jstdlib.o:
-	$(MAKE) -C jstdlib
+	$(MAKE) -C jstdlib all
+	@mkdir -p $(LIB)
+	cp jstdlib/$(LIB)/jstdlib.o $(LIB)/jstdlib.o
 
-not_quite_lisp: $(OUT)/not_quite_lisp.s $(LIB)/jstdlib.o
+not_quite_lisp: not_quite_lisp.jn $(BIN)/jnc $(LIB)/jstdlib.o
+	@mkdir -p $(OUT)
+	$(BIN)/jnc < not_quite_lisp.jn > $(OUT)/not_quite_lisp.s
 	gcc -c $(OUT)/not_quite_lisp.s -o $(LIB)/not_quite_lisp.o
 	gcc	$(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o -o $(BIN)/not_quite_lisp
 	printf "" | $(BIN)/not_quite_lisp
@@ -19,15 +25,14 @@ not_quite_lisp: $(OUT)/not_quite_lisp.s $(LIB)/jstdlib.o
 	echo "())())" | $(BIN)/not_quite_lisp
 	$(BIN)/not_quite_lisp < not_quite_lisp.txt
 
-# pattern rules
-
-$(OUT)/%.s: %.jn $(BIN)/jnc
-	@mkdir -p $(OUT)
-	$(BIN)/jnc < $< > $@
-
 # utility targets
 
+test: all
+	$(MAKE) -C jnc test
+	$(MAKE) -C jstdlib test
+
 clean:
+	rm -rf $(TGT)
 	$(MAKE) -C jnc clean
 	$(MAKE) -C jstdlib clean
 

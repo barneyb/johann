@@ -1,8 +1,8 @@
-TGT=../target
+TGT=target
 BIN=$(TGT)/bin
 LIB=$(TGT)/lib
 OUT=$(TGT)/out
-INCLUDE=../lib
+INCLUDE=../include
 OBJECTS=\
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
@@ -16,10 +16,7 @@ OBJECTS=\
 
 all: $(BIN)/jnc
 
-test::
-	$(MAKE) -C test all
-
-# pattern rules
+# Pattern targets
 
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
@@ -34,7 +31,10 @@ $(LIB)/%.o: $(INCLUDE)/%.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
 
-# utility targets
+# Utility targets
+
+test:: all
+	$(MAKE) -C test all
 
 clean:
 	rm -rf $(TGT)
