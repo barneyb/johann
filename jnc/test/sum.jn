@@ -14,7 +14,7 @@ fn main() {
     char* g = "0";
     println(g);
     int a = 0;          # answer
-    int e = 0 - 1;      # EOF
+    int e = -1;         # EOF
     int f = 0;          # accumulator
     char c = read();
     while c > e {

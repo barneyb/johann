@@ -1,9 +1,9 @@
-TGT=target
-BIN=$(TGT)/bin
-LIB=$(TGT)/lib
-OUT=$(TGT)/out
-JNC=../$(BIN)/jnc
-JSTDLIB=../../jstdlib/$(LIB)/jstdlib.o
+TGT = target
+BIN = $(TGT)/bin
+LIB = $(TGT)/lib
+OUT = $(TGT)/out
+JNC = ../$(BIN)/jnc
+JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: not_quite_lisp \
 	constants \

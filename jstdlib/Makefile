@@ -1,22 +1,30 @@
-TGT=target
-BIN=$(TGT)/bin
-LIB=$(TGT)/lib
-OUT=$(TGT)/out
-INCLUDE=../include
-MODULES=\
-	$(INCLUDE)/mem.s \
-	$(INCLUDE)/print.s \
-	$(INCLUDE)/reader.s \
-	$(INCLUDE)/string.s \
-	$(INCLUDE)/system.s \
+TGT = target
+BIN = $(TGT)/bin
+LIB = $(TGT)/lib
+OUT = $(TGT)/out
+INCLUDE = ../include
+OBJECTS = \
+	$(LIB)/mem.o \
+	$(LIB)/print.o \
+	$(LIB)/reader.o \
+	$(LIB)/string.o \
+	$(LIB)/system.o \
 
 all: $(LIB)/jstdlib.o
 
-$(LIB)/jstdlib.o: jstdlib.s $(MODULES)
-	@mkdir -p $(LIB) $(OUT)
-	cat jstdlib.s > $(OUT)/jstdlib.s
-	cat $(MODULES) >> $(OUT)/jstdlib.s
-	gcc -c $(OUT)/jstdlib.s -o $(LIB)/jstdlib.o
+$(LIB)/jstdlib.o: $(LIB)/_jstdlib.o $(OBJECTS)
+	@mkdir -p $(LIB)
+	gcc -o $(LIB)/jstdlib.o $(LD_OPTS) -nostdlib -r $(LIB)/_jstdlib.o $(OBJECTS)
+
+# Pattern targets
+
+$(LIB)/_%.o: %.s
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
+
+$(LIB)/%.o: $(INCLUDE)/%.s
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
 
 # utility targets
 

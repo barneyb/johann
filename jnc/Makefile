@@ -1,9 +1,10 @@
-TGT=target
-BIN=$(TGT)/bin
-LIB=$(TGT)/lib
-OUT=$(TGT)/out
-INCLUDE=../include
-OBJECTS=\
+TGT = target
+BIN = $(TGT)/bin
+LIB = $(TGT)/lib
+OUT = $(TGT)/out
+INCLUDE = ../include
+VERSION = $(OUT)/inc_version.s
+OBJECTS = \
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
 	$(LIB)/mem.o \
@@ -12,28 +13,36 @@ OBJECTS=\
 	$(LIB)/reader.o \
 	$(LIB)/string.o \
 	$(LIB)/system.o \
-	$(LIB)/token.o \
+	$(LIB)/token.o
+INCLUDES = \
+	inc_token_table.s \
+	$(VERSION)
 
 all: $(BIN)/jnc
+
+$(VERSION):
+	@mkdir -p $(OUT)
+	rm -f $(VERSION)
+	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' >> $(VERSION)
+	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
 
 # Pattern targets
 
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
-	gcc $< $(OBJECTS) -o $@
+	gcc -o $@ -nostdlib -dead_strip $< $(OBJECTS)
 
-# including the token table here is a little draconian, but whatever
-$(LIB)/%.o: %.s inc_token_table.s
+$(LIB)/%.o: %.s $(INCLUDES)
 	@mkdir -p $(LIB)
-	gcc -c $< -o $@
+	gcc -o $@ -c $<
 
 $(LIB)/%.o: $(INCLUDE)/%.s
 	@mkdir -p $(LIB)
-	gcc -c $< -o $@
+	gcc -o $@ -c $<
 
 # Utility targets
 
-test:: all
+test::
 	$(MAKE) -C test all
 
 clean:

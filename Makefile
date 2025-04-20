@@ -1,25 +1,23 @@
-TGT=target
-BIN=$(TGT)/bin
-LIB=$(TGT)/lib
-OUT=$(TGT)/out
+TGT = target
+BIN = $(TGT)/bin
+LIB = $(TGT)/lib
+OUT = $(TGT)/out
 
 all: $(BIN)/jnc $(LIB)/jstdlib.o
 
 $(BIN)/jnc:
 	$(MAKE) -C jnc all
 	@mkdir -p $(BIN)
-	cp jnc/$(BIN)/jnc $(BIN)/jnc
 
 $(LIB)/jstdlib.o:
 	$(MAKE) -C jstdlib all
 	@mkdir -p $(LIB)
-	cp jstdlib/$(LIB)/jstdlib.o $(LIB)/jstdlib.o
 
 not_quite_lisp: not_quite_lisp.jn $(BIN)/jnc $(LIB)/jstdlib.o
 	@mkdir -p $(OUT)
 	$(BIN)/jnc < not_quite_lisp.jn > $(OUT)/not_quite_lisp.s
-	gcc -c $(OUT)/not_quite_lisp.s -o $(LIB)/not_quite_lisp.o
-	gcc	$(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o -o $(BIN)/not_quite_lisp
+	gcc -o $(LIB)/not_quite_lisp.o -c $(OUT)/not_quite_lisp.s
+	gcc -o $(BIN)/not_quite_lisp $(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o
 	printf "" | $(BIN)/not_quite_lisp
 	echo "(()))((((" | $(BIN)/not_quite_lisp
 	echo "())())" | $(BIN)/not_quite_lisp
@@ -27,7 +25,7 @@ not_quite_lisp: not_quite_lisp.jn $(BIN)/jnc $(LIB)/jstdlib.o
 
 # utility targets
 
-test: all
+test:
 	$(MAKE) -C jnc test
 	$(MAKE) -C jstdlib test
 
