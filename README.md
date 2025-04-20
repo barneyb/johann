@@ -105,6 +105,8 @@ First, you'll need a AArch64 mac (aka "Apple silicon") to run on, with the comma
 
 If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn > program.s`. Next, assemble and link with `gcc program.s -o program`. Now you can execute it: `./program`. If you have multiple source files, compile and assemble them separately (with `-c`), and then link the object files into the final binary. The standard library (`./lib/jstdlib.o`) is pre-assembled and only needs to be linked.
 
+> **NB:** Compiled Johann programs are version specific. When changing versions of the compiler, you need to recompile all your sources. The standard library is always compiled with the compiler version it is bundled with. If you have third-party dependencies, their sources will need to be recompiled as well.
+
 Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - you can't use files!
 
 The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
@@ -170,11 +172,13 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 ... snip ...
 ```
 
+Running `make clean all` in the root will ensure your local development version of the compiler and standard library are in sync. If things seem screwy, that's the first thing to do. You'd think `make` would be _exactly_ the tool to automatically prevent this, but I can't figure out the right incantation(s). 
+
 The specific versions of the system software I have:
 
     % uname -a
     Darwin mac.lan 24.3.0 Darwin Kernel Version 24.3.0: Thu Jan  2 20:23:36 PST 2025; root:xnu-11215.81.4~3/RELEASE_ARM64_T8112 arm64
-
+    %
     % make --version
     GNU Make 3.81
     Copyright (C) 2006  Free Software Foundation, Inc.
