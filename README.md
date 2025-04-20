@@ -25,7 +25,7 @@ This will print:
     one: 3
     two: 7
 
-The `3` is the difference in number of `(` and `)`, and the `7` is the first character position (one-indexed) where more `)` than `(` have been encountered.
+The `3` is the difference in number of `(` and `)`, and the `7` is the first character position (one-indexed) where more `)` than `(` have been encountered. Run `make not_quite_lisp` from the root to do basically the same thing.
 
 ## Writing Johann Programs
 

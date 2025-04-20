@@ -13,11 +13,11 @@ $(LIB)/jstdlib.o:
 	$(MAKE) -C jstdlib all
 	@mkdir -p $(LIB)
 
-not_quite_lisp: not_quite_lisp.jn $(BIN)/jnc $(LIB)/jstdlib.o
-	@mkdir -p $(OUT)
-	$(BIN)/jnc < not_quite_lisp.jn > $(OUT)/not_quite_lisp.s
+not_quite_lisp: not_quite_lisp.jn bin/jnc lib/jstdlib.o
+	@mkdir -p $(OUT) $(LIB) $(BIN)
+	bin/jnc < not_quite_lisp.jn > $(OUT)/not_quite_lisp.s
 	gcc -o $(LIB)/not_quite_lisp.o -c $(OUT)/not_quite_lisp.s
-	gcc -o $(BIN)/not_quite_lisp $(LIB)/not_quite_lisp.o $(LIB)/jstdlib.o
+	gcc -o $(BIN)/not_quite_lisp $(LIB)/not_quite_lisp.o lib/jstdlib.o
 	printf "" | $(BIN)/not_quite_lisp
 	echo "(()))((((" | $(BIN)/not_quite_lisp
 	echo "())())" | $(BIN)/not_quite_lisp
