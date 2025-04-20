@@ -1,0 +1,25 @@
+fn main() {
+    int e = 16;
+    int f = 1;
+    int g = 2;
+    int* a = malloc(e); # a = new int[2];
+    *a = 1;             # a[0] = 1;
+    a = a + 8;
+    *a = 2;             # a[1] = 2;
+    int b = *a;         # b = 2;
+    char* d = itoa(b);
+    println(d);
+    free(d);
+    a = a - 8;
+    int c = *a;         # c = 1;
+    d = itoa(c);
+    println(d);
+    free(d);
+    *a = b + c;         # a[0] = 3;
+    b = *a;             # b = 3;
+    free(a);
+    d = itoa(b);
+    println(d);
+    free(d);
+    return 0;
+}

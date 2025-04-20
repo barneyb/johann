@@ -30,6 +30,16 @@ __j_free:
     ldp     lr, x19, [sp], #16
     ret
 
+.global __j_malloc
+__j_malloc:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    ; end frame
+    bl      _mem_alloc;_LOG
+    ; restore frame
+    ldp     lr, x19, [sp], #16
+    ret
+
 .global __j_printc
 __j_printc:
     ; create frame
@@ -80,4 +90,9 @@ __j_read:
     read_return:
     ; restore frame
     ldp     lr, x19, [sp], #16
+    ret
+
+.global __j_storeb
+__j_storeb:
+    strb    w1, [x0]
     ret

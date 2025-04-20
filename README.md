@@ -16,7 +16,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 A complete solution for Not Quite Lisp is found in `not_quite_lisp.jn`. Note that this doesn't meet the goal stated above, as the _compiler_ is not yet written in Johann. To build and run it: `make not_quite_lisp`
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. If you let control fall off the end, you get `0`.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
     fn main() {
         return 0;
@@ -42,6 +42,18 @@ Conditionals use the `if` keyword and loops use `while`. Parentheses are not per
     }
 
 Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer.
+
+A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There's a `storeb` standard library function for writing with 1-byte alignment.
+
+    int e = 16;
+    int* a = malloc(e); # a = new int[2];
+    *a = 1;             # a[0] = 1;
+    a = a + 8;          
+    *a = 2;             # a[1] = 2;
+    int b = *a;         # b = 2;
+    a = a - 8;
+    int c = *a;         # c = 1;
+    *a = b + c;         # a[0] = 3;
 
 Semicolons are required to terminate statements which don't take a block.
 
@@ -122,6 +134,7 @@ Johann's standard library is minimal:
 * `void printc( char )` - print the passed character to STDOUT.
 * `void println( char* )` - print the passed string and a newline to STDOUT. 
 * `char read( )` - read a single character from STDIN, or -1 to signal EOF.
+* `void storeb( char*, char )` - store the passed char into the passed pointer. `*dest = src;`, but only one byte wide.
 
 ## Compiler Errors
 

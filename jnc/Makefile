@@ -19,6 +19,7 @@ INCLUDES = \
 	$(VERSION)
 
 all: $(BIN)/jnc
+	$(BIN)/jnc --version
 
 $(VERSION):
 	@mkdir -p $(OUT)
@@ -30,7 +31,7 @@ $(VERSION):
 
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
-	gcc -o $@ -nostdlib -dead_strip $< $(OBJECTS)
+	gcc -o $@ -nostdlib -dead_strip $^
 
 $(LIB)/%.o: %.s $(INCLUDES)
 	@mkdir -p $(LIB)
@@ -42,12 +43,12 @@ $(LIB)/%.o: $(INCLUDE)/%.s
 
 # Utility targets
 
-test::
-	$(MAKE) -C test all
+test:
+	$(MAKE) -C tests all
 
 clean:
 	rm -rf $(TGT)
-	$(MAKE) -C test clean
+	$(MAKE) -C tests clean
 
 # configuration targets
 

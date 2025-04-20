@@ -29,9 +29,11 @@ $(LIB)/%.o: $(INCLUDE)/%.s
 # utility targets
 
 test: all
+	$(MAKE) -C tests all
 
 clean:
 	rm -rf $(TGT)
+	$(MAKE) -C tests clean
 
 # configuration targets
 

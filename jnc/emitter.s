@@ -287,10 +287,18 @@ _emitter_emit:
 
     __emit_close_block:
     cmp     x22, T_CBRACE
-    b.ne    __emit_second_token     ; next!
+    b.ne    __emit_star             ; next!
     mov     x0, x19
     mov     x1, x20
     bl      do_close_block          ; this.do_close_block( buffer )
+    b       __emit_return__
+
+    __emit_star:
+    cmp     x22, T_STAR
+    b.ne    __emit_second_token     ; next!
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_assign_pointer       ; this.do_assign_pointer( buffer )
     b       __emit_return__
 
     ; now need to check the second token...
@@ -586,13 +594,15 @@ do_decl:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
 
-    ; scan until find an ASSIGN
+    ; scan until find an ASSIGN or SEMI
     add     x21, x20, #8            ; first token is type
     do_decl_again:
     ldr     x0, [x21, #8]!          ; stash pointer -> next token
     bl      _token_type             ; token.type()
     cmp     x0, T_ASSIGN
     b.eq    do_decl_delegate
+    cmp     x0, T_SEMI
+    b.eq    do_decl_return          ; no initializer
     b       do_decl_again
 
     do_decl_delegate:
@@ -706,7 +716,43 @@ do_assign:
     add     x1, x20, #16            ; pointer -> buffer[2] (the RHS)
     bl      do_expr
     tmpl_sec
+    ldr     x0, [x20]               ; pointer -> name token
+    bl      _token_value_ptr        ; pointer -> name
+    ldrb    w0, [x0]                ; first char of name
+    sub     w0, w0, C2R             ; convert lower alpha to digit
+    bl      _print_c
+    tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
+    bl      _token_value_ptr        ; pointer -> name
+    bl      _println_z
+
+    ; restore frame
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_assign_ptr: .asciz "\0        str     x0, [x2\0] ; assign *"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
+do_assign_pointer:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    adrp    x21, tmpl_assign_ptr@PAGE   ; pointer -> template
+    add     x21, x21, tmpl_assign_ptr@PAGEOFF
+
+    tmpl_sec
+    mov     x0, x19
+    add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)
+    bl      do_expr
+    tmpl_sec
+    ldr     x0, [x20, #8]           ; pointer -> name token
     bl      _token_value_ptr        ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit

@@ -1,0 +1,51 @@
+TGT = target
+BIN = $(TGT)/bin
+LIB = $(TGT)/lib
+OUT = $(TGT)/out
+JNC = ../../jnc/$(BIN)/jnc
+JSTDLIB = ../$(LIB)/jstdlib.o
+
+all: hello_world \
+
+hello_world: $(BIN)/hello_world hello_world.expected.txt
+	echo | $(BIN)/hello_world > $(OUT)/hello_world.actual.txt
+	echo Johann | $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
+	$(BIN)/hello_world Barney et al >> $(OUT)/hello_world.actual.txt
+	echo 'Barney the Hobgoblin' \
+		| $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
+	$(BIN)/hello_world 'Barney the Hobgoblin' >> $(OUT)/hello_world.actual.txt
+	diff -u hello_world.expected.txt $(OUT)/hello_world.actual.txt
+
+# Pattern targets
+
+$(BIN)/%: $(LIB)/%.o $(JSTDLIB)
+	@mkdir -p $(BIN)
+	gcc $^ -o $@
+
+$(LIB)/%.o: $(OUT)/%.s
+	@mkdir -p $(LIB)
+	gcc -c $< -o $@
+
+$(OUT)/%.s: %.jn $(JNC)
+	@mkdir -p $(OUT)
+	$(JNC) < $< > $@
+
+# Utility targets
+
+$(JNC):
+	$(MAKE) -C ../../jnc
+
+$(JSTDLIB):
+	$(MAKE) -C ..
+
+clean:
+	rm -rf $(TGT)
+
+# configuration targets
+
+# if there's an error making a target, delete the target as it's in an unknown state
+#.DELETE_ON_ERROR:
+# don't delete intermediate files created by pattern rules
+.SECONDARY:
+# never clean up partially-compiled assembly files (with errors)
+.PRECIOUS: $(OUT)/*.s
