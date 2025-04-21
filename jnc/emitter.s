@@ -11,7 +11,19 @@ err_bad_operator: .asciz "; ERROR: Bad operator at line "
 err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
 at_char: .asciz ", char "
 
-tmpl_prelude: .asciz "    .text
+.include "target/out/inc_version.s"
+
+.macro tmpl_sec r=x21
+    mov     x0, \r
+    bl      _print_z                ; print segment
+    mov     x0, \r
+    bl      _strlen                 ; get its length
+    add     x0, x0, #1
+    add     \r, \r, x0              ; advance to the next segment
+.endm
+
+tmpl_prelude: .asciz "; Compiled with \0
+    .text
     .align  3
     .set NULL, 0
     .set TRUE, 1
@@ -45,19 +57,26 @@ struct Emitter {
 _Emitter_new:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x21, [sp, #-16]!
     ; end frame
 
     mov     x0, SIZEOF              ; how much to allocate
     bl      _mem_alloc;_LOG              ; allocate
     mov     x19, x0                 ; stash pointer -> this
     stp     xzr, xzr, [x0]          ; initialize seq and depth
+    adrp    x21, tmpl_prelude@PAGE
+    add     x21, x21, tmpl_prelude@PAGEOFF
 
-    adrp    x0, tmpl_prelude@PAGE
-    add     x0, x0, tmpl_prelude@PAGEOFF
-    bl      _println_z
+    tmpl_sec
+    adrp    x0, jnc_short_version@PAGE
+    add     x0, x0, jnc_short_version@PAGEOFF
+    bl      _print_z
+    tmpl_sec
+    bl      _println
 
     mov     x0, x19
     ; restore frame
+    ldr     x21, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
@@ -347,15 +366,6 @@ tmpl_main: .asciz "    .global _main
         bl      __j_main
         b       _os_exit
 "
-
-.macro tmpl_sec r=x21
-    mov     x0, \r
-    bl      _print_z                ; print segment
-    mov     x0, \r
-    bl      _strlen                 ; get its length
-    add     x0, x0, #1
-    add     \r, \r, x0              ; advance to the next segment
-.endm
 
 tmpl_fn_intro: .asciz "    .global __j_\0
     __j_\0:
