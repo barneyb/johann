@@ -191,28 +191,32 @@ Running `make clean all` in the root will ensure your local development version 
 
 The specific versions of the system software I have:
 
-    % uname -a
-    Darwin mac.lan 24.3.0 Darwin Kernel Version 24.3.0: Thu Jan  2 20:23:36 PST 2025; root:xnu-11215.81.4~3/RELEASE_ARM64_T8112 arm64
-    %
-    % make --version
-    GNU Make 3.81
-    Copyright (C) 2006  Free Software Foundation, Inc.
-    This is free software; see the source for copying conditions.
-    There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
-    PARTICULAR PURPOSE.
-    
-    This program built for i386-apple-darwin11.3.0
-    %
-    % gcc --version
-    Apple clang version 16.0.0 (clang-1600.0.26.6)
-    Target: arm64-apple-darwin24.3.0
-    Thread model: posix
-    InstalledDir: /Library/Developer/CommandLineTools/usr/bin
-    %
-    % ld -v
-    @(#)PROGRAM:ld PROJECT:ld-1115.7.3
-    BUILD 23:52:02 Dec  5 2024
-    configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
-    will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
-    LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
-    TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+<!--{systemsoftware}-->
+```
+% uname -a
+Darwin mac.lan 24.3.0 Darwin Kernel Version 24.3.0: Thu Jan  2 20:23:36 PST 2025; root:xnu-11215.81.4~3/RELEASE_ARM64_T8112 arm64
+%
+% make --version
+GNU Make 3.81
+Copyright (C) 2006  Free Software Foundation, Inc.
+This is free software; see the source for copying conditions.
+There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.
+
+This program built for i386-apple-darwin11.3.0
+%
+% gcc --version
+Apple clang version 16.0.0 (clang-1600.0.26.6)
+Target: arm64-apple-darwin24.3.0
+Thread model: posix
+InstalledDir: /Library/Developer/CommandLineTools/usr/bin
+%
+% ld -v
+@(#)PROGRAM:ld PROJECT:ld-1115.7.3
+BUILD 23:52:02 Dec  5 2024
+configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
+LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
+TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+```
+<!--{/systemsoftware}-->

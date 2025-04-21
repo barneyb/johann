@@ -39,10 +39,33 @@ git add --force bin/jnc lib/jstdlib.o
 
 # update readme
 LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' README.md | cut -d : -f 1)
-head -n $LINE README.md > tmp.md
-./bin/jnc --version >> tmp.md
-LINE=$(( LINE + 4))
-tail -n +$LINE README.md >> tmp.md
+{
+    head -n $LINE README.md
+    ./bin/jnc --version
+    LINE=$(( LINE + 4))
+    tail -n +$LINE README.md
+} > tmp.md
+mv tmp.md README.md
+# system software
+LINE=$(grep -Fn '<!--{systemsoftware}-->' README.md | cut -d : -f 1)
+{
+    head -n $LINE README.md
+    echo '```'
+    echo '% uname -a'
+    uname -a
+    echo "%"
+    echo '% make --version'
+    make --version
+    echo "%"
+    echo '% gcc --version'
+    gcc --version
+    echo "%"
+    echo '% ld -v'
+    ld -v 2>&1
+    echo '```'
+    LINE=$(grep -Fn '<!--{/systemsoftware}-->' README.md | cut -d : -f 1)
+    tail -n +$LINE README.md
+} > tmp.md
 mv tmp.md README.md
 git add README.md
 
@@ -54,5 +77,3 @@ if ! git diff --quiet; then
     nope 5 "Release created dirtiness?!"
 fi
 git tag -a -m "Release v${VERSION}" "v${VERSION}"
-
-git push --follow-tags
