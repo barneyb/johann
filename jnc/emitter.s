@@ -274,6 +274,14 @@ _emitter_emit:
 
     __emit_bool:
     cmp     x22, T_KW_BOOL
+    b.ne    __emit_void             ; next!
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_decl                 ; this.do_decl( buffer )
+    b       __emit_return__
+
+    __emit_void:
+    cmp     x22, T_KW_VOID
     b.ne    __emit_while            ; next!
     mov     x0, x19
     mov     x1, x20
@@ -282,10 +290,26 @@ _emitter_emit:
 
     __emit_while:
     cmp     x22, T_KW_WHILE
-    b.ne    __emit_if               ; next!
+    b.ne    __emit_again            ; next!
     mov     x0, x19
     mov     x1, x20
     bl      do_while                ; this.do_while( buffer )
+    b       __emit_return__
+
+    __emit_again:
+    cmp     x22, T_KW_AGAIN
+    b.ne    __emit_done             ; next!
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_again                ; this.do_again( buffer )
+    b       __emit_return__
+
+    __emit_done:
+    cmp     x22, T_KW_DONE
+    b.ne    __emit_if               ; next!
+    mov     x0, x19
+    mov     x1, x20
+    bl      do_done                 ; this.do_done( buffer )
     b       __emit_return__
 
     __emit_if:
@@ -572,6 +596,54 @@ do_return:
     tmpl_sec
     mov     x0, x22
     bl      _print_i
+    bl      _println
+
+    ; restore frame
+    ldp     x22, x23, [sp], #16
+    ldp     x20, x21, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .data
+tmpl_again: .asciz "        b       _while_\0_again"
+tmpl_done : .asciz "        b       _while_\0_done"
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+
+/* void do_again( Emitter* self, [Token*] buffer ) */
+do_again:
+    adrp    x2, tmpl_again@PAGE   ; pointer -> template
+    add     x2, x2, tmpl_again@PAGEOFF
+    b       do_loop_thinger
+
+/* void do_done( Emitter* self, [Token*] buffer ) */
+do_done:
+    adrp    x2, tmpl_done@PAGE   ; pointer -> template
+    add     x2, x2, tmpl_done@PAGEOFF
+    b       do_loop_thinger
+
+/* void do_loop_thinger( Emitter* self, [Token*] buffer, char* tmpl ) */
+do_loop_thinger:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x21, [sp, #-16]!
+    stp     x22, x23, [sp, #-16]!
+    ; end frame
+    mov     x19, x0                 ; stash pointer -> this
+    mov     x20, x1                 ; stash pointer -> buffer
+    mov     x21, x2                 ; pointer -> template
+
+    mov     x1, T_KW_WHILE
+    mov     x0, x19
+    bl      innermost_block_of
+    bl      block_id
+    mov     x22, x0                 ; stash current block id
+
+    tmpl_sec
+    mov     x0, x22
+    bl      _print_i
+    tmpl_sec
     bl      _println
 
     ; restore frame

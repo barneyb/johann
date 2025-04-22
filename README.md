@@ -29,7 +29,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow blocks. Type declarations are permitted, but are currently ignored except to introduce a global constant.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -56,6 +56,22 @@ Conditionals use the `if` keyword and loops use `while`. Parentheses are not per
         c = read();
     }
 
+You can use `done` and `again` within a `while` to ... say you're done looping or want to loop again. Combined with `true` (see below), these two constructs are equivalent:
+
+    # the good way
+    while c > b {
+        c = read();
+    }
+
+    # the silly way
+    while true {
+        if c > b {
+            c = read();
+            again;
+        }
+        done;
+    }
+
 Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer.
 
 A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There's a `storeb` standard library function for writing with 1-byte alignment.
@@ -74,9 +90,9 @@ Semicolons are required to terminate statements which don't take a block.
 
 Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters.
 
-The `bool`, `char`, and `int` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored.
+The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
-Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; blocks do not introduce a new scope.
+Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope.
 
 Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not).
 
@@ -85,6 +101,8 @@ Strings are "null-terminated byte strings" a la C. Literals are static, so do no
 Integers are signed 64-bit values, but only unsigned literals up to 65,535 are supported. If you need a greater magnitude, build it up with arithmetic. If you need a negative, unary `-` makes it look like a negative literal, but counts as an operator, so it's a full expression.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
+
+The `null` keyword is recognized as an alias for `0`. Conveniently, `malloc` returns a `0` if it couldn't allocate.
 
 Functions can declare formal arguments within their parentheses, to create variables from passed parameters. These are normal variables, which means functions can take at most seven arguments. Per usual, type information may be provided, but is ignored:
 
@@ -102,17 +120,6 @@ Parameters passed in a function call must be variables, not expressions. This in
     c = itoa(a);
     println(c);
     free(c);        # don't leak memory
-
-Initially, if a function was called with zero parameters, it would implicitly receive the value of the last expression as its first argument. It is my intention for non-pathological programs written with this primitive syntax to remain valid forever. We'll see. Below is an alternate implementation of the above program using this deprecated invocation style. The `add` function takes two arguments, and so cannot be called this way. Capturing the result of `itoa` into `c` is unneeded for printing the result, but _is_ needed to `free` the allocation.
-
-    char* c = "one: ";
-    print();
-    int a = -1;
-    a = a + 2;
-    c = itoa();
-    println();
-    c = c;
-    free();        # don't leak memory
 
 ## Building Johann Programs
 
@@ -165,7 +172,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `27` - Bad statement
 * `28` - Bad expression
 * `29` - Bad operator
-* `37` - Some types of invalid block nesting
+* `37` - Certain types of invalid block nesting
 
 Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
 

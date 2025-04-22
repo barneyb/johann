@@ -16,15 +16,12 @@ at_char: .asciz ", char "
 KW_AGAIN    : .asciz    "again"
 KW_BOOL     : .asciz    "bool"
 KW_CHAR     : .asciz    "char"
-KW_CLASS    : .asciz    "class"
 KW_DONE     : .asciz    "done"
 KW_FALSE    : .asciz    "false"
 KW_FN       : .asciz    "fn"
-KW_FOR      : .asciz    "for"
-KW_FREE     : .asciz    "free"
 KW_IF       : .asciz    "if"
 KW_INT      : .asciz    "int"
-KW_NEW      : .asciz    "new"
+KW_NULL     : .asciz    "null"
 KW_RETURN   : .asciz    "return"
 KW_TRUE     : .asciz    "true"
 KW_VOID     : .asciz    "void"
@@ -592,9 +589,21 @@ convert_keyword:
     add     x1, x1, KW_BOOL@PAGEOFF
     bl      _strcmp
     cmp     xzr, x0
-    b.ne    convert_keyword_if      ; next!
+    b.ne    convert_keyword_void      ; next!
     mov     x0, x19
     mov     x1, T_KW_BOOL
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_void:
+    mov     x0, x20
+    adrp    x1, KW_VOID@PAGE
+    add     x1, x1, KW_VOID@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_if      ; next!
+    mov     x0, x19
+    mov     x1, T_KW_VOID
     bl      _token_set_type
     b       convert_keyword_done    ; done!
 
@@ -616,9 +625,33 @@ convert_keyword:
     add     x1, x1, KW_WHILE@PAGEOFF
     bl      _strcmp
     cmp     xzr, x0
-    b.ne    convert_keyword_return  ; next!
+    b.ne    convert_keyword_again   ; next!
     mov     x0, x19
     mov     x1, T_KW_WHILE
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_again:
+    mov     x0, x20
+    adrp    x1, KW_AGAIN@PAGE
+    add     x1, x1, KW_AGAIN@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_done__  ; next!
+    mov     x0, x19
+    mov     x1, T_KW_AGAIN
+    bl      _token_set_type
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_done__:
+    mov     x0, x20
+    adrp    x1, KW_DONE@PAGE
+    add     x1, x1, KW_DONE@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_return  ; next!
+    mov     x0, x19
+    mov     x1, T_KW_DONE
     bl      _token_set_type
     b       convert_keyword_done    ; done!
 
@@ -633,14 +666,6 @@ convert_keyword:
     mov     x1, T_KW_RETURN
     bl      _token_set_type
     b       convert_keyword_done    ; done!
-
-    ;KW_AGAIN
-    ;KW_CLASS
-    ;KW_DONE
-    ;KW_FOR
-    ;KW_FREE
-    ;KW_NEW
-    ;KW_VOID
 
     convert_keyword_true:
     mov     x0, x20
@@ -663,12 +688,27 @@ convert_keyword:
     add     x1, x1, KW_FALSE@PAGEOFF
     bl      _strcmp
     cmp     xzr, x0
-    b.ne    convert_keyword_done    ; next!
+    b.ne    convert_keyword_null    ; next!
     mov     x0, x19
     mov     x1, T_BOOL
     bl      _token_set_type
     mov     x0, x19
     mov     x1, FALSE
+    bl      _token_set_value
+    b       convert_keyword_done    ; done!
+
+    convert_keyword_null:
+    mov     x0, x20
+    adrp    x1, KW_NULL@PAGE
+    add     x1, x1, KW_NULL@PAGEOFF
+    bl      _strcmp
+    cmp     xzr, x0
+    b.ne    convert_keyword_done    ; next!
+    mov     x0, x19
+    mov     x1, T_INT               ; all nulls are integers!
+    bl      _token_set_type
+    mov     x0, x19
+    mov     x1, NULL
     bl      _token_set_value
     b       convert_keyword_done    ; done!
 

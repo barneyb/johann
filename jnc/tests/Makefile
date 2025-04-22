@@ -10,6 +10,7 @@ all: not_quite_lisp \
 	sum \
 	print_one \
 	store_load \
+	control_flow \
 
 constants: $(BIN)/constants constants.expected.txt
 	$(BIN)/constants > $(OUT)/constants.actual.txt
@@ -30,6 +31,10 @@ print_one: $(BIN)/print_one print_one.expected.txt
 store_load: $(BIN)/store_load store_load.expected.txt
 	$(BIN)/store_load > $(OUT)/store_load.actual.txt
 	diff -u store_load.expected.txt $(OUT)/store_load.actual.txt
+
+control_flow: $(BIN)/control_flow control_flow.expected.txt
+	$(BIN)/control_flow > $(OUT)/control_flow.actual.txt
+	diff -u control_flow.expected.txt $(OUT)/control_flow.actual.txt
 
 # Pattern targets
 
@@ -58,8 +63,6 @@ clean:
 
 # configuration targets
 
-# if there's an error making a target, delete the target as it's in an unknown state
-.DELETE_ON_ERROR:
 # don't delete intermediate files created by pattern rules
 .SECONDARY:
 # never clean up partially-compiled assembly files (with errors)

@@ -8,7 +8,6 @@
 ; flow control keywords         0x200
 .set    T_KW_AGAIN  , 0x200 + 'A'
 .set    T_KW_DONE   , 0x200 + 'D'
-.set    T_KW_FOR    , 0x200 + 'F'
 .set    T_KW_IF     , 0x200 + 'I'
 .set    T_KW_RETURN , 0x200 + 'R'
 .set    T_KW_WHILE  , 0x200 + 'W'
@@ -18,11 +17,7 @@
 .set    T_KW_INT    , 0x300 + 'I'
 .set    T_KW_VOID   , 0x300 + 'V'
 ; definition keywords           0x400
-.set    T_KW_CLASS  , 0x400 + 'C'
 .set    T_KW_FN     , 0x400 + 'F'
-; dynamic allocation keywords   0x500
-.set    T_KW_FREE   , 0x500 + 'F'
-.set    T_KW_NEW    , 0x500 + 'N'
 ; ambiguous character tokens    ASCII (for now)
 .set    T_ASSIGN    , '='
 .set    T_EQ        , '='           ; double-alias, for now
