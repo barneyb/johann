@@ -72,9 +72,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
         done;
     }
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer.
-
-A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There's a `storeb` standard library function for writing with 1-byte alignment.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There are `loadb` and `storeb` standard library functions for reading/writing with 1-byte alignment.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -154,6 +152,7 @@ Johann's standard library is minimal:
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
 * `char* itoa( int )` - return a string version of the passed int.
 * `void* malloc( int )` - allocate the specified number of bytes of memory and return a pointer to it.
+* `char loadb( char* )` - load a char from the passed pointer. `dest = *ptr`, but only one byte wide.
 * `void print( char* )` - print the passed string to STDOUT.
 * `void printc( char )` - print the passed character to STDOUT.
 * `void println( char* )` - print the passed string and a newline to STDOUT. 

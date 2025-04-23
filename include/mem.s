@@ -30,7 +30,7 @@ _mem_alloc:
     stp     lr, x19, [sp, #-16]!    ; save LR and x19
     ; end frame
     mov     x1, PAGE_SIZE           ; every allocation gets a page
-    mov     x0, #0                   ; don't care where
+    mov     x0, #0                  ; don't care where
     bl      _os_mmap
     cmp     x0, #0
     b.ge    alloc_return            ; successfully allocated

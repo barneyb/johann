@@ -92,6 +92,11 @@ __j_read:
     ldp     lr, x19, [sp], #16
     ret
 
+.global __j_loadb
+__j_loadb:
+    ldrb    w0, [x0]
+    ret
+
 .global __j_storeb
 __j_storeb:
     strb    w1, [x0]
