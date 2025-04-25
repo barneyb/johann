@@ -31,7 +31,7 @@ $(VERSION):
 
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
-	gcc -o $@ -nostdlib -dead_strip $^
+	gcc -o $@ -dead_strip $^
 
 $(LIB)/%.o: %.s $(INCLUDES)
 	@mkdir -p $(LIB)
@@ -57,4 +57,4 @@ clean:
 # don't delete intermediate files created by pattern rules
 .SECONDARY:
 # never clean up partially-compiled assembly files (with errors)
-.PRECIOUS: $(LIB)/*.s
+.PRECIOUS: $(OUT)/*.s

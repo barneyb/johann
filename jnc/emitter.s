@@ -22,11 +22,11 @@ at_char: .asciz ", char "
     add     \r, \r, x0              ; advance to the next segment
 .endm
 
-tmpl_prelude: .asciz "; Compiled with \0
-    .text
-    .align  3
-    .set NULL, 0
-    .set TRUE, 1
+tmpl_prelude: .asciz "; Compiled with \0\n\
+    .text\n\
+    .align  3\n\
+    .set NULL, 0\n\
+    .set TRUE, 1\n\
     .set FALSE, 0"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -385,20 +385,20 @@ _emitter_emit:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 s_main: .asciz "main"
-tmpl_main: .asciz "    .global _main
-    _main:
-        bl      __j_main
-        b       _os_exit
+tmpl_main: .asciz "    .global _main\n\
+    _main:\n\
+        bl      __j_main\n\
+        b       _os_exit\n\
 "
 
-tmpl_fn_intro: .asciz "    .global __j_\0
-    __j_\0:
-        ; create frame
-        stp     lr, x19, [sp, #-16]!
-        stp     x20, x21, [sp, #-16]!
-        stp     x22, x23, [sp, #-16]!
-        stp     x24, x25, [sp, #-16]!
-        stp     x26, x27, [sp, #-16]!
+tmpl_fn_intro: .asciz "    .global __j_\0\n\
+    __j_\0:\n\
+        ; create frame\n\
+        stp     lr, x19, [sp, #-16]!\n\
+        stp     x20, x21, [sp, #-16]!\n\
+        stp     x22, x23, [sp, #-16]!\n\
+        stp     x24, x25, [sp, #-16]!\n\
+        stp     x26, x27, [sp, #-16]!\n\
         ; end frame"
 
 tmpl_fn_arg: .asciz "        mov     x2\0, x\0 ; capture param "
@@ -482,8 +482,8 @@ do_fn:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_if_intro: .asciz "\0
-        cmp     x0, FALSE
+tmpl_if_intro: .asciz "\0\n\
+        cmp     x0, FALSE\n\
         b.eq    _if_\0_done"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -523,9 +523,9 @@ do_if:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_while_intro: .asciz "        _while_\0_again:
-\0
-        cmp     x0, FALSE
+tmpl_while_intro: .asciz "        _while_\0_again:\n\
+\0\n\
+        cmp     x0, FALSE\n\
         b.eq    _while_\0_done"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -654,14 +654,14 @@ do_loop_thinger:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_global_int: .asciz "    .data
-        _j_gbl_\0: .xword \0
+tmpl_global_int: .asciz "    .data\n\
+        _j_gbl_\0: .xword \0\n\
     .text"
-tmpl_global_char: .asciz "    .data
-        _j_gbl_\0: .xword '\0'
+tmpl_global_char: .asciz "    .data\n\
+        _j_gbl_\0: .xword '\0'\n\
     .text"
-tmpl_global_string: .asciz "    .data
-        _j_gbl_\0: .asciz \"\0\"
+tmpl_global_string: .asciz "    .data\n\
+        _j_gbl_\0: .asciz \"\0\"\n\
     .text"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -851,17 +851,17 @@ do_assign_pointer:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_fn_outro: .asciz "        mov      x0, #0             ; if no return, use zero
-        _return_\0:
-        ; restore frame
-        ldp     x26, x27, [sp], #16
-        ldp     x24, x25, [sp], #16
-        ldp     x22, x23, [sp], #16
-        ldp     x20, x21, [sp], #16
-        ldp     lr, x19, [sp], #16
+tmpl_fn_outro: .asciz "        mov      x0, #0             ; if no return, use zero\n\
+        _return_\0:\n\
+        ; restore frame\n\
+        ldp     x26, x27, [sp], #16\n\
+        ldp     x24, x25, [sp], #16\n\
+        ldp     x22, x23, [sp], #16\n\
+        ldp     x20, x21, [sp], #16\n\
+        ldp     lr, x19, [sp], #16\n\
         ret"
 tmpl_if_outro: .asciz "        _if_\0_done:"
-tmpl_while_outro: .asciz "        b     _while_\0_again
+tmpl_while_outro: .asciz "        b     _while_\0_again\n\
         _while_\0_done:"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -1117,12 +1117,12 @@ do_panic:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_un_not:    .asciz "        cmp     x0, FALSE
-        b.ne    expr_\0_was_true
-        mov     x0, TRUE
-        b       expr_\0_end
-        expr_\0_was_true:
-        mov     x0, FALSE
+tmpl_un_not:    .asciz "        cmp     x0, FALSE\n\
+        b.ne    expr_\0_was_true\n\
+        mov     x0, TRUE\n\
+        b       expr_\0_end\n\
+        expr_\0_was_true:\n\
+        mov     x0, FALSE\n\
         expr_\0_end:"
 tmpl_un_negate: .asciz "        neg     x0, x0"
 tmpl_un_deref:  .asciz "        ldr     x0, [x0]"
@@ -1211,30 +1211,30 @@ tmpl_bin_add:   .asciz "        add     x0, x0, x1"
 tmpl_bin_sub:   .asciz "        sub     x0, x0, x1"
 tmpl_bin_mul:   .asciz "        mul     x0, x0, x1"
 tmpl_bin_div:   .asciz "        sdiv    x0, x0, x1"
-tmpl_bin_mod:   .asciz "        str     x2, [sp, #-16]!
-        sdiv    x2, x0, x1
-        msub    x0, x2, x1, x0
+tmpl_bin_mod:   .asciz "        str     x2, [sp, #-16]!\n\
+        sdiv    x2, x0, x1\n\
+        msub    x0, x2, x1, x0\n\
         ldr     x2, [sp], #16"
-tmpl_bin_gt:    .asciz "        cmp     x0, x1
-        b.gt    expr_\0
-        mov     x0, FALSE
-        b       expr_\0_end
-        expr_\0:
-        mov     x0, TRUE
+tmpl_bin_gt:    .asciz "        cmp     x0, x1\n\
+        b.gt    expr_\0\n\
+        mov     x0, FALSE\n\
+        b       expr_\0_end\n\
+        expr_\0:\n\
+        mov     x0, TRUE\n\
         expr_\0_end:"
-tmpl_bin_lt:    .asciz "        cmp     x0, x1
-        b.lt    expr_\0
-        mov     x0, FALSE
-        b       expr_\0_end
-        expr_\0:
-        mov     x0, TRUE
+tmpl_bin_lt:    .asciz "        cmp     x0, x1\n\
+        b.lt    expr_\0\n\
+        mov     x0, FALSE\n\
+        b       expr_\0_end\n\
+        expr_\0:\n\
+        mov     x0, TRUE\n\
         expr_\0_end:"
-tmpl_bin_eq:    .asciz "        cmp     x0, x1
-        b.eq    expr_\0
-        mov     x0, FALSE
-        b       expr_\0_end
-        expr_\0:
-        mov     x0, TRUE
+tmpl_bin_eq:    .asciz "        cmp     x0, x1\n\
+        b.eq    expr_\0\n\
+        mov     x0, FALSE\n\
+        b       expr_\0_end\n\
+        expr_\0:\n\
+        mov     x0, TRUE\n\
         expr_\0_end:"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -1416,10 +1416,10 @@ do_token:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_token_string: .asciz "    .data
-        _j_str_\0: .asciz \"\0\"
-    .text
-        adrp    x0, _j_str_\0@PAGE
+tmpl_token_string: .asciz "    .data\n\
+        _j_str_\0: .asciz \"\0\"\n\
+    .text\n\
+        adrp    x0, _j_str_\0@PAGE\n\
         add     x0, x0, _j_str_\0@PAGEOFF"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -1463,7 +1463,7 @@ do_value_string:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_token_id: .asciz "        mov     x0, x2"
-tmpl_token_global: .asciz "        adrp    x0, _j_gbl_\0@PAGE
+tmpl_token_global: .asciz "        adrp    x0, _j_gbl_\0@PAGE\n\
         add     x0, x0, _j_gbl_\0@PAGEOFF"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text

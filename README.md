@@ -195,12 +195,12 @@ commit_hash: c5b792b08b0f1aae6322564305ff226736cdb4ef
 
 Running `make clean all` in the root will ensure your local development version of the compiler and standard library are in sync. If things seem screwy, that's the first thing to do. You'd think `make` would be _exactly_ the tool to automatically prevent this, but I can't figure out the right incantation(s). 
 
-The specific versions of the system software I have:
+The specific versions of the system software I have are listed below. Note that Apple made several backwards-incompatible changes in clang 17 (macos 15.4.1).
 
 <!--{systemsoftware}-->
 ```
 % uname -a
-Darwin mac.lan 24.3.0 Darwin Kernel Version 24.3.0: Thu Jan  2 20:23:36 PST 2025; root:xnu-11215.81.4~3/RELEASE_ARM64_T8112 arm64
+Darwin mac.lan 24.4.0 Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112 arm64
 %
 % make --version
 GNU Make 3.81
@@ -212,17 +212,17 @@ PARTICULAR PURPOSE.
 This program built for i386-apple-darwin11.3.0
 %
 % gcc --version
-Apple clang version 16.0.0 (clang-1600.0.26.6)
-Target: arm64-apple-darwin24.3.0
+Apple clang version 17.0.0 (clang-1700.0.13.3)
+Target: arm64-apple-darwin24.4.0
 Thread model: posix
 InstalledDir: /Library/Developer/CommandLineTools/usr/bin
 %
 % ld -v
-@(#)PROGRAM:ld PROJECT:ld-1115.7.3
-BUILD 23:52:02 Dec  5 2024
+@(#)PROGRAM:ld PROJECT:ld-1167.4.1
+BUILD 20:00:10 Mar 12 2025
 configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
 will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
-LTO support using: LLVM version 16.0.0 (static support for 29, runtime is 29)
-TAPI support using: Apple TAPI version 16.0.0 (tapi-1600.0.11.9)
+LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
+TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 ```
 <!--{/systemsoftware}-->
