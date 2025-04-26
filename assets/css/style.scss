@@ -1,0 +1,13 @@
+---
+---
+
+@import "{{ site.theme }}";
+code {
+  color: unset;
+  text-shadow: unset;
+  background: #eee;
+}
+
+pre code {
+  background: unset;
+}
