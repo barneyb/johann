@@ -1,27 +1,28 @@
-/**
- * I provide the standard library of global functions Johann programs can use.
- */
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 .set    NULL    , 0
-.set    EOF     , -1
-.set    TRUE    , 1
-.set    FALSE   , 0
 
-/* void exit( int status ) */
-.global __j_exit
-__j_exit:
-    mov     x16, #1                 ; 1 = terminate system call
-    svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
-
-/* ssize_t write( int fd, const void *buf, size_t count ) */
-.global __j_write
-__j_write:
-    mov     x16, #4                 ; 4 = write system call
-    svc     #0x80                   ; Call kernel
-    ret                             ; transfer control back, propagating nbytes written
+/* void* memcpy( void* dest, const void* src, std::size_t count ) */
+.global __j_memcpy
+__j_memcpy:
+    ; create frame
+    stp     lr, x19, [sp, #-16]!
+    stp     x20, x0, [sp, #-16]!
+    ; end frame
+    ; todo: panic if regions overlap?
+    ; todo: this is HORRIBLY inefficient
+    mov     x19, #0                 ; bytes copied
+    memcpy_loop:
+    ldrb    w20, [x1], #1           ; load and increment
+    strb    w20, [x0], #1           ; store and increment
+    add     x19, x19, #1            ; count the byte
+    cmp     x19, x2
+    b.lt    memcpy_loop             ; again!
+    ; restore frame
+    ldp     x20, x0, [sp], #16
+    ldp     lr, x19, [sp], #16
+    ret
 
 /* int strcmp( const char* lhs, const char* rhs ) */
 .global __j_strcmp

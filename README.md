@@ -137,27 +137,32 @@ The various `Makefile` may provide additional inspiration. It's worth mentioning
 
 Johann provides no debugging support, but you might be able to use various third-party tools (e.g., GDB) to help? 
 
-## Memory Safety
+## Memory "Safety"
 
-None. Nada. Zilch. See note under _Debugging_ about avoiding bugs.
+There are no safety checks - you can ruin your day with impunity. I'm hoping avoid writing a proper allocator in assembly.
 
-Currently, the "allocator" always `mmap`s an anonymous page _per allocation_. This is both slow and wasteful. I didn't really want to write an allocator in assembly, and correctness doesn't depend on efficient allocation, so just kicked that can down the road a ways.
-
-One side effect of this strategy is the OS will give you a segfault if you try and free an invalid pointer or dereference a pointer to already `free`d memory. This "safety" IS NOT part of the language design, so should not be relied upon.
+Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the four pages are exhausted: segfault!
 
 ## Standard Library
 
-Johann's standard library is minimal:
+Johann's standard library is minimal. Standard C is the model, where appropriate. 
+
+### `allocator`
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
-* `char* itoa( int )` - return a string version of the passed int.
 * `void* malloc( int )` - allocate the specified number of bytes of memory and return a pointer to it.
-* `char loadb( char* )` - load a char from the passed pointer. `dest = *ptr`, but only one byte wide.
-* `void print( char* )` - print the passed string to STDOUT.
-* `void printc( char )` - print the passed character to STDOUT.
-* `void println( char* )` - print the passed string and a newline to STDOUT. 
-* `char read( )` - read a single character from STDIN, or -1 to signal EOF.
-* `void storeb( char*, char )` - store the passed char into the passed pointer. `*dest = src;`, but only one byte wide.
+
+### `os`
+
+* `void exit( int status )` - terminate the program with the given exit status.
+* `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
+* `ssize_t write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
+
+### `string`
+
+* `void* memcpy( void* dest, const void* src, std::size_t count )` - copy bytes between non-overlapping memory regions.
+* `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
+* `size_t strlen( const char* str )` - get the length of a null-terminated string.
 
 ## Compiler Errors
 

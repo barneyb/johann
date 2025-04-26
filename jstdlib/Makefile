@@ -3,7 +3,9 @@ BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
 OBJECTS = \
-	$(LIB)/_jstdlib.o
+	$(LIB)/allocator.o \
+	$(LIB)/os.o \
+	$(LIB)/string.o \
 
 all: $(LIB)/jstdlib.o
 
@@ -13,7 +15,7 @@ $(LIB)/jstdlib.o: $(OBJECTS)
 
 # Pattern targets
 
-$(LIB)/_%.o: %.s
+$(LIB)/%.o: %.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 

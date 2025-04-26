@@ -35,18 +35,6 @@ _os_stdin:
     svc     #0x80                   ; Call the kernel
     ret                             ; transfer control back, propagating nbytes read
 
-/* user_addr_t mmap( caddr_t addr, size_t len ) */
-.global _os_mmap
-_os_mmap:
-    /* 197 - user_addr_t mmap( caddr_t addr, size_t len, int prot, int flags, int fd, off_t pos ) */
-    mov     x5, #0                  ; ignored w/out a fd?
-    mov     x4, #-1                 ; -1 = no file descriptor
-    mov     x3, MAP_ANON ^ MAP_PRIVATE
-    mov     x2, PROT_READ ^ PROT_WRITE
-    mov     x16, #197               ; 197 = mmap system call
-    svc     #0x80                   ; Call kernel
-    ret                             ; transfer control back, propagating address
-
 /* int munmap( caddr_t addr, size_t len ) */
 .global _os_munmap
 _os_munmap:

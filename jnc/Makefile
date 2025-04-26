@@ -13,6 +13,7 @@ INCLUDES = \
 all: $(BIN)/jnc
 	$(BIN)/jnc --version
 	$(BIN)/jnc -v
+	echo "fn main(){}" | $(BIN)/jnc
 
 $(VERSION):
 	@mkdir -p $(OUT)
