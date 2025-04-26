@@ -12,13 +12,6 @@
 .set    PROT_READ   , 0x01
 .set    PROT_WRITE  , 0x02
 
-/* void exit( int status ) */
-.global _os_exit
-_os_exit:
-    /* 1 - void exit( int status ) */
-    mov     x16, #1                 ; 1 = terminate system call
-    svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
-
 /* ssize_t stout( const void *buf, size_t count ) */
 .global _os_stdout
 _os_stdout:
@@ -30,16 +23,6 @@ _os_stdout:
 _os_stderr:
     mov     x16, #2                 ; 2 = StdErr
     b       os_write
-
-; pass the file descriptor in x16
-os_write:
-    /* 4 - ssize_t write( int fd, const void *buf, size_t count ) */
-    mov     x2, x1                  ; number of bytes write
-    mov     x1, x0                  ; buffer to print from
-    mov     x0, x16                 ; file descriptor
-    mov     x16, #4                 ; 4 = write system call
-    svc     #0x80                   ; Call kernel
-    ret                             ; transfer control back, propagating nbytes written
 
 /* ssize_t stdin( void *buf, size_t nbyte ) */
 .global _os_stdin

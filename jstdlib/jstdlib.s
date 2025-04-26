@@ -10,94 +10,60 @@
 .set    TRUE    , 1
 .set    FALSE   , 0
 
-.global __j_itoa
-__j_itoa:
+/* void exit( int status ) */
+.global __j_exit
+__j_exit:
+    mov     x16, #1                 ; 1 = terminate system call
+    svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
+
+/* ssize_t write( int fd, const void *buf, size_t count ) */
+.global __j_write
+__j_write:
+    mov     x16, #4                 ; 4 = write system call
+    svc     #0x80                   ; Call kernel
+    ret                             ; transfer control back, propagating nbytes written
+
+/* int strcmp( const char* lhs, const char* rhs ) */
+.global __j_strcmp
+__j_strcmp:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
-    bl      _int2str
+    strcmp_char:
+    ldrb    w19, [x0], #1           ; l = lhs[i++]
+    ldrb    w20, [x1], #1           ; r = rhs[i++]
+    subs    w19, w19, w20
+    b.ne    strcmp_return           ; l != r
+    cmp     w20, NULL
+    b.eq    strcmp_return           ; l == r == NULL
+    b       strcmp_char             ; again!
+
+    strcmp_return:
+    mov     w0, w19
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
     ret
 
-.global __j_free
-__j_free:
+/* size_t strlen( const char* str ) */
+.global __j_strlen
+__j_strlen:
     ; create frame
     stp     lr, x19, [sp, #-16]!
+    str     x20, [sp, #-16]!
     ; end frame
-    bl      _mem_free;_LOG
+    mov     x20, #0                 ; l = 0
+    strlen_char:
+    ldrb    w19, [x0], #1           ; c = str[i++]
+    cmp     w19, NULL
+    b.eq    strlen_return
+    add     x20, x20, #1            ; l++
+    b strlen_char
+
+    strlen_return:
+    mov     x0, x20
     ; restore frame
+    ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_malloc
-__j_malloc:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    ; end frame
-    bl      _mem_alloc;_LOG
-    ; restore frame
-    ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_printc
-__j_printc:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    ; end frame
-    bl      _print_c
-    ; restore frame
-    ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_print
-__j_print:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    ; end frame
-    bl      _print_z
-    ; restore frame
-    ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_println
-__j_println:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    ; end frame
-    bl      _println_z
-    ; restore frame
-    ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_read
-__j_read:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    ; end frame
-    bl      _Reader_instance        ; r = Reader.instance()
-    mov     x19, x0
-    bl      _reader_is_eof          ; r.is_eof()
-    cmp     x0, FALSE
-    b.ne    read_eof
-    mov     x0, x19
-    bl      _reader_read            ; r.read()
-    b       read_return
-
-    read_eof:
-    mov     x0, EOF
-
-    read_return:
-    ; restore frame
-    ldp     lr, x19, [sp], #16
-    ret
-
-.global __j_loadb
-__j_loadb:
-    ldrb    w0, [x0]
-    ret
-
-.global __j_storeb
-__j_storeb:
-    strb    w1, [x0]
     ret

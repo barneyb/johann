@@ -38,32 +38,6 @@ _print_h:
     ldp     lr, x19, [sp], #16
     ret
 
-/* void print_z( const void *buf ) */
-.global _print_z
-_print_z:
-    ; create frame
-    str     lr, [sp, #-16]!         ; save lr
-    stp     x19, x20, [sp, #-16]!   ; save x19 & x20
-    ; end frame
-    mov     x1, x0
-    mov     x20, #0
-
-    _print_z_char:
-    ldrb    w19, [x1], #1
-    cmp     w19, wzr
-    b.eq    _print_z_go
-    add     x20, x20, #1
-    b       _print_z_char
-
-    _print_z_go:
-    mov     x1, x20
-    bl      _os_stdout
-
-    ; restore frame
-    ldp     x19, x20, [sp], #16     ; restore saved registers
-    ldr     lr, [sp], #16           ; restore lr
-    ret
-
 /* void println_z( const void *buf ) */
 .global _println_z
 _println_z:

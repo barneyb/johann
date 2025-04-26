@@ -2,27 +2,18 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
-INCLUDE = ../include
 OBJECTS = \
-	$(LIB)/mem.o \
-	$(LIB)/print.o \
-	$(LIB)/reader.o \
-	$(LIB)/string.o \
-	$(LIB)/system.o \
+	$(LIB)/_jstdlib.o
 
 all: $(LIB)/jstdlib.o
 
-$(LIB)/jstdlib.o: $(LIB)/_jstdlib.o $(OBJECTS)
+$(LIB)/jstdlib.o: $(OBJECTS)
 	@mkdir -p $(LIB)
-	gcc -o $(LIB)/jstdlib.o $(LD_OPTS) -nostdlib -r $(LIB)/_jstdlib.o $(OBJECTS)
+	gcc -o $(LIB)/jstdlib.o -nostdlib -r $(OBJECTS)
 
 # Pattern targets
 
 $(LIB)/_%.o: %.s
-	@mkdir -p $(LIB)
-	gcc -o $@ -c $<
-
-$(LIB)/%.o: $(INCLUDE)/%.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 

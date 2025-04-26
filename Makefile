@@ -3,15 +3,15 @@ BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
 
-all: $(BIN)/jnc $(LIB)/jstdlib.o
-
-$(BIN)/jnc:
-	$(MAKE) -C jnc all
-	@mkdir -p $(BIN)
+all: $(LIB)/jstdlib.o $(BIN)/jnc
 
 $(LIB)/jstdlib.o:
 	$(MAKE) -C jstdlib all
 	@mkdir -p $(LIB)
+
+$(BIN)/jnc:
+	$(MAKE) -C jnc all
+	@mkdir -p $(BIN)
 
 not_quite_lisp: not_quite_lisp.jn bin/jnc lib/jstdlib.o
 	@mkdir -p $(OUT) $(LIB) $(BIN)
@@ -26,13 +26,13 @@ not_quite_lisp: not_quite_lisp.jn bin/jnc lib/jstdlib.o
 # utility targets
 
 test:
-	$(MAKE) -C jnc test
 	$(MAKE) -C jstdlib test
+	$(MAKE) -C jnc test
 
 clean:
 	rm -rf $(TGT)
-	$(MAKE) -C jnc clean
 	$(MAKE) -C jstdlib clean
+	$(MAKE) -C jnc clean
 
 # configuration targets
 
