@@ -24,17 +24,6 @@ _os_stderr:
     mov     x16, #2                 ; 2 = StdErr
     b       os_write
 
-/* ssize_t stdin( void *buf, size_t nbyte ) */
-.global _os_stdin
-_os_stdin:
-    /* 3 - ssize_t read( int fd, void *buf, size_t nbyte ) */
-    mov     x2, x1                  ; max bytes to read
-    mov     x1, x0                  ; buffer to read them into
-    mov     x0, #0                  ; 0 = StdIn
-    mov     x16, #3                 ; 3 = read system call
-    svc     #0x80                   ; Call the kernel
-    ret                             ; transfer control back, propagating nbytes read
-
 /* int munmap( caddr_t addr, size_t len ) */
 .global _os_munmap
 _os_munmap:

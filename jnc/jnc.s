@@ -11,9 +11,14 @@ err_unimplemented: .asciz "Unimplemented"
 .set    FALSE, 0
 .set    INDENT, 4
 
-/* int main( int argc, char* argv[] ) */
 .global _main
 _main:
+    bl      __j_main
+    b       __j_sys_exit
+
+/* int main( int argc, char* argv[] ) */
+.global __j_main
+__j_main:
     mov     x20, x0                 ; stash arg count
     mov     x21, x1                 ; stash pointer -> argv
     add     x21, x21, #8            ; argv[0] is the command name
@@ -39,16 +44,17 @@ _main:
     main_short_version:
     adrp    x0, jnc_short_version@PAGE
     add     x0, x0, jnc_short_version@PAGEOFF
-    b       print_and_exit
+    bl      __j_println
+    b       main_exit
 
     main_long_version:
     adrp    x0, jnc_long_version@PAGE
     add     x0, x0, jnc_long_version@PAGEOFF
-    b       print_and_exit
+    bl      __j_println
 
     main_exit:
     mov     x0, #0
-    b       __j_exit
+    b       __j_sys_exit
 
 jnc:
     sub     sp, sp, #32             ; sp[0] = pointer -> string
@@ -98,7 +104,7 @@ jnc:
     ldr     x2, [sp, #8]            ; load length
     add     x2, x2, #2              ; two more for ! and newline
     mov     x0, #2                  ; 2 = StdErr
-    bl      __j_write
+    bl      __j_sys_write
     ldr     x1, [sp, #16]           ; load pointer -> allocation
     bl      __j_free                ; free the allocation
 
@@ -107,18 +113,10 @@ jnc:
 ;        ldr x2, [sp, #8]            ; load length
 ;        add x2, x2, #2              ; two more for ! and newline
 ;        mov x0, #1
-;        bl __j_write
+;        bl __j_sys_write
 ;        ldr x1, [sp, #24]           ; load pointer -> allocation
 ;        bl __j_free                ; free the allocation
 
     add     sp, sp, #32             ; release local vars
-    b       main_exit
-
-print_and_exit:
-    mov     x19, x0
-    bl      __j_strlen
-    mov     x2, x0                  ; bytes to write
-    mov     x1, x19                 ; pointer -> buffer
-    mov     x0, #1                  ; 1 = StdOut
-    bl      __j_write
-    b       main_exit
+    mov     x0, #1
+    b       __j_sys_exit

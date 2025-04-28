@@ -11,14 +11,16 @@ INCLUDES = \
 	$(VERSION)
 
 all: $(BIN)/jnc
+	@echo --------------------------------------------------
 	$(BIN)/jnc --version
+	@echo --------------------------------------------------
 	$(BIN)/jnc -v
-	echo "fn main(){}" | $(BIN)/jnc
+	@echo --------------------------------------------------
 
 $(VERSION):
 	@mkdir -p $(OUT)
-	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'\\n"' > $(VERSION)
-	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'\\n"' >> $(VERSION)
+	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' > $(VERSION)
+	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib

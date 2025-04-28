@@ -4,8 +4,9 @@ LIB = $(TGT)/lib
 OUT = $(TGT)/out
 OBJECTS = \
 	$(LIB)/allocator.o \
-	$(LIB)/os.o \
+	$(LIB)/io.o \
 	$(LIB)/string.o \
+	$(LIB)/sys.o \
 
 all: $(LIB)/jstdlib.o
 

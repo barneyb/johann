@@ -8,6 +8,7 @@ JSTDLIB = ../$(LIB)/jstdlib.o
 all: hello_world \
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
+	@mkdir -p $(OUT)
 	echo | $(BIN)/hello_world > $(OUT)/hello_world.actual.txt
 	echo Johann | $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
 	$(BIN)/hello_world Barney et al >> $(OUT)/hello_world.actual.txt
@@ -23,6 +24,10 @@ $(BIN)/%: $(LIB)/%.o $(JSTDLIB)
 	gcc $^ -o $@
 
 $(LIB)/%.o: $(OUT)/%.s
+	@mkdir -p $(LIB)
+	gcc -c $< -o $@
+
+$(LIB)/%.o: %.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
 

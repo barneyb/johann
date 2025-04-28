@@ -3,7 +3,7 @@
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 .set    NULL    , 0
 
-/* void* memcpy( void* dest, const void* src, std::size_t count ) */
+/* void* memcpy( void *dest, const void *src, size_t count ) */
 .global __j_memcpy
 __j_memcpy:
     ; create frame

@@ -145,24 +145,30 @@ Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets
 
 ## Standard Library
 
-Johann's standard library is minimal. Standard C is the model, where appropriate. 
+Johann's standard library is minimal. Where appropriate, standard C provides inspiration. Grouped by the file defining them, which is currently an opaque detail.
 
 ### `allocator`
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
-* `void* malloc( int )` - allocate the specified number of bytes of memory and return a pointer to it.
+* `void* malloc( size_t size )` - allocate the specified number of bytes of memory and return a pointer to it.
 
-### `os`
+### `io`
 
-* `void exit( int status )` - terminate the program with the given exit status.
-* `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
-* `ssize_t write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
+* `int print( char* str )` - write the null-terminated byte string to STDOUT
+* `int println( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT
 
 ### `string`
 
-* `void* memcpy( void* dest, const void* src, std::size_t count )` - copy bytes between non-overlapping memory regions.
+* `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
+
+### `sys`
+
+* `void sys_exit( int status )` - terminate the program with the given exit status.
+* `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
+* `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from STDIN.
+* `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
 
 ## Compiler Errors
 
