@@ -6,6 +6,7 @@ JNC = ../../jnc/$(BIN)/jnc
 JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: hello_world \
+	isspace
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -16,6 +17,11 @@ hello_world: $(BIN)/hello_world hello_world.expected.txt
 		| $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
 	$(BIN)/hello_world 'Barney the Hobgoblin' >> $(OUT)/hello_world.actual.txt
 	diff -u hello_world.expected.txt $(OUT)/hello_world.actual.txt
+
+isspace: $(BIN)/isspace isspace.expected.txt
+	@mkdir -p $(OUT)
+	$(BIN)/isspace > $(OUT)/isspace.actual.txt
+	diff -u isspace.expected.txt $(OUT)/isspace.actual.txt
 
 # Pattern targets
 
@@ -37,10 +43,7 @@ $(OUT)/%.s: %.jn $(JNC)
 
 # Utility targets
 
-$(JNC):
-	$(MAKE) -C ../../jnc
-
-$(JSTDLIB):
+$(JSTDLIB)::
 	$(MAKE) -C ..
 
 clean:

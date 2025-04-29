@@ -1,7 +1,31 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
-.set    NULL    , 0
+NULL = 0
+FALSE = 0
+
+/* int isspace( int ch ) */
+.global __j_isspace
+__j_isspace:
+    cmp     x0, ' '
+    b.gt    isspace_nope            ; everything above space is non-space
+    b.eq    isspace_yep
+    cmp     x0, '\t'
+    b.eq    isspace_yep
+    cmp     x0, '\n'
+    b.eq    isspace_yep
+    cmp     x0, '\r'
+    b.eq    isspace_yep
+    cmp     x0, '\f'
+    b.eq    isspace_yep
+    cmp     x0, 0xb ; '\v'
+    b.eq    isspace_yep
+
+    isspace_nope:
+    mov     x0, FALSE
+
+    isspace_yep:
+    ret
 
 /* void* memcpy( void *dest, const void *src, size_t count ) */
 .global __j_memcpy

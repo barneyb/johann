@@ -29,7 +29,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -159,6 +159,7 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 ### `string`
 
+* `int isspace( int ch )` - is the passed character whitespace?
 * `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
