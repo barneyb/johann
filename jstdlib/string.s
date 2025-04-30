@@ -4,6 +4,21 @@
 NULL = 0
 FALSE = 0
 
+/* int isdigit( int ch ) */
+.global __j_isdigit
+__j_isdigit:
+    cmp     x0, '0'
+    b.lt    isdigit_nope
+    cmp     x0, '9'
+    b.gt    isdigit_nope
+    b       isdigit_yep
+
+    isdigit_nope:
+    mov     x0, FALSE
+
+    isdigit_yep:
+    ret
+
 /* int isspace( int ch ) */
 .global __j_isspace
 __j_isspace:
@@ -25,6 +40,28 @@ __j_isspace:
     mov     x0, FALSE
 
     isspace_yep:
+    ret
+
+/* int isxdigit( int ch ) */
+.global __j_isxdigit
+__j_isxdigit:
+    cmp     x0, '0'
+    b.lt    isxdigit_nope
+    cmp     x0, '9'
+    b.le    isxdigit_yep
+    cmp     x0, 'A'
+    b.lt    isxdigit_nope
+    cmp     x0, 'F'
+    b.le    isxdigit_yep
+    cmp     x0, 'a'
+    b.lt    isxdigit_nope
+    cmp     x0, 'f'
+    b.le    isxdigit_yep
+
+    isxdigit_nope:
+    mov     x0, FALSE
+
+    isxdigit_yep:
     ret
 
 /* void* memcpy( void *dest, const void *src, size_t count ) */
@@ -91,4 +128,9 @@ __j_strlen:
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
+    ret
+
+/* int strtoint( const char* str, char** str_end, int base ) */
+.global __j_strtoint
+__j_strtoint:
     ret

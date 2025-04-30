@@ -1,3 +1,7 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+                                    .text
+.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+
 /* int print( char* str ) */
 .global __j_print
 __j_print:

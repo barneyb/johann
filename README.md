@@ -159,7 +159,9 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 ### `string`
 
+* `int isdigit( int ch )` - is the passed character a decimal digit?
 * `int isspace( int ch )` - is the passed character whitespace?
+* `int isxdigit( int ch )` - is the passed character a hexidecimal digit?
 * `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
