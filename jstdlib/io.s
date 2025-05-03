@@ -62,6 +62,7 @@ __j_printf:
         str     x1, [sp]            ; store i
         cmp     x0, '%'
         b.eq    printf_normal       ; the _second_ % is "normal"
+        mov     x3, #0              ; reset min width
         cmp     x0, 'X'
         b.eq    printf_HEX
         cmp     x0, 'c'
@@ -75,7 +76,7 @@ __j_printf:
         cmp     x0, 'o'
         b.eq    printf_octal
         cmp     x0, 'p'
-        b.eq    printf_hex          ; todo: fixed width would be nice
+        b.eq    printf_pointer
         cmp     x0, 's'
         b.eq    printf_string
         cmp     x0, 'x'
@@ -89,6 +90,8 @@ __j_printf:
     printf_decimal:
         mov     x6, #10
         b       printf_integer
+    printf_pointer:
+        mov     x3, #9              ; pointers always have width 9
     printf_hex:
         mov     x6, #16
         mov     x7, #0x57           ; 10 before 'a'
@@ -106,6 +109,7 @@ __j_printf:
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x20]      ; store a
 
+        ; x3 holds the min width
         ; x6 holds the base
         ; x7 points to the '0' digit for digits past 9 (e.g. 'a' - 10 for hex)
         ; point to SP in x5, to build the value "down" from
@@ -142,6 +146,16 @@ __j_printf:
         add     x4, x4, #1
         cmp     x0, xzr
         b.gt    printf_integer_again
+
+        ; make sure its wide enough
+        mov     w2, '0'
+        printf_pad_again:
+            cmp     x4, x3
+            b.ge    printf_pad_done
+            strb    w2, [x5, #-1]!  ; todo: ensure room!
+            add     x4, x4, #1      ; increment counter
+            b printf_pad_again
+        printf_pad_done:
 
         ; if base is 16, add x prefix
         cmp     x6, #16
