@@ -7,6 +7,7 @@ err_bad_format_conv_len = . - err_bad_format_conv
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 NULL = 0
 TRUE = 1
+FALSE = 0
 
 /* int printf( char* format, ... ) */
 ; note, only seven variadic args will work
@@ -69,6 +70,8 @@ __j_printf:
         b.eq    printf_char
         cmp     x0, 's'
         b.eq    printf_string
+        cmp     x0, 'n'
+        b.eq    printf_newline
         mov     x0, #17
         adrp    x1, err_bad_format_conv@PAGE
         add     x1, x1, err_bad_format_conv@PAGEOFF
@@ -105,7 +108,7 @@ __j_printf:
         str     xzr, [sp, -0x20]!
         ; if x0 is negative,
         cmp     x0, #0
-        b.gt    printf_integer_again
+        b.ge    printf_integer_again
         mov     x1, TRUE
         str     x1, [sp]            ; store true at SP
         neg     x0, x0              ; negate x0
@@ -131,10 +134,20 @@ __j_printf:
         cmp     x0, xzr
         b.gt    printf_integer_again
 
-        ; todo: if base is 16, add 0x prefix
+        ; todo: if base is 16, add x prefix
+        ; todo: if base is not 10, add 0 prefix
 
-        ; todo: if was negative, add minus sign to buffer
+        ; if was negative, add minus sign to buffer
+        ldr     x0, [sp]            ; load whether was negative
+        cmp     x0, FALSE
+        b.eq    printf_integer_copy
+        ; pre-decrement and write to x5
+        mov     w2, '-'
+        strb    w2, [x5, #-1]!
+        ; increment counter in x4
+        add     x4, x4, #1
 
+        printf_integer_copy:
         ; todo: ensure there's room in the buffer
         str     x4, [sp]            ; store counter
         mov     x2, x4              ; nbytes
@@ -150,6 +163,11 @@ __j_printf:
         ldr     x1, [sp, 0x20]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x20]      ; store a
+        b       printf_normal
+
+    printf_newline:
+        ; replace the spec w/ a newline and 'normal'
+        mov     x0, '\n'
         b       printf_normal
 
     printf_string:

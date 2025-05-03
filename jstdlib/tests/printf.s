@@ -4,6 +4,7 @@ char: .asciz "char: [[%c]]\n"
 string: .asciz "string: [[%s]]\n"
 integer: .asciz "integer: [[%d:%i]]\n"
 hex: .asciz "hex: [[%x:%X]]\n"
+octal: .asciz "octal: [[%o]]\n"
 pointer: .asciz "pointer: [[%p]]\n"
 newline: .asciz "newline: [[%n]]\n"          ; not num chars emitted!
 everything: .asciz "everything: %%, %c, %s, %d, %x, %p%n"
@@ -41,35 +42,42 @@ _main:
     mov     x0, x19
     bl      __j_printf
 
-;    mov     x1, 0
-;    adrp    x0, integer@PAGE
-;    add     x0, x0, integer@PAGEOFF
+    mov     x2, 0
+    mov     x1, 0
+    adrp    x0, integer@PAGE
+    add     x0, x0, integer@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+    mov     x2, 12345
+    mov     x1, 12345
+    adrp    x0, integer@PAGE
+    add     x0, x0, integer@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+    mov     x2, -987
+    mov     x1, -987
+    adrp    x0, integer@PAGE
+    add     x0, x0, integer@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+;    mov     x1, 88
+;    adrp    x0, octal@PAGE
+;    add     x0, x0, octal@PAGEOFF
 ;    bl      __j_printf
 ;    mov     x1, x0
 ;    mov     x0, x19
 ;    bl      __j_printf
-;integer: [[0:0]]
-;written: 17
-;
-;    mov     x1, 12345
-;    adrp    x0, integer@PAGE
-;    add     x0, x0, integer@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;integer: [[12345:12345]]
-;written: 25
-;
-;    mov     x1, -987
-;    adrp    x0, integer@PAGE
-;    add     x0, x0, integer@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;integer: [[-987:-987]]
-;written: 23
+;octal: [[0130]]
+;written: 16
 ;
 ;    mov     x1, 123
 ;    adrp    x0, hex@PAGE
@@ -90,17 +98,14 @@ _main:
 ;    bl      __j_printf
 ;pointer: [[0x0000000020]]
 ;written: 26
-;
-;    adrp    x0, newline@PAGE
-;    add     x0, x0, newline@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;newline: [[
-;]]
-;written: 15
-;
+
+    adrp    x0, newline@PAGE
+    add     x0, x0, newline@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
 ;    mov     x5, 1023
 ;    mov     x4, 1024
 ;    mov     x3, 456

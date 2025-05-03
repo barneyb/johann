@@ -4,3 +4,12 @@ char: [[B]]
 written: 12
 string: [[Hello, this most beautiful world!]]
 written: 46
+integer: [[0:0]]
+written: 17
+integer: [[12345:12345]]
+written: 25
+integer: [[-987:-987]]
+written: 23
+newline: [[
+]]
+written: 15
