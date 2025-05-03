@@ -20,25 +20,16 @@ FALSE = 0
 __j_printf:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    ; sp[20] : void* args ; todo: the caller should set these up...
+    ; sp[10] : void* args ; todo: the caller should set these up...
     stp     x6, x7, [sp, -0x10]!
     stp     x4, x5, [sp, -0x10]!
     stp     x2, x3, [sp, -0x10]!
     sub     x2, sp, 0x8             ; where args[0] will end up
     stp     x2, x1, [sp, -0x10]!
-    ; sp[20] :
-    ; sp[18] : int buffer_size
-    ; sp[10] : char* buffer (consumed)
-    stp     xzr, xzr, [sp, -0x10]!
+    ; sp[10] :
     ; sp[8] : int written
     ; sp[0] : char* format (consumed)
     stp     x0, xzr, [sp, -0x10]!
-
-    bl      __j_strlen              ; get length of format
-    str     x0, [sp, 0x18]          ; store buffer_size
-
-    bl      __j_malloc              ; allocate buffer
-    str     x0, [sp, 0x10]          ; store buffer
 
     printf_again:
         ldr     x1, [sp]            ; load i
@@ -51,10 +42,7 @@ __j_printf:
         b       printf_convert
 
     printf_normal:
-        ; todo: ensure there's room in the buffer
-        ldr     x1, [sp, 0x10]      ; load j
-        strb    w0, [x1], #1        ; store buffer[j++]
-        str     x1, [sp, 0x10]      ; store j
+        bl __j_putchar
         ldr     x0, [sp, 0x8]       ; load written
         add     x0, x0, #1          ; written++
         str     x0, [sp, 0x8]       ; store written
@@ -127,9 +115,9 @@ __j_printf:
         b       printf_integer
 
     printf_integer:
-        ldr     x1, [sp, 0x20]      ; load a
+        ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x20]      ; store a
+        str     x1, [sp, 0x10]      ; store a
 
         ; x3 holds the min width
         ; x6 holds the base
@@ -200,32 +188,38 @@ __j_printf:
         add     x4, x4, #1
 
         printf_integer_was_negative:
-        ; if was negative, add minus sign to buffer
+        ; if was negative, add minus sign
         ldr     x0, [sp]            ; load whether was negative
         cmp     x0, FALSE
-        b.eq    printf_integer_copy
+        b.eq    printf_integer_emit
         ; pre-decrement and store at x5
         mov     w2, '-'
         strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
 
-        printf_integer_copy:
-        ; todo: ensure there's room in the buffer
-        str     x4, [sp]            ; store counter
-        mov     x2, x4              ; nbytes
-        mov     x1, x5              ; src
-        ldr     x0, [sp, 0x30]      ; load buffer
-        bl      __j_memcpy          ; copy scratch space to buffer
-        ldr     x4, [sp]            ; load counter
+        printf_integer_emit:
+        ldr     x0, [sp, 0x28]      ; load written
+        add     x0, x0, x4          ; written++
+        str     x0, [sp, 0x28]      ; store written
+        printf_integer_emit_again:
+        ; from x5, for x4 bytes, putchar
+        cmp     x4, #0
+        b.eq    printf_integer_done
+        ldrb    w0, [x5], #1        ; load next char to emit
+        bl      __j_putchar
+        sub     x4, x4, #1
+        b       printf_integer_emit_again
+
+        printf_integer_done:
         add     sp, sp, 0x20        ; deallocate 'integer' stack space
-        b       printf_nbytes_x4
+        b       printf_again
 
     printf_char:
         ; replace the spec w/ the actual character and 'normal'
-        ldr     x1, [sp, 0x20]      ; load a
+        ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x20]      ; store a
+        str     x1, [sp, 0x10]      ; store a
         b       printf_normal
 
     printf_newline:
@@ -234,37 +228,28 @@ __j_printf:
         b       printf_normal
 
     printf_string:
-        ldr     x1, [sp, 0x20]      ; load a
+        ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x20]      ; store a
-        ; allocate 16 bytes on the stack
-        stp     xzr, x0, [sp, -0x10]!   ; store 'nbytes' and pointer -> str
-        bl      __j_strlen
-        str     x0, [sp]            ; store nbytes
-        ; todo: ensure there's room in the buffer
-        mov     x2, x0              ; nbytes
-        ldr     x1, [sp, 0x8]       ; load pointer -> str
-        ldr     x0, [sp, 0x20]      ; load buffer
-        bl      __j_memcpy          ; copy scratch space to buffer
-        ldr     x4, [sp]            ; load nbytes
+        str     x1, [sp, 0x10]      ; store a
+        str     x0, [sp, -0x10]!    ; store pointer -> str
+        printf_string_again:
+            ldr     x1, [sp]        ; load pointer -> str[i]
+            ldrb    w0, [x1], #1    ; load str[i++]
+            str     x1, [sp]        ; store pointer -> str[i]
+            cmp     x0, NULL
+            b.eq    printf_string_done
+            bl      __j_putchar
+            ldr     x0, [sp, 0x18]      ; load written
+            add     x0, x0, #1          ; written++
+            str     x0, [sp, 0x18]      ; store written
+            b       printf_string_again
+        printf_string_done:
         add     sp, sp, 0x10        ; deallocate 'string' stack space
-        b       printf_nbytes_x4
-
-    printf_nbytes_x4:
-        ldp     x2, x0, [sp, 0x8]   ; load written and j
-        add     x2, x2, x4          ; written += counter
-        add     x0, x0, x4          ; j += counter
-        stp     x2, x0, [sp, 0x8]   ; store written and j
         b       printf_again
 
     printf_done:
-        ldp     x2, x1, [sp, 0x8]       ; load written and buffer
-        sub     x1, x1, x2              ; rewind to start of buffer
-        mov     x0, #1                  ; 1 = StdOut
-        bl      __j_sys_write
-
     ldr     x0, [sp, 0x8]           ; load written
-    add     sp, sp, 0x60            ; release local storage
+    add     sp, sp, 0x50            ; release local storage
     ldp     fp, lr, [sp], 0x10
     ret
 
