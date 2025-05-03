@@ -3,7 +3,12 @@
 err_bad_format_conv: .ascii "ERROR: Bad format string conversion spec\n"
 err_bad_format_conv_len = . - err_bad_format_conv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
+.bss
+BUF_SIZE = 128
+buf_stdout: .zero BUF_SIZE
+buf_stdout_len: .zero 8
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
 NULL = 0
 TRUE = 1
@@ -13,7 +18,6 @@ FALSE = 0
 ; note, only seven variadic args will work
 .global __j_printf
 __j_printf:
-    ; todo: do the frame correctly everywhere else too
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     ; sp[20] : void* args ; todo: the caller should set these up...
@@ -160,7 +164,7 @@ __j_printf:
         add     w2, w2, w7          ; convert to high digit
         printf_integer_digit:
         ; pre-decrement and store at x5
-        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
         cmp     x0, xzr
@@ -171,7 +175,7 @@ __j_printf:
         printf_pad_again:
             cmp     x4, x3
             b.ge    printf_pad_done
-            strb    w2, [x5, #-1]!  ; todo: ensure room!
+            strb    w2, [x5, #-1]!
             add     x4, x4, #1      ; increment counter
             b printf_pad_again
         printf_pad_done:
@@ -181,7 +185,7 @@ __j_printf:
         b.ne    printf_integer_not_base10
         ; pre-decrement and store at x5
         add     x2, x7, #33         ; x is the 33rd "digit"
-        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
 
@@ -191,7 +195,7 @@ __j_printf:
         b.eq    printf_integer_was_negative
         ; pre-decrement and store at x5
         mov     w2, '0'
-        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
 
@@ -202,7 +206,7 @@ __j_printf:
         b.eq    printf_integer_copy
         ; pre-decrement and store at x5
         mov     w2, '-'
-        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
 
@@ -261,42 +265,45 @@ __j_printf:
 
     ldr     x0, [sp, 0x8]           ; load written
     add     sp, sp, 0x60            ; release local storage
-    ldp     fp, lr, [sp], 0x10 ; todo: more proper frame
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+/* int putchar( char c ) */
+.global __j_putchar
+__j_putchar:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    ; todo: actually buffer...
+    mov     x2, #1
+    adrp    x1, buf_stdout@PAGE
+    add     x1, x1, buf_stdout@PAGEOFF
+    strb    w0, [x1]
+    mov     x0, #1
+    bl      __j_sys_write
+
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* int puts( char* str ) */
 .global __j_puts
 __j_puts:
-    str     lr, [sp, #-16]!
-    ; sp[24]
-    ; sp[16] : char* buffer
-    ; sp[8] : int length
-    ; sp[0] : char* str
-    str     x0, [sp, #-32]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x19, [sp, -0x10]!
+    mov     x19, x0
 
-    bl      __j_strlen
-    str     x0, [sp, #8]
+    puts_again:
+    ldrb    w0, [x19], #1           ; load str[i++]
+    cmp     w0, NULL
+    b.eq    puts_done
+    bl      __j_putchar
+    b       puts_again
 
-    add     x0, x0, #1              ; for the newline
-    bl      __j_malloc
-    str     x0, [sp, #16]           ; store pointer -> buffer
+    puts_done:
+    mov     x0, '\n'
+    bl      __j_putchar
 
-    ldr     x2, [sp, #8]
-    ldr     x1, [sp]
-    bl      __j_memcpy              ; copy str to the buffer
-
-    ldr     x0, [sp, #16]           ; load pointer -> buffer
-    ldr     x2, [sp, #8]            ; load length
-    add     x2, x0, x2              ; end of buffer
-    mov     w1, '\n'
-    strb    w1, [x2]                ; store newline
-
-    ldr     x2, [sp, #8]
-    add     x2, x2, #1              ; for the newline
-    ldr     x1, [sp, #16]
-    mov     x0, #1                  ; 1 = StdOut
-    bl      __j_sys_write
-
-    add     sp, sp, #32
-    ldr     lr, [sp], #16
+    ldr     x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret

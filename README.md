@@ -127,7 +127,7 @@ If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn
 
 > **NB:** Compiled Johann programs are version specific. When changing versions of the compiler, you need to recompile all your sources. The standard library is always compiled with the compiler version it is bundled with. If you have third-party dependencies, their sources will need to be recompiled as well.
 
-Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - you can't use files!
+Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - Johann doesn't know about files!
 
 The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
 
@@ -155,6 +155,7 @@ Johann's standard library is minimal. Grouped by the file defining them, which i
 ### `io`
 
 * `int printf( char* format, ... )` - converts args to strings basd in the null-terminated `format`, and writes to STDOUT.
+* `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT.
 
 ### `string`

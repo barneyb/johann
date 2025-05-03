@@ -9,6 +9,7 @@ all: hello_world \
 	isspace \
 	isdigit \
 	printf \
+	putchar \
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -34,6 +35,11 @@ printf: $(BIN)/printf printf.expected.txt
 	@mkdir -p $(OUT)
 	$(BIN)/printf > $(OUT)/printf.actual.txt
 	diff -u printf.expected.txt $(OUT)/printf.actual.txt
+
+putchar: $(BIN)/putchar putchar.expected.txt
+	@mkdir -p $(OUT)
+	$(BIN)/putchar > $(OUT)/putchar.actual.txt
+	diff -u putchar.expected.txt $(OUT)/putchar.actual.txt
 
 # Pattern targets
 
