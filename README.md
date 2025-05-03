@@ -154,8 +154,8 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 ### `io`
 
-* `int print( char* str )` - write the null-terminated byte string to STDOUT
-* `int println( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT
+* `int printf( char* format, ... )` - converts args to strings basd on the null-terminated `format` and writes to STDOUT.
+* `int puts( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT.
 
 ### `string`
 
@@ -177,15 +177,8 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
-* `17` - Unrecognized token
-* `18` - Too-long identifier
-* `19` - Too-long string
-* `21` - Bad token
-* `26` - Bad value
-* `27` - Bad statement
-* `28` - Bad expression
-* `29` - Bad operator
-* `37` - Certain types of invalid block nesting
+* `17` - Unrecognized format conversion spec.
+* `99` - Failed to get memory from the OS.
 
 Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
 

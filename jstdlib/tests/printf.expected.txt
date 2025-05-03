@@ -1,0 +1,2 @@
+percent: [[%]]
+written: 15

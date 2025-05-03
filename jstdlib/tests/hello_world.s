@@ -48,12 +48,12 @@ __j_main:
     main_greet:
     adrp    x0, hello@PAGE
     add     x0, x0, hello@PAGEOFF
-    bl      __j_print
+    bl      __j_printf
     ldr     x0, [sp, #16]           ; load pointer -> name
-    bl      __j_print
+    bl      __j_printf
     adrp    x0, bang@PAGE
     add     x0, x0, bang@PAGEOFF
-    bl      __j_println
+    bl      __j_puts
 
     str     x0, [sp, #24]
     bl      __j_free                ; free the buffer (if non-null)
@@ -71,7 +71,7 @@ get_name:
 
     adrp    x0, prompt@PAGE
     add     x0, x0, prompt@PAGEOFF
-    bl      __j_print
+    bl      __j_printf
     mov     x0, BUF_SIZE
     bl      __j_malloc
     str     x0, [sp]                ; store pointer -> buffer

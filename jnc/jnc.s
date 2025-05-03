@@ -22,7 +22,7 @@ __j_main:
     mov     x20, x0                 ; stash arg count
     mov     x21, x1                 ; stash pointer -> argv
     add     x21, x21, #8            ; argv[0] is the command name
-    mov     x19, #0
+    mov     x19, xzr
     main_arg_loop:
     add     x19, x19, 1
     cmp     x19, x20
@@ -31,29 +31,29 @@ __j_main:
     adrp    x1, opt_v@PAGE
     add     x1, x1, opt_v@PAGEOFF
     bl      __j_strcmp
-    cmp     x0, #0
+    cmp     x0, xzr
     b.eq    main_short_version
     ldr     x0, [x21], #8
     adrp    x1, opt_version@PAGE
     add     x1, x1, opt_version@PAGEOFF
     bl      __j_strcmp
-    cmp     x0, #0
+    cmp     x0, xzr
     b.eq    main_long_version
     b       main_arg_loop
 
     main_short_version:
     adrp    x0, jnc_short_version@PAGE
     add     x0, x0, jnc_short_version@PAGEOFF
-    bl      __j_println
+    bl      __j_puts
     b       main_exit
 
     main_long_version:
     adrp    x0, jnc_long_version@PAGE
     add     x0, x0, jnc_long_version@PAGEOFF
-    bl      __j_println
+    bl      __j_puts
 
     main_exit:
-    mov     x0, #0
+    mov     x0, xzr
     b       __j_sys_exit
 
 jnc:

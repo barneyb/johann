@@ -7,7 +7,8 @@ JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: hello_world \
 	isspace \
-	isdigit
+	isdigit \
+	printf \
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -28,6 +29,11 @@ isdigit: $(BIN)/isdigit isdigit.expected.txt
 	@mkdir -p $(OUT)
 	$(BIN)/isdigit > $(OUT)/isdigit.actual.txt
 	diff -u isdigit.expected.txt $(OUT)/isdigit.actual.txt
+
+printf: $(BIN)/printf printf.expected.txt
+	@mkdir -p $(OUT)
+	$(BIN)/printf > $(OUT)/printf.actual.txt
+	diff -u printf.expected.txt $(OUT)/printf.actual.txt
 
 # Pattern targets
 

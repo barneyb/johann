@@ -73,7 +73,7 @@ __j_memcpy:
     ; end frame
     ; todo: panic if regions overlap?
     ; todo: this is HORRIBLY inefficient
-    mov     x19, #0                 ; bytes copied
+    mov     x19, xzr                ; bytes copied
     memcpy_loop:
     ldrb    w20, [x1], #1           ; load and increment
     strb    w20, [x0], #1           ; store and increment
@@ -115,7 +115,7 @@ __j_strlen:
     stp     lr, x19, [sp, #-16]!
     str     x20, [sp, #-16]!
     ; end frame
-    mov     x20, #0                 ; l = 0
+    mov     x20, xzr                ; l = 0
     strlen_char:
     ldrb    w19, [x0], #1           ; c = str[i++]
     cmp     w19, NULL
@@ -128,9 +128,4 @@ __j_strlen:
     ; restore frame
     ldr     x20, [sp], #16
     ldp     lr, x19, [sp], #16
-    ret
-
-/* int strtoint( const char* str, char** str_end, int base ) */
-.global __j_strtoint
-__j_strtoint:
     ret

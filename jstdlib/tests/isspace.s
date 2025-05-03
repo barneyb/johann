@@ -20,11 +20,11 @@ _main:
     cmp     x0, 0
     b.eq    false
     mov     x0, x19
-    bl      __j_println
+    bl      __j_puts
     b       again
     false:
     mov     x0, x20
-    bl      __j_println
+    bl      __j_puts
     b       again
 
     done:

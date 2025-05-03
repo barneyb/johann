@@ -66,11 +66,11 @@ get_more_memory:
     str     x1, [sp]                ; store bytes to allocate
 
     /* 197 - user_addr_t mmap( caddr_t addr, size_t len, int prot, int flags, int fd, off_t pos ) */
-    mov     x5, #0                  ; ignored w/out a fd?
+    mov     x5, xzr                 ; ignored w/out a fd?
     mov     x4, #-1                 ; -1 = no file descriptor
     mov     x3, MAP_ANON ^ MAP_PRIVATE
     mov     x2, PROT_READ ^ PROT_WRITE
-    mov     x0, #0                  ; don't care where
+    mov     x0, xzr                 ; don't care where
     mov     x16, #197               ; 197 = mmap system call
     svc     #0x80                   ; Call kernel
 
