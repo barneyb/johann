@@ -62,7 +62,23 @@ __j_printf:
         str     x1, [sp]            ; store i
         cmp     x0, '%'
         b.eq    printf_normal       ; the _second_ % is "normal"
-        mov     x3, #0              ; reset min width
+        stp     x0, xzr, [sp, -0x10]!   ; store char and width
+        printf_width_again:
+        bl      __j_isdigit
+        cmp     x0, FALSE
+        b.eq    printf_width_done
+        ldp     x0, x3, [sp]        ; load char and width
+        sub     x0, x0, '0'         ; parse digit -> number
+        mov     x2, #10
+        madd    x3, x3, x2, x0      ; add to width
+        ldr     x1, [sp, 0x10]      ; load i
+        ldrb    w0, [x1], #1        ; load format[i++]
+        str     x1, [sp, 0x10]      ; store i
+        stp     x0, x3, [sp]        ; store char and width
+        b       printf_width_again
+        printf_width_done:
+        ldp     x0, x3, [sp], 0x10  ; load and release char and width
+
         cmp     x0, 'X'
         b.eq    printf_HEX
         cmp     x0, 'c'
@@ -91,7 +107,9 @@ __j_printf:
         mov     x6, #10
         b       printf_integer
     printf_pointer:
-        mov     x3, #9              ; pointers always have width 9
+        cmp     x3, #9              ; pointers have minimum width 9
+        b.ge    printf_hex          ; but are otherwise just 'hex'
+        mov     x3, #9
     printf_hex:
         mov     x6, #16
         mov     x7, #0x57           ; 10 before 'a'
@@ -123,6 +141,7 @@ __j_printf:
         b.ge    printf_integer_again
         mov     x1, TRUE
         str     x1, [sp]            ; store true at SP
+        sub     x3, x3, #1          ; leave room for the minus sign
         neg     x0, x0              ; negate x0
 
         printf_integer_again:
@@ -147,7 +166,7 @@ __j_printf:
         cmp     x0, xzr
         b.gt    printf_integer_again
 
-        ; make sure its wide enough
+        ; pad to min width
         mov     w2, '0'
         printf_pad_again:
             cmp     x4, x3

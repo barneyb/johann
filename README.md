@@ -1,6 +1,6 @@
 # They're All Named Johann
 
-Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only AArch64, is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), with no assembly in the solution itself nor the compiler which compiles it.
+Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only `arm64-apple-darwin` (aka Apple Silicon running macOS), is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), with no assembly in the solution itself nor the compiler which compiles it.
 
 You don't want to use it. You don't want to even look at the source. When a bored coder has a martini (or three...) and decides to single-handedly reinvent much of the past ~60 years of computer science from scratch, nothing good results.
 
@@ -12,7 +12,7 @@ You don't want to use it. You don't want to even look at the source. When a bore
 
 ## The Short Version
 
-Clone and compile a test program on your Apple silicon mac with command-line developer tools installed:
+Clone and compile a test program as below. You'll need the command-line developer/Xcode tools installed.
 
     git clone git@github.com:barneyb/johann.git
     cd johann
@@ -29,7 +29,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant. There is no exception handling.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -121,7 +121,7 @@ Parameters passed in a function call must be variables, not expressions. This in
 
 ## Building Johann Programs
 
-First, you'll need a AArch64 mac (aka "Apple silicon") to run on, with the command-line developer tools installed.
+First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon running macOS) to run on, with the command-line developer/Xcode tools installed.
 
 If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn > program.s`. Next, assemble and link with `gcc program.s ./lib/jstdlib.o -o program`. Now you can execute it: `./program`. If you have multiple source files, compile and assemble them separately (with `-c`), and then link the object files into the final binary. The standard library (`./lib/jstdlib.o`) is pre-assembled and only needs to be linked.
 
@@ -145,7 +145,7 @@ Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets
 
 ## Standard Library
 
-Johann's standard library is minimal. Where appropriate, standard C provides inspiration. Grouped by the file defining them, which is currently an opaque detail.
+Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail.
 
 ### `allocator`
 
@@ -154,7 +154,7 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 ### `io`
 
-* `int printf( char* format, ... )` - converts args to strings basd on the null-terminated `format` and writes to STDOUT.
+* `int printf( char* format, ... )` - converts args to strings basd in the null-terminated `format`, and writes to STDOUT.
 * `int puts( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT.
 
 ### `string`
@@ -177,7 +177,7 @@ Johann's standard library is minimal. Where appropriate, standard C provides ins
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
-* `17` - Unrecognized format conversion spec.
+* `17` - Unrecognized format conversion spec for `printf`.
 * `99` - Failed to get memory from the OS.
 
 Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
@@ -202,7 +202,7 @@ commit_hash: 174fc8f720f022adebec109b5e454535db6bd85b
 
 Running `make clean all` in the root will ensure your local development version of the compiler and standard library are in sync. If things seem screwy, that's the first thing to do. You'd think `make` would be _exactly_ the tool to automatically prevent this, but I can't figure out the right incantation(s). 
 
-The specific versions of the system software I have are listed below. Note that Apple made several backwards-incompatible changes in clang 17 (macos 15.4.1).
+The specific versions of the system software I have are listed below. Note that Apple made several backwards-incompatible changes in clang 17 (macOS 15.4.1).
 
 <!--{systemsoftware}-->
 ```

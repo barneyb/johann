@@ -4,12 +4,12 @@ char: [[B]]
 written: 12
 string: [[Hello, this most beautiful world!]]
 written: 46
-integer: [[0:0]]
-written: 17
-integer: [[12345:12345]]
-written: 25
-integer: [[-987:-987]]
+integer: [[0:0000000]]
 written: 23
+integer: [[12345:0012345]]
+written: 27
+integer: [[-987:-000987]]
+written: 26
 octal: [[0130]]
 written: 16
 hex: [[0x7b:0X7B]]
@@ -19,5 +19,5 @@ written: 25
 newline: [[
 ]]
 written: 15
-everything: %, Z, Hello, this most beautiful world!, 456, 0x400, 0x0000003ff
-written: 77
+everything: %, Z, Hello, this most beautiful world!, 456, 0x400, 0x0000000003ff
+written: 80
