@@ -69,35 +69,30 @@ _main:
     mov     x0, x19
     bl      __j_printf
 
-;    mov     x1, 88
-;    adrp    x0, octal@PAGE
-;    add     x0, x0, octal@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;octal: [[0130]]
-;written: 16
-;
-;    mov     x1, 123
-;    adrp    x0, hex@PAGE
-;    add     x0, x0, hex@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;hex: [[0x7b:0X7B]]
-;written: 19
-;
-;    mov     x1, 32
-;    adrp    x0, pointer@PAGE
-;    add     x0, x0, pointer@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;pointer: [[0x0000000020]]
-;written: 26
+    mov     x1, 88
+    adrp    x0, octal@PAGE
+    add     x0, x0, octal@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+    mov     x2, 123
+    mov     x1, 123
+    adrp    x0, hex@PAGE
+    add     x0, x0, hex@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+    mov     x1, 32
+    adrp    x0, pointer@PAGE
+    add     x0, x0, pointer@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
 
     adrp    x0, newline@PAGE
     add     x0, x0, newline@PAGEOFF
@@ -106,20 +101,18 @@ _main:
     mov     x0, x19
     bl      __j_printf
 
-;    mov     x5, 1023
-;    mov     x4, 1024
-;    mov     x3, 456
-;    adrp    x2, hello_world@PAGE
-;    add     x2, x2, hello_world@PAGEOFF
-;    mov     x1, 'Z'
-;    adrp    x0, everything@PAGE
-;    add     x0, x0, everything@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;everything: %, Z, Hello, this most beautiful world!, 456, 0x???, 0x????
-;written: 75-ish?
+    mov     x5, 1023
+    mov     x4, 1024
+    mov     x3, 456
+    adrp    x2, hello_world@PAGE
+    add     x2, x2, hello_world@PAGEOFF
+    mov     x1, 'Z'
+    adrp    x0, everything@PAGE
+    add     x0, x0, everything@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
 
     mov     x0, #0
     ldr     lr, [sp], #16

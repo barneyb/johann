@@ -10,6 +10,14 @@ integer: [[12345:12345]]
 written: 25
 integer: [[-987:-987]]
 written: 23
+octal: [[0130]]
+written: 16
+hex: [[0x7b:0X7B]]
+written: 19
+pointer: [[0x20]]
+written: 18
 newline: [[
 ]]
 written: 15
+everything: %, Z, Hello, this most beautiful world!, 456, 0x400, 0x3ff
+written: 71

@@ -62,16 +62,24 @@ __j_printf:
         str     x1, [sp]            ; store i
         cmp     x0, '%'
         b.eq    printf_normal       ; the _second_ % is "normal"
-        cmp     x0, 'i'
-        b.eq    printf_decimal
-        cmp     x0, 'd'
-        b.eq    printf_decimal
+        cmp     x0, 'X'
+        b.eq    printf_HEX
         cmp     x0, 'c'
         b.eq    printf_char
-        cmp     x0, 's'
-        b.eq    printf_string
+        cmp     x0, 'd'
+        b.eq    printf_decimal
+        cmp     x0, 'i'
+        b.eq    printf_decimal
         cmp     x0, 'n'
         b.eq    printf_newline
+        cmp     x0, 'o'
+        b.eq    printf_octal
+        cmp     x0, 'p'
+        b.eq    printf_hex          ; todo: fixed width would be nice
+        cmp     x0, 's'
+        b.eq    printf_string
+        cmp     x0, 'x'
+        b.eq    printf_hex
         mov     x0, #17
         adrp    x1, err_bad_format_conv@PAGE
         add     x1, x1, err_bad_format_conv@PAGEOFF
@@ -83,11 +91,11 @@ __j_printf:
         b       printf_integer
     printf_hex:
         mov     x6, #16
-        mov     x7, 'a'
+        mov     x7, #0x57           ; 10 before 'a'
         b       printf_integer
     printf_HEX:
         mov     x6, #16
-        mov     x7, 'A'
+        mov     x7, #0x37           ; 10 before 'A'
         b       printf_integer
     printf_octal:
         mov     x6, #8
@@ -99,8 +107,8 @@ __j_printf:
         str     x1, [sp, 0x20]      ; store a
 
         ; x6 holds the base
-        ; x7 points to the 10 digit
-        ; point to SP in x5
+        ; x7 points to the '0' digit for digits past 9 (e.g. 'a' - 10 for hex)
+        ; point to SP in x5, to build the value "down" from
         mov     x5, sp
         ; store a counter in x4
         mov     x4, xzr
@@ -112,6 +120,7 @@ __j_printf:
         mov     x1, TRUE
         str     x1, [sp]            ; store true at SP
         neg     x0, x0              ; negate x0
+
         printf_integer_again:
         ; divide by base into x1
         sdiv    x1, x0, x6          ; x1 = x0 / x6
@@ -127,23 +136,40 @@ __j_printf:
         printf_integer_high:
         add     w2, w2, w7          ; convert to high digit
         printf_integer_digit:
-        ; pre-decrement and write to x5
-        strb    w2, [x5, #-1]!
+        ; pre-decrement and store at x5
+        strb    w2, [x5, #-1]!      ; todo: ensure room!
         ; increment counter in x4
         add     x4, x4, #1
         cmp     x0, xzr
         b.gt    printf_integer_again
 
-        ; todo: if base is 16, add x prefix
-        ; todo: if base is not 10, add 0 prefix
+        ; if base is 16, add x prefix
+        cmp     x6, #16
+        b.ne    printf_integer_not_base10
+        ; pre-decrement and store at x5
+        add     x2, x7, #33         ; x is the 33rd "digit"
+        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        ; increment counter in x4
+        add     x4, x4, #1
 
+        printf_integer_not_base10:
+        ; if base is not 10, add 0 prefix
+        cmp     x6, #10
+        b.eq    printf_integer_was_negative
+        ; pre-decrement and store at x5
+        mov     w2, '0'
+        strb    w2, [x5, #-1]!      ; todo: ensure room!
+        ; increment counter in x4
+        add     x4, x4, #1
+
+        printf_integer_was_negative:
         ; if was negative, add minus sign to buffer
         ldr     x0, [sp]            ; load whether was negative
         cmp     x0, FALSE
         b.eq    printf_integer_copy
-        ; pre-decrement and write to x5
+        ; pre-decrement and store at x5
         mov     w2, '-'
-        strb    w2, [x5, #-1]!
+        strb    w2, [x5, #-1]!      ; todo: ensure room!
         ; increment counter in x4
         add     x4, x4, #1
 
@@ -178,6 +204,7 @@ __j_printf:
         stp     xzr, x0, [sp, -0x10]!   ; store 'nbytes' and pointer -> str
         bl      __j_strlen
         str     x0, [sp]            ; store nbytes
+        ; todo: ensure there's room in the buffer
         mov     x2, x0              ; nbytes
         ldr     x1, [sp, 0x8]       ; load pointer -> str
         ldr     x0, [sp, 0x20]      ; load buffer
