@@ -1,2 +1,6 @@
 percent: [[%]]
 written: 15
+char: [[B]]
+written: 12
+string: [[Hello, this most beautiful world!]]
+written: 46

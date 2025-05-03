@@ -24,27 +24,23 @@ _main:
     mov     x0, x19
     bl      __j_printf
 
-;    mov     x1, 'B'
-;    adrp    x0, char@PAGE
-;    add     x0, x0, char@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;char: [[B]]
-;written: 12
-;
-;    adrp    x1, hello_world@PAGE
-;    add     x1, x1, hello_world@PAGEOFF
-;    adrp    x0, string@PAGE
-;    add     x0, x0, string@PAGEOFF
-;    bl      __j_printf
-;    mov     x1, x0
-;    mov     x0, x19
-;    bl      __j_printf
-;string: [[Hello, this most beautiful world!]]
-;written: 46
-;
+    mov     x1, 'B'
+    adrp    x0, char@PAGE
+    add     x0, x0, char@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
+    adrp    x1, hello_world@PAGE
+    add     x1, x1, hello_world@PAGEOFF
+    adrp    x0, string@PAGE
+    add     x0, x0, string@PAGEOFF
+    bl      __j_printf
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_printf
+
 ;    mov     x1, 0
 ;    adrp    x0, integer@PAGE
 ;    add     x0, x0, integer@PAGEOFF

@@ -46,6 +46,7 @@ __j_printf:
         b       printf_convert
 
     printf_normal:
+        ; todo: ensure there's room in the buffer
         ldr     x1, [sp, 0x10]      ; load j
         strb    w0, [x1], #1        ; store buffer[j++]
         str     x1, [sp, 0x10]      ; store j
@@ -64,6 +65,10 @@ __j_printf:
         b.eq    printf_decimal
         cmp     x0, 'd'
         b.eq    printf_decimal
+        cmp     x0, 'c'
+        b.eq    printf_char
+        cmp     x0, 's'
+        b.eq    printf_string
         mov     x0, #17
         adrp    x1, err_bad_format_conv@PAGE
         add     x1, x1, err_bad_format_conv@PAGEOFF
@@ -131,18 +136,43 @@ __j_printf:
         ; todo: if was negative, add minus sign to buffer
 
         ; todo: ensure there's room in the buffer
-
         str     x4, [sp]            ; store counter
-        ldp     x2, x0, [sp, 0x28]  ; load written and j
-        mov     x2, x4
-        mov     x1, x5
+        mov     x2, x4              ; nbytes
+        mov     x1, x5              ; src
+        ldr     x0, [sp, 0x30]      ; load buffer
         bl      __j_memcpy          ; copy scratch space to buffer
         ldr     x4, [sp]            ; load counter
-        ldp     x2, x0, [sp, 0x28]  ; load written and j
+        add     sp, sp, 0x20        ; deallocate 'integer' stack space
+        b       printf_nbytes_x4
+
+    printf_char:
+        ; replace the spec w/ the actual character and 'normal'
+        ldr     x1, [sp, 0x20]      ; load a
+        ldr     x0, [x1], #8        ; load args[a++]
+        str     x1, [sp, 0x20]      ; store a
+        b       printf_normal
+
+    printf_string:
+        ldr     x1, [sp, 0x20]      ; load a
+        ldr     x0, [x1], #8        ; load args[a++]
+        str     x1, [sp, 0x20]      ; store a
+        ; allocate 16 bytes on the stack
+        stp     xzr, x0, [sp, -0x10]!   ; store 'nbytes' and pointer -> str
+        bl      __j_strlen
+        str     x0, [sp]            ; store nbytes
+        mov     x2, x0              ; nbytes
+        ldr     x1, [sp, 0x8]       ; load pointer -> str
+        ldr     x0, [sp, 0x20]      ; load buffer
+        bl      __j_memcpy          ; copy scratch space to buffer
+        ldr     x4, [sp]            ; load nbytes
+        add     sp, sp, 0x10        ; deallocate 'string' stack space
+        b       printf_nbytes_x4
+
+    printf_nbytes_x4:
+        ldp     x2, x0, [sp, 0x8]   ; load written and j
         add     x2, x2, x4          ; written += counter
         add     x0, x0, x4          ; j += counter
-        stp     x2, x0, [sp, 0x28]  ; store written and j
-        add     sp, sp, 0x20        ; deallocate 'integer' stack space
+        stp     x2, x0, [sp, 0x8]   ; store written and j
         b       printf_again
 
     printf_done:
