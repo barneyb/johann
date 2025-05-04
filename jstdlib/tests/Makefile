@@ -10,6 +10,7 @@ all: hello_world \
 	isdigit \
 	printf \
 	putchar \
+	symbols \
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -40,6 +41,11 @@ putchar: $(BIN)/putchar putchar.expected.txt
 	@mkdir -p $(OUT)
 	$(BIN)/putchar > $(OUT)/putchar.actual.txt
 	diff -u putchar.expected.txt $(OUT)/putchar.actual.txt
+
+symbols: $(BIN)/symbols symbols.expected.txt
+	@mkdir -p $(OUT)
+	$(BIN)/symbols > $(OUT)/symbols.actual.txt
+	diff -u symbols.expected.txt $(OUT)/symbols.actual.txt
 
 # Pattern targets
 

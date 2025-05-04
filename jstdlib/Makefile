@@ -5,6 +5,7 @@ OUT = $(TGT)/out
 OBJECTS = \
 	$(LIB)/allocator.o \
 	$(LIB)/io.o \
+	$(LIB)/table.o \
 	$(LIB)/string.o \
 	$(LIB)/sys.o \
 

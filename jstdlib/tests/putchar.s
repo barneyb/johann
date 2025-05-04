@@ -9,7 +9,6 @@ _main:
 __j_main:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    str     lr, [sp, #-16]!
 
     mov     x0, 'g'
     bl      __j_putchar
@@ -28,6 +27,5 @@ __j_main:
     bl      __j_putchar
 
     mov     x0, #0
-    ldr     lr, [sp], #16
     ldp     fp, lr, [sp], 0x10
     ret

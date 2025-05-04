@@ -2,6 +2,9 @@
 .data
 err_bad_format_conv: .ascii "ERROR: Bad format string conversion spec\n"
 err_bad_format_conv_len = . - err_bad_format_conv
+
+str_true: .asciz "true"
+str_false: .asciz "false"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .bss
 BUF_SIZE = 0x400
@@ -73,6 +76,8 @@ __j_printf:
 
         cmp     x0, 'X'
         b.eq    printf_HEX
+        cmp     x0, 'b'
+        b.eq    printf_boolean
         cmp     x0, 'c'
         b.eq    printf_char
         cmp     x0, 'd'
@@ -230,6 +235,22 @@ __j_printf:
         mov     x0, '\n'
         b       printf_normal
 
+    printf_boolean:
+        ldr     x1, [sp, 0x10]      ; load a
+        ldr     x0, [x1], #8        ; load args[a++]
+        str     x1, [sp, 0x10]      ; store a
+        cmp     x0, FALSE
+        b.ne    printf_boolean_true
+        adrp    x0, str_false@PAGE
+        add     x0, x0, str_false@PAGEOFF
+        b       printf_boolean_done
+        printf_boolean_true:
+        adrp    x0, str_true@PAGE
+        add     x0, x0, str_true@PAGEOFF
+        printf_boolean_done:
+        str     x0, [sp, -0x10]!    ; store pointer -> str
+        b       printf_string_again
+
     printf_string:
         ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
@@ -304,7 +325,7 @@ __flush_stdout:
     bl      __j_sys_write
     adrp    x3, buf_stdout_len@PAGE
     add     x3, x3, buf_stdout_len@PAGEOFF  ; pointer -> len
-    ldr     xzr, [x3]               ; store len = 0
+    str     xzr, [x3]               ; store len = 0
 
     flush_done:
     ldp     fp, lr, [sp], 0x10

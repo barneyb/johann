@@ -145,9 +145,11 @@ Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets
 
 ## Standard Library
 
-Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`. Those starting with `sys_` are not expected to remain available.
+Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
 
 ### `allocator`
+
+Eventually, these will go away in favor of `new`/`drop` or something. I hope.
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
 * `void* malloc( size_t size )` - allocate the specified number of bytes of memory and return a pointer to it.
@@ -169,10 +171,23 @@ Johann's standard library is minimal. Grouped by the file defining them, which i
 
 ### `sys`
 
+Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.
+
 * `void sys_exit( int status )` - terminate the program with the given exit status.
 * `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
 * `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from a file descriptor.
 * `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
+
+### `table`
+
+A table/map/associative-array ADT, which has a reasonable interface, and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended.
+
+* `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
+* `boolean Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
+* `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
+* `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
+* `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).)
+* `int Table_size( Table* t )` - return the number of keys in `t`.
 
 ## Compiler Errors
 

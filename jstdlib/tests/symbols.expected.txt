@@ -1,0 +1,29 @@
+size: 0
+contains 'one': false
+contains 'two': false
+  ptr: 0x000000000
+size: 1
+contains 'one': true
+value of 'one': 'spiffy'
+contains 'two': false
+value of 'two': null
+  ptr: 0x000000000
+size: 2
+contains 'one': true
+value of 'one': 'spiffy'
+contains 'two': true
+value of 'two': 'goober'
+returned: 'spiffy'
+size: 2
+contains 'one': true
+value of 'one': 'thinger'
+contains 'two': true
+value of 'two': 'goober'
+  ptr: 0x000000000
+size: 2
+returned: 'thinger'
+size: 1
+returned: 'goober'
+size: 0
+  ptr: 0x000000000
+size: 0

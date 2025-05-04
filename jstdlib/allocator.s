@@ -12,12 +12,12 @@ end: .zero 8
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align  3                           ; Make sure everything is 8-byte/64-bit aligned
-.set    NULL        , 0
-.set    PAGE_SIZE   , 0x4000        ; todo: compile-time dynamic!
-.set    MAP_ANON    , 0x1000
-.set    MAP_PRIVATE , 0x0002
-.set    PROT_READ   , 0x01
-.set    PROT_WRITE  , 0x02
+NULL        = 0
+PAGE_SIZE   = 0x4000                ; todo: compile-time dynamic!
+MAP_ANON    = 0x1000
+MAP_PRIVATE = 0x0002
+PROT_READ   = 0x01
+PROT_WRITE  = 0x02
 
 /* void free( void *ptr ) */
 .global __j_free
