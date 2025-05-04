@@ -5,15 +5,20 @@ string: .asciz "string: [[%s]]\n"
 integer: .asciz "integer: [[%d:%7i]]\n"
 hex: .asciz "hex: [[%x:%X]]\n"
 octal: .asciz "octal: [[%o]]\n"
-pointer: .asciz "pointer: [[%4p]]\n"
+pointer: .asciz "pointer: [[%p:%4p:%12p]]\n"
 newline: .asciz "newline: [[%n]]\n"          ; not num chars emitted!
-everything: .asciz "everything: %%, %c, %s, %d, %x, %12p%n"
+everything: .asciz "everything: %%, %c, %s, %d, %x, %p%n"
 hello_world: .asciz "Hello, this most beautiful world!"
 count: .asciz "written: %d\n"
 
 .text
 .global _main
 _main:
+    bl      __j_main
+    b       __j_sys_exit
+
+.global __j_main
+__j_main:
     str     lr, [sp, #-16]!
     adrp    x19, count@PAGE
     add     x19, x19, count@PAGEOFF
@@ -86,7 +91,9 @@ _main:
     mov     x0, x19
     bl      __j_printf
 
-    mov     x1, 32
+    mov     x3, 34567
+    mov     x2, 2345
+    mov     x1, 123
     adrp    x0, pointer@PAGE
     add     x0, x0, pointer@PAGEOFF
     bl      __j_printf

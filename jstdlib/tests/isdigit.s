@@ -5,6 +5,11 @@ nope: .asciz "nope!"
 .text
 .global _main
 _main:
+    bl      __j_main
+    b       __j_sys_exit
+
+.global __j_main
+__j_main:
     str     lr, [sp, #-16]!
     sub     sp, sp, #16
     mov     x19, ' '

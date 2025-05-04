@@ -5,6 +5,11 @@ nope: .asciz "nope!"
 .text
 .global _main
 _main:
+    bl      __j_main
+    b       __j_sys_exit
+
+.global __j_main
+__j_main:
     str     lr, [sp, #-16]!
     adrp    x19, yep@PAGE
     add     x20, x19, nope@PAGEOFF ; blindly assume the same page

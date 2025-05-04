@@ -145,7 +145,7 @@ Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets
 
 ## Standard Library
 
-Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail.
+Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`. Those starting with `sys_` are not expected to remain available.
 
 ### `allocator`
 
@@ -154,9 +154,9 @@ Johann's standard library is minimal. Grouped by the file defining them, which i
 
 ### `io`
 
-* `int printf( char* format, ... )` - converts args to strings basd in the null-terminated `format`, and writes to STDOUT.
+* `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
-* `int puts( char* str )` - write the null-terminated byte string _and a newline_ to STDOUT.
+* `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
 ### `string`
 
@@ -171,7 +171,7 @@ Johann's standard library is minimal. Grouped by the file defining them, which i
 
 * `void sys_exit( int status )` - terminate the program with the given exit status.
 * `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
-* `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from STDIN.
+* `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from a file descriptor.
 * `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
 
 ## Compiler Errors

@@ -4,7 +4,7 @@ err_bad_format_conv: .ascii "ERROR: Bad format string conversion spec\n"
 err_bad_format_conv_len = . - err_bad_format_conv
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .bss
-BUF_SIZE = 128
+BUF_SIZE = 0x400
 buf_stdout: .zero BUF_SIZE
 buf_stdout_len: .zero 8
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -207,7 +207,10 @@ __j_printf:
         cmp     x4, #0
         b.eq    printf_integer_done
         ldrb    w0, [x5], #1        ; load next char to emit
+        ; todo: this store/load in a tight loop is ... not ideal
+        stp     x4, x5, [sp, -0x10]!; store before call
         bl      __j_putchar
+        ldp     x4, x5, [sp], 0x10  ; load after call
         sub     x4, x4, #1
         b       printf_integer_emit_again
 
@@ -259,14 +262,51 @@ __j_putchar:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
-    ; todo: actually buffer...
-    mov     x2, #1
     adrp    x1, buf_stdout@PAGE
-    add     x1, x1, buf_stdout@PAGEOFF
-    strb    w0, [x1]
-    mov     x0, #1
-    bl      __j_sys_write
+    add     x1, x1, buf_stdout@PAGEOFF      ; pointer -> buffer[0]
+    adrp    x2, buf_stdout_len@PAGE
+    add     x2, x2, buf_stdout_len@PAGEOFF  ; pointer -> len
+    ldr     x4, [x2]                ; load len
+    add     x3, x1, x4              ; pointer -> buffer[len]
+    strb    w0, [x3]                ; store char at buffer[len]
+    add     x4, x4, #1              ; len++
+    str     x4, [x2]                ; store len
 
+    cmp     x4, BUF_SIZE
+    b.lt    putchar_done
+    ; manually inlined call to __flush_stdout
+    str     x2, [sp, -0x10]!        ; store pointer -> len
+    mov     x2, x4                  ; len
+    mov     x0, #1                  ; 1 = StdOut
+    bl      __j_sys_write
+    ldr     x2, [sp], 0x10          ; load pointer -> len
+    mov     x4, #0                  ; len = 0
+    str     x4, [x2]                ; store len
+
+    putchar_done:
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+.global __flush_stdout
+__flush_stdout:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    adrp    x3, buf_stdout_len@PAGE
+    add     x3, x3, buf_stdout_len@PAGEOFF  ; pointer -> len
+    ldr     x2, [x3]                ; load len
+    cmp     x2, xzr
+    b.eq    flush_done
+
+    adrp    x1, buf_stdout@PAGE
+    add     x1, x1, buf_stdout@PAGEOFF  ; pointer -> buffer[0]
+    mov     x0, #1                  ; 1 = StdOut
+    bl      __j_sys_write
+    adrp    x3, buf_stdout_len@PAGE
+    add     x3, x3, buf_stdout_len@PAGEOFF  ; pointer -> len
+    ldr     xzr, [x3]               ; store len = 0
+
+    flush_done:
     ldp     fp, lr, [sp], 0x10
     ret
 
