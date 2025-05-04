@@ -13,17 +13,28 @@ __j_sys_exit:
     bl      __flush_stdout
     ldr     x0, [sp], 0x10
 
+    sys_exit:
     mov     x16, #1                 ; 1 = terminate system call
     svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
 
 /* void panic( int status, const char *buf, size_t count ) */
 .global __j_panic
 __j_panic:
-    mov     x19, x0
+    ; flush STDOUT first
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x0, [sp, -0x10]!        ; store status
+    stp     x1, x2, [sp, -0x10]!    ; store buf and count
+    bl      __flush_stdout
+    ldp     x1, x2, [sp], 0x10      ; load buf and count
+
+    ; print the message
     mov     x0, #2                  ; 2 = StdErr
     bl      __j_sys_write
-    mov     x0, x19
-    b       __j_sys_exit
+
+    ; exit with status code
+    ldr     x0, [sp], 0x10          ; load status
+    b       sys_exit
 
 /* ssize_t read( int fd, void *buf, size_t nbyte ) */
 .global __j_sys_read
