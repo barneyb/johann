@@ -12,7 +12,7 @@ newline: .ascii "\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 
 /* void print_i( int num ) */
 .global _print_i

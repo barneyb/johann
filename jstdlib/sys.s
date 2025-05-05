@@ -1,6 +1,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 .set    PAGE_SIZE, 0x4000           ; todo: compile-time dynamic!
 
 /* void exit( int status ) */

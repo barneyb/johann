@@ -156,6 +156,10 @@ Eventually, these will go away in favor of `new`/`drop` or something. I hope.
 
 ### `io`
 
+No files, just STDIN and STDOUT. `EOF` is any negative number.
+
+* `int getchar( )` - consume the next character from STDIN, or `EOF`.
+* `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
 * `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.

@@ -1,21 +1,84 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.bss
+BUF_SIZE = 0x400
+buf_stdout: .zero BUF_SIZE
+buf_stdout_pos: .zero 8             ; start empty
+buf_stdin: .zero BUF_SIZE
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .data
 err_bad_format_conv: .ascii "ERROR: Bad format string conversion spec\n"
 err_bad_format_conv_len = . - err_bad_format_conv
 
 str_true: .asciz "true"
 str_false: .asciz "false"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-.bss
-BUF_SIZE = 0x400
-buf_stdout: .zero BUF_SIZE
-buf_stdout_len: .zero 8
+
+buf_stdin_pos: .long BUF_SIZE       ; start needing more
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
+EOF = -13
 NULL = 0
 TRUE = 1
 FALSE = 0
+
+/* int getchar( ) */
+.global __j_getchar
+__j_getchar:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    bl      __j_peekchar
+    cmp     x0, EOF
+    b.le    getchar_done            ; nothing to advance if EOF
+
+    adrp    x1, buf_stdin_pos@PAGE
+    add     x1, x1, buf_stdin_pos@PAGEOFF
+    ldr     x2, [x1]                ; load pos
+    add     x2, x2, #1              ; pos++
+    str     x2, [x1]                ; store pos
+
+    getchar_done:
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+/* int peekchar( ) */
+.global __j_peekchar
+__j_peekchar:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    adrp    x0, buf_stdin_pos@PAGE
+    add     x0, x0, buf_stdin_pos@PAGEOFF
+    ldr     x1, [x0]
+    cmp     x1, BUF_SIZE
+    b.lt    peekchar_loaded
+        str     xzr, [x0]           ; update pos to zero
+        mov     x2, BUF_SIZE
+        adrp    x1, buf_stdin@PAGE
+        add     x1, x1, buf_stdin@PAGEOFF
+        mov     x0, #0              ; 0 = StdIn
+        bl      __j_sys_read
+        ; if less than a buffer's worth, add an EOF
+        cmp     x0, BUF_SIZE
+        b.eq    peekchar_loaded
+            adrp    x1, buf_stdin@PAGE
+            add     x1, x1, buf_stdin@PAGEOFF
+            add     x1, x1, x0      ; index to store EOF
+            mov     x2, EOF
+            strb    w2, [x1]        ; store the EOF
+
+    peekchar_loaded:
+    adrp    x0, buf_stdin_pos@PAGE
+    add     x0, x0, buf_stdin_pos@PAGEOFF
+    ldr     x2, [x0]                ; load pos
+    adrp    x1, buf_stdin@PAGE
+    add     x1, x1, buf_stdin@PAGEOFF
+    add     x1, x1, x2              ; pointer -> buf[pos]
+    ldrb    w0, [x1]
+    sxtb    x0, w0
+
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 /* int printf( char* format, ... ) */
 ; note, only seven variadic args will work
@@ -285,8 +348,8 @@ __j_putchar:
 
     adrp    x1, buf_stdout@PAGE
     add     x1, x1, buf_stdout@PAGEOFF      ; pointer -> buffer[0]
-    adrp    x2, buf_stdout_len@PAGE
-    add     x2, x2, buf_stdout_len@PAGEOFF  ; pointer -> len
+    adrp    x2, buf_stdout_pos@PAGE
+    add     x2, x2, buf_stdout_pos@PAGEOFF  ; pointer -> len
     ldr     x4, [x2]                ; load len
     add     x3, x1, x4              ; pointer -> buffer[len]
     strb    w0, [x3]                ; store char at buffer[len]
@@ -294,7 +357,12 @@ __j_putchar:
     str     x4, [x2]                ; store len
 
     cmp     x4, BUF_SIZE
-    b.lt    putchar_done
+    b.ge    putchar_flush           ; buffer's full
+    cmp     w0, '\n'
+    b.eq    putchar_flush           ; end of line
+    b       putchar_done
+
+    putchar_flush:
     ; manually inlined call to __flush_stdout
     str     x2, [sp, -0x10]!        ; store pointer -> len
     mov     x2, x4                  ; len
@@ -313,8 +381,8 @@ __flush_stdout:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
-    adrp    x3, buf_stdout_len@PAGE
-    add     x3, x3, buf_stdout_len@PAGEOFF  ; pointer -> len
+    adrp    x3, buf_stdout_pos@PAGE
+    add     x3, x3, buf_stdout_pos@PAGEOFF  ; pointer -> len
     ldr     x2, [x3]                ; load len
     cmp     x2, xzr
     b.eq    flush_done
@@ -323,8 +391,8 @@ __flush_stdout:
     add     x1, x1, buf_stdout@PAGEOFF  ; pointer -> buffer[0]
     mov     x0, #1                  ; 1 = StdOut
     bl      __j_sys_write
-    adrp    x3, buf_stdout_len@PAGE
-    add     x3, x3, buf_stdout_len@PAGEOFF  ; pointer -> len
+    adrp    x3, buf_stdout_pos@PAGE
+    add     x3, x3, buf_stdout_pos@PAGEOFF  ; pointer -> len
     str     xzr, [x3]               ; store len = 0
 
     flush_done:

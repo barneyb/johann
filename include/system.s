@@ -6,7 +6,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 .set    MAP_ANON    , 0x1000
 .set    MAP_PRIVATE , 0x0002
 .set    PROT_READ   , 0x01

@@ -31,7 +31,7 @@ tmpl_prelude: .asciz "; Compiled with \0\n\
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 .set    NULL    , 0
 .set    TRUE    , 1
 .set    FALSE   , 0

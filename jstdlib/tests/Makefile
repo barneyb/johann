@@ -11,6 +11,7 @@ all: hello_world \
 	printf \
 	putchar \
 	symbols \
+	getchar \
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -46,6 +47,11 @@ symbols: $(BIN)/symbols symbols.expected.txt
 	@mkdir -p $(OUT)
 	$(BIN)/symbols > $(OUT)/symbols.actual.txt
 	diff -u symbols.expected.txt $(OUT)/symbols.actual.txt
+
+getchar: $(BIN)/getchar getchar.expected.txt
+	@mkdir -p $(OUT)
+	echo "qwerty\nasdf" | $(BIN)/getchar > $(OUT)/getchar.actual.txt
+	diff -u getchar.expected.txt $(OUT)/getchar.actual.txt
 
 # Pattern targets
 
