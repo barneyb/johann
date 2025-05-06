@@ -21,6 +21,7 @@ hello_world: $(BIN)/hello_world hello_world.expected.txt
 	echo 'Barney the Hobgoblin' \
 		| $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
 	$(BIN)/hello_world 'Barney the Hobgoblin' >> $(OUT)/hello_world.actual.txt
+	echo "three\nshort\nlines" | $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
 	diff -u hello_world.expected.txt $(OUT)/hello_world.actual.txt
 
 isspace: $(BIN)/isspace isspace.expected.txt

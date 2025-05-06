@@ -16,7 +16,8 @@ _main:
 
 .global __j_main
 __j_main:
-    str     lr, [sp, #-16]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; sp[24] : char* buf
     ; sp[16] : char* name
     stp     xzr, xzr, [sp, #-16]!
@@ -60,14 +61,15 @@ __j_main:
 
     mov     x0, #0
     add     sp, sp, #32
-    ldr     lr, [sp], #16
+    ldp     fp, lr, [sp], 0x10
     ret
 
 get_name:
-    str     lr, [sp, #-16]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; sp[8] : int read
     ; sp[0] : char* buffer
-    stp     xzr, xzr, [sp, #-16]!
+    stp     xzr, xzr, [sp, -0x10]!
 
     adrp    x0, prompt@PAGE
     add     x0, x0, prompt@PAGEOFF
@@ -76,29 +78,36 @@ get_name:
     bl      __j_malloc
     str     x0, [sp]                ; store pointer -> buffer
 
-    mov     x2, BUF_SIZE
-    mov     x1, x0
-    mov     x0, #0                  ; 0 = StdIn
-    bl      __j_sys_read
-    str     x0, [sp, #8]            ; store bytes read
+    get_name_again:
+        bl      __j_getchar
+        cmp     x0, xzr
+        b.lt    get_name_done
+        cmp     x0, '\n'
+        b.eq    get_name_done
+        ldp     x1, x2, [sp]        ; load pointer -> buffer and read
+        add     x1, x1, x2          ; pointer -> buffer[len]
+        add     x2, x2, #1          ; increment read
+        cmp     x2, BUF_SIZE
+        b.ge    get_name_done       ; out of room (with the null to come)
+        strb    w0, [x1]            ; store char
+        str     x2, [sp, 0x8]       ; store read
+        b       get_name_again
 
-    cmp     x0, #1
-    b.gt    get_name_doit           ; read at least one byte before EOL
+    get_name_done:
+    ldp     x0, x1, [sp]            ; load pointer -> buffer and read
+    cmp     x1, #1
+    b.ge    get_name_doit           ; read at least one 'real' byte
     ; read nothing
-    ldr     x0, [sp]                ; load pointer -> buffer
     bl      __j_free
     mov     x0, NULL
     b       get_name_return
 
     get_name_doit:
-    ldr     x0, [sp]                ; load pointer -> buffer
-    ldr     x2, [sp, #8]            ; load bytes read
-    sub     x2, x2, #1              ; don't want the EOL
-    add     x2, x0, x2              ; pointer -> write the null
+    add     x2, x0, x1              ; pointer -> write the null
     mov     w1, NULL
     strb    w1, [x2]                ; add a null byte at the end
 
     get_name_return:
-    add     sp, sp, #16
-    ldr     lr, [sp], #16
+    add     sp, sp, 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
