@@ -5,10 +5,17 @@ err_alloc_len = . - err_alloc
 
 err_free: .ascii "ERROR: Failed to free\n"
 err_free_len = . - err_free
+
+msg_mem_stats: .asciz "; MEM: %d allocs (%x bytes)\n;      %d frees\n"
+fr: .asciz "  free : %p\n"
+al: .asciz "  alloc: %p\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .bss
 start: .zero 8
 end: .zero 8
+
+alloc_stats: .zero 16
+free_stats: .zero 16
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
@@ -19,13 +26,62 @@ MAP_PRIVATE = 0x0002
 PROT_READ   = 0x01
 PROT_WRITE  = 0x02
 
+.global __mem_stats
+__mem_stats:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    adrp    x0, msg_mem_stats@PAGE
+    add     x0, x0, msg_mem_stats@PAGEOFF
+    adrp    x1, alloc_stats@PAGE
+    add     x1, x1, alloc_stats@PAGEOFF
+    ldp     x1, x2, [x1]
+    adrp    x3, free_stats@PAGE
+    add     x3, x3, free_stats@PAGEOFF
+    ldp     x3, x4, [x3]
+
+    cmp     x1, x3
+    b.ne    mem_stat_bad_count
+    ; todo: sizes too!
+    b       mem_stats_done
+
+    mem_stat_bad_count:
+    adrp    x0, msg_mem_stats@PAGE
+    add     x0, x0, msg_mem_stats@PAGEOFF
+    bl      __j_printf
+
+    mem_stats_done:
+    ldp     fp, lr, [sp], 0x10
+    ret
+
 /* void free( void *ptr ) */
 .global __j_free
 __j_free:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x0, [sp, -0x10]!
+
+;        mov     x1, x0
+;        adrp    x0, fr@PAGE
+;        add     x0, x0, fr@PAGEOFF
+;        bl      __j_printf
+;        ldr     x0, [sp]
+
     cmp     x0, NULL
     b.eq    free_return
+
+        adrp    x3, free_stats@PAGE
+        add     x3, x3, free_stats@PAGEOFF
+        ldp     x1, x2, [x3]
+        add     x1, x1, #1
+;        add     x2, x2, x0
+        stp     x1, x2, [x3]
+
     ; todo
+
     free_return:
+    add     sp, sp, 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void* malloc( size_t size ) */
@@ -35,6 +91,12 @@ __j_malloc:
     stp     lr, x19,    [sp, #-16]!
     ; end frame
     mov     x19, x0
+        adrp    x3, alloc_stats@PAGE
+        add     x3, x3, alloc_stats@PAGEOFF
+        ldp     x1, x2, [x3]
+        add     x1, x1, #1
+        add     x2, x2, x0
+        stp     x1, x2, [x3]
 
     ; if start is null, ask OS
     adrp    x1, start@PAGE
@@ -51,6 +113,14 @@ __j_malloc:
     ldr     x0, [x1]                ; start of allocatable spaces
     add     x2, x0, x19
     str     x2, [x1]                ; record allocation
+
+;        str     x0, [sp, -0x10]!
+;        mov     x1, x0
+;        adrp    x0, al@PAGE
+;        add     x0, x0, al@PAGEOFF
+;        bl      __j_printf
+;        ldr     x0, [sp], 0x10
+
     ; restore frame
     ldp     lr, x19, [sp], #16
     ret

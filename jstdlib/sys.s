@@ -13,6 +13,11 @@ __j_sys_exit:
     bl      __flush_stdout
     ldr     x0, [sp], 0x10
 
+    ; dump mem stats
+    str     x0, [sp, -0x10]!
+    bl      __mem_stats
+    ldr     x0, [sp], 0x10
+
     sys_exit:
     mov     x16, #1                 ; 1 = terminate system call
     svc     #0x80                   ; Call kernel to terminate the program (propagating x0)
