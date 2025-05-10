@@ -1,7 +1,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
-.set    PAGE_SIZE, 0x4000           ; todo: compile-time dynamic!
+PAGE_SIZE = 0x4000           ; todo: compile-time dynamic!
+NULL = 0
 
 /* void exit( int status ) */
 .global __j_sys_exit
@@ -31,6 +32,8 @@ __j_panic:
     str     x0, [sp, -0x10]!        ; store status
     stp     x1, x2, [sp, -0x10]!    ; store buf and count
     bl      __flush_stdout
+    mov     x0, NULL
+    bl      __j_puts
     ldp     x1, x2, [sp], 0x10      ; load buf and count
 
     ; print the message

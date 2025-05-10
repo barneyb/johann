@@ -12,7 +12,11 @@ err_bad_format_conv_len = . - err_bad_format_conv
 str_true: .asciz "true"
 str_false: .asciz "false"
 
-buf_stdin_pos: .long BUF_SIZE       ; start needing more
+buf_stdin_pos: .quad BUF_SIZE       ; start needing more
+
+itoa_cheat: .asciz "%i"
+__j_print_s_format: .asciz "%s"
+__j_print_c_format: .asciz "%c"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
 .align 3 ; 8-byte/64-bit alignment
@@ -24,6 +28,8 @@ FALSE = 0
 /* int getchar( ) */
 .global __j_getchar
 __j_getchar:
+.global __j_read
+__j_read:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
@@ -80,6 +86,18 @@ __j_peekchar:
     ldp     fp, lr, [sp], 0x10
     ret
 
+/* void print( int num ) */
+.global __j_print ; todo: ick
+__j_print:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    mov     x1, x0
+    adrp    x0, __j_print_s_format@PAGE
+    add     x0, x0, __j_print_s_format@PAGEOFF
+    bl      __j_printf
+    ldp     fp, lr, [sp], 0x10
+    ret
+
 /* int printf( char* format, ... ) */
 ; note, only seven variadic args will work
 .global __j_printf
@@ -108,7 +126,7 @@ __j_printf:
         b       printf_convert
 
     printf_normal:
-        bl __j_putchar
+        bl      __j_putchar
         ldr     x0, [sp, 0x8]       ; load written
         add     x0, x0, #1          ; written++
         str     x0, [sp, 0x8]       ; store written
@@ -399,13 +417,79 @@ __flush_stdout:
     ldp     fp, lr, [sp], 0x10
     ret
 
+/* void printc( int ch ) */
+/* void print_c( char c ) */
+.global __j_printc ; todo: ick
+__j_printc:
+.global __j_ick_print_c
+__j_ick_print_c:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    mov     x1, x0
+    adrp    x0, __j_print_c_format@PAGE
+    add     x0, x0, __j_print_c_format@PAGEOFF
+    bl      __j_printf
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+; pure fukken kludge, this
+/* char* itoa( int n ) */
+.global __j_itoa ; todo: ick
+__j_itoa:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x0, [sp, -0x10]!
+
+    ; flush
+    bl      __flush_stdout
+
+    ; printf
+    adrp    x0, itoa_cheat@PAGE
+    add     x0, x0, itoa_cheat@PAGEOFF
+    ldr     x1, [sp], 0x10
+    bl      __j_printf
+
+    ; measure buffer
+    adrp    x1, buf_stdout@PAGE
+    add     x1, x1, buf_stdout@PAGEOFF      ; pointer -> buffer
+    adrp    x0, buf_stdout_pos@PAGE
+    add     x0, x0, buf_stdout_pos@PAGEOFF  ; pointer -> len
+    stp     x1, x0, [sp, -0x10]!    ; store pointers -> buffer and -> len
+    ldp     x1, x0, [sp]    ; store pointers -> buffer and -> len
+    ldr     x0, [x0]                ; load len
+    add     x0, x0, #1              ; room for the null
+
+    ; new buffer
+    bl      __j_malloc
+    ldp     x1, x2, [sp]            ; load pointers -> buffer and -> len
+    ldr     x2, [x2]                ; load len
+    bl      __j_memcpy
+
+    ; place the null
+    ldp     x1, x2, [sp]            ; load pointers -> buffer and -> len
+    ldr     x3, [x2]                ; load len
+    add     x3, x0, x3              ; pointer -> alloc[len]
+    strb    wzr, [x3]               ; store a null
+
+    ; "clear" the buffer
+    str     xzr, [x2]               ; store len = 0
+
+    add     sp, sp, 0x10            ; release local variables
+    ldp     fp, lr, [sp], 0x10
+    ret
+
 /* int puts( char* str ) */
 .global __j_puts
 __j_puts:
+.global __j_println ; todo: ick
+__j_println:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     str     x19, [sp, -0x10]!
     mov     x19, x0
+
+    cmp     x0, NULL
+    b.eq    puts_done
 
     puts_again:
     ldrb    w0, [x19], #1           ; load str[i++]

@@ -77,7 +77,7 @@ __j_free:
 ;        add     x2, x2, x0
         stp     x1, x2, [x3]
 
-    ; todo
+    ; todo /* 73 - int munmap(caddr_t addr, size_t len) */
 
     free_return:
     add     sp, sp, 0x10

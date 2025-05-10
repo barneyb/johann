@@ -31,25 +31,25 @@ struct Parser {
 .global _Parser_new
 _Parser_new:
     ; create frame
-    stp     lr, x19, [sp, #-16]!
+    stp     lr, x19, [sp, -0x10]!
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> lexer
     mov     x0, SIZEOF              ; how much to allocate
-    bl      _mem_alloc;_LOG              ; allocate
+    bl      __j_malloc              ; allocate
     stp     x19, xzr, [x0]          ; initialize lexer & pos
     str     xzr, [x0, OFF_BUF]      ; put a null in the buffer
 
     ; restore frame
-    ldp     lr, x19, [sp], #16
+    ldp     lr, x19, [sp], 0x10
     ret
 
 /* void parse( Parser* self ) */
 .global _parser_parse
 _parser_parse:
     ; create frame
-    stp     lr, x19, [sp, #-16]!
-    stp     x21, x25, [sp, #-16]!
+    stp     lr, x19, [sp, -0x10]!
+    stp     x21, x25, [sp, -0x10]!
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> this
@@ -64,8 +64,8 @@ _parser_parse:
     ; see if we're done
     ldr     x25, [x19, OFF_BUF]     ; load pointer -> first token
 ;            mov     x0, x25
-;            bl      _print_i
-;            bl      _println                ; end line
+;            bl      __j_ick_print_i
+;            bl      __j_ick_println                ; end line
     cmp     x25, NULL
     b.eq    parse_return            ; zero tokens - we're done!
     ; figure out what kind of statement it is
@@ -81,26 +81,26 @@ _parser_parse:
     mov     x0, x21
     bl      _emitter_destroy        ; emitter.destroy()
     ; restore frame
-    ldp     x21, x25, [sp], #16
-    ldp     lr, x19, [sp], #16
+    ldp     x21, x25, [sp], 0x10
+    ldp     lr, x19, [sp], 0x10
     ret
 
 /* void free_buffer( Parser* self ) */
 free_buffer:
     ; create frame
-    stp     lr, x19, [sp, #-16]!
-    stp     x21, x25, [sp, #-16]!
+    stp     lr, x19, [sp, -0x10]!
+    stp     x21, x25, [sp, -0x10]!
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> this
     ldr     x25, [x19, OFF_POS]     ; load pos
 ;            mov     x0, x25
-;            bl      _print_i
-;            bl      _println                ; end line
+;            bl      __j_ick_print_i
+;            bl      __j_ick_println                ; end line
     add     x21, x19, OFF_BUF       ; pointer to buffer
 ;            mov     x0, x21
-;            bl      _print_i
-;            bl      _println                ; end line
+;            bl      __j_ick_print_i
+;            bl      __j_ick_println                ; end line
     free_buffer_loop:
     cmp     x25, xzr
     b.eq    free_buffer_done
@@ -109,25 +109,27 @@ free_buffer:
     mul     x0, x25, x1             ; offset in buffer
     add     x0, x21, x0             ; address in buffer
     ldr     x0, [x0]                ; load pointer from buffer
-    bl      _mem_free;_LOG               ; free the token
+    bl      __j_free               ; free the token
     b       free_buffer_loop
     free_buffer_done:
     str     x25, [x19, OFF_POS]     ; store
 ;            mov     x0, x25
-;            bl      _print_i
-;            bl      _println                ; end line
+;            bl      __j_ick_print_i
+;            bl      __j_ick_println                ; end line
 
     ; restore frame
-    ldp     x21, x25, [sp], #16
-    ldp     lr, x19, [sp], #16
+    ldp     x21, x25, [sp], 0x10
+    ldp     lr, x19, [sp], 0x10
     ret
 
 /* void load_buffer( Parser* self ) */
 load_buffer:
     ; create frame
-    stp     lr, x19, [sp, #-16]!    ; this
-    stp     x20, x21, [sp, #-16]!   ; lexer & buffer
-    stp     x24, x25, [sp, #-16]!   ; token & pos
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x19, [sp, -0x10]!        ; this
+    stp     x20, x21, [sp, -0x10]!   ; lexer & buffer
+    stp     x24, x25, [sp, -0x10]!   ; token & pos
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> this
@@ -136,8 +138,8 @@ load_buffer:
     mov     x25, #0                 ; start at zero
 
 ;            mov     x0, x21
-;            bl      _print_i
-;            bl      _println                ; end line
+;            bl      __j_ick_print_i
+;            bl      __j_ick_println                ; end line
 
     load_buffer_token:
     ; next token
@@ -149,25 +151,25 @@ load_buffer:
 
             ; print the token
             mov     x0, ';'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_type
-            bl      _print_c                ; get and print token type as char
+            bl      __j_Token_type
+            bl      __j_ick_print_c                ; get and print token type as char
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_line
-            bl      _print_i
+            bl      __j_Token_line
+            bl      __j_ick_print_i
             mov     x0, ','
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_char
-            bl      _print_i
+            bl      __j_Token_char
+            bl      __j_ick_print_i
             ; and the value, as appropriate
             mov     x0, x24
-            bl      _token_type
+            bl      __j_Token_type
             cmp     x0, T_INT
             b.eq    _token_val_int
             cmp     x0, T_ID
@@ -183,66 +185,66 @@ load_buffer:
             b       _token_eol
             _token_val_int:
             mov     x0, ':'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_value
-            bl      _print_i
+            bl      __j_Token_value
+            bl      __j_ick_print_i
             b       _token_eol
             _token_val_id:
             mov     x0, ':'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_value_ptr
-            bl      _print_z
+            bl      __j_ick_Token_value_ptr
+            bl      __j_print
             b       _token_eol
             _token_val_char:
             mov     x0, ':'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, '\''
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_value
-            bl      _print_c
+            bl      __j_Token_value
+            bl      __j_ick_print_c
             mov     x0, '\''
-            bl      _print_c
+            bl      __j_ick_print_c
             b       _token_eol
             _token_val_string:
             mov     x0, ':'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, '"'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_value_ptr
-            bl      _print_z
+            bl      __j_ick_Token_value_ptr
+            bl      __j_print
             mov     x0, '"'
-            bl      _print_c
+            bl      __j_ick_print_c
             b       _token_eol
             _token_val_bool:
             mov     x0, ':'
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, ' '
-            bl      _print_c
+            bl      __j_ick_print_c
             mov     x0, x24
-            bl      _token_value
+            bl      __j_Token_value
             cmp     x0, FALSE
             b.eq    _token_val_bool_false
             mov     x0, 'T'
-            bl      _print_c
+            bl      __j_ick_print_c
             b       _token_eol
             _token_val_bool_false:
             mov     x0, 'F'
-            bl      _print_c
+            bl      __j_ick_print_c
             b       _token_eol
             _token_eol:
-;            bl      _println                ; end line
+;            bl      __j_ick_println                ; end line
 
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer
@@ -253,7 +255,7 @@ load_buffer:
 
     ; if semi, obrace, or cbrace, we're done
     mov     x0, x24
-    bl      _token_type
+    bl      __j_Token_type
     cmp     w0, T_SEMI
     b.eq    load_buffer_return
     cmp     w0, T_OBRACE
@@ -263,7 +265,7 @@ load_buffer:
     b       load_buffer_token
 
     load_buffer_return:
-            bl      _println
+            bl      __j_ick_println
     ; add a null terminator
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer
@@ -272,20 +274,22 @@ load_buffer:
     add     x25, x25, #1            ; i++
     str     x25, [x19, OFF_POS]     ; store
     ; restore frame
-    ldp     x24, x25, [sp], #16
-    ldp     x20, x21, [sp], #16
-    ldp     lr, x19, [sp], #16
+    ldp     x24, x25, [sp], 0x10
+    ldp     x20, x21, [sp], 0x10
+    ldr     x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void destroy( Parser* self ) */
 .global _parser_destroy
 _parser_destroy:
     ; create frame
-    str     lr, [sp, #-16]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; end frame
 
-    bl      _mem_free;_LOG
+    bl      __j_free
 
     ; restore frame
-    ldr     lr, [sp], #16
+    ldp     fp, lr, [sp], 0x10
     ret

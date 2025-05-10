@@ -2,10 +2,18 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
+INCLUDE = ../include
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 VERSION = $(OUT)/inc_version.s
-OBJECTS = \
-	$(JSTDLIB)
+OBJECTS = $(JSTDLIB) \
+	$(LIB)/emitter.o \
+	$(LIB)/lexer.o \
+	$(LIB)/parser.o \
+	$(LIB)/print.o \
+	$(LIB)/reader.o \
+	$(LIB)/string.o \
+	$(LIB)/token.o
+
 INCLUDES = \
 	inc_token_table.s \
 	$(VERSION)
@@ -35,9 +43,13 @@ $(LIB)/%.o: %.s $(INCLUDES)
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
+$(LIB)/%.o: $(INCLUDE)/%.s
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
+
 # Utility targets
 
-test:
+test: all
 	$(MAKE) -C tests all
 
 clean:

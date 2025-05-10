@@ -15,19 +15,19 @@ at_char: .asciz ", char "
 
 .macro tmpl_sec r=x21
     mov     x0, \r
-    bl      _print_z                ; print segment
+    bl      __j_print               ; print segment
     mov     x0, \r
     bl      _strlen                 ; get its length
     add     x0, x0, #1
     add     \r, \r, x0              ; advance to the next segment
 .endm
 
-tmpl_prelude: .asciz "; Compiled with \0\n\
+tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
     .align  3\n\
     .set NULL, 0\n\
     .set TRUE, 1\n\
-    .set FALSE, 0"
+    .set FALSE, 0\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -55,29 +55,25 @@ struct Emitter {
 /* Emitter new( ) */
 .global _Emitter_new
 _Emitter_new:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!
-    str     x21, [sp, #-16]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x21, [sp, -0x10]!
 
     mov     x0, SIZEOF              ; how much to allocate
-    bl      _mem_alloc;_LOG              ; allocate
+    bl      __j_malloc              ; allocate
     mov     x19, x0                 ; stash pointer -> this
     stp     xzr, xzr, [x0]          ; initialize seq and depth
-    adrp    x21, tmpl_prelude@PAGE
-    add     x21, x21, tmpl_prelude@PAGEOFF
 
-    tmpl_sec
-    adrp    x0, jnc_short_version@PAGE
-    add     x0, x0, jnc_short_version@PAGEOFF
-    bl      _print_z
-    tmpl_sec
-    bl      _println
+    adrp    x0, tmpl_prelude@PAGE
+    add     x0, x0, tmpl_prelude@PAGEOFF
+    adrp    x1, jnc_short_version@PAGE
+    add     x1, x1, jnc_short_version@PAGEOFF
+    bl      __j_printf
 
     mov     x0, x19
-    ; restore frame
-    ldr     x21, [sp], #16
-    ldp     lr, x19, [sp], #16
+
+    ldp     x19, x21, [sp], #16
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /*
@@ -166,12 +162,12 @@ innermost_block_of:
     innermost_block_of_bad:
         adrp    x0, err_invalid_nesting@PAGE
         add     x0, x0, err_invalid_nesting@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x20
-        bl      _print_h
-        bl      _println
+        bl      __j_ick_print_h
+        bl      __j_ick_println
         mov     x0, #37
-        b       _os_exit
+        b       __j_sys_exit
 
     innermost_block_of_return:
     ; restore frame
@@ -245,7 +241,7 @@ _emitter_emit:
 
     ldr     x21, [x20]              ; stash pointer -> first token
     mov     x0, x21
-    bl      _token_type
+    bl      __j_Token_type
     mov     x22, x0                 ; stash type of first token
 
     __emit_fn:
@@ -349,7 +345,7 @@ _emitter_emit:
     __emit_second_token:
     ldr     x21, [x20, #8]          ; stash pointer -> second token
     mov     x0, x21
-    bl      _token_type
+    bl      __j_Token_type
     mov     x22, x0                 ; stash type of second token
 
     __emit_assign:
@@ -388,7 +384,7 @@ s_main: .asciz "main"
 tmpl_main: .asciz "    .global _main\n\
     _main:\n\
         bl      __j_main\n\
-        b       _os_exit\n\
+        b       __j_sys_exit\n\
 "
 
 tmpl_fn_intro: .asciz "    .global __j_\0\n\
@@ -417,7 +413,7 @@ do_fn:
     adrp    x21, tmpl_fn_intro@PAGE ; pointer -> template
     add     x21, x21, tmpl_fn_intro@PAGEOFF
     ldr     x0, [x20, #8]           ; load pointer -> name token
-    bl      _token_value_ptr        ; token.value_ptr()
+    bl      __j_ick_Token_value_ptr        ; token.value_ptr()
     mov     x22, x0                 ; stash pointer -> name
     mov     x0, x19
     mov     x1, T_KW_FN
@@ -432,24 +428,24 @@ do_fn:
     b.ne    do_fn_intro
     adrp    x0, tmpl_main@PAGE
     add     x0, x0, tmpl_main@PAGEOFF
-    bl      _println_z
+    bl      __j_puts
 
     do_fn_intro:
     tmpl_sec
     mov     x0, x22
-    bl      _print_z
+    bl      __j_print
     tmpl_sec
     mov     x0, x22
-    bl      _print_z
+    bl      __j_print
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     add     x20, x20, #24           ; skip to first arg or close paren
     mov     x22, #0                 ; index of param's register
     do_fn_next_arg:
     ldr     x0, [x20], #8           ; load pointer -> token to interrogate
     mov     x23, x0                 ; stash pointer -> token
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     cmp     x0, T_CPAREN
     b.eq    do_fn_return            ; done!
     cmp     x0, T_ID
@@ -459,18 +455,18 @@ do_fn:
     add     x21, x21, tmpl_fn_arg@PAGEOFF
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      _print_c
+    bl      __j_ick_print_c
     tmpl_sec
     mov     x0, x22
-    bl      _print_i;
+    bl      __j_ick_print_i;
     add     x22, x22, #1            ; increment register
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
-    bl      _println_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_puts
     b.eq    do_fn_next_arg          ; again!
 
     do_fn_return:
@@ -511,9 +507,9 @@ do_if:
     bl      do_expr
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     ; restore frame
     ldr     x22, [sp], #16
@@ -549,16 +545,16 @@ do_while:
 
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x19
     add     x1, x20, #8             ; pointer -> condition token
     bl      do_expr
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     ; restore frame
     ldr     x22, [sp], #16
@@ -595,8 +591,8 @@ do_return:
     bl      do_expr
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
-    bl      _println
+    bl      __j_ick_print_i
+    bl      __j_ick_println
 
     ; restore frame
     ldp     x22, x23, [sp], #16
@@ -642,9 +638,9 @@ do_loop_thinger:
 
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     ; restore frame
     ldp     x22, x23, [sp], #16
@@ -680,7 +676,7 @@ do_decl:
     add     x21, x20, #8            ; first token is type
     do_decl_again:
     ldr     x0, [x21, #8]!          ; stash pointer -> next token
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     cmp     x0, T_ASSIGN
     b.eq    do_decl_delegate
     cmp     x0, T_SEMI
@@ -704,7 +700,7 @@ do_decl:
     ldr     x20, [x21, #8]          ; stash pointer -> value token
     ldr     x22, [x21, #-8]         ; stash pointer -> name token
     mov     x0, x20
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_BOOL
@@ -729,14 +725,14 @@ do_decl:
     add     x21, x21, tmpl_global_int@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      _token_value_ptr        ; pointer -> value
-    bl      _print_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
-    bl      _token_value            ; pointer -> value
-    bl      _print_i
+    bl      __j_Token_value            ; pointer -> value
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_decl_return
 
     do_decl_char:
@@ -744,14 +740,14 @@ do_decl:
     add     x21, x21, tmpl_global_char@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      _token_value_ptr        ; pointer -> value
-    bl      _print_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
-    bl      _token_value            ; pointer -> value
-    bl      _print_c
+    bl      __j_Token_value            ; pointer -> value
+    bl      __j_ick_print_c
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_decl_return
 
     do_decl_string:
@@ -759,14 +755,14 @@ do_decl:
     add     x21, x21, tmpl_global_string@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      _token_value_ptr        ; pointer -> value
-    bl      _print_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
-    bl      _token_value_ptr        ; pointer -> value
-    bl      _print_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_print
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_decl_return
 
     do_decl_return:
@@ -799,14 +795,14 @@ do_assign:
     bl      do_expr
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> name token
-    bl      _token_value_ptr        ; pointer -> name
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      _print_c
+    bl      __j_ick_print_c
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
-    bl      _println_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_puts
 
     ; restore frame
     ldp     x20, x21, [sp], #16
@@ -835,14 +831,14 @@ do_assign_pointer:
     bl      do_expr
     tmpl_sec
     ldr     x0, [x20, #8]           ; pointer -> name token
-    bl      _token_value_ptr        ; pointer -> name
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      _print_c
+    bl      __j_ick_print_c
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
-    bl      _println_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_puts
 
     ; restore frame
     ldp     x20, x21, [sp], #16
@@ -888,9 +884,9 @@ do_close_block:
     add     x21, x21, tmpl_fn_outro@PAGEOFF
     tmpl_sec
     mov     x0, x23
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_close_block_return
 
     do_close_block_if:
@@ -900,9 +896,9 @@ do_close_block:
     add     x21, x21, tmpl_if_outro@PAGEOFF
     tmpl_sec
     mov     x0, x23
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_close_block_return
 
     do_close_block_while:
@@ -912,12 +908,12 @@ do_close_block:
     add     x21, x21, tmpl_while_outro@PAGEOFF
     tmpl_sec
     mov     x0, x23
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x23
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_close_block_return
 
     do_close_block_return:
@@ -951,7 +947,7 @@ do_call:
     do_call_next_arg:
     ldr     x0, [x24], #8           ; load pointer -> token to interrogate
     mov     x23, x0                 ; stash pointer -> token
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     cmp     x0, T_CPAREN
     b.eq    do_call_invoke          ; done!
     cmp     x0, T_COMMA
@@ -961,30 +957,30 @@ do_call:
     add     x21, x21, tmpl_call_param@PAGEOFF
     tmpl_sec
     mov     x0, x22
-    bl      _print_i;
+    bl      __j_ick_print_i;
     add     x22, x22, #1            ; increment register
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      _print_c
+    bl      __j_ick_print_c
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
-    bl      _println_z
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_puts
     b.eq    do_call_next_arg        ; again!
 
     do_call_invoke:
     adrp    x21, tmpl_call@PAGE
     add     x21, x21, tmpl_call@PAGEOFF
     ldr     x0, [x20]               ; load pointer -> name token
-    bl      _token_value_ptr        ; token.value_ptr()
+    bl      __j_ick_Token_value_ptr        ; token.value_ptr()
     mov     x22, x0                 ; stash pointer -> name
 
     tmpl_sec
     mov     x0, x22
-    bl      _println_z
+    bl      __j_puts
 
     ; restore frame
     ldr     x24, [sp], #16
@@ -1004,7 +1000,7 @@ do_expr:
     mov     x20, x1                 ; stash pointer -> buffer
     ldr     x22, [x20, #8]          ; stash pointer -> second token
     mov     x0, x22
-    bl      _token_type
+    bl      __j_Token_type
     mov     x23, x0                 ; type of second token
 
     ; if second token is SEMI, it's a copy
@@ -1059,10 +1055,10 @@ do_expr:
     do_expr_first_token:
     ldr     x22, [x20]              ; stash pointer -> first token
     mov     x0, x22
-    bl      _token_type
+    bl      __j_Token_type
     mov     x23, x0                 ; type of first token
-;        bl _print_h
-;        bl _println
+;        bl __j_ick_print_h
+;        bl __j_ick_println
     ; if the first token is BANG, MINUS, STAR, do unary op
     do_expr_deref:
     cmp     x23, T_BANG
@@ -1101,19 +1097,19 @@ do_panic:
     mov     x19, x1                 ; stash pointer to token
     mov     x20, x2                 ; stash code
 
-    bl      _print_z                ; print message
+    bl      __j_print                ; print message
     mov     x0, x19
-    bl      _token_line
-    bl      _print_i                ; print line num
+    bl      __j_Token_line
+    bl      __j_ick_print_i                ; print line num
     adrp    x0, at_char@PAGE
     add     x0, x0, at_char@PAGEOFF
-    bl      _print_z
+    bl      __j_print
     mov     x0, x19
-    bl      _token_char
-    bl      _print_i                ; print char pos
-    bl      _println
+    bl      __j_Token_char
+    bl      __j_ick_print_i                ; print char pos
+    bl      __j_ick_println
     mov     x0, x20                 ; set status code
-    b       _os_exit                ; terminate
+    b       __j_sys_exit                ; terminate
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
@@ -1145,7 +1141,7 @@ do_unary_op:
 
     ; first token is the operator
     ldr     x0, [x20]
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_BANG
@@ -1170,18 +1166,18 @@ do_unary_op:
     mov     x20, x0
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_un_return
     do_un_neg:
     adrp    x21, tmpl_un_negate@PAGE
@@ -1194,7 +1190,7 @@ do_unary_op:
 
     do_un_emit:
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     do_un_return:
     ; restore frame
@@ -1254,7 +1250,7 @@ do_binary_op:
     bl      do_token
     adrp    x0, tmpl_bin_push@PAGE
     add     x0, x0, tmpl_bin_push@PAGEOFF
-    bl      _println_z
+    bl      __j_puts
 
     ; first token is an operand
     mov     x0, x19
@@ -1263,11 +1259,11 @@ do_binary_op:
 
     adrp    x0, tmpl_bin_pop_x1@PAGE
     add     x0, x0, tmpl_bin_pop_x1@PAGEOFF
-    bl      _println_z
+    bl      __j_puts
 
     ; second token is the operator
     ldr     x0, [x20, #8]
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_PLUS
@@ -1329,7 +1325,7 @@ do_binary_op:
 
     do_arith_emit:
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_binary_op_return
 
     do_logic_emit:
@@ -1338,18 +1334,18 @@ do_binary_op:
     mov     x20, x0
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
     b       do_binary_op_return
 
     do_binary_op_return:
@@ -1367,7 +1363,7 @@ do_token:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> token
     mov     x0, x20
-    bl      _token_type             ; token.type()
+    bl      __j_Token_type             ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_BOOL
@@ -1390,19 +1386,19 @@ do_token:
 
     do_token_id:
     mov     x0, x20                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> name
+    bl      __j_ick_Token_value_ptr        ; pointer -> name
     bl      do_value_id
     b       do_token_return
     do_token_char:                  ; these three all happen to be the same
     do_token_bool:
     do_token_int:
     mov     x0, x20
-    bl      _token_value            ; value of the literal
+    bl      __j_Token_value            ; value of the literal
     bl      do_value_literal
     b       do_token_return
     do_token_string:
     mov     x0, x20                 ; pointer -> token
-    bl      _token_value_ptr        ; pointer -> value
+    bl      __j_ick_Token_value_ptr        ; pointer -> value
     mov     x1, x0
     mov     x0, x19
     bl      do_value_string
@@ -1441,18 +1437,18 @@ do_value_string:
 
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x20
-    bl      _print_z
+    bl      __j_print
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
     mov     x0, x22
-    bl      _print_i
+    bl      __j_ick_print_i
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     ; restore frame
     ldr     x22, [sp], #16
@@ -1484,8 +1480,8 @@ do_value_id:
     tmpl_sec
     ldrb    w0, [x19]               ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      _print_c
-    bl      _println
+    bl      __j_ick_print_c
+    bl      __j_ick_println
     b       do_value_id_return
 
     do_value_id_global:
@@ -1493,12 +1489,12 @@ do_value_id:
     add     x21, x21, tmpl_token_global@PAGEOFF
     tmpl_sec
     mov     x0, x19
-    bl      _print_z
+    bl      __j_print
     tmpl_sec
     mov     x0, x19
-    bl      _print_z
+    bl      __j_print
     tmpl_sec
-    bl      _println
+    bl      __j_ick_println
 
     do_value_id_return:
     ; restore frame
@@ -1523,8 +1519,8 @@ do_value_literal:
     add     x21, x21, tmpl_token_literal@PAGEOFF
     tmpl_sec
     mov     x0, x19
-    bl      _print_i
-    bl      _println
+    bl      __j_ick_print_i
+    bl      __j_ick_println
     ; restore frame
     ldp     lr, x19, [sp], #16
     ret
@@ -1536,7 +1532,7 @@ _emitter_destroy:
     str     lr, [sp, #-16]!
     ; end frame
 
-    bl      _mem_free;_LOG
+    bl      __j_free
 
     ; restore frame
     ldr     lr, [sp], #16
