@@ -86,7 +86,7 @@ __j_peekchar:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* void print( int num ) */
+/* void print( char* str ) */
 .global __j_print ; todo: ick
 __j_print:
     stp     fp, lr, [sp, -0x10]!
@@ -175,7 +175,7 @@ __j_printf:
         b.eq    printf_string
         cmp     x0, 'x'
         b.eq    printf_hex
-        mov     x0, #17
+        mov     x0, #47
         adrp    x1, err_bad_format_conv@PAGE
         add     x1, x1, err_bad_format_conv@PAGEOFF
         mov     x2, err_bad_format_conv_len

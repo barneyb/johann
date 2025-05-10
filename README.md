@@ -29,7 +29,9 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant. There is no exception handling.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness.
+
+All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant. They may move to the other side of the identifier (e.g., `i: int` instead of `int i`). There is no exception handling.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -72,7 +74,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
         done;
     }
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There are `loadb` and `storeb` standard library functions for reading/writing with 1-byte alignment.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -86,13 +88,13 @@ Compound expressions are not supported, so there is no operator precedence. The 
 
 Semicolons are required to terminate statements which don't take a block.
 
-Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters.
+Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters. This will change.
 
 The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
-Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope.
+Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
 
-Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not).
+Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
 
@@ -108,7 +110,7 @@ Functions can declare formal arguments within their parentheses, to create varia
         return a + b;
     }
 
-Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and most of the standard library functions:
+Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     char* c = "one: ";
     print(c);
@@ -121,7 +123,7 @@ Parameters passed in a function call must be variables, not expressions. This in
 
 ## Building Johann Programs
 
-First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon running macOS) to run on, with the command-line developer/Xcode tools installed.
+First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon, running macOS) to run on, with the command-line developer/Xcode tools installed.
 
 If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn > program.s`. Next, assemble and link with `gcc program.s ./lib/jstdlib.o -o program`. Now you can execute it: `./program`. If you have multiple source files, compile and assemble them separately (with `-c`), and then link the object files into the final binary. The standard library (`./lib/jstdlib.o`) is pre-assembled and only needs to be linked.
 
@@ -139,13 +141,13 @@ Johann provides no debugging support, but you might be able to use various third
 
 ## Memory "Safety"
 
-There are no safety checks - you can ruin your day with impunity. I'm hoping avoid writing a proper allocator in assembly.
+There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is logged. I'm hoping avoid writing a proper allocator in assembly.
 
 Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the four pages are exhausted: segfault!
 
 ## Standard Library
 
-Johann's standard library is minimal. Grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
+Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
 
 ### `allocator`
 
@@ -193,11 +195,29 @@ A table/map/associative-array ADT, which has a reasonable interface, and a linea
 * `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).)
 * `int Table_size( Table* t )` - return the number of keys in `t`.
 
+### Obsolete
+
+A few functions remain supported, but are tagged "ick", and will eventually be removed.
+
+* `void print( char* str )` - use `printf`
+* `void printc( int ch )` - use `printf`
+* `int println( char* str )` - use `puts` or `printf`
+* `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
+
 ## Compiler Errors
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
-* `17` - Unrecognized format conversion spec for `printf`.
+* `17` - Unrecognized token
+* `18` - Too-long identifier
+* `19` - Too-long string
+* `21` - Bad token
+* `26` - Bad value
+* `27` - Bad statement
+* `28` - Bad expression
+* `29` - Bad operator
+* `37` - Certain types of invalid block nesting
+* `47` - Unrecognized format conversion spec for `printf`.
 * `99` - Failed to get memory from the OS.
 
 Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
@@ -253,3 +273,7 @@ LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
 TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 ```
 <!--{/systemsoftware}-->
+
+## Application Binary Interface
+
+Johann-compiled code mostly conforms to the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
