@@ -23,4 +23,5 @@ fn main() {
     free(a);
     b = itoa(b);
     println(b);
+    free(b);
 }

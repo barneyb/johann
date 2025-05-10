@@ -5,64 +5,72 @@ opt_v: .asciz "-v"
 opt_version: .asciz "--version"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 .set    NULL, 0
 .set    FALSE, 0
 .set    INDENT, 4
 
-/* int main( int argc, char* argv[] ) */
 .global _main
 _main:
+    bl      __j_main
+    b       __j_sys_exit
+
+/* int main( int argc, char* argv[] ) */
+.global __j_main
+__j_main:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     mov     x20, x0                 ; stash arg count
     mov     x21, x1                 ; stash pointer -> argv
     add     x21, x21, #8            ; argv[0] is the command name
-    mov     x19, #0
-    arg_loop:
-    add     x19, x19, 1
-    cmp     x19, x20
-    b.ge    _main_jnc
-    ldr     x0, [x21]
-    adrp    x1, opt_v@PAGE
-    add     x1, x1, opt_v@PAGEOFF
-    bl      _strcmp
-    cmp     x0, #0
-    b.eq    _main_short_version
-    ldr     x0, [x21], #8
-    adrp    x1, opt_version@PAGE
-    add     x1, x1, opt_version@PAGEOFF
-    bl      _strcmp
-    cmp     x0, #0
-    b.eq    _main_long_version
-    b       arg_loop
+    mov     x19, xzr
+    main_arg_loop:
+        add     x19, x19, 1
+        cmp     x19, x20
+        b.ge    _main_jnc
+        ldr     x0, [x21]
+        adrp    x1, opt_v@PAGE
+        add     x1, x1, opt_v@PAGEOFF
+        bl      __j_strcmp
+        cmp     x0, xzr
+        b.eq    main_short_version
+        ldr     x0, [x21], #8
+        adrp    x1, opt_version@PAGE
+        add     x1, x1, opt_version@PAGEOFF
+        bl      __j_strcmp
+        cmp     x0, xzr
+        b.eq    main_long_version
+        b       main_arg_loop
 
-    _main_short_version:
-    adrp    x0, jnc_short_version@PAGE
-    add     x0, x0, jnc_short_version@PAGEOFF
-    bl      _println_z
-    b       _main_exit
+    main_short_version:
+        adrp    x0, jnc_short_version@PAGE
+        add     x0, x0, jnc_short_version@PAGEOFF
+        bl      __j_puts
+        b       main_success
 
-    _main_long_version:
-    adrp    x0, jnc_long_version@PAGE
-    add     x0, x0, jnc_long_version@PAGEOFF
-    bl      _println_z
-    b       _main_exit
+    main_long_version:
+        adrp    x0, jnc_long_version@PAGE
+        add     x0, x0, jnc_long_version@PAGEOFF
+        bl      __j_puts
+        b       main_success
 
     _main_jnc:
     bl      jnc
 
-    _main_exit:
-    mov     x0, #0
-    b       _os_exit
+    main_success:
+    mov     x0, xzr
+    main_exit:
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 jnc:
     ; create frame
-    stp     lr, x19, [sp, #-16]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     stp     x20, x21, [sp, #-16]!
-    stp     x24, x25, [sp, #-16]!
     ; end frame
 
-    bl      _Reader_instance        ; r = Reader.instance()
-    mov     x19, x0                 ; stash pointer -> r
     bl      _Lexer_new              ; lex = Lexer.new(r)
     mov     x20, x0                 ; stash pointer -> lex
     bl      _Parser_new             ; parser = Parser.new(lex);
@@ -71,14 +79,11 @@ jnc:
     bl      _parser_parse
 
     mov     x0, x21
-    bl      _parser_destroy         ; lex.destroy()
+    bl      _parser_destroy         ; parser.destroy()
     mov     x0, x20
     bl      _lexer_destroy          ; lex.destroy()
-    mov     x0, x19
-    bl      _Reader_destroy         ; Reader.destroy()
 
     ; restore frame
-    ldp     x24, x25, [sp], #16
     ldp     x20, x21, [sp], #16
-    ldp     lr, x19, [sp], #16
+    ldp     fp, lr, [sp], 0x10
     ret

@@ -1,6 +1,6 @@
 # They're All Named Johann
 
-Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only AArch64, is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), with no assembly in the solution itself nor the compiler which compiles it.
+Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only `arm64-apple-darwin` (aka Apple Silicon running macOS), is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), with no assembly in the solution itself nor the compiler which compiles it.
 
 You don't want to use it. You don't want to even look at the source. When a bored coder has a martini (or three...) and decides to single-handedly reinvent much of the past ~60 years of computer science from scratch, nothing good results.
 
@@ -12,7 +12,7 @@ You don't want to use it. You don't want to even look at the source. When a bore
 
 ## The Short Version
 
-Clone and compile a test program on your Apple silicon mac with command-line developer tools installed:
+Clone and compile a test program as below. You'll need the command-line developer/Xcode tools installed.
 
     git clone git@github.com:barneyb/johann.git
     cd johann
@@ -29,7 +29,9 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter (i.e., not semantic), and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness.
+
+All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant. They may move to the other side of the identifier (e.g., `i: int` instead of `int i`). There is no exception handling.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -72,7 +74,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
         done;
     }
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment. There are `loadb` and `storeb` standard library functions for reading/writing with 1-byte alignment.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -86,13 +88,13 @@ Compound expressions are not supported, so there is no operator precedence. The 
 
 Semicolons are required to terminate statements which don't take a block.
 
-Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters.
+Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters. This will change.
 
 The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
-Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope.
+Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
 
-Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not).
+Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
 
@@ -108,7 +110,7 @@ Functions can declare formal arguments within their parentheses, to create varia
         return a + b;
     }
 
-Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and most of the standard library functions:
+Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     char* c = "one: ";
     print(c);
@@ -121,13 +123,13 @@ Parameters passed in a function call must be variables, not expressions. This in
 
 ## Building Johann Programs
 
-First, you'll need a AArch64 mac (aka "Apple silicon") to run on, with the command-line developer tools installed.
+First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon, running macOS) to run on, with the command-line developer/Xcode tools installed.
 
 If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn > program.s`. Next, assemble and link with `gcc program.s ./lib/jstdlib.o -o program`. Now you can execute it: `./program`. If you have multiple source files, compile and assemble them separately (with `-c`), and then link the object files into the final binary. The standard library (`./lib/jstdlib.o`) is pre-assembled and only needs to be linked.
 
 > **NB:** Compiled Johann programs are version specific. When changing versions of the compiler, you need to recompile all your sources. The standard library is always compiled with the compiler version it is bundled with. If you have third-party dependencies, their sources will need to be recompiled as well.
 
-Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - you can't use files!
+Implicit is a command shell that understands redirection. Compilation is always "read from STDIN and write to STDOUT" - Johann doesn't know about files!
 
 The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
 
@@ -137,27 +139,70 @@ The various `Makefile` may provide additional inspiration. It's worth mentioning
 
 Johann provides no debugging support, but you might be able to use various third-party tools (e.g., GDB) to help? 
 
-## Memory Safety
+## Memory "Safety"
 
-None. Nada. Zilch. See note under _Debugging_ about avoiding bugs.
+There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is logged. I'm hoping avoid writing a proper allocator in assembly.
 
-Currently, the "allocator" always `mmap`s an anonymous page _per allocation_. This is both slow and wasteful. I didn't really want to write an allocator in assembly, and correctness doesn't depend on efficient allocation, so just kicked that can down the road a ways.
-
-One side effect of this strategy is the OS will give you a segfault if you try and free an invalid pointer or dereference a pointer to already `free`d memory. This "safety" IS NOT part of the language design, so should not be relied upon.
+Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the four pages are exhausted: segfault!
 
 ## Standard Library
 
-Johann's standard library is minimal:
+Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
+
+### `allocator`
+
+Eventually, these will go away in favor of `new`/`drop` or something. I hope.
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
-* `char* itoa( int )` - return a string version of the passed int.
-* `void* malloc( int )` - allocate the specified number of bytes of memory and return a pointer to it.
-* `char loadb( char* )` - load a char from the passed pointer. `dest = *ptr`, but only one byte wide.
-* `void print( char* )` - print the passed string to STDOUT.
-* `void printc( char )` - print the passed character to STDOUT.
-* `void println( char* )` - print the passed string and a newline to STDOUT. 
-* `char read( )` - read a single character from STDIN, or -1 to signal EOF.
-* `void storeb( char*, char )` - store the passed char into the passed pointer. `*dest = src;`, but only one byte wide.
+* `void* malloc( size_t size )` - allocate the specified number of bytes of memory and return a pointer to it.
+
+### `io`
+
+No files, just STDIN and STDOUT. `EOF` is any negative number.
+
+* `int getchar( )` - consume the next character from STDIN, or `EOF`.
+* `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
+* `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
+* `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
+* `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
+
+### `string`
+
+* `int isdigit( int ch )` - is the passed character a decimal digit?
+* `int isspace( int ch )` - is the passed character whitespace?
+* `int isxdigit( int ch )` - is the passed character a hexidecimal digit?
+* `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
+* `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
+* `size_t strlen( const char* str )` - get the length of a null-terminated string.
+
+### `sys`
+
+Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.
+
+* `void sys_exit( int status )` - terminate the program with the given exit status.
+* `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
+* `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from a file descriptor.
+* `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
+
+### `table`
+
+A table/map/associative-array ADT, which has a reasonable interface, and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended.
+
+* `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
+* `boolean Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
+* `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
+* `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
+* `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).)
+* `int Table_size( Table* t )` - return the number of keys in `t`.
+
+### Obsolete
+
+A few functions remain supported, but are tagged "ick", and will eventually be removed.
+
+* `void print( char* str )` - use `printf`
+* `void printc( int ch )` - use `printf`
+* `int println( char* str )` - use `puts` or `printf`
+* `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 
 ## Compiler Errors
 
@@ -172,6 +217,8 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `28` - Bad expression
 * `29` - Bad operator
 * `37` - Certain types of invalid block nesting
+* `47` - Unrecognized format conversion spec for `printf`.
+* `99` - Failed to get memory from the OS.
 
 Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
 
@@ -195,7 +242,7 @@ commit_hash: 174fc8f720f022adebec109b5e454535db6bd85b
 
 Running `make clean all` in the root will ensure your local development version of the compiler and standard library are in sync. If things seem screwy, that's the first thing to do. You'd think `make` would be _exactly_ the tool to automatically prevent this, but I can't figure out the right incantation(s). 
 
-The specific versions of the system software I have are listed below. Note that Apple made several backwards-incompatible changes in clang 17 (macos 15.4.1).
+The specific versions of the system software I have are listed below. Note that Apple made several backwards-incompatible changes in clang 17 (macOS 15.4.1).
 
 <!--{systemsoftware}-->
 ```
@@ -226,3 +273,7 @@ LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
 TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 ```
 <!--{/systemsoftware}-->
+
+## Application Binary Interface
+
+Johann-compiled code mostly conforms to the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.

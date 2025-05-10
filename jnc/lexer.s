@@ -29,7 +29,7 @@ KW_WHILE    : .asciz    "while"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.align 3 ; 8-byte/64-bit alignment
 .set    NULL, 0
 .set    FALSE, 0
 
@@ -61,7 +61,7 @@ _Lexer_new:
 
     mov     x19, x0                 ; stash pointer -> reader
     mov     x0, SIZEOF              ; how much to allocate
-    bl      _mem_alloc;_LOG              ; allocate
+    bl      __j_malloc              ; allocate
     str     x19, [x0]               ; initialize
     mov     x19, #1
     stp     x19, xzr, [x0, OFF_LINE]
@@ -86,11 +86,11 @@ _lexer_token:
 
     token_skip_char:
     mov     x0, x20
-    bl      _reader_is_eof          ; this.reader.is_eof()
+    bl      __j_ick_reader_is_eof          ; this.reader.is_eof()
     cmp     x0, FALSE
     b.ne    token_null
     mov     x0, x20
-    bl      _reader_read            ; this.reader.read()
+    bl      __j_ick_reader_read            ; this.reader.read()
 
     ; see if it's a newline
     cmp     x0, '\n'
@@ -191,29 +191,29 @@ _lexer_token:
     mov     x23, x0                 ; save the char
     adrp    x0, err_bad_token@PAGE
     add     x0, x0, err_bad_token@PAGEOFF
-    bl      _print_z
+    bl      __j_print
     mov     x0, x23
-    bl      _print_c
+    bl      __j_ick_print_c
     adrp    x0, at_line@PAGE
     add     x0, x0, at_line@PAGEOFF
-    bl      _print_z
+    bl      __j_print
     mov     x0, x21
-    bl      _print_i
+    bl      __j_ick_print_i
     adrp    x0, at_char@PAGE
     add     x0, x0, at_char@PAGEOFF
-    bl      _print_z
+    bl      __j_print
     mov     x0, x22
-    bl      _print_i
-    bl      _println                ; end line
+    bl      __j_ick_print_i
+    bl      __j_ick_println                ; end line
     mov     x0, #17
-    b       _os_exit
+    b       __j_sys_exit
 
     token_punct:
-    bl      _Token_new
+    bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      _token_set_coords
+    bl      __j_Token_set_coords
     mov     x0, x24
     b       token_return
 
@@ -223,16 +223,16 @@ _lexer_token:
     bl      lex_digits
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_INT
-    bl      _Token_new
+    bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      _token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords       ; set coords of start
     mov     x0, x23                 ; unstash name
     bl      _str2int
     mov     x1, x0
     mov     x0, x24
-    bl      _token_set_value        ; set value
+    bl      __j_Token_set_value        ; set value
     mov     x0, x23                 ; unstash name
     bl      _strlen
     ; todo: validate len
@@ -248,14 +248,14 @@ _lexer_token:
     bl      lex_identifier
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_ID
-    bl      _Token_new
+    bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      _token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords       ; set coords of start
     mov     x0, x24
     ldr     x1, [x23]               ; load first 8 bytes of name
-    bl      _token_set_value        ; set value
+    bl      __j_Token_set_value        ; set value
     mov     x0, x23                 ; unstash name
     bl      _strlen
     cmp     x0, #7
@@ -264,7 +264,7 @@ _lexer_token:
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
     mov     x0, x23                 ; unstash name
-    bl      _mem_free               ; free name
+    bl      __j_free               ; free name
     mov     x0, x24
     bl      convert_keyword
     mov     x0, x24
@@ -272,38 +272,38 @@ _lexer_token:
     token_id_long:
         adrp    x0, err_long_id@PAGE
         add     x0, x0, err_long_id@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x23
-        bl      _print_z
+        bl      __j_print
         adrp    x0, at_line@PAGE
         add     x0, x0, at_line@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x21
-        bl      _print_i
+        bl      __j_ick_print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x22
-        bl      _print_i
-        bl      _println                ; end line
+        bl      __j_ick_print_i
+        bl      __j_ick_println                ; end line
         mov     x0, #18
-        b       _os_exit
+        b       __j_sys_exit
 
     token_char:
     mov     x0, x20
-    bl      _reader_read            ; the actual char
+    bl      __j_ick_reader_read            ; the actual char
     mov     x23, x0
     mov     x0, x20
-    bl      _reader_read            ; the second single quote
+    bl      __j_ick_reader_read            ; the second single quote
     mov     x0, T_CHAR
-    bl      _Token_new
+    bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      _token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords       ; set coords of start
     mov     x0, x24
     mov     x1, x23                 ; the character
-    bl      _token_set_value        ; set value
+    bl      __j_Token_set_value        ; set value
     add     x22, x22, #2            ; add the char and close quote
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
     mov     x0, x24
@@ -314,14 +314,14 @@ _lexer_token:
     bl      lex_string
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_STRING
-    bl      _Token_new
+    bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      _token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords       ; set coords of start
     mov     x0, x24
     ldr     x1, [x23]               ; load first 8 bytes of string
-    bl      _token_set_value        ; set value
+    bl      __j_Token_set_value        ; set value
     mov     x0, x23                 ; unstash name
     bl      _strlen
     cmp     x0, #7
@@ -330,28 +330,28 @@ _lexer_token:
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
     mov     x0, x23                 ; unstash name
-    bl      _mem_free               ; free name
+    bl      __j_free               ; free name
     mov     x0, x24
     b       token_return
     token_string_long:
         adrp    x0, err_long_string@PAGE
         add     x0, x0, err_long_string@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x23
-        bl      _print_z
+        bl      __j_print
         adrp    x0, at_line@PAGE
         add     x0, x0, at_line@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x21
-        bl      _print_i
+        bl      __j_ick_print_i
         adrp    x0, at_char@PAGE
         add     x0, x0, at_char@PAGEOFF
-        bl      _print_z
+        bl      __j_print
         mov     x0, x22
-        bl      _print_i
-        bl      _println                ; end line
+        bl      __j_ick_print_i
+        bl      __j_ick_println                ; end line
         mov     x0, #19
-        b       _os_exit
+        b       __j_sys_exit
 
     token_null:
     mov     x0, NULL
@@ -371,7 +371,7 @@ _lexer_destroy:
     str     lr, [sp, #-16]!
     ; end frame
 
-    bl      _mem_free;_LOG
+    bl      __j_free
 
     ; restore frame
     ldr     lr, [sp], #16
@@ -387,11 +387,11 @@ lex_comment:
 
     lex_comment_char:
     mov     x0, x19
-    bl      _reader_is_eof          ; this.reader.is_eof()
+    bl      __j_ick_reader_is_eof          ; this.reader.is_eof()
     cmp     x0, FALSE
     b.ne    lex_comment_return      ; out of characters
     mov     x0, x19
-    bl      _reader_read
+    bl      __j_ick_reader_read
     cmp     x0, '\n'
     b.eq    lex_comment_return
     b       lex_comment_char
@@ -411,7 +411,7 @@ lex_digits:
     mov     x19, x0                 ; stash pointer -> reader
     mov     x22, x1                 ; stash first char
     mov     x0, #21                 ; 64-bit int max len
-    bl      _mem_alloc
+    bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
     mov     x21, x20                ; pointer -> buffer[pos] to write
     strb    w22, [x21], #1          ; put first char in the string
@@ -419,13 +419,13 @@ lex_digits:
     lex_digits_char:
     ; forgo the EOF check - there's no valid syntax for that case.
     mov     x0, x19
-    bl      _reader_peek            ; reader.peek()
+    bl      __j_ick_reader_peek            ; reader.peek()
     cmp     x0, '0'
     b.lt    lex_digits_return
     cmp     x0, '9'
     b.gt    lex_digits_return
     mov     x0, x19
-    bl      _reader_read            ; consume the char
+    bl      __j_ick_reader_read            ; consume the char
     strb    w0, [x21], #1           ; add it to the string
     b       lex_digits_char
 
@@ -435,12 +435,12 @@ lex_digits:
 
 ;        ; print the number
 ;        mov     x0, '('
-;        bl      _print_c
+;        bl      __j_ick_print_c
 ;        mov     x0, x20
-;        bl      _print_z
+;        bl      __j_print
 ;        mov     x0, ')'
-;        bl      _print_c
-;        bl      _println
+;        bl      __j_ick_print_c
+;        bl      __j_ick_println
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
@@ -459,7 +459,7 @@ lex_identifier:
     mov     x19, x0                 ; stash pointer -> reader
     mov     x22, x1                 ; stash first char
     mov     x0, #256                ; todo: max identifier length
-    bl      _mem_alloc
+    bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
     mov     x21, x20                ; pointer -> buffer[pos] to write
     strb    w22, [x21], #1          ; put first char in the string
@@ -467,13 +467,13 @@ lex_identifier:
     lex_identifier_char:
     ; forgo the EOF check - there's no valid syntax for that case.
     mov     x0, x19
-    bl      _reader_peek            ; reader.peek()
+    bl      __j_ick_reader_peek            ; reader.peek()
     cmp     x0, 'a'
     b.lt    lex_identifier_return
     cmp     x0, 'z'
     b.gt    lex_identifier_return
     mov     x0, x19
-    bl      _reader_read            ; consume the char
+    bl      __j_ick_reader_read            ; consume the char
     strb    w0, [x21], #1           ; add it to the string
     b       lex_identifier_char
 
@@ -483,12 +483,12 @@ lex_identifier:
 
 ;        ; print the identifier
 ;        mov     x0, '['
-;        bl      _print_c
+;        bl      __j_ick_print_c
 ;        mov     x0, x20
-;        bl      _print_z
+;        bl      __j_print
 ;        mov     x0, ']'
-;        bl      _print_c
-;        bl      _println
+;        bl      __j_ick_print_c
+;        bl      __j_ick_println
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
@@ -505,14 +505,14 @@ lex_string:
     ; end frame
     mov     x19, x0                 ; stash pointer -> reader
     mov     x0, #4096               ; todo: max string literal length
-    bl      _mem_alloc
+    bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
     mov     x21, x20                ; pointer -> buffer[pos] to write
 
     lex_string_char:
     ; forgo the EOF check - there's no valid syntax for that case.
     mov     x0, x19
-    bl      _reader_read            ; read a char
+    bl      __j_ick_reader_read            ; read a char
     cmp     x0, '"'
     b.eq    lex_string_return
     strb    w0, [x21], #1           ; add it to the string
@@ -524,12 +524,12 @@ lex_string:
 
 ;        ; print the string
 ;        mov     x0, '{'
-;        bl      _print_c
+;        bl      __j_ick_print_c
 ;        mov     x0, x20
-;        bl      _print_z
+;        bl      __j_print
 ;        mov     x0, '}'
-;        bl      _print_c
-;        bl      _println
+;        bl      __j_ick_print_c
+;        bl      __j_ick_println
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
@@ -544,7 +544,7 @@ convert_keyword:
     str     x20, [sp, #-16]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> token
-    bl      _token_value_ptr
+    bl      __j_ick_Token_value_ptr
     mov     x20, x0                 ; stash pointer -> token.value
 
     convert_keyword_fn:
@@ -556,7 +556,7 @@ convert_keyword:
     b.ne    convert_keyword_int     ; next!
     mov     x0, x19
     mov     x1, T_KW_FN
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_int:
@@ -568,7 +568,7 @@ convert_keyword:
     b.ne    convert_keyword_char    ; next!
     mov     x0, x19
     mov     x1, T_KW_INT
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_char:
@@ -580,7 +580,7 @@ convert_keyword:
     b.ne    convert_keyword_bool; next!
     mov     x0, x19
     mov     x1, T_KW_CHAR
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_bool:
@@ -592,7 +592,7 @@ convert_keyword:
     b.ne    convert_keyword_void      ; next!
     mov     x0, x19
     mov     x1, T_KW_BOOL
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_void:
@@ -604,7 +604,7 @@ convert_keyword:
     b.ne    convert_keyword_if      ; next!
     mov     x0, x19
     mov     x1, T_KW_VOID
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_if:
@@ -616,7 +616,7 @@ convert_keyword:
     b.ne    convert_keyword_while   ; next!
     mov     x0, x19
     mov     x1, T_KW_IF
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_while:
@@ -628,7 +628,7 @@ convert_keyword:
     b.ne    convert_keyword_again   ; next!
     mov     x0, x19
     mov     x1, T_KW_WHILE
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_again:
@@ -640,7 +640,7 @@ convert_keyword:
     b.ne    convert_keyword_done__  ; next!
     mov     x0, x19
     mov     x1, T_KW_AGAIN
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_done__:
@@ -652,7 +652,7 @@ convert_keyword:
     b.ne    convert_keyword_return  ; next!
     mov     x0, x19
     mov     x1, T_KW_DONE
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_return:
@@ -664,7 +664,7 @@ convert_keyword:
     b.ne    convert_keyword_true    ; next!
     mov     x0, x19
     mov     x1, T_KW_RETURN
-    bl      _token_set_type
+    bl      __j_Token_set_type
     b       convert_keyword_done    ; done!
 
     convert_keyword_true:
@@ -676,10 +676,10 @@ convert_keyword:
     b.ne    convert_keyword_false   ; next!
     mov     x0, x19
     mov     x1, T_BOOL
-    bl      _token_set_type
+    bl      __j_Token_set_type
     mov     x0, x19
     mov     x1, TRUE
-    bl      _token_set_value
+    bl      __j_Token_set_value
     b       convert_keyword_done    ; done!
 
     convert_keyword_false:
@@ -691,10 +691,10 @@ convert_keyword:
     b.ne    convert_keyword_null    ; next!
     mov     x0, x19
     mov     x1, T_BOOL
-    bl      _token_set_type
+    bl      __j_Token_set_type
     mov     x0, x19
     mov     x1, FALSE
-    bl      _token_set_value
+    bl      __j_Token_set_value
     b       convert_keyword_done    ; done!
 
     convert_keyword_null:
@@ -706,10 +706,10 @@ convert_keyword:
     b.ne    convert_keyword_done    ; next!
     mov     x0, x19
     mov     x1, T_INT               ; all nulls are integers!
-    bl      _token_set_type
+    bl      __j_Token_set_type
     mov     x0, x19
     mov     x1, NULL
-    bl      _token_set_value
+    bl      __j_Token_set_value
     b       convert_keyword_done    ; done!
 
     convert_keyword_done:

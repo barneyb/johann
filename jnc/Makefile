@@ -3,29 +3,35 @@ BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
 INCLUDE = ../include
+JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 VERSION = $(OUT)/inc_version.s
-OBJECTS = \
+OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
-	$(LIB)/mem.o \
 	$(LIB)/parser.o \
 	$(LIB)/print.o \
 	$(LIB)/reader.o \
 	$(LIB)/string.o \
-	$(LIB)/system.o \
 	$(LIB)/token.o
+
 INCLUDES = \
 	inc_token_table.s \
 	$(VERSION)
 
 all: $(BIN)/jnc
+	@echo --------------------------------------------------
 	$(BIN)/jnc --version
+	@echo --------------------------------------------------
+	$(BIN)/jnc -v
+	@echo --------------------------------------------------
 
 $(VERSION):
 	@mkdir -p $(OUT)
-	rm -f $(VERSION)
-	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' >> $(VERSION)
+	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' > $(VERSION)
 	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
+
+$(JSTDLIB)::
+	$(MAKE) -C ../jstdlib
 
 # Pattern targets
 
@@ -43,11 +49,12 @@ $(LIB)/%.o: $(INCLUDE)/%.s
 
 # Utility targets
 
-test:
+test: all
 	$(MAKE) -C tests all
 
 clean:
 	rm -rf $(TGT)
+	$(MAKE) -C ../jstdlib clean
 	$(MAKE) -C tests clean
 
 # configuration targets

@@ -1,123 +1,41 @@
-/**
- * I provide routines for easing printing to STDOUT and STDERR
- */
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .bss
-c_buf: .zero 1
-
+.data
+__j_print_i_format: .asciz "%i"
+__j_print_h_format: .asciz "%x"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-newline: .ascii "\n"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-.align  3                           ; Make sure everything is 8-byte/64-bit aligned
+.text
+.align 3 ; 8-byte/64-bit alignment
 
 /* void print_i( int num ) */
-.global _print_i
-_print_i:
-    stp     lr, x19, [sp, #-16]!
-    bl      _int2str
-    mov     x19, x0
-    bl      _print_z
-    mov     x0, x19
-    bl      _mem_free;_LOG
-    ldp     lr, x19, [sp], #16
+.global __j_ick_print_i
+__j_ick_print_i:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    mov     x1, x0
+    adrp    x0, __j_print_i_format@PAGE
+    add     x0, x0, __j_print_i_format@PAGEOFF
+    bl      __j_printf
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void print_h( int num ) */
-.global _print_h
-_print_h:
-    stp     lr, x19, [sp, #-16]!
-    bl      _int2hex
-    mov     x19, x0
-    bl      _print_z
-    mov     x0, x19
-    bl      _mem_free;_LOG
-    ldp     lr, x19, [sp], #16
-    ret
-
-/* void print_z( const void *buf ) */
-.global _print_z
-_print_z:
-    ; create frame
-    str     lr, [sp, #-16]!         ; save lr
-    stp     x19, x20, [sp, #-16]!   ; save x19 & x20
-    ; end frame
+.global __j_ick_print_h
+__j_ick_print_h:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     mov     x1, x0
-    mov     x20, #0
-
-    _print_z_char:
-    ldrb    w19, [x1], #1
-    cmp     w19, wzr
-    b.eq    _print_z_go
-    add     x20, x20, #1
-    b       _print_z_char
-
-    _print_z_go:
-    mov     x1, x20
-    bl      _os_stdout
-
-    ; restore frame
-    ldp     x19, x20, [sp], #16     ; restore saved registers
-    ldr     lr, [sp], #16           ; restore lr
-    ret
-
-/* void println_z( const void *buf ) */
-.global _println_z
-_println_z:
-    ; create frame
-    str     lr, [sp, #-16]!         ; save lr
-    ; end frame
-    bl      _print_z
-    bl      _println
-
-    ; restore frame
-    ldr     lr, [sp], #16           ; restore lr
-    ret
-
-/* void println_n( const void *buf, size_t count ) */
-.global _println_n
-_println_n:
-    ; create frame
-    str     lr, [sp, #-16]!         ; save lr
-    ; end frame
-    bl      _os_stdout
-    bl      _println
-
-    ; restore frame
-    ldr     lr, [sp], #16           ; restore lr
-    ret
-
-/* void print_c( char c ) */
-.global _print_c
-_print_c:
-    ; create frame
-    stp     lr, x19, [sp, #-16]!    ; save lr and x19
-    ; end frame
-    adrp    x19, c_buf@PAGE
-    add     x19, x19, c_buf@PAGEOFF
-    strb    w0, [x19]
-    mov     x0, x19
-    mov     x1, #1
-    bl      _os_stdout
-
-    ; restore frame
-    ldp     lr, x19, [sp], #16      ; restore lr and x19
+    adrp    x0, __j_print_h_format@PAGE
+    add     x0, x0, __j_print_h_format@PAGEOFF
+    bl      __j_printf
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void println( ) */
-.global _println
-_println:
-    ; create frame
-    str     lr, [sp, #-16]!         ; save lr
-    ; end frame
-    adrp    x0, newline@PAGE
-    add     x0, x0, newline@PAGEOFF
-    mov     x1, #1
-    bl      _os_stdout              ; print!
-
-    ; restore frame
-    ldr     lr, [sp], #16           ; restore lr
+.global __j_ick_println
+__j_ick_println:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    mov     x0, '\n'
+    bl      __j_ick_print_c
+    ldp     fp, lr, [sp], 0x10
     ret
