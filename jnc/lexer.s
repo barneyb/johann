@@ -1,7 +1,3 @@
-/**
- * I provide a Lexer "class" which tokenizes the characters from a Reader.
- */
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 .set    TRUE, 1
@@ -14,7 +10,7 @@ at_line: .asciz "' at line "
 at_char: .asciz ", char "
 
 KW_AGAIN    : .asciz    "again"
-KW_BOOL     : .asciz    "bool"
+KW_BOOL     : .asciz    "boolean"
 KW_CHAR     : .asciz    "char"
 KW_DONE     : .asciz    "done"
 KW_FALSE    : .asciz    "false"
@@ -37,37 +33,26 @@ KW_WHILE    : .asciz    "while"
 
 /*
 struct Lexer {
-    Reader* reader                  ; pointer -> source of characters
     int line_num                    ; line of the source being lexed
     int char_pos                    ; position in the line
-    int pos                         ; next buffer index to write
-    [char] buf                      ; buffered bytes
 }
 */
-.set    OFF_READ, 0
-.set    OFF_LINE, 8
-.set    OFF_CHAR, 16
-.set    OFF_POS , 24
-.set    OFF_BUF , 32
-.set    BUF_CAP , 8                     ; todo: embiggen when identifiers get longer
-.set    SIZEOF  , OFF_BUF + BUF_CAP     ; buffer is always last
+.set    OFF_LINE, 0
+.set    OFF_CHAR, 0x8
+.set    SIZEOF  , OFF_CHAR + 0x8    ; buffer is always last
 
-/* Lexer new( Reader* r ) */
+/* Lexer new( ) */
 .global _Lexer_new
 _Lexer_new:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
 
-    mov     x19, x0                 ; stash pointer -> reader
     mov     x0, SIZEOF              ; how much to allocate
     bl      __j_malloc              ; allocate
-    str     x19, [x0]               ; initialize
-    mov     x19, #1
-    stp     x19, xzr, [x0, OFF_LINE]
+    mov     x1, #1
+    stp     x1, xzr, [x0, OFF_LINE] ; initialize line and char
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* Token token( Lexer* self ) */
@@ -81,16 +66,13 @@ _lexer_token:
     ; end frame
 
     mov     x19, x0                 ; pointer -> this
-    ldr     x20, [x19, OFF_READ]    ; load this.reader
     ldp     x21, x22, [x19, OFF_LINE]   ; load this.line_num and .char_pos
 
     token_skip_char:
-    mov     x0, x20
-    bl      __j_ick_reader_is_eof          ; this.reader.is_eof()
+    bl      __j_iseof
     cmp     x0, FALSE
     b.ne    token_null
-    mov     x0, x20
-    bl      __j_ick_reader_read            ; this.reader.read()
+    bl      __j_getchar
 
     ; see if it's a newline
     cmp     x0, '\n'
@@ -115,8 +97,6 @@ _lexer_token:
     ; see if it's a comment, and consume until end of line if so
     cmp     x0, T_HASH
     b.ne    token_keep_going
-    mov     x0, x20
-    mov     x1, '\n'
     bl      lex_comment
     b       token_handle_newline
 
@@ -170,7 +150,6 @@ _lexer_token:
     cmp     x0, T_MINUS
     b.eq    token_minus
     ; multi-character tokens...
-    str     xzr, [x19, OFF_POS]     ; store this.pos = 0 to "empty" the buffer
     cmp     x0, 'a'                 ; T_ID
     b.ge    token_id_ish
     cmp     x0, '0'                 ; T_INT
@@ -229,8 +208,6 @@ _lexer_token:
     token_int:
     sub     sp, sp, 0x10            ; two-int return "structure"
     mov     x8, sp
-    mov     x1, x0                  ; pass first digit
-    mov     x0, x20                 ; and the reader
     bl      lex_digits
     mov     x0, T_INT
     bl      __j_Token__new
@@ -247,8 +224,6 @@ _lexer_token:
     b       token_return
 
     token_id:
-    mov     x1, x0                  ; pass first character
-    mov     x0, x20                 ; and the reader
     bl      lex_identifier
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_ID
@@ -295,10 +270,10 @@ _lexer_token:
 
     token_char:
     mov     x0, x20
-    bl      __j_ick_reader_read            ; the actual char
+    bl      __j_getchar            ; the actual char
     mov     x23, x0
     mov     x0, x20
-    bl      __j_ick_reader_read            ; the second single quote
+    bl      __j_getchar            ; the second single quote
     mov     x0, T_CHAR
     bl      __j_Token__new
     mov     x24, x0                 ; pointer -> token
@@ -314,7 +289,6 @@ _lexer_token:
     b       token_return
 
     token_string:
-    mov     x0, x20                 ; pass the reader
     bl      lex_string
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_STRING
@@ -381,31 +355,26 @@ _lexer_destroy:
     ldr     lr, [sp], 0x10
     ret
 
-; Eats characters from the Reader, up to and including the next newline.
-/* void lex_comment( Reader* reader ) */
+; Eats characters up to and including the next newline.
+/* void lex_comment( ) */
 lex_comment:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> reader
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
 
     lex_comment_char:
-    mov     x0, x19
-    bl      __j_ick_reader_is_eof          ; this.reader.is_eof()
+    bl      __j_iseof
     cmp     x0, FALSE
     b.ne    lex_comment_return      ; out of characters
-    mov     x0, x19
-    bl      __j_ick_reader_read
+    bl      __j_getchar
     cmp     x0, '\n'
     b.eq    lex_comment_return
     b       lex_comment_char
 
     lex_comment_return:
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
-/* [val, consumed] lex_digits( Reader* reader, char first_char ) */
+/* [val, consumed] lex_digits( char first_char ) */
 lex_digits:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
@@ -414,10 +383,10 @@ lex_digits:
     stp     x21, x8, [sp, -0x10]!   ; stash consumed, XR
 
     mov     x21, xzr                ; chars consumed
-    cmp     x1, '-'
+    cmp     x0, '-'
     b.eq    lex_digits_negative
     mov     x19, FALSE              ; not negative
-    sub     x20, x1, '0'            ; parse first digit
+    sub     x20, x0, '0'            ; parse first digit
     b       lex_digits_go
     lex_digits_negative:
     mov     x19, TRUE               ; negative
@@ -450,15 +419,14 @@ lex_digits:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* char* lex_identifier( Reader* reader, char first_char ) */
+/* char* lex_identifier( char first_char ) */
 lex_identifier:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
     str     x22, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> reader
-    mov     x22, x1                 ; stash first char
+    mov     x22, x0                 ; stash first char
     mov     x0, #256                ; todo: max identifier length
     bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
@@ -467,29 +435,18 @@ lex_identifier:
 
     lex_identifier_char:
     ; forgo the EOF check - there's no valid syntax for that case.
-    mov     x0, x19
-    bl      __j_ick_reader_peek            ; reader.peek()
+    bl      __j_peekchar
     cmp     x0, 'a'
     b.lt    lex_identifier_return
     cmp     x0, 'z'
     b.gt    lex_identifier_return
-    mov     x0, x19
-    bl      __j_ick_reader_read            ; consume the char
+    bl      __j_getchar            ; consume the char
     strb    w0, [x21], #1           ; add it to the string
     b       lex_identifier_char
 
     lex_identifier_return:
     mov     x0, NULL                ; null-terminator
     strb    w0, [x21], #1           ; add it to the string
-
-;        ; print the identifier
-;        mov     x0, '['
-;        bl      __j_ick_print_c
-;        mov     x0, x20
-;        bl      __j_print
-;        mov     x0, ']'
-;        bl      __j_ick_print_c
-;        bl      __j_ick_println
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
@@ -498,13 +455,12 @@ lex_identifier:
     ldp     lr, x19, [sp], 0x10
     ret
 
-/* char* lex_string( Reader* reader ) */
+/* char* lex_string( ) */
 lex_string:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> reader
     mov     x0, #4096               ; todo: max string literal length
     bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
@@ -512,8 +468,7 @@ lex_string:
 
     lex_string_char:
     ; forgo the EOF check - there's no valid syntax for that case.
-    mov     x0, x19
-    bl      __j_ick_reader_read            ; read a char
+    bl      __j_getchar
     cmp     x0, '"'
     b.eq    lex_string_return
     strb    w0, [x21], #1           ; add it to the string
@@ -522,15 +477,6 @@ lex_string:
     lex_string_return:
     mov     x0, NULL                ; null-terminator
     strb    w0, [x21], #1           ; add it to the string
-
-;        ; print the string
-;        mov     x0, '{'
-;        bl      __j_ick_print_c
-;        mov     x0, x20
-;        bl      __j_print
-;        mov     x0, '}'
-;        bl      __j_ick_print_c
-;        bl      __j_ick_println
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame

@@ -10,7 +10,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
 	$(LIB)/print.o \
-	$(LIB)/reader.o \
 	$(LIB)/token.o
 
 INCLUDES = \

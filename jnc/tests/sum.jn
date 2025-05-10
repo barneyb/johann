@@ -16,7 +16,7 @@ fn main() {
     int a = 0;          # answer
     int e = -1;         # EOF
     int f = 0;          # accumulator
-    bool b = false;     # negative
+    boolean b = false;     # negative
     char c = read();
     while c > e {
         if c = '-' {
@@ -24,7 +24,7 @@ fn main() {
             c = read();
             again;
         }
-        bool d = isdgt(c);
+        boolean d = isdgt(c);
         if d {
             c = c - '0'; # subtract ASCII 0 to "parse digit"
             f = f * 10;

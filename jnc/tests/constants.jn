@@ -1,7 +1,7 @@
 char* ohhai = "Hello, ";
 int* nine = 9;
 char* space = ' ';
-bool* hidenum = false;
+boolean* hidenum = false;
 int* ten = 10;
 char* world = "world!";
 
