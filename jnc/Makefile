@@ -11,7 +11,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/parser.o \
 	$(LIB)/print.o \
 	$(LIB)/reader.o \
-	$(LIB)/string.o \
 	$(LIB)/token.o
 
 INCLUDES = \

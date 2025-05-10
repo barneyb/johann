@@ -21,7 +21,7 @@ not_quite_lisp: $(BIN)/not_quite_lisp not_quite_lisp.expected.txt
 	diff -u not_quite_lisp.expected.txt $(OUT)/not_quite_lisp.actual.txt
 
 sum: $(BIN)/sum sum.expected.txt
-	echo "1 23 456 100000 1 5" | $(BIN)/sum > $(OUT)/sum.actual.txt
+	echo "1 -23 456 100000 1 -5" | $(BIN)/sum > $(OUT)/sum.actual.txt
 	diff -u sum.expected.txt $(OUT)/sum.actual.txt
 
 print_one: $(BIN)/print_one print_one.expected.txt
