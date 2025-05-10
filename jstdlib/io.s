@@ -20,10 +20,26 @@ __j_print_c_format: .asciz "%c"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
 .align 3 ; 8-byte/64-bit alignment
-EOF = -13
+EOF = -1
 NULL = 0
 TRUE = 1
 FALSE = 0
+
+/* boolean iseof( ) */
+.global __j_iseof
+__j_iseof:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    bl      __j_peekchar
+    cmp     x0, EOF
+    b.le    iseof_yep
+    mov     x0, FALSE
+    b       iseof_done
+    iseof_yep:
+    mov     x0, TRUE
+    iseof_done:
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 /* int getchar( ) */
 .global __j_getchar

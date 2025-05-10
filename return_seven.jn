@@ -58,7 +58,7 @@ class adder {
 fn main(): int {
     # local variables are mutable
     adder a = adder.zero();
-    bool nope = false;
+    boolean nope = false;
     # if doesn't use parens, and braces are mandatory
     if ! nope {
         # call methods with the dot operator, passing additional args, as needed.

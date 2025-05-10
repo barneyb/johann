@@ -16,27 +16,32 @@ fn main() {
     int a = 0;          # answer
     int e = -1;         # EOF
     int f = 0;          # accumulator
+    boolean b = false;     # negative
     char c = read();
     while c > e {
-        bool d = isdgt(c);
+        if c = '-' {
+            b = true;
+            c = read();
+            again;
+        }
+        boolean d = isdgt(c);
         if d {
             c = c - '0'; # subtract ASCII 0 to "parse digit"
             f = f * 10;
             f = f + c;
+            if b {
+                # negate
+                f = f * -1;
+                b = false;
+            }
         }
         if !d {
-            g = "+ ";
-            print(g);
-            g = itoa(f);
-            println(g);     # print number
-            free(g);
+            g = "+ %i\n";
+            printf(g, f);
             a = add(a, f);  # add to the answer
             f = 0;          # reset
-            g = "= ";
-            print(g);
-            g = itoa(a);
-            println(g);     # print answer
-            free(g);
+            g = "= %i\n";
+            printf(g, a);
         }
         c = read();
     }

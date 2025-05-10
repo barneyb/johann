@@ -90,19 +90,19 @@ Semicolons are required to terminate statements which don't take a block.
 
 Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters. This will change.
 
-The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
+The `boolean`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
 Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
 
 Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
 
-Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. Those constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done.
+Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. A `\n` may be used for a newline; other escapes may work, but are unsupported. Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
-Integers are signed 64-bit values, but only unsigned literals up to 65,535 are supported. If you need a greater magnitude, build it up with arithmetic. If you need a negative, unary `-` makes it look like a negative literal, but counts as an operator, so it's a full expression.
+Integers are signed 64-bit values, but literals requiring more than 15-bits will cause runtime crashes. If you need a greater magnitude, build it up with arithmetic. This will change.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 
-The `null` keyword is recognized as an alias for `0`. Conveniently, `malloc` returns a `0` if it couldn't allocate.
+The `null` keyword is recognized as an alias for `0`.
 
 Functions can declare formal arguments within their parentheses, to create variables from passed parameters. These are normal variables, which means functions can take at most seven arguments. Per usual, type information may be provided, but is ignored:
 
@@ -141,9 +141,11 @@ Johann provides no debugging support, but you might be able to use various third
 
 ## Memory "Safety"
 
-There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is logged. I'm hoping avoid writing a proper allocator in assembly.
+There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is logged.
 
-Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the four pages are exhausted: segfault!
+Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the pages are exhausted: segfault!
+
+I'm hoping avoid writing a proper allocator in assembly.
 
 ## Standard Library
 
