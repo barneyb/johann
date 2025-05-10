@@ -1,13 +1,3 @@
-fn isdgt(c) {
-    if c < '0' {
-        return false;
-    }
-    if c > '9' {
-        return false;
-    }
-    return true;
-}
-
 # I read a series of integers and add them up, printing each number and the
 # running total as they are read.
 fn main() {
@@ -24,7 +14,7 @@ fn main() {
             c = read();
             again;
         }
-        boolean d = isdgt(c);
+        boolean d = isdigit(c);
         if d {
             c = c - '0'; # subtract ASCII 0 to "parse digit"
             f = f * 10;

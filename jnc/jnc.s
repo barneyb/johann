@@ -3,6 +3,19 @@
 .include "target/out/inc_version.s"
 opt_v: .asciz "-v"
 opt_version: .asciz "--version"
+
+err_panic: .ascii "Compilation error\n"
+err_panic_len = . - err_panic
+
+tmpl_panic: .asciz ".data\n\
+err_compiler_fail: .ascii \"Prior compilation error\\n\"\n\
+err_compiler_fail_len = . - err_compiler_fail\n\
+.text\n\
+mov x0, #%i\n\
+adrp x1, err_compiler_fail@PAGE\n\
+add x1, x1, err_compiler_fail@PAGEOFF\n\
+mov x2, err_compiler_fail_len\n\
+bl __j_panic\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
@@ -87,3 +100,25 @@ jnc:
     ldp     x20, x21, [sp], #16
     ldp     fp, lr, [sp], 0x10
     ret
+
+/* void jnc_panic( char* format, [val, line, char]* token, int code ) */
+.global __j_jnc_panic
+__j_jnc_panic:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x2, [sp, -0x10]!    ; store status code
+
+    ldr     x3, [x1, 0x8]
+    ldr     x4, [x1, 0x10]
+    ldr     x2, [x1]
+    ldr     x1, [sp]            ; load status code
+    bl      __j_printf
+    ldr     x1, [sp]            ; load status code
+    adrp    x0, tmpl_panic@PAGE
+    add     x0, x0, tmpl_panic@PAGEOFF
+    bl      __j_printf
+    ldr     x0, [sp], 0x10      ; load status code
+    adrp    x1, err_panic@PAGE
+    add     x1, x1, err_panic@PAGEOFF
+    mov     x2, err_panic_len
+    b       __j_panic

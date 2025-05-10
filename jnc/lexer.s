@@ -3,11 +3,9 @@
 .set    TRUE, 1
 .set    FALSE, 0
 
-err_bad_token: .asciz "; ERROR: Unrecognized token '"
-err_long_id: .asciz "; ERROR: >7 char identifier '"
-err_long_string: .asciz "; ERROR: >7 char string '"
-at_line: .asciz "' at line "
-at_char: .asciz ", char "
+err_bad_char: .asciz "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n"
+err_long_id: .asciz "\n; ERROR(%i): >7 char identifier '%s' at line %i, char %i\n"
+err_long_string: .asciz "\n; ERROR(%i): >7 char string '%s' at line %i, char %i\n"
 
 KW_AGAIN    : .asciz    "again"
 KW_BOOL     : .asciz    "boolean"
@@ -176,25 +174,13 @@ _lexer_token:
     b.le    token_int
 
     ; print the char that fell through
-    mov     x23, x0                 ; save the char
-    adrp    x0, err_bad_token@PAGE
-    add     x0, x0, err_bad_token@PAGEOFF
-    bl      __j_print
-    mov     x0, x23
-    bl      __j_ick_print_c
-    adrp    x0, at_line@PAGE
-    add     x0, x0, at_line@PAGEOFF
-    bl      __j_print
-    mov     x0, x21
-    bl      __j_ick_print_i
-    adrp    x0, at_char@PAGE
-    add     x0, x0, at_char@PAGEOFF
-    bl      __j_print
-    mov     x0, x22
-    bl      __j_ick_print_i
-    bl      __j_ick_println                ; end line
-    mov     x0, #17
-    b       __j_sys_exit
+        str     x22, [sp, -0x10]!
+        stp     x0, x21, [sp, -0x10]!
+        adrp    x0, err_bad_char@PAGE
+        add     x0, x0, err_bad_char@PAGEOFF
+        mov     x1, sp
+        mov     x2, #17
+        bl      __j_jnc_panic
 
     token_punct:
     bl      __j_Token__new
@@ -249,24 +235,13 @@ _lexer_token:
     mov     x0, x24
     b       token_return
     token_id_long:
+        str     x22, [sp, -0x10]!
+        stp     x23, x21, [sp, -0x10]!
         adrp    x0, err_long_id@PAGE
         add     x0, x0, err_long_id@PAGEOFF
-        bl      __j_print
-        mov     x0, x23
-        bl      __j_print
-        adrp    x0, at_line@PAGE
-        add     x0, x0, at_line@PAGEOFF
-        bl      __j_print
-        mov     x0, x21
-        bl      __j_ick_print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      __j_print
-        mov     x0, x22
-        bl      __j_ick_print_i
-        bl      __j_ick_println                ; end line
-        mov     x0, #18
-        b       __j_sys_exit
+        mov     x1, sp
+        mov     x2, #18
+        bl      __j_jnc_panic
 
     token_char:
     mov     x0, x20
@@ -312,24 +287,13 @@ _lexer_token:
     mov     x0, x24
     b       token_return
     token_string_long:
+        str     x22, [sp, -0x10]!
+        stp     x23, x21, [sp, -0x10]!
         adrp    x0, err_long_string@PAGE
         add     x0, x0, err_long_string@PAGEOFF
-        bl      __j_print
-        mov     x0, x23
-        bl      __j_print
-        adrp    x0, at_line@PAGE
-        add     x0, x0, at_line@PAGEOFF
-        bl      __j_print
-        mov     x0, x21
-        bl      __j_ick_print_i
-        adrp    x0, at_char@PAGE
-        add     x0, x0, at_char@PAGEOFF
-        bl      __j_print
-        mov     x0, x22
-        bl      __j_ick_print_i
-        bl      __j_ick_println                ; end line
-        mov     x0, #19
-        b       __j_sys_exit
+        mov     x1, sp
+        mov     x2, #19
+        bl      __j_jnc_panic
 
     token_null:
     mov     x0, NULL

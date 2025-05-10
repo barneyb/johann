@@ -368,7 +368,7 @@ _emitter_emit:
         add     x0, x0, err_bad_stmt@PAGEOFF    ; pointer -> msg
         mov     x1, x21             ; pointer -> token
         mov     x2, #27             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     __emit_return__:
     ; restore frame
@@ -716,7 +716,7 @@ do_decl:
         add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
         mov     x1, x20             ; pointer -> token
         mov     x2, #26             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     do_decl_bool:                  ; these two happen to be the same
     do_decl_int:
@@ -1078,7 +1078,7 @@ do_expr:
         add     x0, x0, err_bad_expr@PAGEOFF    ; pointer -> msg
         mov     x1, x22             ; pointer -> token
         mov     x2, #28             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     do_expr_return:
     ; restore frame
@@ -1086,30 +1086,6 @@ do_expr:
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret
-
-/* void do_panic( char* format, Token* token, int code ) */
-do_panic:
-    ; create frame
-    stp     lr, x0, [sp, -0x10]!
-    stp     x1, x2, [sp, -0x10]!
-    sub     sp, sp, 0x10
-    ; end frame
-    mov     x19, x1
-    mov     x0, x19
-    bl      __j_Token_line
-    str     x0, [sp]
-    mov     x0, x19
-    bl      __j_Token_char
-    str     x0, [sp, 0x8]
-    mov     x0, x19
-    bl      __j_Token_type
-    mov     x2, x0
-    ldp     x3, x4, [sp], 0x10
-    ldr     x1, [sp, 0x8]           ; load status code
-    ldr     x0, [sp, 0x18]          ; load pointer -> format
-    bl      __j_printf
-    ldr     x0, [sp, 0x8]           ; load status code
-    b       __j_sys_exit
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
@@ -1156,7 +1132,7 @@ do_unary_op:
         add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
         ldr     x1, [x20]           ; pointer -> token
         mov     x2, #29             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     do_un_not:
     adrp    x21, tmpl_un_not@PAGE
@@ -1288,7 +1264,7 @@ do_binary_op:
         add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
         ldr     x1, [x20, #8]       ; pointer -> token
         mov     x2, #29             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     do_bin_add:
     adrp    x21, tmpl_bin_add@PAGE
@@ -1382,7 +1358,7 @@ do_token:
         add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
         mov     x1, x20             ; pointer -> token
         mov     x2, #26             ; error code
-        bl      do_panic            ; print and terminate
+        bl      __j_jnc_panic            ; print and terminate
 
     do_token_id:
     mov     x0, x20                 ; pointer -> token
