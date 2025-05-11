@@ -1,15 +1,15 @@
-char* ohhai = "Hello, ";
+char* THE_GREETING = "Hello, ";
 int* nine = 9;
 char* space = ' ';
-boolean* hidenum = false;
+boolean* HIDE_NUMBER_1 = false;
 int* ten = 10;
 char* world = "world!";
 
 fn main() {
     c = world;
-    a = ohhai;
+    a_greeting = THE_GREETING;
     print();
-    b = *hidenum;
+    b = *HIDE_NUMBER_1;
     if !b {
         a = *ten;
         b = *nine;

@@ -1450,6 +1450,8 @@ do_value_id:
     ldrb    w0, [x19]               ; first char of name
     cmp     w0, 'g'
     b.gt    do_value_id_global
+    cmp     w0, 'a'
+    b.lt    do_value_id_global
 
     adrp    x21, tmpl_token_id@PAGE
     add     x21, x21, tmpl_token_id@PAGEOFF

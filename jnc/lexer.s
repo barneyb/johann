@@ -150,6 +150,8 @@ _lexer_token:
     ; multi-character tokens...
     cmp     x0, 'a'                 ; T_ID
     b.ge    token_id_ish
+    cmp     x0, 'A'                 ; T_ID
+    b.ge    token_ID_ish
     cmp     x0, '0'                 ; T_INT
     b.ge    token_int_ish
     cmp     x0, '\''                ; T_CHAR
@@ -167,6 +169,10 @@ _lexer_token:
 
     token_id_ish:
     cmp     x0, 'z'
+    b.le    token_id
+
+    token_ID_ish:
+    cmp     x0, 'Z'
     b.le    token_id
 
     token_int_ish:
@@ -367,7 +373,7 @@ lex_identifier:
     str     x22, [sp, -0x10]!
     ; end frame
     mov     x22, x0                 ; stash first char
-    mov     x0, #256                ; todo: max identifier length
+    mov     x0, #64                 ; todo: max identifier length
     bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
     mov     x21, x20                ; pointer -> buffer[pos] to write
@@ -376,10 +382,22 @@ lex_identifier:
     lex_identifier_char:
     ; forgo the EOF check - there's no valid syntax for that case.
     bl      __j_peekchar
-    cmp     x0, 'a'
-    b.lt    lex_identifier_return
     cmp     x0, 'z'
     b.gt    lex_identifier_return
+    cmp     x0, 'a'
+    b.ge    lex_identifier_consume
+    cmp     x0, '_'
+    b.eq    lex_identifier_consume
+    cmp     x0, 'Z'
+    b.gt    lex_identifier_return
+    cmp     x0, 'A'
+    b.ge    lex_identifier_consume
+    cmp     x0, '9'
+    b.gt    lex_identifier_return
+    cmp     x0, '0'
+    b.ge    lex_identifier_consume
+    b       lex_identifier_return
+    lex_identifier_consume:
     bl      __j_getchar            ; consume the char
     strb    w0, [x21], #1           ; add it to the string
     b       lex_identifier_char

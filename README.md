@@ -88,13 +88,13 @@ Compound expressions are not supported, so there is no operator precedence. The 
 
 Semicolons are required to terminate statements which don't take a block.
 
-Strings and identifiers are capped at seven characters. Identifiers can only use lowercase letters. This will change.
+Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore.
 
 The `boolean`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
 Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
 
-Global constants (defined outside a function) are identified by their full name, which must start with `h`-`z`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
+Global constants (defined outside a function) are identified by their full name, which cannot start with `a`-`g`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. A `\n` may be used for a newline; other escapes may work, but are unsupported. Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
