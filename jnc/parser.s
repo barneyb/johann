@@ -94,6 +94,7 @@ free_buffer:
 
     mov     x19, x0                 ; stash pointer -> this
     ldr     x25, [x19, OFF_POS]     ; load pos
+    sub     x25, x25, #1            ; don't need to free the null
 ;            mov     x0, x25
 ;            bl      __j_ick_print_i
 ;            bl      __j_ick_println                ; end line
@@ -109,7 +110,11 @@ free_buffer:
     mul     x0, x25, x1             ; offset in buffer
     add     x0, x21, x0             ; address in buffer
     ldr     x0, [x0]                ; load pointer from buffer
-    bl      __j_free               ; free the token
+    cmp     x0, NULL
+    b.ne    free_buffer_drop
+    b       free_buffer_loop
+    free_buffer_drop:
+    bl      __j_Token_drop          ; drop the token
     b       free_buffer_loop
     free_buffer_done:
     str     x25, [x19, OFF_POS]     ; store
@@ -198,7 +203,7 @@ load_buffer:
             mov     x0, ' '
             bl      __j_ick_print_c
             mov     x0, x24
-            bl      __j_ick_Token_value_ptr
+            bl      __j_Token_value
             bl      __j_print
             b       _token_eol
             _token_val_char:
@@ -222,7 +227,7 @@ load_buffer:
             mov     x0, '"'
             bl      __j_ick_print_c
             mov     x0, x24
-            bl      __j_ick_Token_value_ptr
+            bl      __j_Token_value
             bl      __j_print
             mov     x0, '"'
             bl      __j_ick_print_c

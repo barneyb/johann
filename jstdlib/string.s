@@ -73,6 +73,7 @@ __j_memcpy:
     ; end frame
     ; todo: panic if regions overlap?
     ; todo: this is HORRIBLY inefficient
+    ; todo: C6.2.96 CPYP, CPYM, CPYE
     mov     x19, xzr                ; bytes copied
     memcpy_loop:
     ldrb    w20, [x1], #1           ; load and increment

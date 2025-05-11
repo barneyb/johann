@@ -217,31 +217,19 @@ _lexer_token:
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      __j_Token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords    ; set coords of start
     mov     x0, x24
-    ldr     x1, [x23]               ; load first 8 bytes of name
-    bl      __j_Token_set_value        ; set value
+    mov     x1, x23
+    bl      __j_Token_set_value     ; set value
     mov     x0, x23                 ; unstash name
-    bl      _strlen
-    cmp     x0, #7
-    b.gt    token_id_long
+    bl      _strlen ; todo: silly to remeasure...
     sub     x0, x0, #1              ; first char was already counted
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x23                 ; unstash name
-    bl      __j_free               ; free name
     mov     x0, x24
     bl      convert_keyword
     mov     x0, x24
     b       token_return
-    token_id_long:
-        str     x22, [sp, -0x10]!
-        stp     x23, x21, [sp, -0x10]!
-        adrp    x0, err_long_id@PAGE
-        add     x0, x0, err_long_id@PAGEOFF
-        mov     x1, sp
-        mov     x2, #18
-        bl      __j_jnc_panic
 
     token_char:
     mov     x0, x20
@@ -271,29 +259,17 @@ _lexer_token:
     mov     x24, x0                 ; pointer -> token
     mov     x1, x21
     mov     x2, x22
-    bl      __j_Token_set_coords       ; set coords of start
+    bl      __j_Token_set_coords    ; set coords of start
     mov     x0, x24
-    ldr     x1, [x23]               ; load first 8 bytes of string
-    bl      __j_Token_set_value        ; set value
+    mov     x1, x23
+    bl      __j_Token_set_value     ; set value
     mov     x0, x23                 ; unstash name
-    bl      _strlen
-    cmp     x0, #7
-    b.gt    token_string_long
+    bl      _strlen ; todo: silly to remeasure...
     add     x0, x0, #1              ; and close quote (open was already counted)
     add     x22, x22, x0            ; add the scanned char count
     str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x23                 ; unstash name
-    bl      __j_free               ; free name
     mov     x0, x24
     b       token_return
-    token_string_long:
-        str     x22, [sp, -0x10]!
-        stp     x23, x21, [sp, -0x10]!
-        adrp    x0, err_long_string@PAGE
-        add     x0, x0, err_long_string@PAGEOFF
-        mov     x1, sp
-        mov     x2, #19
-        bl      __j_jnc_panic
 
     token_null:
     mov     x0, NULL
@@ -455,169 +431,160 @@ convert_keyword:
     str     x20, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> token
-    bl      __j_ick_Token_value_ptr
+    bl      __j_Token_value
     mov     x20, x0                 ; stash pointer -> token.value
+    b       convert_keyword_fn
+
+    /* boolean test( int type, char* kw ), closed over x19=token, x20=token.value */
+    convert_keyword_test:
+        stp     fp, lr, [sp, -0x10]!
+        mov     fp, sp
+        stp     x0, x1, [sp, -0x10]!
+
+        mov     x0, x20             ; token.value
+        bl      _strcmp
+        cmp     xzr, x0
+        b.ne    convert_keyword_test_no
+        mov     x0, x20
+        bl      __j_free            ; free the identifier
+        mov     x0, x19
+        ldr     x1, [sp]            ; load type
+        bl      __j_Token_set_type
+        mov     x0, x19
+        ldr     x1, [sp, 0x8]       ; load static pointer -> keyword
+        bl      __j_Token_set_value
+        mov     x0, TRUE
+        b       convert_keyword_test_done
+
+        convert_keyword_test_no:
+        mov     x0, FALSE
+
+        convert_keyword_test_done:
+        add     sp, sp, 0x10
+        ldp     fp, lr, [sp], 0x10
+        ret
 
     convert_keyword_fn:
-    mov     x0, x20
+    mov     x0, T_KW_FN
     adrp    x1, KW_FN@PAGE
     add     x1, x1, KW_FN@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_int     ; next!
-    mov     x0, x19
-    mov     x1, T_KW_FN
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_int     ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_int:
-    mov     x0, x20
+    mov     x0, T_KW_INT
     adrp    x1, KW_INT@PAGE
     add     x1, x1, KW_INT@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_char    ; next!
-    mov     x0, x19
-    mov     x1, T_KW_INT
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_char    ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_char:
-    mov     x0, x20
+    mov     x0, T_KW_CHAR
     adrp    x1, KW_CHAR@PAGE
     add     x1, x1, KW_CHAR@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_bool; next!
-    mov     x0, x19
-    mov     x1, T_KW_CHAR
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_bool    ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_bool:
-    mov     x0, x20
+    mov     x0, T_KW_BOOL
     adrp    x1, KW_BOOL@PAGE
     add     x1, x1, KW_BOOL@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_void      ; next!
-    mov     x0, x19
-    mov     x1, T_KW_BOOL
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_void    ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_void:
-    mov     x0, x20
+    mov     x0, T_KW_VOID
     adrp    x1, KW_VOID@PAGE
     add     x1, x1, KW_VOID@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_if      ; next!
-    mov     x0, x19
-    mov     x1, T_KW_VOID
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_if      ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_if:
-    mov     x0, x20
+    mov     x0, T_KW_IF
     adrp    x1, KW_IF@PAGE
     add     x1, x1, KW_IF@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_while   ; next!
-    mov     x0, x19
-    mov     x1, T_KW_IF
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_while   ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_while:
-    mov     x0, x20
+    mov     x0, T_KW_WHILE
     adrp    x1, KW_WHILE@PAGE
     add     x1, x1, KW_WHILE@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_again   ; next!
-    mov     x0, x19
-    mov     x1, T_KW_WHILE
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_again   ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_again:
-    mov     x0, x20
+    mov     x0, T_KW_AGAIN
     adrp    x1, KW_AGAIN@PAGE
     add     x1, x1, KW_AGAIN@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_done__  ; next!
-    mov     x0, x19
-    mov     x1, T_KW_AGAIN
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_done__  ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_done__:
-    mov     x0, x20
+    mov     x0, T_KW_DONE
     adrp    x1, KW_DONE@PAGE
     add     x1, x1, KW_DONE@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_return  ; next!
-    mov     x0, x19
-    mov     x1, T_KW_DONE
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_return  ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_return:
-    mov     x0, x20
+    mov     x0, T_KW_RETURN
     adrp    x1, KW_RETURN@PAGE
     add     x1, x1, KW_RETURN@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_true    ; next!
-    mov     x0, x19
-    mov     x1, T_KW_RETURN
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_true    ; next!
     b       convert_keyword_done    ; done!
 
     convert_keyword_true:
-    mov     x0, x20
+    mov     x0, T_BOOL
     adrp    x1, KW_TRUE@PAGE
     add     x1, x1, KW_TRUE@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_false   ; next!
-    mov     x0, x19
-    mov     x1, T_BOOL
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_false   ; next!
     mov     x0, x19
     mov     x1, TRUE
     bl      __j_Token_set_value
     b       convert_keyword_done    ; done!
 
     convert_keyword_false:
-    mov     x0, x20
+    mov     x0, T_BOOL
     adrp    x1, KW_FALSE@PAGE
     add     x1, x1, KW_FALSE@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_null    ; next!
-    mov     x0, x19
-    mov     x1, T_BOOL
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_null    ; next!
     mov     x0, x19
     mov     x1, FALSE
     bl      __j_Token_set_value
     b       convert_keyword_done    ; done!
 
     convert_keyword_null:
-    mov     x0, x20
+    mov     x0, T_INT
     adrp    x1, KW_NULL@PAGE
     add     x1, x1, KW_NULL@PAGEOFF
-    bl      _strcmp
-    cmp     xzr, x0
-    b.ne    convert_keyword_done    ; next!
-    mov     x0, x19
-    mov     x1, T_INT               ; all nulls are integers!
-    bl      __j_Token_set_type
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_done    ; next!
     mov     x0, x19
     mov     x1, NULL
     bl      __j_Token_set_value

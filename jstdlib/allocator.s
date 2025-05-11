@@ -7,8 +7,8 @@ err_free: .ascii "ERROR: Failed to free\n"
 err_free_len = . - err_free
 
 msg_mem_stats: .asciz "; MEM: %d allocs (%x bytes)\n;      %d frees\n"
-fr: .asciz "  free : %p\n"
-al: .asciz "  alloc: %p\n"
+al: .asciz "    ; alloc: %p\n"
+fr: .asciz "    ; free : %p\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .bss
 start: .zero 8
@@ -91,6 +91,26 @@ __j_malloc:
     stp     lr, x19,    [sp, #-16]!
     ; end frame
     mov     x19, x0
+
+    ; ensure 64-bit / 8-byte aligned
+    mov     x2, x0
+    ubfx    x1, x0, #0, #3          ; extract three low bits
+    cmp     x1, xzr
+    b.eq    malloc_go               ; already aligned
+    mov     x3, #8
+    sub     x1, x3, x1              ; bytes to add
+    add     x0, x0, x1              ; total allocation
+;        .data
+;        malign: .asciz "      ; resize %x (req %x)\n"
+;        .text
+;        stp     x0, x1, [sp, -0x10]!
+;        mov x1, x0
+;        adrp x0, malign@PAGE
+;        add x0, x0, malign@PAGEOFF
+;        bl __j_printf
+;        ldp     x0, x1, [sp], 0x10
+
+    malloc_go:
         adrp    x3, alloc_stats@PAGE
         add     x3, x3, alloc_stats@PAGEOFF
         ldp     x1, x2, [x3]

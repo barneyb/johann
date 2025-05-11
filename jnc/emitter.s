@@ -412,7 +412,7 @@ do_fn:
     adrp    x21, tmpl_fn_intro@PAGE ; pointer -> template
     add     x21, x21, tmpl_fn_intro@PAGEOFF
     ldr     x0, [x20, #8]           ; load pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; token.value_ptr()
+    bl      __j_Token_value         ; token.value_ptr()
     mov     x22, x0                 ; stash pointer -> name
     mov     x0, x19
     mov     x1, T_KW_FN
@@ -454,7 +454,7 @@ do_fn:
     add     x21, x21, tmpl_fn_arg@PAGEOFF
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      __j_ick_print_c
@@ -464,7 +464,7 @@ do_fn:
     add     x22, x22, #1            ; increment register
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     bl      __j_puts
     b.eq    do_fn_next_arg          ; again!
 
@@ -724,7 +724,7 @@ do_decl:
     add     x21, x21, tmpl_global_int@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_Token_value         ; pointer -> value
     bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
@@ -739,7 +739,7 @@ do_decl:
     add     x21, x21, tmpl_global_char@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_Token_value         ; pointer -> value
     bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
@@ -754,11 +754,11 @@ do_decl:
     add     x21, x21, tmpl_global_string@PAGEOFF
     tmpl_sec
     mov     x0, x22                 ; pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_Token_value         ; pointer -> value
     bl      __j_print
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
-    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_Token_value         ; pointer -> value
     bl      __j_print
     tmpl_sec
     bl      __j_ick_println
@@ -794,13 +794,13 @@ do_assign:
     bl      do_expr
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      __j_ick_print_c
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     bl      __j_puts
 
     ; restore frame
@@ -830,13 +830,13 @@ do_assign_pointer:
     bl      do_expr
     tmpl_sec
     ldr     x0, [x20, #8]           ; pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      __j_ick_print_c
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     bl      __j_puts
 
     ; restore frame
@@ -960,13 +960,13 @@ do_call:
     add     x22, x22, #1            ; increment register
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
     bl      __j_ick_print_c
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     bl      __j_puts
     b.eq    do_call_next_arg        ; again!
 
@@ -974,7 +974,7 @@ do_call:
     adrp    x21, tmpl_call@PAGE
     add     x21, x21, tmpl_call@PAGEOFF
     ldr     x0, [x20]               ; load pointer -> name token
-    bl      __j_ick_Token_value_ptr        ; token.value_ptr()
+    bl      __j_Token_value         ; token.value_ptr()
     mov     x22, x0                 ; stash pointer -> name
 
     tmpl_sec
@@ -1362,7 +1362,7 @@ do_token:
 
     do_token_id:
     mov     x0, x20                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> name
+    bl      __j_Token_value         ; pointer -> name
     bl      do_value_id
     b       do_token_return
     do_token_char:                  ; these three all happen to be the same
@@ -1374,7 +1374,7 @@ do_token:
     b       do_token_return
     do_token_string:
     mov     x0, x20                 ; pointer -> token
-    bl      __j_ick_Token_value_ptr        ; pointer -> value
+    bl      __j_Token_value         ; pointer -> value
     mov     x1, x0
     mov     x0, x19
     bl      do_value_string
