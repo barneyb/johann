@@ -36,6 +36,6 @@ __j_ick_println:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     mov     x0, '\n'
-    bl      __j_ick_print_c
+    bl      __j_putchar
     ldp     fp, lr, [sp], 0x10
     ret

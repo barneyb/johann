@@ -16,7 +16,6 @@ buf_stdin_pos: .quad BUF_SIZE       ; start needing more
 
 itoa_cheat: .asciz "%i"
 __j_print_s_format: .asciz "%s"
-__j_print_c_format: .asciz "%c"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
 .align 3 ; 8-byte/64-bit alignment
@@ -430,21 +429,6 @@ __flush_stdout:
     str     xzr, [x3]               ; store len = 0
 
     flush_done:
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* void printc( int ch ) */
-/* void print_c( char c ) */
-.global __j_printc ; todo: ick
-__j_printc:
-.global __j_ick_print_c
-__j_ick_print_c:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    mov     x1, x0
-    adrp    x0, __j_print_c_format@PAGE
-    add     x0, x0, __j_print_c_format@PAGEOFF
-    bl      __j_printf
     ldp     fp, lr, [sp], 0x10
     ret
 

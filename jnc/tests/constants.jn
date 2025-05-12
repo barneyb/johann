@@ -1,4 +1,4 @@
-char* THE_GREETING = "Hello, ";
+char* THE_GREETING = "Why hello there, ";
 int* nine = 9;
 char* space = ' ';
 boolean* HIDE_NUMBER_1 = false;
@@ -8,19 +8,15 @@ char* world = "world!";
 fn main() {
     c = world;
     a_greeting = THE_GREETING;
-    print();
+    printf();
     b = *HIDE_NUMBER_1;
     if !b {
         a = *ten;
         b = *nine;
         a = a - b;
-        a = itoa();
-        print();
-        a = a;
-        free();
-        a = *space;
-        printc();
+        f = "%i ";
+        printf(f, a);
     }
     a = c;
-    println();
+    puts();
 }

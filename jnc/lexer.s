@@ -40,8 +40,8 @@ struct Lexer {
 .set    SIZEOF  , OFF_CHAR + 0x8    ; buffer is always last
 
 /* Lexer new( ) */
-.global _Lexer_new
-_Lexer_new:
+.global __j_Lexer__new
+__j_Lexer__new:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
@@ -289,8 +289,8 @@ _lexer_token:
     ret
 
 /* void destroy( Lexer* self ) */
-.global _lexer_destroy
-_lexer_destroy:
+.global __j_Lexer_drop
+__j_Lexer_drop:
     ; create frame
     str     lr, [sp, -0x10]!
     ; end frame

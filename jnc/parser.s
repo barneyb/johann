@@ -3,10 +3,16 @@
  */
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-
+.data
+p_token: .asciz "; %c %i,%i"
+p_token_int: .asciz ": %i"
+p_token_char: .asciz ": '%c'"
+p_token_id: .asciz ": %s"
+p_token_string: .asciz ": \"%s\""
+p_token_true: .asciz ": true"
+p_token_false: .asciz ": false"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
+.text
 .align 3 ; 8-byte/64-bit alignment
 .set    NULL, 0
 .set    FALSE, 0
@@ -21,27 +27,30 @@ struct Parser {
     [Token*] buf                    ; buffered tokens
 }
 */
-.set    OFF_LEX , 0
-.set    OFF_POS , 8
-.set    OFF_BUF , 16
-.set    BUF_CAP , 25
-.set    SIZEOF  , OFF_BUF + BUF_CAP * 8 ; buffer is always last
+OFF_LEX     = 0
+OFF_POS     = 0x8
+OFF_BUF     = 0x10
+BUF_CAP     = 25
+SIZEOF      = OFF_BUF + BUF_CAP * 8 ; buffer is always last
 
 /* Parser new( Lexer* lex ) */
-.global _Parser_new
-_Parser_new:
+.global __j_Parser__new
+__j_Parser__new:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x19, [sp, -0x10]!
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> lexer
     mov     x0, SIZEOF              ; how much to allocate
     bl      __j_malloc              ; allocate
-    stp     x19, xzr, [x0]          ; initialize lexer & pos
-    str     xzr, [x0, OFF_BUF]      ; put a null in the buffer
+    str     x19, [x0]               ; initialize lexer
+    stp     xzr, xzr, [x0, OFF_POS] ; initialize pos & buffer
 
     ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldr     x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void parse( Parser* self ) */
@@ -55,7 +64,7 @@ _parser_parse:
     mov     x19, x0                 ; stash pointer -> this
 
     ; build an emitter to send "statements" to
-    bl      _Emitter_new
+    bl      __j_Emitter__new
     mov     x21, x0                 ; stash pointer -> emitter
 
     parse_next:
@@ -79,7 +88,7 @@ _parser_parse:
 
     parse_return:
     mov     x0, x21
-    bl      _emitter_destroy        ; emitter.destroy()
+    bl      __j_Emitter_drop        ; emitter.destroy()
     ; restore frame
     ldp     x21, x25, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
@@ -155,23 +164,19 @@ load_buffer:
     mov     x24, x0                 ; stash pointer -> token
 
             ; print the token
-            mov     x0, ';'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_type
-            bl      __j_ick_print_c                ; get and print token type as char
-            mov     x0, ' '
-            bl      __j_ick_print_c
+            stp     xzr, x0, [sp, -0x10]!
             mov     x0, x24
             bl      __j_Token_line
-            bl      __j_ick_print_i
-            mov     x0, ','
-            bl      __j_ick_print_c
+            str     x0, [sp]
             mov     x0, x24
             bl      __j_Token_char
-            bl      __j_ick_print_i
+            mov     x3, x0
+            ldp     x2, x1, [sp], 0x10
+            adrp    x0, p_token@PAGE
+            add     x0, x0, p_token@PAGEOFF
+            bl      __j_printf
             ; and the value, as appropriate
             mov     x0, x24
             bl      __j_Token_type
@@ -189,64 +194,50 @@ load_buffer:
             b.ge    _token_val_id   ; keywords are identifiers
             b       _token_eol
             _token_val_int:
-            mov     x0, ':'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_value
-            bl      __j_ick_print_i
+            mov     x1, x0
+            adrp    x0, p_token_int@PAGE
+            add     x0, x0, p_token_int@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_val_id:
-            mov     x0, ':'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_value
-            bl      __j_print
+            mov     x1, x0
+            adrp    x0, p_token_id@PAGE
+            add     x0, x0, p_token_id@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_val_char:
-            mov     x0, ':'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
-            mov     x0, '\''
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_value
-            bl      __j_ick_print_c
-            mov     x0, '\''
-            bl      __j_ick_print_c
+            mov     x1, x0
+            adrp    x0, p_token_char@PAGE
+            add     x0, x0, p_token_char@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_val_string:
-            mov     x0, ':'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
-            mov     x0, '"'
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_value
-            bl      __j_print
-            mov     x0, '"'
-            bl      __j_ick_print_c
+            mov     x1, x0
+            adrp    x0, p_token_string@PAGE
+            add     x0, x0, p_token_string@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_val_bool:
-            mov     x0, ':'
-            bl      __j_ick_print_c
-            mov     x0, ' '
-            bl      __j_ick_print_c
             mov     x0, x24
             bl      __j_Token_value
             cmp     x0, FALSE
             b.eq    _token_val_bool_false
-            mov     x0, 'T'
-            bl      __j_ick_print_c
+            adrp    x0, p_token_false@PAGE
+            add     x0, x0, p_token_false@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_val_bool_false:
-            mov     x0, 'F'
-            bl      __j_ick_print_c
+            adrp    x0, p_token_true@PAGE
+            add     x0, x0, p_token_true@PAGEOFF
+            bl      __j_printf
             b       _token_eol
             _token_eol:
 ;            bl      __j_ick_println                ; end line
@@ -286,8 +277,8 @@ load_buffer:
     ret
 
 /* void destroy( Parser* self ) */
-.global _parser_destroy
-_parser_destroy:
+.global __j_Parser_drop
+__j_Parser_drop:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp

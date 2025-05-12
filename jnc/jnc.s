@@ -81,23 +81,23 @@ jnc:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    stp     x20, x21, [sp, #-16]!
+    stp     x20, x21, [sp, -0x10]!
     ; end frame
 
-    bl      _Lexer_new              ; lex = Lexer.new(r)
+    bl      __j_Lexer__new          ; lex = new Lexer(r)
     mov     x20, x0                 ; stash pointer -> lex
-    bl      _Parser_new             ; parser = Parser.new(lex);
+    bl      __j_Parser__new         ; parser = new Parser(lex);
     mov     x21, x0                 ; stash pointer -> parser
 
     bl      _parser_parse
 
     mov     x0, x21
-    bl      _parser_destroy         ; parser.destroy()
+    bl      __j_Parser_drop         ; parser.drop()
     mov     x0, x20
-    bl      _lexer_destroy          ; lex.destroy()
+    bl      __j_Lexer_drop          ; lex.drop()
 
     ; restore frame
-    ldp     x20, x21, [sp], #16
+    ldp     x20, x21, [sp], 0x10
     ldp     fp, lr, [sp], 0x10
     ret
 

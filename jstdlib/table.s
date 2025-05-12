@@ -63,6 +63,7 @@ __j_Table_drop:
     b       drop_again
 
     drop_done:
+    add     sp, sp, 0x10
     ldp     fp, lr, [sp], 0x10
     ret
 

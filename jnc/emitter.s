@@ -45,15 +45,15 @@ struct Emitter {
     [Block] blocks                  ; array/stack of "lexical" Blocks
 }
 */
-.set    OFF_SEQ     , 0
-.set    OFF_DEPTH   , 8
-.set    OFF_BLOCKS  , 16
-.set    BLOCKS_CAP  , 10
-.set    SIZEOF      , OFF_BLOCKS + BLOCKS_CAP * SIZEOF_BLOCK    ; blocks is always last
+OFF_SEQ     = 0
+OFF_DEPTH   = 0x8
+OFF_BLOCKS  = 0x10
+BLOCKS_CAP  = 10
+SIZEOF      = OFF_BLOCKS + BLOCKS_CAP * SIZEOF_BLOCK    ; blocks is always last
 
 /* Emitter new( ) */
-.global _Emitter_new
-_Emitter_new:
+.global __j_Emitter__new
+__j_Emitter__new:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     stp     x19, x21, [sp, -0x10]!
@@ -62,6 +62,10 @@ _Emitter_new:
     bl      __j_malloc              ; allocate
     mov     x19, x0                 ; stash pointer -> this
     stp     xzr, xzr, [x0]          ; initialize seq and depth
+    ; enter global "block"
+    mov     x0, x19
+    mov     x1, NULL
+    bl      enter_block             ; this.enter_block()
 
     adrp    x0, tmpl_prelude@PAGE
     add     x0, x0, tmpl_prelude@PAGEOFF
@@ -79,11 +83,13 @@ _Emitter_new:
 struct Block {
     int type                        ; type of the block, identified by its token
     int id                          ; unique id num of the block
+    Table* symbols
 }
 */
-.set    B_OFF_TYPE    , 0
-.set    B_OFF_ID      , 8
-.set    SIZEOF_BLOCK, B_OFF_ID + 8
+B_OFF_TYPE    = 0
+B_OFF_ID      = 0x8
+B_OFF_SYMBOLS = 0x10
+SIZEOF_BLOCK  = B_OFF_SYMBOLS + 8
 
 /* int id( Block* b ) */
 block_id:
@@ -110,9 +116,10 @@ block_type:
 /* Block* enter_block( Emitter* self, int type ) */
 enter_block:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
@@ -123,14 +130,15 @@ enter_block:
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x0, x22, x1, x0         ; pointer -> block
     stp     x20, x21, [x0]          ; initialize type and id
+    str     xzr, [x0, B_OFF_SYMBOLS]; initialize symbol table to null
 
     add     x22, x22, 1             ; increment depth
     stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
 
     ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* Block* innermost_block_of( Emitter* self, int type ) */
@@ -197,24 +205,25 @@ leave_block:
 /* int seqnum( Emitter* self ) */
 seqnum:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    ldr     x19, [x0, OFF_SEQ]      ; load seq
-    add     x19, x19, 1             ; increment seq
-    str     x19, [x0, OFF_SEQ]      ; store seq
-    mov     x0, x19
+    mov     x1, x0                  ; stash pointer -> this
+    ldr     x0, [x1, OFF_SEQ]       ; load seq
+    add     x0, x0, 1               ; increment seq
+    str     x0, [x1, OFF_SEQ]       ; store seq
     ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* bool is_global( Emitter* self ) */
 is_global:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; end frame
-    ldr     x19, [x0, OFF_DEPTH]   ; load depth
-    cmp     x19, #0
+    ldr     x1, [x0, OFF_DEPTH]     ; load depth
+    cmp     x1, #1
     b.eq    is_global_yep
     mov     x0, FALSE
     b       is_global_return
@@ -224,7 +233,7 @@ is_global:
 
     is_global_return:
     ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void emit( Emitter* self, [Token*] stmt ) */
@@ -457,7 +466,7 @@ do_fn:
     bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
+    bl      __j_putchar
     tmpl_sec
     mov     x0, x22
     bl      __j_ick_print_i;
@@ -744,7 +753,7 @@ do_decl:
     tmpl_sec
     mov     x0, x20                 ; pointer -> value token
     bl      __j_Token_value            ; pointer -> value
-    bl      __j_ick_print_c
+    bl      __j_putchar
     tmpl_sec
     bl      __j_ick_println
     b       do_decl_return
@@ -797,7 +806,7 @@ do_assign:
     bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
+    bl      __j_putchar
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
@@ -833,7 +842,7 @@ do_assign_pointer:
     bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
+    bl      __j_putchar
     tmpl_sec
     ldr     x0, [x20]               ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
@@ -963,7 +972,7 @@ do_call:
     bl      __j_Token_value         ; pointer -> name
     ldrb    w0, [x0]                ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
+    bl      __j_putchar
     tmpl_sec
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
@@ -1458,7 +1467,7 @@ do_value_id:
     tmpl_sec
     ldrb    w0, [x19]               ; first char of name
     sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
+    bl      __j_putchar
     bl      __j_ick_println
     b       do_value_id_return
 
@@ -1504,8 +1513,8 @@ do_value_literal:
     ret
 
 /* void destroy( Emitter* self ) */
-.global _emitter_destroy
-_emitter_destroy:
+.global __j_Emitter_drop
+__j_Emitter_drop:
     ; create frame
     str     lr, [sp, -0x10]!
     ; end frame
