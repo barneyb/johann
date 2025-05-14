@@ -74,6 +74,8 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
         done;
     }
 
+Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
+
 Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
 
     int e = 16;

@@ -25,8 +25,10 @@ all: $(BIN)/jnc
 
 $(VERSION):
 	@mkdir -p $(OUT)
-	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' > $(VERSION)
-	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
+	echo ".global __j_jnc_short_version" > $(VERSION)
+	echo "__j_jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' >> $(VERSION)
+	echo ".global __j_jnc_long_version" >> $(VERSION)
+	echo "__j_jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib

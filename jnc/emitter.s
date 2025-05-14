@@ -10,8 +10,6 @@ err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
 err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
 
-.include "target/out/inc_version.s"
-
 .macro tmpl_sec r=x21
     mov     x0, \r
     bl      __j_print               ; print segment
@@ -69,8 +67,8 @@ __j_Emitter__new:
 
     adrp    x0, tmpl_prelude@PAGE
     add     x0, x0, tmpl_prelude@PAGEOFF
-    adrp    x1, jnc_short_version@PAGE
-    add     x1, x1, jnc_short_version@PAGEOFF
+    adrp    x1, __j_jnc_short_version@PAGE
+    add     x1, x1, __j_jnc_short_version@PAGEOFF
     bl      __j_printf
 
     mov     x0, x19
@@ -89,7 +87,18 @@ struct Block {
 B_OFF_TYPE    = 0
 B_OFF_ID      = 0x8
 B_OFF_SYMBOLS = 0x10
-SIZEOF_BLOCK  = B_OFF_SYMBOLS + 8
+SIZEOF_BLOCK  = B_OFF_SYMBOLS + 0x8
+
+/* void drop( Block* b ) */
+block_drop:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    ldr     x0, [x0, B_OFF_SYMBOLS]; load block's symbol table
+    bl      __j_Table_drop
+
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 /* int id( Block* b ) */
 block_id:
@@ -130,7 +139,13 @@ enter_block:
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x0, x22, x1, x0         ; pointer -> block
     stp     x20, x21, [x0]          ; initialize type and id
-    str     xzr, [x0, B_OFF_SYMBOLS]; initialize symbol table to null
+
+    mov     x20, x0                 ; stash pointer -> block
+    adrp    x0, __j_strcmp@PAGE
+    add     x0, x0, __j_strcmp@PAGEOFF
+    bl      __j_Table__new
+    str     x0, [x20, B_OFF_SYMBOLS]; initialize symbol table
+    mov     x0, x20                 ; restore pointer -> block
 
     add     x22, x22, 1             ; increment depth
     stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
@@ -925,6 +940,8 @@ do_close_block:
     b       do_close_block_return
 
     do_close_block_return:
+    mov     x0, x22
+    bl      block_drop
     ; restore frame
     ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
@@ -1512,15 +1529,17 @@ do_value_literal:
     ldp     lr, x19, [sp], 0x10
     ret
 
-/* void destroy( Emitter* self ) */
+/* void drop( Emitter* self ) */
 .global __j_Emitter_drop
 __j_Emitter_drop:
-    ; create frame
-    str     lr, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x0, [sp, -0x10]!
 
+    bl      leave_block
+    bl      block_drop
+    ldr     x0, [sp], 0x10
     bl      __j_free
 
-    ; restore frame
-    ldr     lr, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret

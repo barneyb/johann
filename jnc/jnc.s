@@ -57,14 +57,14 @@ __j_main:
         b       main_arg_loop
 
     main_short_version:
-        adrp    x0, jnc_short_version@PAGE
-        add     x0, x0, jnc_short_version@PAGEOFF
+        adrp    x0, __j_jnc_short_version@PAGE
+        add     x0, x0, __j_jnc_short_version@PAGEOFF
         bl      __j_puts
         b       main_success
 
     main_long_version:
-        adrp    x0, jnc_long_version@PAGE
-        add     x0, x0, jnc_long_version@PAGEOFF
+        adrp    x0, __j_jnc_long_version@PAGE
+        add     x0, x0, __j_jnc_long_version@PAGEOFF
         bl      __j_puts
         b       main_success
 
