@@ -1,0 +1,43 @@
+fn main(int c, char** a) {
+    int b = 1; # skip the command name
+    while b < c {
+        d = b * 8;
+        d = a + d;
+        d = *d;
+        print_series(d);
+        b = b + 1;
+    }
+}
+
+fn print_series(char* a) {
+    a = read_int(a); # todo: allow initializing w/ a function call
+    f = "%i";
+    printf(f, a);
+    f = ", %i";
+    while a > 1 {
+        b = a % 2;
+        if b = 0 {
+            a = a / 2;
+        }
+        if b = 1 {
+            a = a * 3;
+            a = a + 1;
+        }
+        printf(f, a);
+    }
+    f = " !\n";
+    printf(f);
+}
+
+fn read_int(char* a) {
+    int f = 0;          # accumulator
+    c = loadb(a);
+    while c > 0 {
+        c = c - '0'; # subtract ASCII 0 to "parse digit"
+        f = f * 10;
+        f = f + c;
+        a = a + 1;
+        c = loadb(a);
+    }
+    return f;
+}

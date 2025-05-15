@@ -1064,14 +1064,14 @@ do_expr:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_un_not:    .asciz "        cmp     x0, FALSE\n\
-        b.ne    expr_\0_was_true\n\
+        b.ne    expr_%i_was_true\n\
         mov     x0, TRUE\n\
-        b       expr_\0_end\n\
-        expr_\0_was_true:\n\
+        b       expr_%i_end\n\
+        expr_%i_was_true:\n\
         mov     x0, FALSE\n\
-        expr_\0_end:"
-tmpl_un_negate: .asciz "        neg     x0, x0"
-tmpl_un_deref:  .asciz "        ldr     x0, [x0]"
+        expr_%i_end:\n"
+tmpl_un_negate: .asciz "        neg     x0, x0\n"
+tmpl_un_deref:  .asciz "        ldr     x0, [x0]\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1091,7 +1091,7 @@ do_unary_op:
 
     ; first token is the operator
     ldr     x0, [x20]
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_BANG
@@ -1106,41 +1106,28 @@ do_unary_op:
         add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
         ldr     x1, [x20]           ; pointer -> token
         mov     x2, #29             ; error code
-        bl      __j_jnc_panic            ; print and terminate
+        bl      __j_jnc_panic       ; print and terminate
 
     do_un_not:
-    adrp    x21, tmpl_un_not@PAGE
-    add     x21, x21, tmpl_un_not@PAGEOFF
     mov     x0, x19
     bl      seqnum
-    mov     x20, x0
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x0
+    mov     x1, x0
+    adrp    x0, tmpl_un_not@PAGE
+    add     x0, x0, tmpl_un_not@PAGEOFF
+    bl      __j_printf
     b       do_un_return
     do_un_neg:
-    adrp    x21, tmpl_un_negate@PAGE
-    add     x21, x21, tmpl_un_negate@PAGEOFF
-    b       do_un_emit
+    adrp    x0, tmpl_un_negate@PAGE
+    add     x0, x0, tmpl_un_negate@PAGEOFF
+    bl      __j_printf
+    b       do_un_return
     do_un_deref:
-    adrp    x21, tmpl_un_deref@PAGE
-    add     x21, x21, tmpl_un_deref@PAGEOFF
-    b       do_un_emit
-
-    do_un_emit:
-    tmpl_sec
-    bl      __j_ick_println
+    adrp    x0, tmpl_un_deref@PAGE
+    add     x0, x0, tmpl_un_deref@PAGEOFF
+    bl      __j_printf
 
     do_un_return:
     ; restore frame
@@ -1161,27 +1148,16 @@ tmpl_bin_mod:   .asciz "        str     x2, [sp, -0x10]!\n\
         sdiv    x2, x0, x1\n\
         msub    x0, x2, x1, x0\n\
         ldr     x2, [sp], 0x10"
-tmpl_bin_gt:    .asciz "        cmp     x0, x1\n\
-        b.gt    expr_\0\n\
+tmpl_b_gt:    .asciz "gt"
+tmpl_b_lt:    .asciz "lt"
+tmpl_b_eq:    .asciz "eq"
+tmpl_bin_comp:    .asciz "        cmp     x0, x1\n\
+        b.%s    expr_%i\n\
         mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
+        b       expr_%i_end\n\
+        expr_%i:\n\
         mov     x0, TRUE\n\
-        expr_\0_end:"
-tmpl_bin_lt:    .asciz "        cmp     x0, x1\n\
-        b.lt    expr_\0\n\
-        mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
-        mov     x0, TRUE\n\
-        expr_\0_end:"
-tmpl_bin_eq:    .asciz "        cmp     x0, x1\n\
-        b.eq    expr_\0\n\
-        mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
-        mov     x0, TRUE\n\
-        expr_\0_end:"
+        expr_%i_end:\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1241,61 +1217,53 @@ do_binary_op:
         bl      __j_jnc_panic            ; print and terminate
 
     do_bin_add:
-    adrp    x21, tmpl_bin_add@PAGE
-    add     x21, x21, tmpl_bin_add@PAGEOFF
+    adrp    x0, tmpl_bin_add@PAGE
+    add     x0, x0, tmpl_bin_add@PAGEOFF
     b       do_arith_emit
     do_bin_sub:
-    adrp    x21, tmpl_bin_sub@PAGE
-    add     x21, x21, tmpl_bin_sub@PAGEOFF
+    adrp    x0, tmpl_bin_sub@PAGE
+    add     x0, x0, tmpl_bin_sub@PAGEOFF
     b       do_arith_emit
     do_bin_mul:
-    adrp    x21, tmpl_bin_mul@PAGE
-    add     x21, x21, tmpl_bin_mul@PAGEOFF
+    adrp    x0, tmpl_bin_mul@PAGE
+    add     x0, x0, tmpl_bin_mul@PAGEOFF
     b       do_arith_emit
     do_bin_div:
-    adrp    x21, tmpl_bin_div@PAGE
-    add     x21, x21, tmpl_bin_div@PAGEOFF
+    adrp    x0, tmpl_bin_div@PAGE
+    add     x0, x0, tmpl_bin_div@PAGEOFF
     b       do_arith_emit
     do_bin_mod:
-    adrp    x21, tmpl_bin_mod@PAGE
-    add     x21, x21, tmpl_bin_mod@PAGEOFF
+    adrp    x0, tmpl_bin_mod@PAGE
+    add     x0, x0, tmpl_bin_mod@PAGEOFF
     b       do_arith_emit
     do_bin_gt:
-    adrp    x21, tmpl_bin_gt@PAGE
-    add     x21, x21, tmpl_bin_gt@PAGEOFF
+    adrp    x21, tmpl_b_gt@PAGE
+    add     x21, x21, tmpl_b_gt@PAGEOFF
     b       do_logic_emit
     do_bin_lt:
-    adrp    x21, tmpl_bin_lt@PAGE
-    add     x21, x21, tmpl_bin_lt@PAGEOFF
+    adrp    x21, tmpl_b_lt@PAGE
+    add     x21, x21, tmpl_b_lt@PAGEOFF
     b       do_logic_emit
     do_bin_eq:
-    adrp    x21, tmpl_bin_eq@PAGE
-    add     x21, x21, tmpl_bin_eq@PAGEOFF
+    adrp    x21, tmpl_b_eq@PAGE
+    add     x21, x21, tmpl_b_eq@PAGEOFF
     b       do_logic_emit
 
     do_arith_emit:
-    tmpl_sec
-    bl      __j_ick_println
+    bl      __j_puts
     b       do_binary_op_return
 
     do_logic_emit:
     mov     x0, x19
     bl      seqnum
-    mov     x20, x0
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x5, x0
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x0
+    mov     x1, x21
+    adrp    x0, tmpl_bin_comp@PAGE
+    add     x0, x0, tmpl_bin_comp@PAGEOFF
+    bl      __j_printf
     b       do_binary_op_return
 
     do_binary_op_return:
@@ -1363,47 +1331,34 @@ do_token:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_token_string: .asciz "    .data\n\
-        _j_str_\0: .asciz \"\0\"\n\
+        _j_str_%i: .asciz \"%s\"\n\
     .text\n\
-        adrp    x0, _j_str_\0@PAGE\n\
-        add     x0, x0, _j_str_\0@PAGEOFF"
+        adrp    x0, _j_str_%i@PAGE\n\
+        add     x0, x0, _j_str_%i@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
 /* void do_value_id( Emitter* self, char* name ) */
 do_value_string:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x20, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> name
-    adrp    x21, tmpl_token_string@PAGE
-    add     x21, x21, tmpl_token_string@PAGEOFF
-    mov     x0, x19
-    bl      seqnum
-    mov     x22, x0                 ; stash num
+    bl      seqnum                  ; self.seqnum()
 
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x20                 ; pointer -> name
+    mov     x1, x0
+    adrp    x0, tmpl_token_string@PAGE
+    add     x0, x0, tmpl_token_string@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldr     x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
