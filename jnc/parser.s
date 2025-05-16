@@ -72,9 +72,6 @@ _parser_parse:
     bl      load_buffer             ; this.load_buffer()
     ; see if we're done
     ldr     x25, [x19, OFF_BUF]     ; load pointer -> first token
-;            mov     x0, x25
-;            bl      __j_ick_print_i
-;            bl      __j_ick_println                ; end line
     cmp     x25, NULL
     b.eq    parse_return            ; zero tokens - we're done!
     ; figure out what kind of statement it is
@@ -104,13 +101,7 @@ free_buffer:
     mov     x19, x0                 ; stash pointer -> this
     ldr     x25, [x19, OFF_POS]     ; load pos
     sub     x25, x25, #1            ; don't need to free the null
-;            mov     x0, x25
-;            bl      __j_ick_print_i
-;            bl      __j_ick_println                ; end line
     add     x21, x19, OFF_BUF       ; pointer to buffer
-;            mov     x0, x21
-;            bl      __j_ick_print_i
-;            bl      __j_ick_println                ; end line
     free_buffer_loop:
     cmp     x25, xzr
     b.eq    free_buffer_done
@@ -127,9 +118,6 @@ free_buffer:
     b       free_buffer_loop
     free_buffer_done:
     str     x25, [x19, OFF_POS]     ; store
-;            mov     x0, x25
-;            bl      __j_ick_print_i
-;            bl      __j_ick_println                ; end line
 
     ; restore frame
     ldp     x21, x25, [sp], 0x10
@@ -150,10 +138,6 @@ load_buffer:
     ldr     x20, [x19, OFF_LEX]     ; load pointer -> lexer
     add     x21, x19, OFF_BUF       ; pointer -> buffer
     mov     x25, #0                 ; start at zero
-
-;            mov     x0, x21
-;            bl      __j_ick_print_i
-;            bl      __j_ick_println                ; end line
 
     load_buffer_token:
     ; next token
@@ -240,7 +224,6 @@ load_buffer:
             bl      __j_printf
             b       _token_eol
             _token_eol:
-;            bl      __j_ick_println                ; end line
 
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer
@@ -261,7 +244,8 @@ load_buffer:
     b       load_buffer_token
 
     load_buffer_return:
-            bl      __j_ick_println
+    mov     x0, '\n'
+    bl      __j_putchar
     ; add a null terminator
     mov     x1, #8                  ; sizeof element
     mul     x0, x25, x1             ; offset in buffer

@@ -8,7 +8,7 @@ err_bad_stmt: .asciz "; ERROR(%i): Bad statement %x at line %i, char %i\n"
 err_bad_expr: .asciz "; ERROR(%i): Bad expression %x at line %i, char %i\n"
 err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
-err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
+err_invalid_nesting: .asciz "; ERROR: Invalid nesting %x\n"
 
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
@@ -173,12 +173,10 @@ innermost_block_of:
     b       innermost_block_of_return
 
     innermost_block_of_bad:
+        mov     x1, x20
         adrp    x0, err_invalid_nesting@PAGE
         add     x0, x0, err_invalid_nesting@PAGEOFF
-        bl      __j_print
-        mov     x0, x20
-        bl      __j_ick_print_h
-        bl      __j_ick_println
+        bl      __j_printf
         mov     x0, #37
         b       __j_sys_exit
 
@@ -1021,8 +1019,6 @@ do_expr:
     mov     x0, x22
     bl      __j_Token_type
     mov     x23, x0                 ; type of first token
-;        bl __j_ick_print_h
-;        bl __j_ick_println
     ; if the first token is BANG, MINUS, STAR, do unary op
     do_expr_deref:
     cmp     x23, T_BANG
