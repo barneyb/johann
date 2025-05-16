@@ -1,7 +1,7 @@
 char* THE_GREETING = "Why hello there, ";
 int* nine = 9;
 char* space = ' ';
-boolean* HIDE_NUMBER_1 = false;
+bool* HIDE_NUMBER_1 = false;
 int* ten = 10;
 char* world = "world!";
 

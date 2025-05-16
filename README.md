@@ -92,7 +92,7 @@ Semicolons are required to terminate statements which don't take a block.
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore.
 
-The `boolean`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
+The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
 
 Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
 
@@ -193,7 +193,7 @@ Those starting with `sys_` (thin syscall wrappers) are not expected to remain av
 A table/map/associative-array ADT, which has a reasonable interface, and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended.
 
 * `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
-* `boolean Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
+* `bool Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
 * `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
 * `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
 * `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).)

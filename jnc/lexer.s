@@ -8,7 +8,7 @@ err_long_id: .asciz "\n; ERROR(%i): >7 char identifier '%s' at line %i, char %i\
 err_long_string: .asciz "\n; ERROR(%i): >7 char string '%s' at line %i, char %i\n"
 
 KW_AGAIN    : .asciz    "again"
-KW_BOOL     : .asciz    "boolean"
+KW_BOOL     : .asciz    "bool"
 KW_CHAR     : .asciz    "char"
 KW_DONE     : .asciz    "done"
 KW_FALSE    : .asciz    "false"
@@ -453,7 +453,7 @@ convert_keyword:
     mov     x20, x0                 ; stash pointer -> token.value
     b       convert_keyword_fn
 
-    /* boolean test( int type, char* kw ), closed over x19=token, x20=token.value */
+    /* bool test( int type, char* kw ), closed over x19=token, x20=token.value */
     convert_keyword_test:
         stp     fp, lr, [sp, -0x10]!
         mov     fp, sp

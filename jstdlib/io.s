@@ -24,7 +24,7 @@ NULL = 0
 TRUE = 1
 FALSE = 0
 
-/* boolean iseof( ) */
+/* bool iseof( ) */
 .global __j_iseof
 __j_iseof:
     stp     fp, lr, [sp, -0x10]!
@@ -173,7 +173,7 @@ __j_printf:
         cmp     x0, 'X'
         b.eq    printf_HEX
         cmp     x0, 'b'
-        b.eq    printf_boolean
+        b.eq    printf_bool
         cmp     x0, 'c'
         b.eq    printf_char
         cmp     x0, 'd'
@@ -331,19 +331,19 @@ __j_printf:
         mov     x0, '\n'
         b       printf_normal
 
-    printf_boolean:
+    printf_bool:
         ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x10]      ; store a
         cmp     x0, FALSE
-        b.ne    printf_boolean_true
+        b.ne    printf_bool_true
         adrp    x0, str_false@PAGE
         add     x0, x0, str_false@PAGEOFF
-        b       printf_boolean_done
-        printf_boolean_true:
+        b       printf_bool_done
+        printf_bool_true:
         adrp    x0, str_true@PAGE
         add     x0, x0, str_true@PAGEOFF
-        printf_boolean_done:
+        printf_bool_done:
         str     x0, [sp, -0x10]!    ; store pointer -> str
         b       printf_string_again
 

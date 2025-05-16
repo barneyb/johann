@@ -186,7 +186,7 @@ __j_Table_get:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* boolean Table_contains( Table* t, ? key ) */
+/* bool Table_contains( Table* t, ? key ) */
 .global __j_Table_contains
 __j_Table_contains:
     stp     fp, lr, [sp, -0x10]!
