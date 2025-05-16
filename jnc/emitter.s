@@ -10,15 +10,6 @@ err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
 err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
 
-.macro tmpl_sec r=x21
-    mov     x0, \r
-    bl      __j_print               ; print segment
-    mov     x0, \r
-    bl      _strlen                 ; get its length
-    add     x0, x0, #1
-    add     \r, \r, x0              ; advance to the next segment
-.endm
-
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
     .align  3\n\
@@ -1363,9 +1354,9 @@ do_value_string:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_token_id: .asciz "        mov     x0, x2"
-tmpl_token_global: .asciz "        adrp    x0, _j_gbl_\0@PAGE\n\
-        add     x0, x0, _j_gbl_\0@PAGEOFF"
+tmpl_token_id: .asciz "        mov     x0, x2%c\n"
+tmpl_token_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE\n\
+        add     x0, x0, _j_gbl_%s@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1382,26 +1373,19 @@ do_value_id:
     cmp     w0, 'a'
     b.lt    do_value_id_global
 
-    adrp    x21, tmpl_token_id@PAGE
-    add     x21, x21, tmpl_token_id@PAGEOFF
-    tmpl_sec
-    ldrb    w0, [x19]               ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_putchar
-    bl      __j_ick_println
+    ldrb    w1, [x19]               ; first char of name
+    sub     w1, w1, C2R             ; convert lower alpha to digit
+    adrp    x0, tmpl_token_id@PAGE
+    add     x0, x0, tmpl_token_id@PAGEOFF
+    bl      __j_printf
     b       do_value_id_return
 
     do_value_id_global:
-    adrp    x21, tmpl_token_global@PAGE
-    add     x21, x21, tmpl_token_global@PAGEOFF
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_print
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x19
+    mov     x2, x19
+    adrp    x0, tmpl_token_global@PAGE
+    add     x0, x0, tmpl_token_global@PAGEOFF
+    bl      __j_printf
 
     do_value_id_return:
     ; restore frame
@@ -1412,7 +1396,7 @@ do_value_id:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 ; todo: values too large to fit in a imm16 (>65,535) won't work...
-tmpl_token_literal: .asciz "        mov     x0, #"
+tmpl_token_literal: .asciz "        mov     x0, #%i\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1421,13 +1405,10 @@ do_value_literal:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash the value
-    adrp    x21, tmpl_token_literal@PAGE
-    add     x21, x21, tmpl_token_literal@PAGEOFF
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_ick_print_i
-    bl      __j_ick_println
+    mov     x1, x0
+    adrp    x0, tmpl_token_literal@PAGE
+    add     x0, x0, tmpl_token_literal@PAGEOFF
+    bl      __j_printf
     ; restore frame
     ldp     lr, x19, [sp], 0x10
     ret
