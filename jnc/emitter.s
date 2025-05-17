@@ -811,6 +811,15 @@ do_decl:
     bl      __j_Token_type          ; token.type()
     mov     x21, x0                 ; stash token type
 
+    ; set up the template params
+    mov     x0, x22                 ; pointer -> name token
+    bl      __j_Token_value         ; pointer -> value
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x0, x20                 ; pointer -> value token
+    bl      __j_Token_value         ; pointer -> value
+    mov     x2, x0
+    ldr     x1, [sp], 0x10          ; load pointer -> name
+
     cmp     x21, T_BOOL
     b.eq    do_decl_bool
     cmp     x21, T_CHAR
@@ -829,43 +838,22 @@ do_decl:
 
     do_decl_bool:                  ; these two happen to be the same
     do_decl_int:
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    str     x0, [sp, -0x10]!
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value         ; pointer -> value
-    mov     x2, x0
-    ldr     x1, [sp], 0x10
     adrp    x0, tmpl_global_int@PAGE
     add     x0, x0, tmpl_global_int@PAGEOFF
-    bl      __j_printf
-    b       do_decl_return
+    b       do_decl_emit_global
 
     do_decl_char:
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    str     x0, [sp, -0x10]!
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value            ; pointer -> value
-    mov     x2, x0
-    ldr     x1, [sp], 0x10
     adrp    x0, tmpl_global_char@PAGE
     add     x0, x0, tmpl_global_char@PAGEOFF
-    bl      __j_printf
-    b       do_decl_return
+    b       do_decl_emit_global
 
     do_decl_string:
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    str     x0, [sp, -0x10]!
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value         ; pointer -> value
-    mov     x2, x0
-    ldr     x1, [sp], 0x10
     adrp    x0, tmpl_global_string@PAGE
     add     x0, x0, tmpl_global_string@PAGEOFF
+    b       do_decl_emit_global
+
+    do_decl_emit_global:
     bl      __j_printf
-    b       do_decl_return
 
     do_decl_return:
     ; restore frame
