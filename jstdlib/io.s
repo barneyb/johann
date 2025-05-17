@@ -117,8 +117,38 @@ __j_print:
 ; note, only seven variadic args will work
 .global __j_printf
 __j_printf:
+    adrp    x8, __j_putchar@PAGE
+    add     x8, x8, __j_putchar@PAGEOFF
+    b       printf
+
+/* int eprintf( char* format, ... ) */
+; note, only seven variadic args will work
+.global __j_eprintf
+__j_eprintf:
+    adrp    x8, errchar@PAGE
+    add     x8, x8, errchar@PAGEOFF
+    b       printf
+
+    ; like putchar, but unbuffered to StdErr
+    errchar:
+        stp     fp, lr, [sp, -0x10]!
+        mov     fp, sp
+        str     x0, [sp, -0x10]!
+
+        mov     x2, 1                   ; len
+        mov     x1, sp
+        mov     x0, #2                  ; 2 = StdErr
+        bl      __j_sys_write
+
+        add     sp, sp, 0x10
+        ldp     fp, lr, [sp], 0x10
+        ret
+
+printf:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
+    ; fp[-16] : emit_char( c )
+    str     x8, [sp, -0x10]!
     ; sp[10] : void* args ; todo: the caller should set these up...
     stp     x6, x7, [sp, -0x10]!
     stp     x4, x5, [sp, -0x10]!
@@ -141,7 +171,8 @@ __j_printf:
         b       printf_convert
 
     printf_normal:
-        bl      __j_putchar
+        ldr     x8, [fp, -0x10]
+        blr     x8
         ldr     x0, [sp, 0x8]       ; load written
         add     x0, x0, #1          ; written++
         str     x0, [sp, 0x8]       ; store written
@@ -310,7 +341,8 @@ __j_printf:
         ldrb    w0, [x5], #1        ; load next char to emit
         ; todo: this store/load in a tight loop is ... not ideal
         stp     x4, x5, [sp, -0x10]!; store before call
-        bl      __j_putchar
+        ldr     x8, [fp, -0x10]
+        blr     x8
         ldp     x4, x5, [sp], 0x10  ; load after call
         sub     x4, x4, #1
         b       printf_integer_emit_again
@@ -358,7 +390,8 @@ __j_printf:
             str     x1, [sp]        ; store pointer -> str[i]
             cmp     x0, NULL
             b.eq    printf_string_done
-            bl      __j_putchar
+            ldr     x8, [fp, -0x10]
+            blr     x8
             ldr     x0, [sp, 0x18]      ; load written
             add     x0, x0, #1          ; written++
             str     x0, [sp, 0x18]      ; store written
@@ -369,7 +402,7 @@ __j_printf:
 
     printf_done:
     ldr     x0, [sp, 0x8]           ; load written
-    add     sp, sp, 0x50            ; release local storage
+    add     sp, sp, 0x60            ; release local storage
     ldp     fp, lr, [sp], 0x10
     ret
 

@@ -8,14 +8,14 @@ err_bad_stmt: .asciz "; ERROR(%i): Bad statement %x at line %i, char %i\n"
 err_bad_expr: .asciz "; ERROR(%i): Bad expression %x at line %i, char %i\n"
 err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
-err_invalid_nesting: .asciz "; ERROR: Invalid nesting %x\n"
+err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
 
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
     .align  3\n\
-    .set NULL, 0\n\
-    .set TRUE, 1\n\
-    .set FALSE, 0\n"
+    NULL  = 0\n\
+    TRUE  = 1\n\
+    FALSE = 0\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -147,12 +147,12 @@ enter_block:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* Block* innermost_block_of( Emitter* self, int type ) */
+/* Block* innermost_block_of( Emitter* self, int type, Token* t ) */
 innermost_block_of:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     x22, x2, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
@@ -173,12 +173,11 @@ innermost_block_of:
     b       innermost_block_of_return
 
     innermost_block_of_bad:
-        mov     x1, x20
         adrp    x0, err_invalid_nesting@PAGE
         add     x0, x0, err_invalid_nesting@PAGEOFF
-        bl      __j_printf
-        mov     x0, #37
-        b       __j_sys_exit
+        ldr     x1, [sp, 0x8]       ; load pointer -> token
+        mov     x2, #37             ; error code
+        bl      __j_jnc_panic       ; print and terminate
 
     innermost_block_of_return:
     ; restore frame
@@ -574,9 +573,8 @@ do_return:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_return@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_return@PAGEOFF
 
+    ldr     x2, [x1]
     mov     x1, T_KW_FN
     mov     x0, x19
     bl      innermost_block_of
@@ -626,6 +624,7 @@ do_loop_thinger:
     mov     x19, x0                 ; stash pointer -> this
     mov     x21, x2                 ; pointer -> template
 
+    ldr     x2, [x1]
     mov     x1, T_KW_WHILE
     mov     x0, x19
     bl      innermost_block_of
@@ -772,8 +771,6 @@ do_assign:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_assign@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_assign@PAGEOFF
 
     mov     x0, x19
     add     x1, x20, 0x10            ; pointer -> buffer[2] (the RHS)
@@ -805,8 +802,6 @@ do_assign_pointer:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_assign_ptr@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_assign_ptr@PAGEOFF
 
     mov     x0, x19
     add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)

@@ -106,17 +106,28 @@ jnc:
 __j_jnc_panic:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
+    stp     x0, x1, [sp, -0x10]!; store format & token
     str     x2, [sp, -0x10]!    ; store status code
 
+    ; to StdErr
+    ldr     x3, [x1, 0x8]
+    ldr     x4, [x1, 0x10]
+    ldr     x2, [x1]
+    ldr     x1, [sp]            ; load status code
+    bl      __j_eprintf
+    ; to the output file
+    ldp     x0, x1, [sp, 0x10]  ; load format & token
     ldr     x3, [x1, 0x8]
     ldr     x4, [x1, 0x10]
     ldr     x2, [x1]
     ldr     x1, [sp]            ; load status code
     bl      __j_printf
+    ; ensure the output file will error if executed
     ldr     x1, [sp]            ; load status code
     adrp    x0, tmpl_panic@PAGE
     add     x0, x0, tmpl_panic@PAGEOFF
     bl      __j_printf
+    ; panic!
     ldr     x0, [sp], 0x10      ; load status code
     adrp    x1, err_panic@PAGE
     add     x1, x1, err_panic@PAGEOFF
