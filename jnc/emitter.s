@@ -9,6 +9,7 @@ err_bad_expr: .asciz "; ERROR(%i): Bad expression %x at line %i, char %i\n"
 err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
 err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
+err_dupe_decl: .asciz "; ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n"
 
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
@@ -85,8 +86,8 @@ block_drop:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
-    ldr     x0, [x0, B_OFF_SYMBOLS]; load block's symbol table
-    bl      __j_Table_drop
+    ldr     x0, [x0, B_OFF_SYMBOLS] ; load block's symbol table
+    bl      __j_Table_drop_values   ; drop nodes AND their values
 
     ldp     fp, lr, [sp], 0x10
     ret
@@ -136,6 +137,14 @@ enter_block:
     add     x0, x0, __j_strcmp@PAGEOFF
     bl      __j_Table__new
     str     x0, [x20, B_OFF_SYMBOLS]; initialize symbol table
+;        .data
+;        bt:.asciz "; block: %p, table: %p\n"
+;        .text
+;        mov x2, x0
+;        mov x1, x20
+;        adrp x0, bt@PAGE
+;        add x0, x0, bt@PAGEOFF    ; pointer -> msg
+;        bl __j_printf
     mov     x0, x20                 ; restore pointer -> block
 
     add     x22, x22, 1             ; increment depth
@@ -184,6 +193,20 @@ innermost_block_of:
     ldr     x22, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
+    ret
+
+/* Block* current_block( Emitter* self ) */
+current_block:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    add     x1, x0, OFF_BLOCKS      ; pointer -> stack of blocks
+    mov     x2, SIZEOF_BLOCK        ; size of block
+    ldr     x3, [x0, OFF_DEPTH]     ; load depth
+    sub     x3, x3, #1
+    madd    x0, x2, x3, x1          ; pointer -> block
+
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* Block* leave_block( Emitter* self ) */
@@ -469,6 +492,7 @@ do_fn:
     bl      __j_Token_value         ; pointer -> name
     mov     x3, x0
     ldp     x1, x2, [sp], 0x10
+    ; todo: add to symbol table
     adrp    x0, tmpl_fn_arg@PAGE   ; pointer -> template
     add     x0, x0, tmpl_fn_arg@PAGEOFF
     bl      __j_printf
@@ -654,6 +678,97 @@ tmpl_global_string: .asciz "    .data\n\
                                     .text
 
 /* void do_decl( Emitter* self, [Token*] buffer ) */
+
+vardecl:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
+    stp     x23, x24, [sp, -0x10]!
+    mov     x19, x0                 ; stash pointer -> self
+    mov     x20, x1                 ; stash pointer -> buffer
+
+    sub     x21, x20, 0x8           ; i = -1 (poor man's for loop)
+    mov     x24, #-2                ; nptr = -2
+    vardecl_again:
+    add     x21, x21, 0x8           ; i++
+    add     x24, x24, #1            ; nptr++
+    ldr     x0, [x21]               ; load pointer -> tokens[i]
+    bl      __j_Token_type          ; token.type()
+;        .data
+;        asdf:.asciz "; vd: token %x %i\n"
+;        .text
+;        mov x2, x0
+;        mov x1, x0
+;        adrp x0, asdf@PAGE
+;        add x0, x0, asdf@PAGEOFF
+;        bl __j_printf
+;        ldr x0, [x21]
+;        bl __j_Token_type
+    cmp     x0, T_ID
+    b.ne    vardecl_again
+
+    ; find the name
+    ldr     x23, [x21]              ; stash pointer -> id token
+    mov     x0, x23
+    bl      __j_Token_value
+    stp     x0, x23, [sp, -0x10]!   ; store pointers -> name & -> id token
+    ; get the current block
+    mov     x0, x19
+    bl      current_block           ; self.current_block()
+    ; get its symbol table
+    ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
+    mov     x23, x0                 ; stash pointer -> symbols
+    ; if already defined, panic
+    ldr     x1, [sp]                ; load pointer -> name
+    bl      __j_Table_contains
+    cmp     x0, FALSE
+    b.eq    vardecl_midpoint_reg
+        ; build a panic tuple on the stack, since the token itself won't work
+        ldp     x1, x0, [sp]
+        bl      __j_Token_char
+        str     x0, [sp, -0x10]!
+        ldp     x1, x0, [sp, 0x10]
+        bl      __j_Token_line
+        stp     x1, x0, [sp, -0x10]!
+        adrp    x0, err_dupe_decl@PAGE
+        add     x0, x0, err_dupe_decl@PAGEOFF    ; pointer -> msg
+        mov     x1, sp
+        mov     x2, #22             ; error code
+        bl      __j_jnc_panic       ; print and terminate
+    vardecl_midpoint_reg:
+    ; find base type
+    ldr     x0, [x20]               ; load pointer -> tokens[0]
+    bl      __j_Token_type          ; token.type()
+    ; build symbol
+    mov     x1, x24
+    bl      __j_Symbol__new
+    mov     x24, x0                 ; stash pointer -> symbol
+    ; add to table
+    mov     x2, x0                  ; pointer -> symbol
+    ldr     x1, [sp]                ; load pointer -> name
+    mov     x0, x23                 ; pointer -> symbols
+    bl      __j_Table_put
+;        .data
+;        ns:.asciz "; added '%s' to table w/ type %x width %d and nptr %d\n"
+;        .text
+;        ldp x3, x4, [x24]           ; load width and nptr
+;        ldr x0, [x20]               ; load pointer -> tokens[0]
+;        bl __j_Token_type           ; token.type()
+;        mov x2, x0
+;        ldr x1, [sp]
+;        adrp x0, ns@PAGE
+;        add x0, x0, ns@PAGEOFF
+;        bl __j_printf
+
+    add     sp, sp, 0x10            ; release locals
+
+    ldp     x23, x24, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
+    ret
+
 do_decl:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -663,11 +778,13 @@ do_decl:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
 
+    bl      vardecl
+
     ; scan until find an ASSIGN or SEMI
     add     x21, x20, #8            ; first token is type
     do_decl_again:
     ldr     x0, [x21, #8]!          ; stash pointer -> next token
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     cmp     x0, T_ASSIGN
     b.eq    do_decl_delegate
     cmp     x0, T_SEMI
@@ -922,6 +1039,7 @@ do_call:
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
     mov     x3, x0
+    ; todo: respect globals
     ldrb    w2, [x0]                ; first char of name
     sub     w2, w2, C2R             ; convert lower alpha to digit
     mov     x1, x22

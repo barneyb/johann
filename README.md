@@ -31,7 +31,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness.
 
-All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow "blocks". Type declarations are permitted, but are currently ignored except to introduce a global constant. They may move to the other side of the identifier (e.g., `i: int` instead of `int i`). There is no exception handling.
+All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks. Type declarations are encouraged, but are currently only required to introduce globals (not locals). They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
 Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
 
@@ -76,7 +76,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==`). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to make a pointer. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Three comparisons operators are supported: `<`, `>`, and `=` (not `==` - yet!). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to take an address. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -88,15 +88,15 @@ Compound expressions are not supported, so there is no operator precedence. The 
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 
-Semicolons are required to terminate statements which don't take a block.
+Semicolons are required to terminate statements which don't take a block. Blocks are not currently statements as is normal in C-family languages.
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore.
 
-The `bool`, `char`, `int`, and `void` keywords may be used to introduce a variable, and are ignored. Pointers may be declared with `*`, which is similarly ignored. `void` only makes sense as a pointer, of course.
+The `bool`, `char`, `int`, and `void` keywords may be used to introduce a local variable, and are required to introduce a global one. Pointers may be declared with `*`. `void` only makes sense as a pointer, of course.
 
-Variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; "blocks" do not introduce a new scope. This will change.
+Local variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; blocks do not introduce a new scope. This will change.
 
-Global constants (defined outside a function) are identified by their full name, which cannot start with `a`-`g`. A type declaration is required (though ignored) and globals are _always_ pointers (`*` or not). This will change.
+Global constants (defined outside a function) are identified by their full name, which cannot start with `a`-`g`. A type declaration is required, and globals are _always_ pointers (`*` or not). This will change.
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. A `\n` may be used for a newline; other escapes may work, but are unsupported. Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
@@ -106,14 +106,15 @@ Boolean literals `true` and `false` are recognized as aliases for `1` and `0` re
 
 The `null` keyword is recognized as an alias for `0`.
 
-Functions can declare formal arguments within their parentheses, to create variables from passed parameters. These are normal variables, which means functions can take at most seven arguments. Per usual, type information may be provided, but is ignored:
+Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most seven arguments. Per usual, type information is optional, and will move to the other side (like all variable declarations):
 
     fn add(int a, int b) {
         return a + b;
     }
 
-Parameters passed in a function call must be variables, not expressions. This includes literals. A convoluted way to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
+Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
+    # convoluted:
     char* c = "one: ";
     print(c);
     int a = -1;
@@ -121,7 +122,15 @@ Parameters passed in a function call must be variables, not expressions. This in
     a = add(a, b);
     c = itoa(a);
     println(c);
-    free(c);        # don't leak memory
+    free(c);           # don't leak memory
+
+    # easier:
+    char* f = "one: %i\n";
+    a = 1;
+    printf(f, a);
+
+    # not allowed:
+    # printf("one: %i\n", 1);
 
 ## Building Johann Programs
 
@@ -143,7 +152,7 @@ Johann provides no debugging support, but you might be able to use various third
 
 ## Memory "Safety"
 
-There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is logged.
+There are no runtime safety checks - you can ruin your day with impunity. When a program exits (without panicking), the count of `malloc` and `free` calls is compared. If they don't match, a warning is printed to STDERR.
 
 Currently, the "allocator" `mmap`s a few anonymous pages, and each `malloc` gets the next however many bytes from there. `free` does nothing, so once the pages are exhausted: segfault!
 
@@ -165,8 +174,10 @@ Eventually, these will go away in favor of `new`/`drop` or something. I hope.
 No files, just STDIN and STDOUT. `EOF` is any negative number.
 
 * `int getchar( )` - consume the next character from STDIN, or `EOF`.
+* `bool iseof( )` - whether STDIN has reached EOF.
 * `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
 * `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
+* `int eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering).
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
@@ -183,28 +194,29 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 
 Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.
 
-* `void sys_exit( int status )` - terminate the program with the given exit status.
+* `void exit( int status )` - terminate the program with the given exit status.
 * `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
 * `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from a file descriptor.
 * `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
 
 ### `table`
 
-A table/map/associative-array ADT, which has a reasonable interface, and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended.
+A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `drop_values` method can help if the values happen to be pointers.
 
 * `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
 * `bool Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
+* `void Table_drop( Table* t )` - drops `t`, freeing all internal structure, but not keys/values.
+* `void Table_drop_values( Table* t )` - drops `t`, freeing all internal structure **AND** values' pointed-at allocations, but not keys.
 * `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
 * `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
-* `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).)
+* `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).
 * `int Table_size( Table* t )` - return the number of keys in `t`.
 
 ### Obsolete
 
-A few functions remain supported, but are tagged "ick", and will eventually be removed.
+A few obsolete functions remain available, but are tagged "ick", and will eventually be removed.
 
 * `void print( char* str )` - use `printf`
-* `void printc( int ch )` - use `printf`
 * `int println( char* str )` - use `puts` or `printf`
 * `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 
@@ -216,6 +228,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `18` - Too-long identifier
 * `19` - Too-long string
 * `21` - Bad token
+* `22` - Duplicate declaration
 * `26` - Bad value
 * `27` - Bad statement
 * `28` - Bad expression
@@ -224,7 +237,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `47` - Unrecognized format conversion spec for `printf`.
 * `99` - Failed to get memory from the OS.
 
-Most errors are not caught, and may result in compiler crashes or the emission of assembly codes which cannot be assembled or cause crashes.
+Most errors are not caught and result in compiler crashes, invalid assembly code, or code which will crash when executed.
 
 ## Building Johann Itself (`jnc` and `jstdlib.o`)
 
@@ -280,4 +293,6 @@ TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 
 ## Application Binary Interface
 
-Johann-compiled code mostly conforms to the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
+Johann-compiled code mostly conforms to a subset of the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
+
+The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines omit one.

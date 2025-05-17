@@ -8,14 +8,18 @@ fn main() {
     println(c);
     free(c);        # don't leak memory
 
-    char* c = "one: ";
+    c = "one: ";
     print();
-    int a = -1;
+    a = -1;
     a = a + 2;
     c = itoa();
     println();
     c = c;
     free();        # don't leak memory
+
+    char* f = "one: %i\n";
+    a = 1;
+    printf(f, a);
 }
 
 fn add(a, int b) {

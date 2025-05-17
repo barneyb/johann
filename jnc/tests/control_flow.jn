@@ -1,7 +1,8 @@
 fn main() {
     char g = '!';
     int a = 16;
-    void* a = malloc(a); # space for a pair of ints and/or pointers
+    # todo: use let to make a new var (with the same name)
+    a = malloc(a); # space for a pair of ints and/or pointers
     if a = null {
         putchar(g);
         putchar(g);

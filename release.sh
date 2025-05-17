@@ -29,7 +29,7 @@ make clean
 if ! git diff --quiet; then
     nope 3 "Clean created dirtiness?!"
 fi
-make test all
+make test all not_quite_lisp
 if ! git diff --quiet; then
     nope 4 "Build created dirtiness?!"
 fi

@@ -8,6 +8,7 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
+	$(LIB)/symbol.o \
 	$(LIB)/token.o
 
 INCLUDES = \

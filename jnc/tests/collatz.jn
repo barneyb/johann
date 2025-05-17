@@ -1,5 +1,11 @@
+int ONE = 1;
+char C_ZERO = '0';
+char* START = "%i";
+char* NEXT_NUM = ", %i";
+
 fn main(int c, char** a) {
-    int b = 1; # skip the command name
+    # skip the command name
+    int b = *ONE; # todo: this global isn't SUPPOSED to be a pointer
     while b < c {
         d = b * 8;
         d = a + d;
@@ -10,10 +16,10 @@ fn main(int c, char** a) {
 }
 
 fn print_series(char* a) {
-    a = read_int(a); # todo: allow initializing w/ a function call
-    f = "%i";
+    int a = read_int(a);
+    char* f = START;
     printf(f, a);
-    f = ", %i";
+    f = NEXT_NUM;
     while a > 1 {
         b = a % 2;
         if b = 0 {
@@ -31,13 +37,16 @@ fn print_series(char* a) {
 
 fn read_int(char* a) {
     int f = 0;          # accumulator
-    c = loadb(a);
+    c = loadb(a); # todo: icky
+    char d = C_ZERO;
+    d = loadb(d); # todo: not a pointer
+                  # todo: should be inlined
     while c > 0 {
-        c = c - '0'; # subtract ASCII 0 to "parse digit"
+        c = c - d; # subtract ASCII 0 to "parse digit"
         f = f * 10;
         f = f + c;
-        a = a + 1;
-        c = loadb(a);
+        a = a + 1; # todo: use array notation
+        c = loadb(a); # todo: icky
     }
     return f;
 }

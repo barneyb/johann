@@ -46,17 +46,35 @@ __j_Table_size:
 /* void Table_drop( Table* t ) */
 .global __j_Table_drop
 __j_Table_drop:
+    mov     x1, FALSE
+    b       drop
+
+/* void Table_drop_values( Table* t ) */
+.global __j_Table_drop_values
+__j_Table_drop_values:
+    mov     x1, TRUE
+    b       drop
+
+/* void drop( Table* t, bool values ) */
+drop:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
-    ldr     x1, [x0, 0x10]          ; load t.head
-    str     x1, [sp, -0x10]!        ; store curr
+    ldr     x2, [x0, 0x10]          ; load t.head
+    stp     x2, x1, [sp, -0x10]!    ; store curr & values
     bl      __j_free                ; free t
 
     drop_again:
-    ldr     x0, [sp]                ; load curr
+    ldp     x0, x1, [sp]            ; load curr & values
     cmp     x0, NULL
     b.eq    drop_done
+    cmp     x1, FALSE
+    b.eq    drop_node
+        ; drop the value first
+        ldr     x0, [x0, 0x10]      ; load curr.value
+        bl      __j_free
+        ldr     x0, [sp]            ; load curr
+    drop_node:
     ldr     x1, [x0, 0x18]          ; load curr.next
     str     x1, [sp]                ; store curr
     bl      __j_free                ; free curr
@@ -196,7 +214,6 @@ __j_Table_contains:
     ret
 
 /* Node* find_node( Table* t, ? key ) */
-.global find_node
 find_node:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp

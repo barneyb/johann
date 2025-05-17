@@ -30,7 +30,7 @@ test:
 	$(MAKE) -C jnc test
 
 clean:
-	rm -rf $(TGT)
+	rm -rf $(TGT) *.s a.out
 	$(MAKE) -C jstdlib clean
 	$(MAKE) -C jnc clean
 
