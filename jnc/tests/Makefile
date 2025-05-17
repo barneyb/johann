@@ -5,10 +5,11 @@ OUT = $(TGT)/out
 JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
-all: collatz \
+all: reverse \
+	collatz \
+	constants \
 	zero \
 	not_quite_lisp \
-	constants \
 	sum \
 	print_one \
 	store_load \

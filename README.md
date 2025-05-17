@@ -229,6 +229,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `19` - Too-long string
 * `21` - Bad token
 * `22` - Duplicate declaration
+* `23` - Unknown symbol
 * `26` - Bad value
 * `27` - Bad statement
 * `28` - Bad expression

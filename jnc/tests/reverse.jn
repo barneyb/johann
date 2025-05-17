@@ -1,0 +1,86 @@
+char* STRING_A = "no commas here!";
+char* STRING_B = "perhaps one, or more, commas?";
+char STOP_AT = ',';
+int CHARS_SCANNED = 0;
+
+fn main() {
+    char* a = STRING_A;
+    do_string(a);
+    scan_stats();
+
+    a = STRING_B;
+    do_string(a);
+    scan_stats();
+}
+
+fn scan_stats() {
+    char* f = "Scanned %i total chars\n";
+    int b = *CHARS_SCANNED; # todo: not a pointer!
+    printf(f, b);
+}
+
+fn do_string(char* a) {
+    # find the stop char
+    char g = *STOP_AT; # todo: not a pointer!
+    int b = strpos(a, g);
+
+    if b < 0 {
+        char* f = "Didn't find stop char '%c' anywhere in '%s'?!\n";
+        printf(f, g, a);
+        return b;
+    }
+    char* f = "Found '%c' at position %i of '%s'.\n";
+    printf(f, g, b, a);
+    char* d = strcpy(a);
+    strrev(d, b);
+    b = strpos(d, g);
+    printf(f, g, b, d);
+    free(d);
+}
+
+fn strpos(char* a, char b) {
+    char* d = a;
+    char c = scan(d);
+    g = "is char '%c' actually '%c'? %b\n";
+    while c ! b {
+        if c = 0 {
+            return -1;
+        }
+        d = d + 1;
+        c = scan(d);
+    }
+    d = d - a;
+    return d;
+}
+
+fn scan(char* a) {
+    char* a = a; # todo: the arg should declare this symbol
+    char c = *a;
+    int f = CHARS_SCANNED; # todo: ick
+    int g = *f; # todo: ick
+    *f = g + 1; # todo: ick
+    return c;
+}
+
+fn strcpy(char* a) {
+    int d = strlen(a);
+    d = d + 1; # for the trailing null
+    char* b = malloc(d);
+    memcpy(b, a, d);
+    return b;
+}
+
+fn strrev(char* a, int b) {
+    int d = 0;
+    b = b - 1; # don't move the stop char itself
+    while b > 0 {
+        char* c = a + b;
+        char* g = a + d;
+        char e = *c;
+        char f = *g;
+        *c = f;
+        *g = e;
+        b = b - 1;
+        d = d + 1;
+    }
+}

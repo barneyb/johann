@@ -65,13 +65,3 @@ __j_sys_write:
     svc     #0x80                   ; Call kernel
     ldp     fp, lr, [sp], 0x10
     ret                             ; transfer control back, propagating nbytes written
-
-.global __j_loadb
-__j_loadb: ; todo: ick
-    ldrb    w0, [x0]
-    ret
-
-.global __j_storeb
-__j_storeb: ; todo: ick
-    strb    w1, [x0]
-    ret

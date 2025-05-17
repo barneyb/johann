@@ -7,7 +7,7 @@ fn main(int c, char** a) {
     # skip the command name
     int b = *ONE; # todo: this global isn't SUPPOSED to be a pointer
     while b < c {
-        d = b * 8;
+        int d = b * 8;
         d = a + d;
         d = *d;
         print_series(d);
@@ -37,16 +37,15 @@ fn print_series(char* a) {
 
 fn read_int(char* a) {
     int f = 0;          # accumulator
-    c = loadb(a); # todo: icky
-    char d = C_ZERO;
-    d = loadb(d); # todo: not a pointer
-                  # todo: should be inlined
+    char* a = a; # todo: the arg should create a symbol
+    c = *a;
+    d = *C_ZERO; # todo: this global isn't SUPPOSED to be a pointer
     while c > 0 {
         c = c - d; # subtract ASCII 0 to "parse digit"
         f = f * 10;
         f = f + c;
-        a = a + 1; # todo: use array notation
-        c = loadb(a); # todo: icky
+        a = a + 1; # todo: use array notation instead of pointer arithmetic
+        c = *a;
     }
     return f;
 }

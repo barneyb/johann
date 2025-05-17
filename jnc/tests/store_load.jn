@@ -2,6 +2,7 @@ fn main() {
     int e = 16;
     int f = 1;
     int g = 2;
+    # todo: use array notation, instead of explicit pointer arithmetic
     int* a = malloc(e); # a = new int[2];
     *a = 1;             # a[0] = 1;
     a = a + 8;
