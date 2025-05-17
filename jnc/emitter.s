@@ -1101,9 +1101,11 @@ do_expr:
     mov     x1, x20
     bl      do_call
     b       do_expr_return
-    ; if second token is EQ, LT, GT, PLUS, MINUS, SLASH, STAR, PERCENT, do binary op
+    ; if second token is EQ, BANG, LT, GT, PLUS, MINUS, SLASH, STAR, PERCENT, do binary op
     do_expr_bool:
     cmp     x23, T_EQ
+    b.eq    do_expr_binop
+    cmp     x23, T_BANG
     b.eq    do_expr_binop
     cmp     x23, T_LT
     b.eq    do_expr_binop
@@ -1251,6 +1253,7 @@ tmpl_bin_mod:   .asciz "        str     x2, [sp, -0x10]!\n\
 tmpl_b_gt:    .asciz "gt"
 tmpl_b_lt:    .asciz "lt"
 tmpl_b_eq:    .asciz "eq"
+tmpl_b_ne:    .asciz "ne"
 tmpl_bin_comp:    .asciz "        cmp     x0, x1\n\
         b.%s    expr_%i\n\
         mov     x0, FALSE\n\
@@ -1304,6 +1307,8 @@ do_binary_op:
     b.eq    do_bin_mod
     cmp     x21, T_EQ
     b.eq    do_bin_eq
+    cmp     x21, T_BANG
+    b.eq    do_bin_ne
     cmp     x21, T_LT
     b.eq    do_bin_lt
     cmp     x21, T_GT
@@ -1347,6 +1352,10 @@ do_binary_op:
     do_bin_eq:
     adrp    x21, tmpl_b_eq@PAGE
     add     x21, x21, tmpl_b_eq@PAGEOFF
+    b       do_logic_emit
+    do_bin_ne:
+    adrp    x21, tmpl_b_ne@PAGE
+    add     x21, x21, tmpl_b_ne@PAGEOFF
     b       do_logic_emit
 
     do_arith_emit:
