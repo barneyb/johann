@@ -416,10 +416,13 @@ lex_identifier:
 /* char* lex_string( ) */
 lex_string:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
     ; end frame
-    mov     x0, #4096               ; todo: max string literal length
+    mov     x22, 0x10
+    mov     x0, x22
     bl      __j_malloc
     mov     x20, x0                 ; pointer -> start of buffer
     mov     x21, x20                ; pointer -> buffer[pos] to write
@@ -429,6 +432,24 @@ lex_string:
     bl      __j_getchar
     cmp     x0, '"'
     b.eq    lex_string_return
+    sub     x5, x21, x20
+    cmp     x5, x22
+    b.lt    lex_string_append
+        ; todo: this _should_ be `realloc`, but the allocator doesn't know length!
+        str     x0, [sp, -0x10]!    ; store the char just read
+        lsl     x22, x22, #1        ; double it
+        mov     x0, x22
+        bl      __j_malloc
+        mov     x1, x20
+        sub     x2, x21, x20
+        stp     x0, x2, [sp, -0x10]!; store pointer -> new & len
+        bl      __j_memcpy          ; copy from old to new
+        mov     x0, x20             ; free old
+        bl      __j_free
+        ldp     x20, x2, [sp], 0x10 ; restore pointer -> new & len
+        add     x21, x20, x2        ; pointer -> buffer[pos] to write
+        ldr     x0, [sp], 0x10      ; load the char just read
+    lex_string_append:
     strb    w0, [x21], #1           ; add it to the string
     b       lex_string_char
 
@@ -438,8 +459,9 @@ lex_string:
 
     mov     x0, x20                 ; return pointer -> buffer
     ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void convert_keyword( Token* token ) */
