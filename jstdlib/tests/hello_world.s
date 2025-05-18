@@ -12,7 +12,7 @@ bang: .asciz  "!"
 .global _main
 _main:
     bl      __j_main
-    b       __j_sys_exit
+    b       __j_exit
 
 .global __j_main
 __j_main:

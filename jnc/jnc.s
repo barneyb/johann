@@ -26,7 +26,7 @@ bl __j_panic\n"
 .global _main
 _main:
     bl      __j_main
-    b       __j_sys_exit
+    b       __j_exit
 
 /* int main( int argc, char* argv[] ) */
 .global __j_main

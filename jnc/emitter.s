@@ -471,7 +471,7 @@ s_main: .asciz "main"
 tmpl_main: .asciz "    .global _main\n\
     _main:\n\
         bl      __j_main\n\
-        b       __j_sys_exit\n\
+        b       __j_exit\n\
 "
 
 tmpl_fn_intro: .asciz "    .global __j_%s\n\
