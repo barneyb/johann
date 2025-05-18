@@ -1,6 +1,6 @@
 fn main() {
     char* c = "one: ";
-    print(c);
+    printf(c);
     int a = -1;
     int b = 2;
     a = add(a, b);
@@ -9,7 +9,7 @@ fn main() {
     free(c);        # don't leak memory
 
     c = "one: ";
-    print();
+    printf();
     a = -1;
     a = a + 2;
     c = itoa();

@@ -112,7 +112,7 @@ Parameters passed in a function call must be local variables, not expressions. T
 
     # convoluted:
     char* c = "one: ";
-    print(c);
+    printf(c);
     int a = -1;
     int b = 2;
     a = add(a, b);
@@ -212,7 +212,6 @@ A table/map/associative-array ADT, which has a reasonable interface (for a tree-
 
 A few obsolete functions remain available, but are tagged "ick", and will eventually be removed.
 
-* `void print( char* str )` - use `printf`
 * `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 
 ## Compiler Errors

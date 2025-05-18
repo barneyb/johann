@@ -15,7 +15,6 @@ str_false: .asciz "false"
 buf_stdin_pos: .quad BUF_SIZE       ; start needing more
 
 itoa_cheat: .asciz "%i"
-__j_print_s_format: .asciz "%s"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
 .align 3 ; 8-byte/64-bit alignment
@@ -98,18 +97,6 @@ __j_peekchar:
     ldrb    w0, [x1]
     sxtb    x0, w0
 
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* void print( char* str ) */
-.global __j_print ; todo: ick
-__j_print:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    mov     x1, x0
-    adrp    x0, __j_print_s_format@PAGE
-    add     x0, x0, __j_print_s_format@PAGEOFF
-    bl      __j_printf
     ldp     fp, lr, [sp], 0x10
     ret
 

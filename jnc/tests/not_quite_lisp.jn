@@ -22,14 +22,14 @@ fn main() -> int {
         c = read();
     }
     char* a = "one: ";
-    print();            # implicitly passed a
+    printf();            # implicitly passed a
     f = f;
     a = itoa();         # implicitly passed f
     puts();             # implicitly passed a
     a = a;
     free();             # implicitly passed a
     a = "two: ";
-    print();            # implicitly passed a
+    printf();            # implicitly passed a
     e = e;
     a = itoa();         # implicitly passed e
     puts();             # implicitly passed a
