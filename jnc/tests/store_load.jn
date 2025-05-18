@@ -9,18 +9,18 @@ fn main() {
     *a = 2;             # a[1] = 2;
     int b = *a;         # b = 2;
     char* d = itoa(b);
-    println(d);
+    puts(d);
     free(d);
     a = a - 8;
     int c = *a;         # c = 1;
     d = itoa(c);
-    println(d);
+    puts(d);
     free(d);
     *a = b + c;         # a[0] = 3;
     b = *a;             # b = 3;
     free(a);
     d = itoa(b);
-    println(d);
+    puts(d);
     free(d);
     return 0;
 }

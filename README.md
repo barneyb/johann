@@ -43,7 +43,7 @@ Functions are defined with the `fn` keyword. Use `return` to return a value. The
 
     fn main(int a, char** b) {
         b = *b;
-        println(b);
+        puts(b);
         return a - 1;
     }
 
@@ -117,7 +117,7 @@ Parameters passed in a function call must be local variables, not expressions. T
     int b = 2;
     a = add(a, b);
     c = itoa(a);
-    println(c);
+    puts(c);
     free(c);           # don't leak memory
 
     # easier:
@@ -213,7 +213,6 @@ A table/map/associative-array ADT, which has a reasonable interface (for a tree-
 A few obsolete functions remain available, but are tagged "ick", and will eventually be removed.
 
 * `void print( char* str )` - use `printf`
-* `int println( char* str )` - use `puts` or `printf`
 * `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 
 ## Compiler Errors

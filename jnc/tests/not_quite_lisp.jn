@@ -25,14 +25,14 @@ fn main() -> int {
     print();            # implicitly passed a
     f = f;
     a = itoa();         # implicitly passed f
-    println();          # implicitly passed a
+    puts();             # implicitly passed a
     a = a;
     free();             # implicitly passed a
     a = "two: ";
     print();            # implicitly passed a
     e = e;
     a = itoa();         # implicitly passed e
-    println();          # implicitly passed a
+    puts();             # implicitly passed a
     a = a;
     free();             # implicitly passed a
 }

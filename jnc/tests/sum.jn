@@ -2,7 +2,7 @@
 # running total as they are read.
 fn main() {
     char* g = "0";
-    println(g);
+    puts(g);
     int a = 0;          # answer
     int e = -1;         # EOF
     int f = 0;          # accumulator

@@ -5,7 +5,7 @@ fn main() {
     int b = 2;
     a = add(a, b);
     c = itoa(a);
-    println(c);
+    puts(c);
     free(c);        # don't leak memory
 
     c = "one: ";
@@ -13,7 +13,7 @@ fn main() {
     a = -1;
     a = a + 2;
     c = itoa();
-    println();
+    puts();
     c = c;
     free();        # don't leak memory
 

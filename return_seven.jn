@@ -84,8 +84,7 @@ fn main(): int {
     greet = greet + space;  # allocate a new string
     greet = greet + 'W';    # another new string
     greet = greet + "orld!";# guess what? another new string!
-    # println comes from the standard library, and is super nebulous.
-    println(greet);
+    puts(greet);
 
     int result = a.sum();
     free a; # don't forget to deallocate - there's no GC! If the object's class

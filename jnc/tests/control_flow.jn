@@ -23,6 +23,6 @@ fn main() {
     }
     free(a);
     b = itoa(b);
-    println(b);
+    puts(b);
     free(b);
 }

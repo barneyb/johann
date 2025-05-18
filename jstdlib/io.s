@@ -514,8 +514,6 @@ __j_itoa:
 /* int puts( char* str ) */
 .global __j_puts
 __j_puts:
-.global __j_println ; todo: ick
-__j_println:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     str     x19, [sp, -0x10]!
