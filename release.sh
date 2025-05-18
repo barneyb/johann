@@ -27,14 +27,17 @@ fi
 # build
 make clean
 if ! git diff --quiet; then
-    nope 3 "Clean created dirtiness?!"
+    nope 3 "Clean created dirtiness"
 fi
-make test all not_quite_lisp
+make test all
 if ! git diff --quiet; then
-    nope 4 "Build created dirtiness?!"
+    nope 4 "Build created dirtiness"
 fi
 cp jnc/target/bin/jnc bin
 cp jstdlib/target/lib/jstdlib.o lib
+if ! make not_quite_lisp; then
+    nope 7 "Not Quite Lisp doesn't work anymore"
+fi
 git add --force bin/jnc lib/jstdlib.o
 
 # update readme
@@ -77,6 +80,6 @@ VERSION=$(./bin/jnc -v | cut -d ' ' -f 2 | cut -d - -f 1)
 git commit -a -m "Add v${VERSION} release binaries"
 make clean test all
 if ! git diff --quiet; then
-    nope 5 "Release created dirtiness?!"
+    nope 5 "Release created dirtiness"
 fi
 git tag -a -m "Release v${VERSION}" "v${VERSION}"

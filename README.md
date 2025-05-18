@@ -22,8 +22,8 @@ Clone and compile a test program as below. You'll need the command-line develope
 
 This will print:
 
-    one: 3
-    two: 7
+    Part A: 3
+    Part B: 7
 
 The `3` is the difference in number of `(` and `)`, and the `7` is the first character position (one-indexed) where more `)` than `(` have been encountered. Run `make not_quite_lisp` from the root to do basically the same thing.
 
@@ -33,7 +33,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
 
     fn main() {
         return 0;
@@ -49,9 +49,11 @@ Functions are defined with the `fn` keyword. Use `return` to return a value. The
 
 Conditionals use the `if` keyword and loops use `while`. Parentheses are not permitted around the conditional expression. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
-    c = getchar();
+    int i = 0;
+    int f = 0;
+    char c = getchar();
     while c > b {
-        g = g + 1;
+        i = i + 1;
         if c = '(' {
             f = f + 1;
         }
@@ -88,17 +90,13 @@ Compound expressions are not supported, so there is no operator precedence. The 
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 
-Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're part of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change. 
+Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change. 
 
-Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore.
+Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline; other escapes may work, but are unsupported. Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
-The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. Pointers may be declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`.
+The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. Globals are _always_ pointers, whether declared w/ `*` or not. This will change.
 
-Global variables (defined outside a function) are identified by their full name. Globals are _always_ pointers, whether declared w/ `*` or not. This will change.
-
-Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. A `\n` may be used for a newline; other escapes may work, but are unsupported. Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
-
-Integers are signed 64-bit values, but literals requiring more than 15-bits will cause runtime crashes. If you need a greater magnitude, build it up with arithmetic. This will change.
+Integers are signed 64-bit values, but literals requiring more than 15-bits will compile into invalid assembly. If you need a greater magnitude, build it up with arithmetic. This will change.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 
@@ -162,7 +160,7 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 
 ### `allocator`
 
-Eventually, these will go away in favor of `new`/`drop` or something. I hope.
+Eventually, these will go away in favor of `new`/`drop` or something. And hopefully be taken over by the compiler itself, so programmers can't screw it up.
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
 * `void* malloc( size_t size )` - allocate the specified number of bytes of memory and return a pointer to it.

@@ -1,34 +1,21 @@
 fn main() {
     int floor = 0;
-    int descend = 0;
-    int a = 0;
-    char c = read();
-    int eol = 0 - 1;
-    while c > eol {
-        a = a + 1;
+    int first_descent = -1;
+    int idx = 0;
+    char c = getchar();
+    while c > 0 { # not EOF
+        idx = idx + 1;
         if c = '(' {
             floor = floor + 1;
         }
         if c = ')' {
-            if floor = 0 { if descend = 0 {
-                descend = a;
-            } }
             floor = floor - 1;
+            if first_descent < 0 { if floor < 0 {
+                first_descent = idx;
+            } }
         }
-        c = read();
+        c = getchar();
     }
-    output(floor, descend);
-}
-
-fn output(floor, descend) {
-    char* a = "one: ";
-    print(a);
-    a = itoa(floor);
-    println(a);
-    free(a);
-    a = "two: ";
-    print(a);
-    a = itoa(descend);
-    println(a);
-    free(a);
+    char* format = "Part A: %i\nPart B: %i\n";
+    printf(format, floor, first_descent);
 }
