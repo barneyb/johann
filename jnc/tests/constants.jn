@@ -6,15 +6,15 @@ int* ten = 10;
 char* world = "world!";
 
 fn main() {
-    c = world;
-    a_greeting = THE_GREETING;
+    char* c = world;
+    char* a_greeting = THE_GREETING;
     printf();
-    b = *HIDE_NUMBER_1;
+    bool b = *HIDE_NUMBER_1;
     if !b {
-        a = *ten;
-        b = *nine;
-        a = a - b;
-        f = "%i ";
+        int a = *ten;
+        int d = *nine;
+        a = a - d;
+        char* f = "%i ";
         printf(f, a);
     }
     a = c;

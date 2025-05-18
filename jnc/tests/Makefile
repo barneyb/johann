@@ -5,14 +5,14 @@ OUT = $(TGT)/out
 JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
-all: reverse \
+all: sum \
+	store_load \
+	reverse \
 	collatz \
 	constants \
 	zero \
 	not_quite_lisp \
-	sum \
 	print_one \
-	store_load \
 	control_flow \
 
 # non-standard targets

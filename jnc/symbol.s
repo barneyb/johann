@@ -12,13 +12,15 @@
 
 /*
 struct Symbol {
-    int width                       ; byte width of a value
-    int nptr                        ; number of pointer indirections
+    int width       ; byte width of a value
+    int nptr        ; number of pointer indirections
+    int offset      ; storage offset of the symbol (local/global semantics vary)
 }
 */
 OFF_WIDTH   = 0
 OFF_NPTR    = 0x8
-SIZEOF      = OFF_NPTR + 8
+OFF_OFFSET  = 0x10
+SIZEOF      = OFF_OFFSET + 8
 
 /* Symbol* new( int type, int nptr ) */
 .global __j_Symbol__new
@@ -46,5 +48,27 @@ __j_Symbol__new:
     stp     x1, x2, [x0]            ; initialize width & nptr
 
     ; restore frame
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+/* int offset( Symbol* s ) */
+.global __j_Symbol_offset
+__j_Symbol_offset:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    ldr     x0, [x0, OFF_OFFSET]
+
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+/* void set_offset( Symbol* s, int offset ) */
+.global __j_Symbol_set_offset
+__j_Symbol_set_offset:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    str     x1, [x0, OFF_OFFSET]
+
     ldp     fp, lr, [sp], 0x10
     ret

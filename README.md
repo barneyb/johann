@@ -31,9 +31,9 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness.
 
-All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks. Type declarations are encouraged, but are currently only required to introduce globals (not locals). They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
+All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code.
+Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function.
 
     fn main() {
         return 0;
@@ -49,26 +49,26 @@ Functions are defined with the `fn` keyword. Use `return` to return a value. The
 
 Conditionals use the `if` keyword and loops use `while`. Parentheses are not permitted around the conditional expression. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
-    c = read();
+    c = getchar();
     while c > b {
         g = g + 1;
         if c = '(' {
             f = f + 1;
         }
-        c = read();
+        c = getchar();
     }
 
-You can use `done` and `again` within a `while` to ... say you're done looping or want to loop again. Combined with `true` (see below), these two constructs are equivalent:
+You can use `done` and `again` within a `while` to ... say you're done looping or want to loop again. These two snippets are equivalent:
 
-    # the good way
+    # the reasonable way
     while c > b {
-        c = read();
+        c = getchar();
     }
 
     # the silly way
     while true {
         if c > b {
-            c = read();
+            c = getchar();
             again;
         }
         done;
@@ -76,7 +76,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to take an address. A `*` can also be used on the left side of an assignment to write to pointed-at memory with 64-bit/8-byte alignment.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to take an address. A `*` can also be used on the left side of an assignment to write to the pointed-at memory.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -88,15 +88,13 @@ Compound expressions are not supported, so there is no operator precedence. The 
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 
-Semicolons are required to terminate statements which don't take a block. Blocks are not currently statements as is normal in C-family languages.
+Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're part of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change. 
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore.
 
-The `bool`, `char`, `int`, and `void` keywords may be used to introduce a local variable, and are required to introduce a global one. Pointers may be declared with `*`. `void` only makes sense as a pointer, of course.
+The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. Pointers may be declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`.
 
-Local variables are uniquely identified by their first character (the rest is ignored), and must start with `a`-`g`. I.e., you get seven cryptic variables. Period. Variables are scoped to the function they're defined in; blocks do not introduce a new scope. This will change.
-
-Global constants (defined outside a function) are identified by their full name, which cannot start with `a`-`g`. A type declaration is required, and globals are _always_ pointers (`*` or not). This will change.
+Global variables (defined outside a function) are identified by their full name. Globals are _always_ pointers, whether declared w/ `*` or not. This will change.
 
 Strings are "null-terminated byte strings" a la C. Literals are static, so do not need to be `free`-d. A `\n` may be used for a newline; other escapes may work, but are unsupported. Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
@@ -106,7 +104,7 @@ Boolean literals `true` and `false` are recognized as aliases for `1` and `0` re
 
 The `null` keyword is recognized as an alias for `0`.
 
-Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most seven arguments. Per usual, type information is optional, and will move to the other side (like all variable declarations):
+Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most eight arguments.
 
     fn add(int a, int b) {
         return a + b;
@@ -201,12 +199,12 @@ Those starting with `sys_` (thin syscall wrappers) are not expected to remain av
 
 ### `table`
 
-A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `drop_values` method can help if the values happen to be pointers.
+A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `drop_values` method can help if the values happen to be pointers to owned objects.
 
 * `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
 * `bool Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
-* `void Table_drop( Table* t )` - drops `t`, freeing all internal structure, but not keys/values.
-* `void Table_drop_values( Table* t )` - drops `t`, freeing all internal structure **AND** values' pointed-at allocations, but not keys.
+* `void Table_drop( Table* t )` - drops `t`, freeing all internal structure.
+* `void Table_drop_values( Table* t )` - drops `t`, freeing all internal structure **AND** values' pointed-at allocations (but not keys).
 * `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
 * `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
 * `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).
@@ -230,6 +228,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `21` - Bad token
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
+* `24` - Too many local vars
 * `26` - Bad value
 * `27` - Bad statement
 * `28` - Bad expression
@@ -294,6 +293,6 @@ TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 
 ## Application Binary Interface
 
-Johann-compiled code mostly conforms to a subset of the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
+Johann-compiled code mostly conforms to (a subset of) the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
 
-The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines omit one.
+The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines may forgo a record.

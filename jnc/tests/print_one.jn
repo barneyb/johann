@@ -22,6 +22,6 @@ fn main() {
     printf(f, a);
 }
 
-fn add(a, int b) {
+fn add(int a, int b) {
     return a + b;
 }

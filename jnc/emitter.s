@@ -11,6 +11,7 @@ err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
 err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
 err_dupe_decl: .asciz "; ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n"
 err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n"
+err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
 
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
@@ -22,10 +23,9 @@ tmpl_prelude: .asciz "; Compiled with %s\n\
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
-.set    NULL    , 0
-.set    TRUE    , 1
-.set    FALSE   , 0
-.set    C2R     , 49                ; amount to subtract from a char to get its register #
+NULL    = 0
+TRUE    = 1
+FALSE   = 0
 
 .include "inc_token_table.s"
 
@@ -331,6 +331,9 @@ _emitter_emit:
     bl      __j_Token_type
     mov     x22, x0                 ; stash type of first token
 
+    cmp     x22, T_SEMI
+    b.eq    __emit_return__         ; well that was kind of silly...
+
     __emit_fn:
     cmp     x22, T_KW_FN
     b.ne    __emit_int              ; next!
@@ -485,7 +488,7 @@ tmpl_fn_intro: .asciz "    .global __j_%s\n\
         stp     x26, x27, [sp, -0x10]!\n\
         ; end frame\n"
 
-tmpl_fn_arg: .asciz "        mov     x2%c, x%i ; capture param %s\n"
+tmpl_fn_arg: .asciz "        mov     x%i, x%i ; capture param %s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -540,7 +543,7 @@ do_fn:
     cmp     x0, T_KW_VOID
     b.eq    do_fn_decl
     cmp     x0, T_ID
-    b.eq    do_fn_id
+    b.eq    do_fn_argname
     b       do_fn_next_arg          ; again!
 
     do_fn_decl:
@@ -550,18 +553,17 @@ do_fn:
     bl      vardecl
     b       do_fn_next_arg          ; again!
 
-    do_fn_id:
+    do_fn_argname:
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
-    ldrb    w1, [x0]                ; first char of name
-    sub     w1, w1, C2R             ; convert lower alpha to digit
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x0, x19
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset       ; symbol.offset();
+    mov     x1, x0
     mov     x2, x22
-    add     x22, x22, #1            ; increment register
-    stp     x1, x2, [sp, -0x10]!
-    mov     x0, x23                 ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    mov     x3, x0
-    ldp     x1, x2, [sp], 0x10
+    add     x22, x22, #1            ; increment arg register
+    ldr     x3, [sp], 0x10          ; load pointer -> name
     adrp    x0, tmpl_fn_arg@PAGE   ; pointer -> template
     add     x0, x0, tmpl_fn_arg@PAGEOFF
     bl      __j_printf
@@ -781,13 +783,24 @@ vardecl:
     b.ne    vardecl_again
 
     ; find the name
-    ldr     x23, [x21]              ; stash pointer -> id token
+    ldr     x23, [x21]              ; load pointer -> id token
     mov     x0, x23
     bl      __j_Token_value
     stp     x0, x23, [sp, -0x10]!   ; store pointers -> name & -> id token
     ; get the current block
     mov     x0, x19
+    bl      is_global
+    cmp     x0, FALSE
+    b.ne    vardecl_global
+    mov     x0, x19
+    mov     x1, T_KW_FN
+    mov     x2, x23
+    bl      innermost_block_of
+    b        vardecl_got_block
+    vardecl_global:
+    mov     x0, x19
     bl      current_block           ; self.current_block()
+    vardecl_got_block:
     ; get its symbol table
     ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
     mov     x23, x0                 ; stash pointer -> symbols
@@ -816,8 +829,29 @@ vardecl:
     mov     x1, x24
     bl      __j_Symbol__new
     mov     x24, x0                 ; stash pointer -> symbol
+    ; set its register/offset
+    mov     x0, x23                 ; pointer -> symbols
+    bl      __j_Table_size
+    cmp     x0, #8
+    b.lt    vardecl_few_enough
+        ; build a panic tuple on the stack, since the token itself won't work
+        ldp     x1, x0, [sp]
+        bl      __j_Token_char
+        str     x0, [sp, -0x10]!
+        ldp     x1, x0, [sp, 0x10]
+        bl      __j_Token_line
+        stp     x1, x0, [sp, -0x10]!
+        adrp    x0, err_too_many_locals@PAGE
+        add     x0, x0, err_too_many_locals@PAGEOFF    ; pointer -> msg
+        mov     x1, sp
+        mov     x2, #24             ; error code
+        bl      __j_jnc_panic       ; print and terminate
+    vardecl_few_enough:
+    add     x1, x0, #20             ; start at register x20
+    mov     x0, x24
+    bl      __j_Symbol_set_offset
     ; add to table
-    mov     x2, x0                  ; pointer -> symbol
+    mov     x2, x24                 ; pointer -> symbol
     ldr     x1, [sp]                ; load pointer -> name
     mov     x0, x23                 ; pointer -> symbols
     bl      __j_Table_put
@@ -940,15 +974,16 @@ do_decl:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign: .asciz "        mov     x2%c, x0 ; assign %s\n"
+tmpl_assign: .asciz "        mov     x%i, x0 ; assign %s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
 /* void do_assign( Emitter* self, [Token*] buffer ) */
 do_assign:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
@@ -956,24 +991,30 @@ do_assign:
     mov     x0, x19
     add     x1, x20, 0x10            ; pointer -> buffer[2] (the RHS)
     bl      do_expr
+
     ldr     x0, [x20]               ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> name
-    ldrb    w1, [x0]                ; first char of name
-    sub     w1, w1, C2R             ; convert lower alpha to digit
-    mov     x2, x0
-    adrp    x0, tmpl_assign@PAGE   ; pointer -> template
+    bl      __j_Token_value
+    str     x0, [sp, -0x10]!         ; store pointer -> name
+    ldr     x2, [x20]               ; pointer -> name token
+    mov     x1, x0                  ; pointer -> name
+    mov     x0, x19                 ; pointer -> self
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset
+    ldr     x2, [sp], 0x10          ; load pointer -> name
+    mov     x1, x0
+    adrp    x0, tmpl_assign@PAGE    ; pointer -> template
     add     x0, x0, tmpl_assign@PAGEOFF
     bl      __j_printf
 
     ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     x21, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign_ptr_quad: .asciz "        str     x0, [x2%c] ; assign *%s\n"
-tmpl_assign_ptr_byte: .asciz "        strb    w0, [x2%c] ; assign *%s\n"
+tmpl_assign_ptr_quad: .asciz "        str     x0, [x%i] ; assign *%s\n"
+tmpl_assign_ptr_byte: .asciz "        strb    w0, [x%i] ; assign *%s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -989,35 +1030,22 @@ do_assign_pointer:
     add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)
     bl      do_expr
 
-    ldr     x0, [x20, #8]           ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> name
-    str     x0, [sp, -0x10]!
+    ldr     x0, [x20, 0x8]          ; pointer -> name token
+    bl      __j_Token_value
+    str     x0, [sp, -0x10]!        ; store pointer -> name
     mov     x1, x0
-    ldr     x2, [x20, #8]           ; pointer -> name token
+    ldr     x2, [x20, 0x8]          ; pointer -> name token
     mov     x0, x19
-    bl      lookup_symbol
+    bl      lookup_symbol           ; self.lookup_symbol(name, token)
     ldp     x3, x4, [x0]            ; load width and nptr from the symbol
-;        .data
-;        goob:.asciz "          ; symbol '%s' has width: %i, nptr: %i\n"
-;        .text
-;        ldr x1, [x20, #8]
-;        bl __j_Token_value         ; pointer -> name
-;        mov x1, x0
-;        adrp x0, goob@PAGE
-;        add x0, x0, goob@PAGEOFF
-;        stp x3, x4, [sp, -0x10]!
-;        bl __j_printf
-;        ldp x3, x4, [sp], 0x10
-
-    ldr     x0, [sp], 0x10
-    ldrb    w1, [x0]                ; first char of name
-    sub     w1, w1, C2R             ; convert lower alpha to digit
-    mov     x2, x0
+    bl      __j_Symbol_offset
+    mov     x1, x0
+    ldr     x2, [sp], 0x10          ; load pointer -> name
 
     cmp     x3, #1
-    b.ne    do_assign_pointer_quad        ; if width != 1, use quad
+    b.ne    do_assign_pointer_quad  ; if width != 1, use quad
     cmp     x4, #1
-    b.gt    do_assign_pointer_quad        ; if npts > 1, use quad (deref is a pointer)
+    b.gt    do_assign_pointer_quad  ; if npts > 1, use quad (deref is a pointer)
     adrp    x0, tmpl_assign_ptr_byte@PAGE
     add     x0, x0, tmpl_assign_ptr_byte@PAGEOFF
     bl      __j_printf
@@ -1104,7 +1132,7 @@ do_close_block:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_call_param: .asciz "        mov     x%i, x2%c ; pass %s\n"
+tmpl_call_param: .asciz "        mov     x%i, x%i ; pass %s\n"
 tmpl_call: .asciz "        bl       __j_%s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -1132,13 +1160,17 @@ do_call:
     cmp     x0, T_COMMA
     b.eq    do_call_next_arg        ; again!
 
+    ; todo: respect globals...
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
-    mov     x3, x0
-    ; todo: respect globals
-    ldrb    w2, [x0]                ; first char of name
-    sub     w2, w2, C2R             ; convert lower alpha to digit
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x1, x0
+    mov     x0, x19
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset
+    mov     x2, x0
     mov     x1, x22
+    ldr     x3, [sp], 0x10          ; store pointer -> name
     adrp    x0, tmpl_call_param@PAGE   ; pointer -> template
     add     x0, x0, tmpl_call_param@PAGEOFF
     bl      __j_printf
@@ -1539,6 +1571,8 @@ do_token:
     mov     x0, x20                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
     str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x1, x0
+    mov     x0, x19
     bl      do_value_id
     ldr     x0, [sp], 0x10          ; load pointer -> name
     b       do_token_return
@@ -1575,7 +1609,7 @@ tmpl_token_string: .asciz "    .data\n\
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
-/* void do_value_id( Emitter* self, char* name ) */
+/* void do_value_string( Emitter* self, char* name ) */
 do_value_string:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
@@ -1600,35 +1634,41 @@ do_value_string:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_token_id: .asciz "        mov     x0, x2%c\n"
+tmpl_token_id: .asciz "        mov     x0, x%i ; value of %s\n"
 tmpl_token_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE\n\
         add     x0, x0, _j_gbl_%s@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
-/* void do_value_id( char* name ) */
+/* void do_value_id( Emitter* self, char* name ) */
 do_value_id:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     str     x21, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> name
-    ldrb    w0, [x19]               ; first char of name
+    mov     x19, x0                 ; stash pointer -> self
+    mov     x21, x1                 ; stash pointer -> name
+    ldrb    w0, [x21]               ; first char of name
     cmp     w0, 'g'
     b.gt    do_value_id_global
     cmp     w0, 'a'
     b.lt    do_value_id_global
 
-    ldrb    w1, [x19]               ; first char of name
-    sub     w1, w1, C2R             ; convert lower alpha to digit
+    mov     x1, x21
+    mov     x0, x19
+    bl      lookup_symbol
+    bl      __j_Symbol_offset
+    mov     x2, x21
+    mov     x1, x0
     adrp    x0, tmpl_token_id@PAGE
     add     x0, x0, tmpl_token_id@PAGEOFF
     bl      __j_printf
     b       do_value_id_return
 
+    ; todo: treat globals uniformly...
     do_value_id_global:
-    mov     x1, x19
-    mov     x2, x19
+    mov     x1, x21
+    mov     x2, x21
     adrp    x0, tmpl_token_global@PAGE
     add     x0, x0, tmpl_token_global@PAGEOFF
     bl      __j_printf

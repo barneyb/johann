@@ -21,7 +21,7 @@ fn print_series(char* c) {
     printf(f, a);
     f = NEXT_NUM;
     while a > 1 {
-        b = a % 2;
+        int b = a % 2;
         if b = 0 {
             a = a / 2;
         }
@@ -37,8 +37,8 @@ fn print_series(char* c) {
 
 fn read_int(char* a) {
     int f = 0;          # accumulator
-    c = *a;
-    d = *C_ZERO; # todo: this global isn't SUPPOSED to be a pointer
+    char c = *a;
+    char d = *C_ZERO; # todo: this global isn't SUPPOSED to be a pointer
     while c > 0 {
         c = c - d; # subtract ASCII 0 to "parse digit"
         f = f * 10;

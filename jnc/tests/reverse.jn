@@ -29,7 +29,7 @@ fn do_string(char* a) {
         printf(f, g, a);
         return b;
     }
-    char* f = "Found '%c' at position %i of '%s'.\n";
+    f = "Found '%c' at position %i of '%s'.\n";
     printf(f, g, b, a);
     char* d = strcpy(a);
     strrev(d, b);
@@ -41,7 +41,7 @@ fn do_string(char* a) {
 fn strpos(char* a, char b) {
     char* d = a;
     char c = scan(d);
-    g = "is char '%c' actually '%c'? %b\n";
+    char* g = "is char '%c' actually '%c'? %b\n";
     while c ! b {
         if c = 0 {
             return -1;
