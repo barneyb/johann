@@ -468,33 +468,27 @@ __j_itoa:
     add     x0, x0, itoa_cheat@PAGEOFF
     ldr     x1, [sp], 0x10
     bl      __j_printf
+    mov     x0, NULL
+    bl      __j_putchar
 
     ; measure buffer
     adrp    x1, buf_stdout@PAGE
     add     x1, x1, buf_stdout@PAGEOFF      ; pointer -> buffer
     adrp    x0, buf_stdout_pos@PAGE
     add     x0, x0, buf_stdout_pos@PAGEOFF  ; pointer -> len
-    stp     x1, x0, [sp, -0x10]!    ; store pointers -> buffer and -> len
-    ldp     x1, x0, [sp]    ; store pointers -> buffer and -> len
+    stp     x1, x0, [sp, -0x10]!    ; store pointers -> buffer & -> len
     ldr     x0, [x0]                ; load len
-    add     x0, x0, #1              ; room for the null
 
     ; new buffer
     bl      __j_malloc
-    ldp     x1, x2, [sp]            ; load pointers -> buffer and -> len
+    ldp     x1, x2, [sp]            ; load pointers -> buffer & -> len
     ldr     x2, [x2]                ; load len
     bl      __j_memcpy
 
-    ; place the null
-    ldp     x1, x2, [sp]            ; load pointers -> buffer and -> len
-    ldr     x3, [x2]                ; load len
-    add     x3, x0, x3              ; pointer -> alloc[len]
-    strb    wzr, [x3]               ; store a null
-
     ; "clear" the buffer
+    ldp     x1, x2, [sp], 0x10      ; load pointers -> buffer & -> len
     str     xzr, [x2]               ; store len = 0
 
-    add     sp, sp, 0x10            ; release local variables
     ldp     fp, lr, [sp], 0x10
     ret
 

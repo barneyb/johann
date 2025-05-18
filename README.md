@@ -210,7 +210,7 @@ A table/map/associative-array ADT, which has a reasonable interface (for a tree-
 
 ### Obsolete
 
-A few obsolete functions remain available, but are tagged "ick", and will eventually be removed.
+One obsolete function remains available, and will eventually be removed.
 
 * `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 
