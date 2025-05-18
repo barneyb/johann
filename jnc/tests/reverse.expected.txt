@@ -1,5 +1,8 @@
 Didn't find stop char ',' anywhere in 'no commas here!'?!
 Scanned 16 total chars
 Found ',' at position 11 of 'perhaps one, or more, commas?'.
-Found ',' at position 11 of 'eerhaps onp, or more, commas?'.
+Found ',' at position 11 of 'eno spahrep, or more, commas?'.
 Scanned 40 total chars
+Found ',' at position 59 of 'I am a significantly longer string of characters to examine, but still have a comma.'.
+Found ',' at position 59 of 'enimaxe ot sretcarahc fo gnirts regnol yltnacifingis a ma I, but still have a comma.'.
+Scanned 160 total chars
