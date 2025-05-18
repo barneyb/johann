@@ -54,8 +54,8 @@ __j_Parser__new:
     ret
 
 /* void parse( Parser* self ) */
-.global _parser_parse
-_parser_parse:
+.global __j_Parser_parse
+__j_Parser_parse:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x21, x25, [sp, -0x10]!

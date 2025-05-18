@@ -1,0 +1,43 @@
+char* ERR_PANIC = "Compilation error";
+
+fn jnc_compile() {
+    void* lex = Lexer__new();
+    void* parser = Parser__new(lex);
+
+    Parser_parse(parser);
+
+    Parser_drop(parser);
+    Lexer_drop(lex);
+}
+
+# token is a [val, line, char] tuple to dissect for the format
+fn jnc_panic(char* format, void* token, int status) {
+    # todo: array indexing (or destructuring!) would be nice...
+    int val = *token;
+    token = token + 8;
+    int ln = *token;
+    token = token + 8;
+    int ch = *token;
+    # to StdErr
+    eprintf(format, status, val, ln, ch);
+    # to the output file
+    printf(format, status, val, ln, ch);
+    # ensure the output file will error if executed
+    break_output(status);
+    # panic!
+    format = "Compilation error\n";
+    eprintf(format);
+    exit(status);
+}
+
+fn break_output(int status) { # todo: not public!
+    # todo: text blocks (or at least concatenation) would be nice...
+    # todo: character escapes would be nice...
+    char* pre = ".data\nerr_compiler_fail: .ascii ";
+    char* err = "Prior compilation error\\n";
+    char* post = "\nerr_compiler_fail_len = . - err_compiler_fail\n.text\nmov x0, #%i\nadrp x1, err_compiler_fail@PAGE\nadd x1, x1, err_compiler_fail@PAGEOFF\nmov x2, err_compiler_fail_len\nbl __j_panic\n";
+    char q = '"';
+    char* format = "%s%c%s%c";
+    printf(format, pre, q, err, q);
+    printf(post, status);
+}

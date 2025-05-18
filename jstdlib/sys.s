@@ -13,7 +13,9 @@ __j_exit:
     bl      __flush_stdout
     ldr     x0, [sp], 0x10
 
-    ; dump mem stats
+    ; dump mem stats if non-error
+    cmp     x0, #0
+    b.ne    sys_exit
     str     x0, [sp, -0x10]!
     bl      __mem_stats
     ldr     x0, [sp], 0x10

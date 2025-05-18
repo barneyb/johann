@@ -2,10 +2,12 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
+JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 VERSION = $(OUT)/inc_version.s
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
+	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
@@ -39,6 +41,14 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	gcc -o $@ -dead_strip $^
 
 $(LIB)/%.o: %.s $(INCLUDES)
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
+
+$(OUT)/%.jn.s: %.jn
+	@mkdir -p $(OUT)
+	$(JNC) < $< > $@
+
+$(LIB)/%.jn.o: $(OUT)/%.jn.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
