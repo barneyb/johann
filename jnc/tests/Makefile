@@ -5,12 +5,14 @@ OUT = $(TGT)/out
 JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
-all: zero \
-	not_quite_lisp \
-	constants \
-	sum \
-	print_one \
+all: sum \
 	store_load \
+	reverse \
+	collatz \
+	constants \
+	zero \
+	not_quite_lisp \
+	print_one \
 	control_flow \
 
 # non-standard targets
@@ -22,6 +24,10 @@ not_quite_lisp: $(BIN)/not_quite_lisp not_quite_lisp.expected.txt
 sum: $(BIN)/sum sum.expected.txt
 	echo "1 -23 456 100000 1 -5" | $(BIN)/sum > $(OUT)/sum.actual.txt
 	diff -u sum.expected.txt $(OUT)/sum.actual.txt
+
+collatz: $(BIN)/collatz collatz.expected.txt
+	$(BIN)/collatz 5 12 19 27 > $(OUT)/collatz.actual.txt
+	diff -u collatz.expected.txt $(OUT)/collatz.actual.txt
 
 # Pattern targets
 

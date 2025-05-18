@@ -1,10 +1,11 @@
 fn main() {
     char g = '!';
     int a = 16;
-    void* a = malloc(a); # space for a pair of ints and/or pointers
+    # todo: use let to make a new var (with the same name)
+    a = malloc(a); # space for a pair of ints and/or pointers
     if a = null {
-        printc(g);
-        printc(g);
+        putchar(g);
+        putchar(g);
         return 1;
     }
     int b = 3;
@@ -12,13 +13,13 @@ fn main() {
         b = b + 2;
         if b < 7 {
             again; # run the loop again
-            printc(g);
+            putchar(g);
         }
         if b > 6 {
             done; # loop is done
-            printc(g);
+            putchar(g);
         }
-        printc(g);
+        putchar(g);
     }
     free(a);
     b = itoa(b);

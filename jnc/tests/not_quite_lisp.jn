@@ -28,7 +28,7 @@ fn main() -> int {
     println();          # implicitly passed a
     a = a;
     free();             # implicitly passed a
-    char* a = "two: ";
+    a = "two: ";
     print();            # implicitly passed a
     e = e;
     a = itoa();         # implicitly passed e

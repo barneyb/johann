@@ -8,33 +8,24 @@ err_bad_stmt: .asciz "; ERROR(%i): Bad statement %x at line %i, char %i\n"
 err_bad_expr: .asciz "; ERROR(%i): Bad expression %x at line %i, char %i\n"
 err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
 err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
-err_invalid_nesting: .asciz "; ERROR: Invalid nesting "
-
-.include "target/out/inc_version.s"
-
-.macro tmpl_sec r=x21
-    mov     x0, \r
-    bl      __j_print               ; print segment
-    mov     x0, \r
-    bl      _strlen                 ; get its length
-    add     x0, x0, #1
-    add     \r, \r, x0              ; advance to the next segment
-.endm
+err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
+err_dupe_decl: .asciz "; ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n"
+err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n"
+err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
 
 tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
     .align  3\n\
-    .set NULL, 0\n\
-    .set TRUE, 1\n\
-    .set FALSE, 0\n"
+    NULL  = 0\n\
+    TRUE  = 1\n\
+    FALSE = 0\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
-.set    NULL    , 0
-.set    TRUE    , 1
-.set    FALSE   , 0
-.set    C2R     , 49                ; amount to subtract from a char to get its register #
+NULL    = 0
+TRUE    = 1
+FALSE   = 0
 
 .include "inc_token_table.s"
 
@@ -45,15 +36,15 @@ struct Emitter {
     [Block] blocks                  ; array/stack of "lexical" Blocks
 }
 */
-.set    OFF_SEQ     , 0
-.set    OFF_DEPTH   , 8
-.set    OFF_BLOCKS  , 16
-.set    BLOCKS_CAP  , 10
-.set    SIZEOF      , OFF_BLOCKS + BLOCKS_CAP * SIZEOF_BLOCK    ; blocks is always last
+OFF_SEQ     = 0
+OFF_DEPTH   = 0x8
+OFF_BLOCKS  = 0x10
+BLOCKS_CAP  = 10
+SIZEOF      = OFF_BLOCKS + BLOCKS_CAP * SIZEOF_BLOCK    ; blocks is always last
 
 /* Emitter new( ) */
-.global _Emitter_new
-_Emitter_new:
+.global __j_Emitter__new
+__j_Emitter__new:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     stp     x19, x21, [sp, -0x10]!
@@ -62,11 +53,15 @@ _Emitter_new:
     bl      __j_malloc              ; allocate
     mov     x19, x0                 ; stash pointer -> this
     stp     xzr, xzr, [x0]          ; initialize seq and depth
+    ; enter global "block"
+    mov     x0, x19
+    mov     x1, NULL
+    bl      enter_block             ; this.enter_block()
 
     adrp    x0, tmpl_prelude@PAGE
     add     x0, x0, tmpl_prelude@PAGEOFF
-    adrp    x1, jnc_short_version@PAGE
-    add     x1, x1, jnc_short_version@PAGEOFF
+    adrp    x1, __j_jnc_short_version@PAGE
+    add     x1, x1, __j_jnc_short_version@PAGEOFF
     bl      __j_printf
 
     mov     x0, x19
@@ -79,11 +74,24 @@ _Emitter_new:
 struct Block {
     int type                        ; type of the block, identified by its token
     int id                          ; unique id num of the block
+    Table* symbols
 }
 */
-.set    B_OFF_TYPE    , 0
-.set    B_OFF_ID      , 8
-.set    SIZEOF_BLOCK, B_OFF_ID + 8
+B_OFF_TYPE    = 0
+B_OFF_ID      = 0x8
+B_OFF_SYMBOLS = 0x10
+SIZEOF_BLOCK  = B_OFF_SYMBOLS + 0x8
+
+/* void drop( Block* b ) */
+block_drop:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    ldr     x0, [x0, B_OFF_SYMBOLS] ; load block's symbol table
+    bl      __j_Table_drop_values   ; drop nodes AND their values
+
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 /* int id( Block* b ) */
 block_id:
@@ -110,9 +118,10 @@ block_type:
 /* Block* enter_block( Emitter* self, int type ) */
 enter_block:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
@@ -124,21 +133,88 @@ enter_block:
     madd    x0, x22, x1, x0         ; pointer -> block
     stp     x20, x21, [x0]          ; initialize type and id
 
+    mov     x20, x0                 ; stash pointer -> block
+    adrp    x0, __j_strcmp@PAGE
+    add     x0, x0, __j_strcmp@PAGEOFF
+    bl      __j_Table__new
+    str     x0, [x20, B_OFF_SYMBOLS]; initialize symbol table
+;        .data
+;        bt:.asciz "; block: %p, table: %p\n"
+;        .text
+;        mov x2, x0
+;        mov x1, x20
+;        adrp x0, bt@PAGE
+;        add x0, x0, bt@PAGEOFF    ; pointer -> msg
+;        bl __j_printf
+    mov     x0, x20                 ; restore pointer -> block
+
     add     x22, x22, 1             ; increment depth
     stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
 
     ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
-/* Block* innermost_block_of( Emitter* self, int type ) */
+/* Symbol* lookup_symbol( Emitter* self, char* name, Token* t ) */
+lookup_symbol:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x1, x2, [sp, -0x10]!    ; store pointers -> name & -> t
+    mov     x19, x0                 ; stash pointer -> this
+    ldr     x20, [x19, OFF_DEPTH]   ; load depth
+;        .data
+;        asdf:.asciz "          ; LOOKUP name: '%s', type: %x, line: %i, char: %i, value: %x\n"
+;        .text
+;        ldp     x1, x6, [sp]
+;        ldp     x2, x3, [x6]
+;        ldp     x4, x5, [x6, 0x10]
+;        adrp x0, asdf@PAGE
+;        add x0, x0, asdf@PAGEOFF
+;        bl __j_printf
+
+    lookup_symbol_loop:
+    sub     x20, x20, 1             ; decrement depth
+    cmp     x20, #0
+    b.lt    lookup_symbol_bad       ; out of blocks!
+    add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
+    mov     x1, SIZEOF_BLOCK        ; size of block
+    madd    x0, x20, x1, x0         ; pointer -> block
+    ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
+    ldr     x1, [sp]                ; load pointer -> name
+    bl      __j_Table_get
+    cmp     x0, NULL
+    b.ne    lookup_symbol_return
+    b       lookup_symbol_loop
+
+    lookup_symbol_bad:
+        ; build a panic tuple on the stack, since the token itself won't work
+        ldp     x1, x0, [sp]
+        bl      __j_Token_char
+        str     x0, [sp, -0x10]!
+        ldp     x1, x0, [sp, 0x10]
+        bl      __j_Token_line
+        stp     x1, x0, [sp, -0x10]!
+        adrp    x0, err_unknown_symbol@PAGE
+        add     x0, x0, err_unknown_symbol@PAGEOFF
+        mov     x1, sp
+        mov     x2, #23             ; error code
+        bl      __j_jnc_panic       ; print and terminate
+
+    lookup_symbol_return:
+    add     sp, sp, 0x10            ; release locals
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
+    ret
+
+/* Block* innermost_block_of( Emitter* self, int type, Token* t ) */
 innermost_block_of:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     x22, x2, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> type
@@ -161,18 +237,29 @@ innermost_block_of:
     innermost_block_of_bad:
         adrp    x0, err_invalid_nesting@PAGE
         add     x0, x0, err_invalid_nesting@PAGEOFF
-        bl      __j_print
-        mov     x0, x20
-        bl      __j_ick_print_h
-        bl      __j_ick_println
-        mov     x0, #37
-        b       __j_sys_exit
+        ldr     x1, [sp, 0x8]       ; load pointer -> token
+        mov     x2, #37             ; error code
+        bl      __j_jnc_panic       ; print and terminate
 
     innermost_block_of_return:
     ; restore frame
     ldr     x22, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
+    ret
+
+/* Block* current_block( Emitter* self ) */
+current_block:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
+    add     x1, x0, OFF_BLOCKS      ; pointer -> stack of blocks
+    mov     x2, SIZEOF_BLOCK        ; size of block
+    ldr     x3, [x0, OFF_DEPTH]     ; load depth
+    sub     x3, x3, #1              ; decrement depth
+    madd    x0, x2, x3, x1          ; pointer -> block
+
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* Block* leave_block( Emitter* self ) */
@@ -197,24 +284,25 @@ leave_block:
 /* int seqnum( Emitter* self ) */
 seqnum:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    ldr     x19, [x0, OFF_SEQ]      ; load seq
-    add     x19, x19, 1             ; increment seq
-    str     x19, [x0, OFF_SEQ]      ; store seq
-    mov     x0, x19
+    mov     x1, x0                  ; stash pointer -> this
+    ldr     x0, [x1, OFF_SEQ]       ; load seq
+    add     x0, x0, 1               ; increment seq
+    str     x0, [x1, OFF_SEQ]       ; store seq
     ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* bool is_global( Emitter* self ) */
 is_global:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
     ; end frame
-    ldr     x19, [x0, OFF_DEPTH]   ; load depth
-    cmp     x19, #0
+    ldr     x1, [x0, OFF_DEPTH]     ; load depth
+    cmp     x1, #1
     b.eq    is_global_yep
     mov     x0, FALSE
     b       is_global_return
@@ -224,7 +312,7 @@ is_global:
 
     is_global_return:
     ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void emit( Emitter* self, [Token*] stmt ) */
@@ -242,6 +330,9 @@ _emitter_emit:
     mov     x0, x21
     bl      __j_Token_type
     mov     x22, x0                 ; stash type of first token
+
+    cmp     x22, T_SEMI
+    b.eq    __emit_return__         ; well that was kind of silly...
 
     __emit_fn:
     cmp     x22, T_KW_FN
@@ -383,20 +474,21 @@ s_main: .asciz "main"
 tmpl_main: .asciz "    .global _main\n\
     _main:\n\
         bl      __j_main\n\
-        b       __j_sys_exit\n\
+        b       __j_exit\n\
 "
 
-tmpl_fn_intro: .asciz "    .global __j_\0\n\
-    __j_\0:\n\
+tmpl_fn_intro: .asciz "    .global __j_%s\n\
+    __j_%s:\n\
         ; create frame\n\
-        stp     lr, x19, [sp, -0x10]!\n\
+        stp     fp, lr, [sp, -0x10]!\n\
+        mov     fp, sp\n\
         stp     x20, x21, [sp, -0x10]!\n\
         stp     x22, x23, [sp, -0x10]!\n\
         stp     x24, x25, [sp, -0x10]!\n\
         stp     x26, x27, [sp, -0x10]!\n\
-        ; end frame"
+        ; end frame\n"
 
-tmpl_fn_arg: .asciz "        mov     x2\0, x\0 ; capture param "
+tmpl_fn_arg: .asciz "        mov     x%i, x%i ; capture param %s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -409,10 +501,8 @@ do_fn:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_fn_intro@PAGE ; pointer -> template
-    add     x21, x21, tmpl_fn_intro@PAGEOFF
     ldr     x0, [x20, #8]           ; load pointer -> name token
-    bl      __j_Token_value         ; token.value_ptr()
+    bl      __j_Token_value         ; token.value()
     mov     x22, x0                 ; stash pointer -> name
     mov     x0, x19
     mov     x1, T_KW_FN
@@ -430,43 +520,54 @@ do_fn:
     bl      __j_puts
 
     do_fn_intro:
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_print
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x22
+    mov     x2, x22
+    adrp    x0, tmpl_fn_intro@PAGE ; pointer -> template
+    add     x0, x0, tmpl_fn_intro@PAGEOFF
+    bl      __j_printf
 
-    add     x20, x20, #24           ; skip to first arg or close paren
+    add     x20, x20, 0x18          ; skip to first arg or close paren
     mov     x22, #0                 ; index of param's register
     do_fn_next_arg:
-    ldr     x0, [x20], #8           ; load pointer -> token to interrogate
+    ldr     x0, [x20], 0x8          ; load pointer -> token to interrogate
     mov     x23, x0                 ; stash pointer -> token
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     cmp     x0, T_CPAREN
     b.eq    do_fn_return            ; done!
+    cmp     x0, T_KW_INT
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_CHAR
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_BOOL
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_VOID
+    b.eq    do_fn_decl
     cmp     x0, T_ID
-    b.ne    do_fn_next_arg          ; again!
+    b.eq    do_fn_argname
+    b       do_fn_next_arg          ; again!
 
-    adrp    x21, tmpl_fn_arg@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_fn_arg@PAGEOFF
-    tmpl_sec
+    do_fn_decl:
+    mov     x0, x19
+    mov     x1, x20
+    sub     x1, x1, 0x8
+    bl      vardecl
+    b       do_fn_next_arg          ; again!
+
+    do_fn_argname:
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
-    ldrb    w0, [x0]                ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i;
-    add     x22, x22, #1            ; increment register
-    tmpl_sec
-    mov     x0, x23                 ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    bl      __j_puts
-    b.eq    do_fn_next_arg          ; again!
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x0, x19
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset       ; symbol.offset();
+    mov     x1, x0
+    mov     x2, x22
+    add     x22, x22, #1            ; increment arg register
+    ldr     x3, [sp], 0x10          ; load pointer -> name
+    adrp    x0, tmpl_fn_arg@PAGE   ; pointer -> template
+    add     x0, x0, tmpl_fn_arg@PAGEOFF
+    bl      __j_printf
+    b       do_fn_next_arg          ; again!
 
     do_fn_return:
     ; restore frame
@@ -477,9 +578,8 @@ do_fn:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_if_intro: .asciz "\0\n\
-        cmp     x0, FALSE\n\
-        b.eq    _if_\0_done"
+tmpl_if_intro: .asciz "        cmp     x0, FALSE\n\
+        b.eq    if_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -492,23 +592,19 @@ do_if:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_if_intro@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_if_intro@PAGEOFF
     mov     x0, x19
     mov     x1, T_KW_IF
     bl      enter_block             ; this.enter_block()
     bl      block_id
     mov     x22, x0                 ; stash current block id
 
-    tmpl_sec
     mov     x0, x19
     add     x1, x20, #8             ; pointer -> condition token
     bl      do_expr
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x22
+    adrp    x0, tmpl_if_intro@PAGE   ; pointer -> template
+    add     x0, x0, tmpl_if_intro@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
     ldr     x22, [sp], 0x10
@@ -518,10 +614,9 @@ do_if:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_while_intro: .asciz "        _while_\0_again:\n\
-\0\n\
-        cmp     x0, FALSE\n\
-        b.eq    _while_\0_done"
+tmpl_while_intro_a: .asciz "        while_%i_again:\n"
+tmpl_while_intro_b: .asciz "        cmp     x0, FALSE\n\
+        b.eq    while_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -534,26 +629,23 @@ do_while:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_while_intro@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_while_intro@PAGEOFF
     mov     x0, x19
     mov     x1, T_KW_WHILE
     bl      enter_block             ; this.enter_block()
     bl      block_id
     mov     x22, x0                 ; stash current block id
 
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
+    mov     x1, x22
+    adrp    x0, tmpl_while_intro_a@PAGE   ; pointer -> template
+    add     x0, x0, tmpl_while_intro_a@PAGEOFF
+    bl      __j_printf
     mov     x0, x19
     add     x1, x20, #8             ; pointer -> condition token
     bl      do_expr
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x22
+    adrp    x0, tmpl_while_intro_b@PAGE   ; pointer -> template
+    add     x0, x0, tmpl_while_intro_b@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
     ldr     x22, [sp], 0x10
@@ -563,7 +655,7 @@ do_while:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_return: .asciz "        b       _return_"
+tmpl_return: .asciz "        b       _return_%i\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -576,9 +668,8 @@ do_return:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_return@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_return@PAGEOFF
 
+    ldr     x2, [x1]
     mov     x1, T_KW_FN
     mov     x0, x19
     bl      innermost_block_of
@@ -586,12 +677,12 @@ do_return:
     mov     x22, x0                 ; stash current block id
 
     mov     x0, x19
-    add     x1, x20, #8            ; pointer -> buffer[1] (pointer -> value token)
+    add     x1, x20, #8             ; pointer -> buffer[1] (pointer -> value token)
     bl      do_expr
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    bl      __j_ick_println
+    adrp    x0, tmpl_return@PAGE    ; pointer -> template
+    add     x0, x0, tmpl_return@PAGEOFF
+    mov     x1, x22
+    bl      __j_printf
 
     ; restore frame
     ldp     x22, x23, [sp], 0x10
@@ -601,8 +692,8 @@ do_return:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_again: .asciz "        b       _while_\0_again"
-tmpl_done : .asciz "        b       _while_\0_done"
+tmpl_again: .asciz "        b       while_%i_again\n"
+tmpl_done : .asciz "        b       while_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -621,47 +712,169 @@ do_done:
 /* void do_loop_thinger( Emitter* self, [Token*] buffer, char* tmpl ) */
 do_loop_thinger:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x21, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
     mov     x21, x2                 ; pointer -> template
 
+    ldr     x2, [x1]
     mov     x1, T_KW_WHILE
     mov     x0, x19
     bl      innermost_block_of
     bl      block_id
-    mov     x22, x0                 ; stash current block id
+    mov     x1, x0
 
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x0, x21
+    bl      __j_printf
 
     ; restore frame
-    ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
+tmpl_global_bool: .asciz "    .data\n\
+        _j_gbl_%s: .byte %i\n\
+    .text\n"
 tmpl_global_int: .asciz "    .data\n\
-        _j_gbl_\0: .xword \0\n\
-    .text"
+        _j_gbl_%s: .quad %i\n\
+    .text\n"
 tmpl_global_char: .asciz "    .data\n\
-        _j_gbl_\0: .xword '\0'\n\
-    .text"
+        _j_gbl_%s: .byte '%c'\n\
+    .text\n"
 tmpl_global_string: .asciz "    .data\n\
-        _j_gbl_\0: .asciz \"\0\"\n\
-    .text"
+        _j_gbl_%s: .asciz \"%s\"\n\
+    .text\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
 /* void do_decl( Emitter* self, [Token*] buffer ) */
+
+vardecl:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
+    stp     x23, x24, [sp, -0x10]!
+    mov     x19, x0                 ; stash pointer -> self
+    mov     x20, x1                 ; stash pointer -> buffer
+
+    sub     x21, x20, 0x8           ; i = -1 (poor man's for loop)
+    mov     x24, #-2                ; nptr = -2
+    vardecl_again:
+    add     x21, x21, 0x8           ; i++
+    add     x24, x24, #1            ; nptr++
+    ldr     x0, [x21]               ; load pointer -> tokens[i]
+    bl      __j_Token_type          ; token.type()
+;        .data
+;        asdf:.asciz "; vd: token %x %i\n"
+;        .text
+;        mov x2, x0
+;        mov x1, x0
+;        adrp x0, asdf@PAGE
+;        add x0, x0, asdf@PAGEOFF
+;        bl __j_printf
+;        ldr x0, [x21]
+;        bl __j_Token_type
+    cmp     x0, T_ID
+    b.ne    vardecl_again
+
+    ; find the name
+    ldr     x23, [x21]              ; load pointer -> id token
+    mov     x0, x23
+    bl      __j_Token_value
+    stp     x0, x23, [sp, -0x10]!   ; store pointers -> name & -> id token
+    ; get the current block
+    mov     x0, x19
+    bl      is_global
+    cmp     x0, FALSE
+    b.ne    vardecl_global
+    mov     x0, x19
+    mov     x1, T_KW_FN
+    mov     x2, x23
+    bl      innermost_block_of
+    b        vardecl_got_block
+    vardecl_global:
+    mov     x0, x19
+    bl      current_block           ; self.current_block()
+    vardecl_got_block:
+    ; get its symbol table
+    ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
+    mov     x23, x0                 ; stash pointer -> symbols
+    ; if already defined, panic
+    ldr     x1, [sp]                ; load pointer -> name
+    bl      __j_Table_contains
+    cmp     x0, FALSE
+    b.eq    vardecl_midpoint_reg
+        ; build a panic tuple on the stack, since the token itself won't work
+        ldp     x1, x0, [sp]
+        bl      __j_Token_char
+        str     x0, [sp, -0x10]!
+        ldp     x1, x0, [sp, 0x10]
+        bl      __j_Token_line
+        stp     x1, x0, [sp, -0x10]!
+        adrp    x0, err_dupe_decl@PAGE
+        add     x0, x0, err_dupe_decl@PAGEOFF    ; pointer -> msg
+        mov     x1, sp
+        mov     x2, #22             ; error code
+        bl      __j_jnc_panic       ; print and terminate
+    vardecl_midpoint_reg:
+    ; find base type
+    ldr     x0, [x20]               ; load pointer -> tokens[0]
+    bl      __j_Token_type          ; token.type()
+    ; build symbol
+    mov     x1, x24
+    bl      __j_Symbol__new
+    mov     x24, x0                 ; stash pointer -> symbol
+    ; set its register/offset
+    mov     x0, x23                 ; pointer -> symbols
+    bl      __j_Table_size
+    cmp     x0, #8
+    b.lt    vardecl_few_enough
+        ; build a panic tuple on the stack, since the token itself won't work
+        ldp     x1, x0, [sp]
+        bl      __j_Token_char
+        str     x0, [sp, -0x10]!
+        ldp     x1, x0, [sp, 0x10]
+        bl      __j_Token_line
+        stp     x1, x0, [sp, -0x10]!
+        adrp    x0, err_too_many_locals@PAGE
+        add     x0, x0, err_too_many_locals@PAGEOFF    ; pointer -> msg
+        mov     x1, sp
+        mov     x2, #24             ; error code
+        bl      __j_jnc_panic       ; print and terminate
+    vardecl_few_enough:
+    add     x1, x0, #20             ; start at register x20
+    mov     x0, x24
+    bl      __j_Symbol_set_offset
+    ; add to table
+    mov     x2, x24                 ; pointer -> symbol
+    ldr     x1, [sp]                ; load pointer -> name
+    mov     x0, x23                 ; pointer -> symbols
+    bl      __j_Table_put
+;        .data
+;        ns:.asciz "; added '%s' to table w/ type %x width %d and nptr %d\n"
+;        .text
+;        ldp x3, x4, [x24]           ; load width and nptr
+;        ldr x0, [x20]               ; load pointer -> tokens[0]
+;        bl __j_Token_type           ; token.type()
+;        mov x2, x0
+;        ldr x1, [sp]
+;        adrp x0, ns@PAGE
+;        add x0, x0, ns@PAGEOFF
+;        bl __j_printf
+
+    add     sp, sp, 0x10            ; release locals
+
+    ldp     x23, x24, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
+    ret
+
 do_decl:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -671,11 +884,13 @@ do_decl:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
 
+    bl      vardecl
+
     ; scan until find an ASSIGN or SEMI
     add     x21, x20, #8            ; first token is type
     do_decl_again:
     ldr     x0, [x21, #8]!          ; stash pointer -> next token
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     cmp     x0, T_ASSIGN
     b.eq    do_decl_delegate
     cmp     x0, T_SEMI
@@ -699,8 +914,17 @@ do_decl:
     ldr     x20, [x21, #8]          ; stash pointer -> value token
     ldr     x22, [x21, #-8]         ; stash pointer -> name token
     mov     x0, x20
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     mov     x21, x0                 ; stash token type
+
+    ; set up the template params
+    mov     x0, x22                 ; pointer -> name token
+    bl      __j_Token_value         ; pointer -> value
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x0, x20                 ; pointer -> value token
+    bl      __j_Token_value         ; pointer -> value
+    mov     x2, x0
+    ldr     x1, [sp], 0x10          ; load pointer -> name
 
     cmp     x21, T_BOOL
     b.eq    do_decl_bool
@@ -716,53 +940,30 @@ do_decl:
         add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
         mov     x1, x20             ; pointer -> token
         mov     x2, #26             ; error code
-        bl      __j_jnc_panic            ; print and terminate
+        bl      __j_jnc_panic       ; print and terminate
 
-    do_decl_bool:                  ; these two happen to be the same
+    do_decl_bool:
+    adrp    x0, tmpl_global_bool@PAGE
+    add     x0, x0, tmpl_global_bool@PAGEOFF
+    b       do_decl_emit_global
+
     do_decl_int:
-    adrp    x21, tmpl_global_int@PAGE
-    add     x21, x21, tmpl_global_int@PAGEOFF
-    tmpl_sec
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value            ; pointer -> value
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
-    b       do_decl_return
+    adrp    x0, tmpl_global_int@PAGE
+    add     x0, x0, tmpl_global_int@PAGEOFF
+    b       do_decl_emit_global
 
     do_decl_char:
-    adrp    x21, tmpl_global_char@PAGE
-    add     x21, x21, tmpl_global_char@PAGEOFF
-    tmpl_sec
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value            ; pointer -> value
-    bl      __j_ick_print_c
-    tmpl_sec
-    bl      __j_ick_println
-    b       do_decl_return
+    adrp    x0, tmpl_global_char@PAGE
+    add     x0, x0, tmpl_global_char@PAGEOFF
+    b       do_decl_emit_global
 
     do_decl_string:
-    adrp    x21, tmpl_global_string@PAGE
-    add     x21, x21, tmpl_global_string@PAGEOFF
-    tmpl_sec
-    mov     x0, x22                 ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> value
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x20                 ; pointer -> value token
-    bl      __j_Token_value         ; pointer -> value
-    bl      __j_print
-    tmpl_sec
-    bl      __j_ick_println
-    b       do_decl_return
+    adrp    x0, tmpl_global_string@PAGE
+    add     x0, x0, tmpl_global_string@PAGEOFF
+    b       do_decl_emit_global
+
+    do_decl_emit_global:
+    bl      __j_printf
 
     do_decl_return:
     ; restore frame
@@ -773,44 +974,47 @@ do_decl:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign: .asciz "\0        mov     x2\0, x0 ; assign "
+tmpl_assign: .asciz "        mov     x%i, x0 ; assign %s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
 /* void do_assign( Emitter* self, [Token*] buffer ) */
 do_assign:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_assign@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_assign@PAGEOFF
 
-    tmpl_sec
     mov     x0, x19
     add     x1, x20, 0x10            ; pointer -> buffer[2] (the RHS)
     bl      do_expr
-    tmpl_sec
+
     ldr     x0, [x20]               ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> name
-    ldrb    w0, [x0]                ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
-    tmpl_sec
-    ldr     x0, [x20]               ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    bl      __j_puts
+    bl      __j_Token_value
+    str     x0, [sp, -0x10]!         ; store pointer -> name
+    ldr     x2, [x20]               ; pointer -> name token
+    mov     x1, x0                  ; pointer -> name
+    mov     x0, x19                 ; pointer -> self
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset
+    ldr     x2, [sp], 0x10          ; load pointer -> name
+    mov     x1, x0
+    adrp    x0, tmpl_assign@PAGE    ; pointer -> template
+    add     x0, x0, tmpl_assign@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldp     x21, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign_ptr: .asciz "\0        str     x0, [x2\0] ; assign *"
+tmpl_assign_ptr_quad: .asciz "        str     x0, [x%i] ; assign *%s\n"
+tmpl_assign_ptr_byte: .asciz "        strb    w0, [x%i] ; assign *%s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -821,24 +1025,37 @@ do_assign_pointer:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    adrp    x21, tmpl_assign_ptr@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_assign_ptr@PAGEOFF
 
-    tmpl_sec
     mov     x0, x19
     add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)
     bl      do_expr
-    tmpl_sec
-    ldr     x0, [x20, #8]           ; pointer -> name token
-    bl      __j_Token_value         ; pointer -> name
-    ldrb    w0, [x0]                ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
-    tmpl_sec
-    ldr     x0, [x20]               ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    bl      __j_puts
 
+    ldr     x0, [x20, 0x8]          ; pointer -> name token
+    bl      __j_Token_value
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x1, x0
+    ldr     x2, [x20, 0x8]          ; pointer -> name token
+    mov     x0, x19
+    bl      lookup_symbol           ; self.lookup_symbol(name, token)
+    ldp     x3, x4, [x0]            ; load width and nptr from the symbol
+    bl      __j_Symbol_offset
+    mov     x1, x0
+    ldr     x2, [sp], 0x10          ; load pointer -> name
+
+    cmp     x3, #1
+    b.ne    do_assign_pointer_quad  ; if width != 1, use quad
+    cmp     x4, #1
+    b.gt    do_assign_pointer_quad  ; if npts > 1, use quad (deref is a pointer)
+    adrp    x0, tmpl_assign_ptr_byte@PAGE
+    add     x0, x0, tmpl_assign_ptr_byte@PAGEOFF
+    bl      __j_printf
+    b       do_assign_pointer_return
+    do_assign_pointer_quad:
+    adrp    x0, tmpl_assign_ptr_quad@PAGE
+    add     x0, x0, tmpl_assign_ptr_quad@PAGEOFF
+    bl      __j_printf
+
+    do_assign_pointer_return:
     ; restore frame
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
@@ -846,18 +1063,18 @@ do_assign_pointer:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_fn_outro: .asciz "        mov      x0, #0             ; if no return, use zero\n\
-        _return_\0:\n\
+tmpl_fn_outro: .asciz "        mov      x0, #0             ; fell off end; return zero\n\
+        _return_%i:\n\
         ; restore frame\n\
         ldp     x26, x27, [sp], 0x10\n\
         ldp     x24, x25, [sp], 0x10\n\
         ldp     x22, x23, [sp], 0x10\n\
         ldp     x20, x21, [sp], 0x10\n\
-        ldp     lr, x19, [sp], 0x10\n\
-        ret"
-tmpl_if_outro: .asciz "        _if_\0_done:"
-tmpl_while_outro: .asciz "        b     _while_\0_again\n\
-        _while_\0_done:"
+        ldp     fp, lr, [sp], 0x10\n\
+        ret\n\n\n"
+tmpl_if_outro: .asciz "        if_%i_done:\n"
+tmpl_while_outro: .asciz "        b     while_%i_again\n\
+        while_%i_done:\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -879,43 +1096,34 @@ do_close_block:
 
     cmp     x0, T_KW_FN
     b.ne    do_close_block_if
-    adrp    x21, tmpl_fn_outro@PAGE ; pointer -> template
-    add     x21, x21, tmpl_fn_outro@PAGEOFF
-    tmpl_sec
-    mov     x0, x23
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x23
+    adrp    x0, tmpl_fn_outro@PAGE ; pointer -> template
+    add     x0, x0, tmpl_fn_outro@PAGEOFF
+    bl      __j_printf
     b       do_close_block_return
 
     do_close_block_if:
     cmp     x0, T_KW_IF
     b.ne    do_close_block_while
-    adrp    x21, tmpl_if_outro@PAGE ; pointer -> template
-    add     x21, x21, tmpl_if_outro@PAGEOFF
-    tmpl_sec
-    mov     x0, x23
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x23
+    adrp    x0, tmpl_if_outro@PAGE ; pointer -> template
+    add     x0, x0, tmpl_if_outro@PAGEOFF
+    bl      __j_printf
     b       do_close_block_return
 
     do_close_block_while:
     cmp     x0, T_KW_WHILE
     b.ne    do_close_block_return
-    adrp    x21, tmpl_while_outro@PAGE ; pointer -> template
-    add     x21, x21, tmpl_while_outro@PAGEOFF
-    tmpl_sec
-    mov     x0, x23
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x23
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x2, x23
+    mov     x1, x23
+    adrp    x0, tmpl_while_outro@PAGE ; pointer -> template
+    add     x0, x0, tmpl_while_outro@PAGEOFF
+    bl      __j_printf
     b       do_close_block_return
 
     do_close_block_return:
+    mov     x0, x22
+    bl      block_drop
     ; restore frame
     ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
@@ -924,8 +1132,8 @@ do_close_block:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_call_param: .asciz "        mov     x\0, x2\0 ; pass "
-tmpl_call: .asciz "        bl       __j_"
+tmpl_call_param: .asciz "        mov     x%i, x%i ; pass %s\n"
+tmpl_call: .asciz "        bl       __j_%s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -941,45 +1149,41 @@ do_call:
     mov     x20, x1                 ; stash pointer -> buffer
 
     ; pass parameters
-    add     x24, x20, 0x10           ; skip to first arg or close paren
+    add     x24, x20, 0x10          ; skip to first arg or close paren
     mov     x22, #0                 ; index of param's register
     do_call_next_arg:
     ldr     x0, [x24], #8           ; load pointer -> token to interrogate
     mov     x23, x0                 ; stash pointer -> token
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     cmp     x0, T_CPAREN
     b.eq    do_call_invoke          ; done!
     cmp     x0, T_COMMA
     b.eq    do_call_next_arg        ; again!
 
-    adrp    x21, tmpl_call_param@PAGE   ; pointer -> template
-    add     x21, x21, tmpl_call_param@PAGEOFF
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i;
+    ; todo: respect globals...
+    mov     x0, x23                 ; pointer -> token
+    bl      __j_Token_value         ; pointer -> name
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x1, x0
+    mov     x0, x19
+    bl      lookup_symbol           ; self.lookup_symbol(name)
+    bl      __j_Symbol_offset
+    mov     x2, x0
+    mov     x1, x22
+    ldr     x3, [sp], 0x10          ; store pointer -> name
+    adrp    x0, tmpl_call_param@PAGE   ; pointer -> template
+    add     x0, x0, tmpl_call_param@PAGEOFF
+    bl      __j_printf
     add     x22, x22, #1            ; increment register
-    tmpl_sec
-    mov     x0, x23                 ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    ldrb    w0, [x0]                ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
-    tmpl_sec
-    mov     x0, x23                 ; pointer -> token
-    bl      __j_Token_value         ; pointer -> name
-    bl      __j_puts
     b.eq    do_call_next_arg        ; again!
 
     do_call_invoke:
-    adrp    x21, tmpl_call@PAGE
-    add     x21, x21, tmpl_call@PAGEOFF
     ldr     x0, [x20]               ; load pointer -> name token
     bl      __j_Token_value         ; token.value_ptr()
-    mov     x22, x0                 ; stash pointer -> name
-
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_puts
+    mov     x1, x0
+    adrp    x0, tmpl_call@PAGE
+    add     x0, x0, tmpl_call@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
     ldr     x24, [sp], 0x10
@@ -1025,9 +1229,11 @@ do_expr:
     mov     x1, x20
     bl      do_call
     b       do_expr_return
-    ; if second token is EQ, LT, GT, PLUS, MINUS, SLASH, STAR, PERCENT, do binary op
+    ; if second token is EQ, BANG, LT, GT, PLUS, MINUS, SLASH, STAR, PERCENT, do binary op
     do_expr_bool:
     cmp     x23, T_EQ
+    b.eq    do_expr_binop
+    cmp     x23, T_BANG
     b.eq    do_expr_binop
     cmp     x23, T_LT
     b.eq    do_expr_binop
@@ -1056,8 +1262,6 @@ do_expr:
     mov     x0, x22
     bl      __j_Token_type
     mov     x23, x0                 ; type of first token
-;        bl __j_ick_print_h
-;        bl __j_ick_println
     ; if the first token is BANG, MINUS, STAR, do unary op
     do_expr_deref:
     cmp     x23, T_BANG
@@ -1090,14 +1294,15 @@ do_expr:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_un_not:    .asciz "        cmp     x0, FALSE\n\
-        b.ne    expr_\0_was_true\n\
+        b.ne    expr_%i_was_true\n\
         mov     x0, TRUE\n\
-        b       expr_\0_end\n\
-        expr_\0_was_true:\n\
+        b       expr_%i_end\n\
+        expr_%i_was_true:\n\
         mov     x0, FALSE\n\
-        expr_\0_end:"
-tmpl_un_negate: .asciz "        neg     x0, x0"
-tmpl_un_deref:  .asciz "        ldr     x0, [x0]"
+        expr_%i_end:\n"
+tmpl_un_negate: .asciz "        neg     x0, x0\n"
+tmpl_un_deref_quad: .asciz "        ldr     x0, [x0]\n"
+tmpl_un_deref_byte: .asciz "        ldrb    w0, [x0]\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1114,10 +1319,11 @@ do_unary_op:
     mov     x0, x19
     ldr     x1, [x20, #8]
     bl      do_token
+    str     x0, [sp, -0x10]!        ; store pointer -> optional identifier
 
     ; first token is the operator
     ldr     x0, [x20]
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     mov     x21, x0                 ; stash token type
 
     cmp     x21, T_BANG
@@ -1132,44 +1338,56 @@ do_unary_op:
         add     x0, x0, err_bad_operator@PAGEOFF    ; pointer -> msg
         ldr     x1, [x20]           ; pointer -> token
         mov     x2, #29             ; error code
-        bl      __j_jnc_panic            ; print and terminate
+        bl      __j_jnc_panic       ; print and terminate
 
     do_un_not:
-    adrp    x21, tmpl_un_not@PAGE
-    add     x21, x21, tmpl_un_not@PAGEOFF
     mov     x0, x19
     bl      seqnum
-    mov     x20, x0
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x0
+    mov     x1, x0
+    adrp    x0, tmpl_un_not@PAGE
+    add     x0, x0, tmpl_un_not@PAGEOFF
+    bl      __j_printf
     b       do_un_return
     do_un_neg:
-    adrp    x21, tmpl_un_negate@PAGE
-    add     x21, x21, tmpl_un_negate@PAGEOFF
-    b       do_un_emit
+    adrp    x0, tmpl_un_negate@PAGE
+    add     x0, x0, tmpl_un_negate@PAGEOFF
+    bl      __j_printf
+    b       do_un_return
     do_un_deref:
-    adrp    x21, tmpl_un_deref@PAGE
-    add     x21, x21, tmpl_un_deref@PAGEOFF
-    b       do_un_emit
-
-    do_un_emit:
-    tmpl_sec
-    bl      __j_ick_println
+    ; get the symbol
+    mov     x0, x19
+    ldr     x1, [sp]                ; pointer -> name of variable to deref
+    ldr     x2, [x20, #8]
+    bl      lookup_symbol
+    ldp     x2, x3, [x0]            ; load width and nptr from the symbol
+;        .data
+;        asdf:.asciz "        ; symbol '%s' has width: %i, nptr: %i\n"
+;        .text
+;        adrp x0, asdf@PAGE
+;        add x0, x0, asdf@PAGEOFF
+;        ldr x1, [sp]
+;        stp x2, x3, [sp, -0x10]!
+;        bl __j_printf
+;        ldp x2, x3, [sp], 0x10
+    cmp     x2, #1
+    b.ne    do_un_deref_quad        ; if width != 1, use quad
+    cmp     x3, #1
+    b.gt    do_un_deref_quad        ; if npts > 1, use quad (deref is a pointer)
+    adrp    x0, tmpl_un_deref_byte@PAGE
+    add     x0, x0, tmpl_un_deref_byte@PAGEOFF
+    bl      __j_printf
+    b       do_un_return
+    do_un_deref_quad:
+    adrp    x0, tmpl_un_deref_quad@PAGE
+    add     x0, x0, tmpl_un_deref_quad@PAGEOFF
+    bl      __j_printf
 
     do_un_return:
     ; restore frame
+    add     sp, sp, 0x10            ; release locals
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret
@@ -1187,27 +1405,17 @@ tmpl_bin_mod:   .asciz "        str     x2, [sp, -0x10]!\n\
         sdiv    x2, x0, x1\n\
         msub    x0, x2, x1, x0\n\
         ldr     x2, [sp], 0x10"
-tmpl_bin_gt:    .asciz "        cmp     x0, x1\n\
-        b.gt    expr_\0\n\
+tmpl_b_gt:    .asciz "gt"
+tmpl_b_lt:    .asciz "lt"
+tmpl_b_eq:    .asciz "eq"
+tmpl_b_ne:    .asciz "ne"
+tmpl_bin_comp:    .asciz "        cmp     x0, x1\n\
+        b.%s    expr_%i\n\
         mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
+        b       expr_%i_end\n\
+        expr_%i:\n\
         mov     x0, TRUE\n\
-        expr_\0_end:"
-tmpl_bin_lt:    .asciz "        cmp     x0, x1\n\
-        b.lt    expr_\0\n\
-        mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
-        mov     x0, TRUE\n\
-        expr_\0_end:"
-tmpl_bin_eq:    .asciz "        cmp     x0, x1\n\
-        b.eq    expr_\0\n\
-        mov     x0, FALSE\n\
-        b       expr_\0_end\n\
-        expr_\0:\n\
-        mov     x0, TRUE\n\
-        expr_\0_end:"
+        expr_%i_end:\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1254,6 +1462,8 @@ do_binary_op:
     b.eq    do_bin_mod
     cmp     x21, T_EQ
     b.eq    do_bin_eq
+    cmp     x21, T_BANG
+    b.eq    do_bin_ne
     cmp     x21, T_LT
     b.eq    do_bin_lt
     cmp     x21, T_GT
@@ -1267,61 +1477,57 @@ do_binary_op:
         bl      __j_jnc_panic            ; print and terminate
 
     do_bin_add:
-    adrp    x21, tmpl_bin_add@PAGE
-    add     x21, x21, tmpl_bin_add@PAGEOFF
+    adrp    x0, tmpl_bin_add@PAGE
+    add     x0, x0, tmpl_bin_add@PAGEOFF
     b       do_arith_emit
     do_bin_sub:
-    adrp    x21, tmpl_bin_sub@PAGE
-    add     x21, x21, tmpl_bin_sub@PAGEOFF
+    adrp    x0, tmpl_bin_sub@PAGE
+    add     x0, x0, tmpl_bin_sub@PAGEOFF
     b       do_arith_emit
     do_bin_mul:
-    adrp    x21, tmpl_bin_mul@PAGE
-    add     x21, x21, tmpl_bin_mul@PAGEOFF
+    adrp    x0, tmpl_bin_mul@PAGE
+    add     x0, x0, tmpl_bin_mul@PAGEOFF
     b       do_arith_emit
     do_bin_div:
-    adrp    x21, tmpl_bin_div@PAGE
-    add     x21, x21, tmpl_bin_div@PAGEOFF
+    adrp    x0, tmpl_bin_div@PAGE
+    add     x0, x0, tmpl_bin_div@PAGEOFF
     b       do_arith_emit
     do_bin_mod:
-    adrp    x21, tmpl_bin_mod@PAGE
-    add     x21, x21, tmpl_bin_mod@PAGEOFF
+    adrp    x0, tmpl_bin_mod@PAGE
+    add     x0, x0, tmpl_bin_mod@PAGEOFF
     b       do_arith_emit
     do_bin_gt:
-    adrp    x21, tmpl_bin_gt@PAGE
-    add     x21, x21, tmpl_bin_gt@PAGEOFF
+    adrp    x21, tmpl_b_gt@PAGE
+    add     x21, x21, tmpl_b_gt@PAGEOFF
     b       do_logic_emit
     do_bin_lt:
-    adrp    x21, tmpl_bin_lt@PAGE
-    add     x21, x21, tmpl_bin_lt@PAGEOFF
+    adrp    x21, tmpl_b_lt@PAGE
+    add     x21, x21, tmpl_b_lt@PAGEOFF
     b       do_logic_emit
     do_bin_eq:
-    adrp    x21, tmpl_bin_eq@PAGE
-    add     x21, x21, tmpl_bin_eq@PAGEOFF
+    adrp    x21, tmpl_b_eq@PAGE
+    add     x21, x21, tmpl_b_eq@PAGEOFF
+    b       do_logic_emit
+    do_bin_ne:
+    adrp    x21, tmpl_b_ne@PAGE
+    add     x21, x21, tmpl_b_ne@PAGEOFF
     b       do_logic_emit
 
     do_arith_emit:
-    tmpl_sec
-    bl      __j_ick_println
+    bl      __j_puts
     b       do_binary_op_return
 
     do_logic_emit:
     mov     x0, x19
     bl      seqnum
-    mov     x20, x0
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x5, x0
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x0
+    mov     x1, x21
+    adrp    x0, tmpl_bin_comp@PAGE
+    add     x0, x0, tmpl_bin_comp@PAGEOFF
+    bl      __j_printf
     b       do_binary_op_return
 
     do_binary_op_return:
@@ -1330,7 +1536,8 @@ do_binary_op:
     ldp     lr, x19, [sp], 0x10
     ret
 
-/* void do_token( Emitter* self, Token* t ) */
+; todo: I return variable name (or null) so deref logic can look up symbol...
+/* char* do_token( Emitter* self, Token* t ) */
 do_token:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -1363,7 +1570,11 @@ do_token:
     do_token_id:
     mov     x0, x20                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
+    str     x0, [sp, -0x10]!        ; store pointer -> name
+    mov     x1, x0
+    mov     x0, x19
     bl      do_value_id
+    ldr     x0, [sp], 0x10          ; load pointer -> name
     b       do_token_return
     do_token_char:                  ; these three all happen to be the same
     do_token_bool:
@@ -1371,15 +1582,17 @@ do_token:
     mov     x0, x20
     bl      __j_Token_value            ; value of the literal
     bl      do_value_literal
-    b       do_token_return
+    b       do_token_return_null
     do_token_string:
     mov     x0, x20                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> value
     mov     x1, x0
     mov     x0, x19
     bl      do_value_string
-    b       do_token_return
+    b       do_token_return_null
 
+    do_token_return_null:
+    mov     x0, NULL
     do_token_return:
     ; restore frame
     ldp     x20, x21, [sp], 0x10
@@ -1389,90 +1602,76 @@ do_token:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_token_string: .asciz "    .data\n\
-        _j_str_\0: .asciz \"\0\"\n\
+        _j_str_%i: .asciz \"%s\"\n\
     .text\n\
-        adrp    x0, _j_str_\0@PAGE\n\
-        add     x0, x0, _j_str_\0@PAGEOFF"
+        adrp    x0, _j_str_%i@PAGE\n\
+        add     x0, x0, _j_str_%i@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
-/* void do_value_id( Emitter* self, char* name ) */
+/* void do_value_string( Emitter* self, char* name ) */
 do_value_string:
     ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x20, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> name
-    adrp    x21, tmpl_token_string@PAGE
-    add     x21, x21, tmpl_token_string@PAGEOFF
-    mov     x0, x19
-    bl      seqnum
-    mov     x22, x0                 ; stash num
+    bl      seqnum                  ; self.seqnum()
 
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x20
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    mov     x0, x22
-    bl      __j_ick_print_i
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x4, x0
+    mov     x3, x0
+    mov     x2, x20                 ; pointer -> name
+    mov     x1, x0
+    adrp    x0, tmpl_token_string@PAGE
+    add     x0, x0, tmpl_token_string@PAGEOFF
+    bl      __j_printf
 
     ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
+    ldr     x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_token_id: .asciz "        mov     x0, x2"
-tmpl_token_global: .asciz "        adrp    x0, _j_gbl_\0@PAGE\n\
-        add     x0, x0, _j_gbl_\0@PAGEOFF"
+tmpl_token_id: .asciz "        mov     x0, x%i ; value of %s\n"
+tmpl_token_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE\n\
+        add     x0, x0, _j_gbl_%s@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
-/* void do_value_id( char* name ) */
+/* void do_value_id( Emitter* self, char* name ) */
 do_value_id:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     str     x21, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash pointer -> name
-    ldrb    w0, [x19]               ; first char of name
+    mov     x19, x0                 ; stash pointer -> self
+    mov     x21, x1                 ; stash pointer -> name
+    ldrb    w0, [x21]               ; first char of name
     cmp     w0, 'g'
     b.gt    do_value_id_global
     cmp     w0, 'a'
     b.lt    do_value_id_global
 
-    adrp    x21, tmpl_token_id@PAGE
-    add     x21, x21, tmpl_token_id@PAGEOFF
-    tmpl_sec
-    ldrb    w0, [x19]               ; first char of name
-    sub     w0, w0, C2R             ; convert lower alpha to digit
-    bl      __j_ick_print_c
-    bl      __j_ick_println
+    mov     x1, x21
+    mov     x0, x19
+    bl      lookup_symbol
+    bl      __j_Symbol_offset
+    mov     x2, x21
+    mov     x1, x0
+    adrp    x0, tmpl_token_id@PAGE
+    add     x0, x0, tmpl_token_id@PAGEOFF
+    bl      __j_printf
     b       do_value_id_return
 
+    ; todo: treat globals uniformly...
     do_value_id_global:
-    adrp    x21, tmpl_token_global@PAGE
-    add     x21, x21, tmpl_token_global@PAGEOFF
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_print
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_print
-    tmpl_sec
-    bl      __j_ick_println
+    mov     x1, x21
+    mov     x2, x21
+    adrp    x0, tmpl_token_global@PAGE
+    add     x0, x0, tmpl_token_global@PAGEOFF
+    bl      __j_printf
 
     do_value_id_return:
     ; restore frame
@@ -1483,7 +1682,7 @@ do_value_id:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 ; todo: values too large to fit in a imm16 (>65,535) won't work...
-tmpl_token_literal: .asciz "        mov     x0, #"
+tmpl_token_literal: .asciz "        mov     x0, #%i\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1492,26 +1691,25 @@ do_value_literal:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     ; end frame
-    mov     x19, x0                 ; stash the value
-    adrp    x21, tmpl_token_literal@PAGE
-    add     x21, x21, tmpl_token_literal@PAGEOFF
-    tmpl_sec
-    mov     x0, x19
-    bl      __j_ick_print_i
-    bl      __j_ick_println
+    mov     x1, x0
+    adrp    x0, tmpl_token_literal@PAGE
+    add     x0, x0, tmpl_token_literal@PAGEOFF
+    bl      __j_printf
     ; restore frame
     ldp     lr, x19, [sp], 0x10
     ret
 
-/* void destroy( Emitter* self ) */
-.global _emitter_destroy
-_emitter_destroy:
-    ; create frame
-    str     lr, [sp, -0x10]!
-    ; end frame
+/* void drop( Emitter* self ) */
+.global __j_Emitter_drop
+__j_Emitter_drop:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    str     x0, [sp, -0x10]!
 
+    bl      leave_block
+    bl      block_drop
+    ldr     x0, [sp], 0x10
     bl      __j_free
 
-    ; restore frame
-    ldr     lr, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret

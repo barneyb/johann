@@ -16,7 +16,6 @@ buf_stdin_pos: .quad BUF_SIZE       ; start needing more
 
 itoa_cheat: .asciz "%i"
 __j_print_s_format: .asciz "%s"
-__j_print_c_format: .asciz "%c"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 .text
 .align 3 ; 8-byte/64-bit alignment
@@ -25,7 +24,7 @@ NULL = 0
 TRUE = 1
 FALSE = 0
 
-/* boolean iseof( ) */
+/* bool iseof( ) */
 .global __j_iseof
 __j_iseof:
     stp     fp, lr, [sp, -0x10]!
@@ -118,8 +117,38 @@ __j_print:
 ; note, only seven variadic args will work
 .global __j_printf
 __j_printf:
+    adrp    x8, __j_putchar@PAGE
+    add     x8, x8, __j_putchar@PAGEOFF
+    b       printf
+
+/* int eprintf( char* format, ... ) */
+; note, only seven variadic args will work
+.global __j_eprintf
+__j_eprintf:
+    adrp    x8, errchar@PAGE
+    add     x8, x8, errchar@PAGEOFF
+    b       printf
+
+    ; like putchar, but unbuffered to StdErr
+    errchar:
+        stp     fp, lr, [sp, -0x10]!
+        mov     fp, sp
+        str     x0, [sp, -0x10]!
+
+        mov     x2, 1                   ; len
+        mov     x1, sp
+        mov     x0, #2                  ; 2 = StdErr
+        bl      __j_sys_write
+
+        add     sp, sp, 0x10
+        ldp     fp, lr, [sp], 0x10
+        ret
+
+printf:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
+    ; fp[-16] : emit_char( c )
+    str     x8, [sp, -0x10]!
     ; sp[10] : void* args ; todo: the caller should set these up...
     stp     x6, x7, [sp, -0x10]!
     stp     x4, x5, [sp, -0x10]!
@@ -142,7 +171,8 @@ __j_printf:
         b       printf_convert
 
     printf_normal:
-        bl      __j_putchar
+        ldr     x8, [fp, -0x10]
+        blr     x8
         ldr     x0, [sp, 0x8]       ; load written
         add     x0, x0, #1          ; written++
         str     x0, [sp, 0x8]       ; store written
@@ -174,7 +204,7 @@ __j_printf:
         cmp     x0, 'X'
         b.eq    printf_HEX
         cmp     x0, 'b'
-        b.eq    printf_boolean
+        b.eq    printf_bool
         cmp     x0, 'c'
         b.eq    printf_char
         cmp     x0, 'd'
@@ -311,7 +341,8 @@ __j_printf:
         ldrb    w0, [x5], #1        ; load next char to emit
         ; todo: this store/load in a tight loop is ... not ideal
         stp     x4, x5, [sp, -0x10]!; store before call
-        bl      __j_putchar
+        ldr     x8, [fp, -0x10]
+        blr     x8
         ldp     x4, x5, [sp], 0x10  ; load after call
         sub     x4, x4, #1
         b       printf_integer_emit_again
@@ -332,19 +363,19 @@ __j_printf:
         mov     x0, '\n'
         b       printf_normal
 
-    printf_boolean:
+    printf_bool:
         ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x10]      ; store a
         cmp     x0, FALSE
-        b.ne    printf_boolean_true
+        b.ne    printf_bool_true
         adrp    x0, str_false@PAGE
         add     x0, x0, str_false@PAGEOFF
-        b       printf_boolean_done
-        printf_boolean_true:
+        b       printf_bool_done
+        printf_bool_true:
         adrp    x0, str_true@PAGE
         add     x0, x0, str_true@PAGEOFF
-        printf_boolean_done:
+        printf_bool_done:
         str     x0, [sp, -0x10]!    ; store pointer -> str
         b       printf_string_again
 
@@ -359,7 +390,8 @@ __j_printf:
             str     x1, [sp]        ; store pointer -> str[i]
             cmp     x0, NULL
             b.eq    printf_string_done
-            bl      __j_putchar
+            ldr     x8, [fp, -0x10]
+            blr     x8
             ldr     x0, [sp, 0x18]      ; load written
             add     x0, x0, #1          ; written++
             str     x0, [sp, 0x18]      ; store written
@@ -370,7 +402,7 @@ __j_printf:
 
     printf_done:
     ldr     x0, [sp, 0x8]           ; load written
-    add     sp, sp, 0x50            ; release local storage
+    add     sp, sp, 0x60            ; release local storage
     ldp     fp, lr, [sp], 0x10
     ret
 
@@ -430,21 +462,6 @@ __flush_stdout:
     str     xzr, [x3]               ; store len = 0
 
     flush_done:
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* void printc( int ch ) */
-/* void print_c( char c ) */
-.global __j_printc ; todo: ick
-__j_printc:
-.global __j_ick_print_c
-__j_ick_print_c:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    mov     x1, x0
-    adrp    x0, __j_print_c_format@PAGE
-    add     x0, x0, __j_print_c_format@PAGEOFF
-    bl      __j_printf
     ldp     fp, lr, [sp], 0x10
     ret
 

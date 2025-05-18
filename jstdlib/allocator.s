@@ -48,7 +48,7 @@ __mem_stats:
     mem_stat_bad_count:
     adrp    x0, msg_mem_stats@PAGE
     add     x0, x0, msg_mem_stats@PAGEOFF
-    bl      __j_printf
+    bl      __j_eprintf
 
     mem_stats_done:
     ldp     fp, lr, [sp], 0x10

@@ -9,7 +9,7 @@ EOF = -1
 .global _main
 _main:
     bl      __j_main
-    b       __j_sys_exit
+    b       __j_exit
 
 /* void assert_eq( int actual, int expected ) */
 assert_eq:
@@ -41,7 +41,7 @@ assert_eq:
     add     x0, x0, assert_failed@PAGEOFF
     bl      __j_printf
     mov     x0, 42
-    bl      __j_sys_exit
+    bl      __j_exit
 
     assert_eq_ok:
     ldp     fp, lr, [sp], 0x10

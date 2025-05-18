@@ -26,7 +26,7 @@ bl __j_panic\n"
 .global _main
 _main:
     bl      __j_main
-    b       __j_sys_exit
+    b       __j_exit
 
 /* int main( int argc, char* argv[] ) */
 .global __j_main
@@ -57,14 +57,14 @@ __j_main:
         b       main_arg_loop
 
     main_short_version:
-        adrp    x0, jnc_short_version@PAGE
-        add     x0, x0, jnc_short_version@PAGEOFF
+        adrp    x0, __j_jnc_short_version@PAGE
+        add     x0, x0, __j_jnc_short_version@PAGEOFF
         bl      __j_puts
         b       main_success
 
     main_long_version:
-        adrp    x0, jnc_long_version@PAGE
-        add     x0, x0, jnc_long_version@PAGEOFF
+        adrp    x0, __j_jnc_long_version@PAGE
+        add     x0, x0, __j_jnc_long_version@PAGEOFF
         bl      __j_puts
         b       main_success
 
@@ -81,23 +81,23 @@ jnc:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    stp     x20, x21, [sp, #-16]!
+    stp     x20, x21, [sp, -0x10]!
     ; end frame
 
-    bl      _Lexer_new              ; lex = Lexer.new(r)
+    bl      __j_Lexer__new          ; lex = new Lexer(r)
     mov     x20, x0                 ; stash pointer -> lex
-    bl      _Parser_new             ; parser = Parser.new(lex);
+    bl      __j_Parser__new         ; parser = new Parser(lex);
     mov     x21, x0                 ; stash pointer -> parser
 
     bl      _parser_parse
 
     mov     x0, x21
-    bl      _parser_destroy         ; parser.destroy()
+    bl      __j_Parser_drop         ; parser.drop()
     mov     x0, x20
-    bl      _lexer_destroy          ; lex.destroy()
+    bl      __j_Lexer_drop          ; lex.drop()
 
     ; restore frame
-    ldp     x20, x21, [sp], #16
+    ldp     x20, x21, [sp], 0x10
     ldp     fp, lr, [sp], 0x10
     ret
 
@@ -106,17 +106,28 @@ jnc:
 __j_jnc_panic:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
+    stp     x0, x1, [sp, -0x10]!; store format & token
     str     x2, [sp, -0x10]!    ; store status code
 
+    ; to StdErr
+    ldr     x3, [x1, 0x8]
+    ldr     x4, [x1, 0x10]
+    ldr     x2, [x1]
+    ldr     x1, [sp]            ; load status code
+    bl      __j_eprintf
+    ; to the output file
+    ldp     x0, x1, [sp, 0x10]  ; load format & token
     ldr     x3, [x1, 0x8]
     ldr     x4, [x1, 0x10]
     ldr     x2, [x1]
     ldr     x1, [sp]            ; load status code
     bl      __j_printf
+    ; ensure the output file will error if executed
     ldr     x1, [sp]            ; load status code
     adrp    x0, tmpl_panic@PAGE
     add     x0, x0, tmpl_panic@PAGEOFF
     bl      __j_printf
+    ; panic!
     ldr     x0, [sp], 0x10      ; load status code
     adrp    x1, err_panic@PAGE
     add     x1, x1, err_panic@PAGEOFF

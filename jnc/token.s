@@ -85,83 +85,76 @@ __j_Token_drop:
 /* int type( Token* t ) */
 .global __j_Token_type
 __j_Token_type:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     ldr     x0, [x0, OFF_TYPE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void set_type( Token* t, int type ) */
 .global __j_Token_set_type
 __j_Token_set_type:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     str     x1, [x0, OFF_TYPE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* int line( Token* t ) */
 .global __j_Token_line
 __j_Token_line:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     ldr     x0, [x0, OFF_LINE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* int char( Token* t ) */
 .global __j_Token_char
 __j_Token_char:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     ldr     x0, [x0, OFF_CHAR]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void set_coords( Token* t, int line, int char ) */
 .global __j_Token_set_coords
 __j_Token_set_coords:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     stp     x1, x2, [x0, OFF_LINE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* ? value( Token* t ) */
 .global __j_Token_value
 __j_Token_value:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     ldr     x0, [x0, OFF_VALUE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void set_value( Token* t, ? value ) */
 .global __j_Token_set_value
 __j_Token_set_value:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+
     str     x1, [x0, OFF_VALUE]
 
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
     ret

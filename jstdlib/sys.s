@@ -1,12 +1,11 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
-PAGE_SIZE = 0x4000           ; todo: compile-time dynamic!
 NULL = 0
 
 /* void exit( int status ) */
-.global __j_sys_exit
-__j_sys_exit:
+.global __j_exit
+__j_exit:
     ; flush STDOUT first
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp

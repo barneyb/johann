@@ -2,14 +2,13 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
-INCLUDE = ../include
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 VERSION = $(OUT)/inc_version.s
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
-	$(LIB)/print.o \
+	$(LIB)/symbol.o \
 	$(LIB)/token.o
 
 INCLUDES = \
@@ -25,8 +24,10 @@ all: $(BIN)/jnc
 
 $(VERSION):
 	@mkdir -p $(OUT)
-	echo "jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' > $(VERSION)
-	echo "jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
+	echo ".global __j_jnc_short_version" > $(VERSION)
+	echo "__j_jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' >> $(VERSION)
+	echo ".global __j_jnc_long_version" >> $(VERSION)
+	echo "__j_jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
@@ -38,10 +39,6 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	gcc -o $@ -dead_strip $^
 
 $(LIB)/%.o: %.s $(INCLUDES)
-	@mkdir -p $(LIB)
-	gcc -o $@ -c $<
-
-$(LIB)/%.o: $(INCLUDE)/%.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
