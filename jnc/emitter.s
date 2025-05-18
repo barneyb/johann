@@ -523,17 +523,34 @@ do_fn:
     add     x0, x0, tmpl_fn_intro@PAGEOFF
     bl      __j_printf
 
-    add     x20, x20, #24           ; skip to first arg or close paren
+    add     x20, x20, 0x18          ; skip to first arg or close paren
     mov     x22, #0                 ; index of param's register
     do_fn_next_arg:
-    ldr     x0, [x20], #8           ; load pointer -> token to interrogate
+    ldr     x0, [x20], 0x8          ; load pointer -> token to interrogate
     mov     x23, x0                 ; stash pointer -> token
-    bl      __j_Token_type             ; token.type()
+    bl      __j_Token_type          ; token.type()
     cmp     x0, T_CPAREN
     b.eq    do_fn_return            ; done!
+    cmp     x0, T_KW_INT
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_CHAR
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_BOOL
+    b.eq    do_fn_decl
+    cmp     x0, T_KW_VOID
+    b.eq    do_fn_decl
     cmp     x0, T_ID
-    b.ne    do_fn_next_arg          ; again!
+    b.eq    do_fn_id
+    b       do_fn_next_arg          ; again!
 
+    do_fn_decl:
+    mov     x0, x19
+    mov     x1, x20
+    sub     x1, x1, 0x8
+    bl      vardecl
+    b       do_fn_next_arg          ; again!
+
+    do_fn_id:
     mov     x0, x23                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> name
     ldrb    w1, [x0]                ; first char of name
@@ -545,11 +562,10 @@ do_fn:
     bl      __j_Token_value         ; pointer -> name
     mov     x3, x0
     ldp     x1, x2, [sp], 0x10
-    ; todo: add to symbol table
     adrp    x0, tmpl_fn_arg@PAGE   ; pointer -> template
     add     x0, x0, tmpl_fn_arg@PAGEOFF
     bl      __j_printf
-    b.eq    do_fn_next_arg          ; again!
+    b       do_fn_next_arg          ; again!
 
     do_fn_return:
     ; restore frame

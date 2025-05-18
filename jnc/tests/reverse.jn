@@ -54,7 +54,6 @@ fn strpos(char* a, char b) {
 }
 
 fn scan(char* a) {
-    char* a = a; # todo: the arg should declare this symbol
     char c = *a;
     int f = CHARS_SCANNED; # todo: ick
     int g = *f; # todo: ick

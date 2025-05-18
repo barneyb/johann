@@ -1,6 +1,6 @@
 # They're All Named Johann
 
-Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only `arm64-apple-darwin` (aka Apple Silicon running macOS), is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), with no assembly in the solution itself nor the compiler which compiles it.
+Johann is a fairly comical attempt at building a programming langauge from scratch. It targets only `arm64-apple-darwin` (aka Apple Silicon running macOS), is self-hosted†, and generates _terrible_ assembly codes‡. The goal is to solve [Not Quite Lisp](https://adventofcode.com/2015/day/1), in Johann, using a compiler entirely written in Johann.
 
 You don't want to use it. You don't want to even look at the source. When a bored coder has a martini (or three...) and decides to single-handedly reinvent much of the past ~60 years of computer science from scratch, nothing good results.
 
