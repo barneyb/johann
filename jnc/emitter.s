@@ -492,6 +492,7 @@ tmpl_main: .asciz "    .global _main\n\
         b       __j_exit\n\
 "
 
+; todo: viz support
 tmpl_fn_intro: .asciz "    .global __j_%s\n\
     __j_%s:\n\
         ; create frame\n\
@@ -748,16 +749,21 @@ do_loop_thinger:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
+; todo: viz support
 tmpl_global_bool: .asciz "    .data\n\
+        .global _j_gbl_%s\n\
         _j_gbl_%s: .byte %i\n\
     .text\n"
 tmpl_global_int: .asciz "    .data\n\
+        .global _j_gbl_%s\n\
         _j_gbl_%s: .quad %i\n\
     .text\n"
 tmpl_global_char: .asciz "    .data\n\
+        .global _j_gbl_%s\n\
         _j_gbl_%s: .byte '%c'\n\
     .text\n"
 tmpl_global_string: .asciz "    .data\n\
+        .global _j_gbl_%s\n\
         _j_gbl_%s: .asciz \"%s\"\n\
     .text\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -947,8 +953,9 @@ do_decl:
     str     x0, [sp, -0x10]!        ; store pointer -> name
     mov     x0, x20                 ; pointer -> value token
     bl      __j_Token_value         ; pointer -> value
-    mov     x2, x0
-    ldr     x1, [sp], 0x10          ; load pointer -> name
+    mov     x3, x0
+    ldr     x2, [sp], 0x10          ; load pointer -> name
+    mov     x1, x2
 
     cmp     x21, T_BOOL
     b.eq    do_decl_bool
