@@ -1,6 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-.include "target/out/inc_version.s"
 opt_v: .asciz "-v"
 opt_version: .asciz "--version"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,14 +43,14 @@ __j_main:
         b       main_arg_loop
 
     main_short_version:
-        adrp    x0, __j_jnc_short_version@PAGE
-        add     x0, x0, __j_jnc_short_version@PAGEOFF
+        adrp    x0, _j_gbl_JNC_SHORT_VERSION@PAGE
+        add     x0, x0, _j_gbl_JNC_SHORT_VERSION@PAGEOFF
         bl      __j_puts
         b       main_success
 
     main_long_version:
-        adrp    x0, __j_jnc_long_version@PAGE
-        add     x0, x0, __j_jnc_long_version@PAGEOFF
+        adrp    x0, _j_gbl_JNC_LONG_VERSION@PAGE
+        add     x0, x0, _j_gbl_JNC_LONG_VERSION@PAGEOFF
         bl      __j_puts
         b       main_success
 

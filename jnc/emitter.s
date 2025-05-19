@@ -60,8 +60,8 @@ __j_Emitter__new:
 
     adrp    x0, tmpl_prelude@PAGE
     add     x0, x0, tmpl_prelude@PAGEOFF
-    adrp    x1, __j_jnc_short_version@PAGE
-    add     x1, x1, __j_jnc_short_version@PAGEOFF
+    adrp    x1, _j_gbl_JNC_SHORT_VERSION@PAGE
+    add     x1, x1, _j_gbl_JNC_SHORT_VERSION@PAGEOFF
     bl      __j_printf
 
     mov     x0, x19

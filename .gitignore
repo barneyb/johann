@@ -2,3 +2,4 @@
 /.idea/
 target/
 *.o
+/jnc/inc_version.jn
