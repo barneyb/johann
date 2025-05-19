@@ -20,13 +20,13 @@ fn main() {
 
 fn scan_stats() {
     char* f = "Scanned %i total chars\n";
-    int b = *CHARS_SCANNED; # todo: not a pointer!
+    int b = CHARS_SCANNED;
     printf(f, b);
 }
 
 fn do_string(char* a) {
     # find the stop char
-    char g = *STOP_AT; # todo: not a pointer!
+    char g = STOP_AT;
     int b = strpos(a, g);
 
     if b < 0 {
@@ -60,9 +60,7 @@ fn strpos(char* a, char b) {
 
 fn scan(char* a) {
     char c = *a;
-    int f = CHARS_SCANNED; # todo: ick
-    int g = *f; # todo: ick
-    *f = g + 1; # todo: ick
+    CHARS_SCANNED = CHARS_SCANNED + 1;
     return c;
 }
 
