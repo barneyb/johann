@@ -1,0 +1,101 @@
+# This one's tricky. The value lexed is returned, and char_count is incremented
+# for each character read. In assembly, it was a composite return (via x8), but
+# Johann's not that capable (yet).
+fn Lexer_lex_digits(char first_char, int* char_count) {
+    bool is_negative = false;
+    int n;
+    # deal with negatives first
+    if first_char = '-' {
+        is_negative = true;
+        first_char = getchar();
+        n = *char_count;
+        n = n + 1;
+        *char_count = n;
+    }
+    int val = 12345;
+    if first_char ! '0' {
+        # decimal
+        val = Lexer_lex_digits_dec(first_char, char_count);
+    }
+    if first_char = '0' {
+        # might be zero, might be hex
+        char c = peekchar();
+        bool d;
+        if c = 'x' {
+            # hex
+            getchar(); # soak up the 'x'
+            first_char = getchar();
+            n = *char_count;
+            n = n + 2; # count both chars at once
+            *char_count = n;
+            d = isxdigit(first_char);
+            if !d {
+                n = 16;
+                panic(n); # todo: issue a proper error
+            }
+            val = Lexer_lex_digits_hex(first_char, char_count);
+        } # todo: else would be nice...
+        if c ! 'x' {
+            d = isdigit(c);
+            if d {
+                # malformed
+                n = 10;
+                panic(n); # todo: issue a proper error
+            }
+            # zero
+            val = 0;
+        }
+    }
+    if is_negative {
+        val = 0 - val;
+    }
+    return val;
+}
+
+fn Lexer_lex_digits_dec(char first_char, int* char_count) {
+    int val = first_char - '0';
+    char c = peekchar();
+    bool d = isdigit(c);
+    int n;
+    while d {
+        c = getchar();
+        n = *char_count;
+        n = n + 1;
+        *char_count = n;
+        n = c - '0';
+        val = val * 10;
+        val = val + n;
+        c = peekchar();
+        d = isdigit(c);
+    }
+    return val;
+}
+
+fn Lexer_lex_digits_hex(char first_char, int* char_count) {
+    int val = parse_hex_digit(first_char);
+    char c = peekchar();
+    bool d = isxdigit(c);
+    int n;
+    while d {
+        c = getchar();
+        n = *char_count;
+        n = n + 1;
+        *char_count = n;
+        n = parse_hex_digit(c);
+        val = val * 16;
+        val = val + n;
+        c = peekchar();
+        d = isxdigit(c);
+    }
+    return val;
+}
+
+fn parse_hex_digit(char c) {
+    if c > 'Z' {
+        return c - 'W'; # 10 before 'a'
+    }
+    if c > '9' {
+        return c - '7'; # 10 before 'A'
+    }
+    return c - '0';
+}

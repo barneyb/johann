@@ -179,7 +179,7 @@ _lexer_token:
     cmp     x0, '9'
     b.le    token_int
 
-    ; print the char that fell through
+    ; indicate the char that fell through
         str     x22, [sp, -0x10]!
         stp     x0, x21, [sp, -0x10]!
         adrp    x0, err_bad_char@PAGE
@@ -325,43 +325,13 @@ lex_digits:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!  ; stash negative, value
-    stp     x21, x8, [sp, -0x10]!   ; stash consumed, XR
 
-    mov     x21, xzr                ; chars consumed
-    cmp     x0, '-'
-    b.eq    lex_digits_negative
-    mov     x19, FALSE              ; not negative
-    sub     x20, x0, '0'            ; parse first digit
-    b       lex_digits_go
-    lex_digits_negative:
-    mov     x19, TRUE               ; negative
-    mov     x20, xzr
-    lex_digits_go:
-
-    lex_digits_again:
-    bl      __j_peekchar
-    bl      __j_isdigit
-    cmp     x0, FALSE
-    b.eq    lex_digits_done
-    bl      __j_getchar
-    sub     x0, x0, '0'             ; parse
-    mov     x1, #10                 ; base
-    madd    x20, x20, x1, x0        ; add to result
-    add     x21, x21, #1            ; count char
-    b       lex_digits_again
-
-    lex_digits_done:
-    cmp     x19, FALSE
-    b.eq    lex_digits_return
-    neg     x20, x20
-
-    lex_digits_return:
-    ldr     x19, [sp, 0x8]          ; load pointer -> indirect return
-    stp     x20, x21, [x19]         ; indirect return
-
-    ldp     x21, xzr, [sp], 0x10
-    ldp     x19, x20, [sp], 0x10
+    str     x8, [sp, -0x10]!        ; store pointer -> indirect return
+    add     x1, x8, 0x8             ; pointer -> consumed
+    str     xzr, [x1]               ; start counting at zero
+    bl      __j_Lexer_lex_digits
+    ldr     x8, [sp], 0x10          ; load pointer -> indirect return
+    str     x0, [x8]                ; store val
     ldp     fp, lr, [sp], 0x10
     ret
 

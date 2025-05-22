@@ -1,0 +1,31 @@
+fn main() {
+    char* f = "value: %i\n";
+    int n;
+    n = 0; printf(f, n);
+    n = 1; printf(f, n);
+    n = 9; printf(f, n);
+    n = 10; printf(f, n);
+    n = 1234; printf(f, n);
+    n = 0x0; printf(f, n);
+    n = 0x1; printf(f, n);
+    n = 0xe; printf(f, n);
+    n = 0xf; printf(f, n);
+    n = 0x10; printf(f, n);
+    n = 0x7ff; printf(f, n);
+    n = 0xE; printf(f, n);
+    n = 0x7FA; printf(f, n);
+
+    n = -0; printf(f, n);
+    n = -1; printf(f, n);
+    n = -9; printf(f, n);
+    n = -10; printf(f, n);
+    n = -1234; printf(f, n);
+    n = -0x0; printf(f, n);
+    n = -0x1; printf(f, n);
+    n = -0xe; printf(f, n);
+    n = -0xf; printf(f, n);
+    n = -0x10; printf(f, n);
+    n = -0x7ff; printf(f, n);
+    n = -0xE; printf(f, n);
+    n = -0x7FA; printf(f, n);
+}

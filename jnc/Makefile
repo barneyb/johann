@@ -10,6 +10,7 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.jn.o \
 	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.o \
+	$(LIB)/lexer.jn.o \
 	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
 	$(LIB)/token.o \

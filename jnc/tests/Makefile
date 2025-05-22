@@ -5,7 +5,8 @@ OUT = $(TGT)/out
 JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
-all: sum \
+all: literals \
+	sum \
 	store_load \
 	reverse \
 	collatz \
