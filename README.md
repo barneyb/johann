@@ -94,7 +94,7 @@ Semicolons are required to terminate statements which don't take a block. Blocks
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline; other escapes may work, but are unsupported. Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
-The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. Globals are _always_ pointers, whether declared w/ `*` or not. This will change.
+The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change.
 
 Integers are signed 64-bit values, but literals requiring more than 15-bits will compile into invalid assembly. If you need a greater magnitude, build it up with arithmetic. This will change.
 
