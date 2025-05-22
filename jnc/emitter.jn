@@ -1,0 +1,19 @@
+int T_KW_FN = 1094; # 0x400 'F'
+int T_SEMI = 59;    #       ';'
+
+fn Emitter_return(void* self, void** buffer) {
+    int kw = T_KW_FN;
+    void* token = *buffer;
+    void* block = Emitter_innermost_block_of(self, kw, token);
+    int id = Emitter_Block_id(block);
+    token = buffer + 8;
+    token = *token;
+    kw = T_SEMI;
+    int type = Token_type(token);
+    if type ! kw {
+        buffer = buffer + 8;
+        Emitter_expr(self, buffer);
+    }
+    char* tmpl = "        b       _return_%i\n";
+    printf(tmpl, id);
+}

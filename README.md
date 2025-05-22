@@ -33,7 +33,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
+Functions are defined with the `fn` keyword. Use `return` to return (with a value or not). The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
 
     fn main() {
         return 0;

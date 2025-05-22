@@ -94,6 +94,8 @@ block_drop:
     ret
 
 /* int id( Block* b ) */
+.global __j_Emitter_Block_id
+__j_Emitter_Block_id:
 block_id:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -225,6 +227,8 @@ lookup_symbol_by_name_and_token:
     ret
 
 /* Block* innermost_block_of( Emitter* self, int type, Token* t ) */
+.global __j_Emitter_innermost_block_of
+__j_Emitter_innermost_block_of:
 innermost_block_of:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -426,7 +430,7 @@ _emitter_emit:
     b.ne    __emit_close_block      ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_return               ; this.do_return( buffer )
+    bl      __j_Emitter_return               ; this.do_return( buffer )
     b       __emit_return__
 
     __emit_close_block:
@@ -662,44 +666,6 @@ do_while:
 
     ; restore frame
     ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_return: .asciz "        b       _return_%i\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_return( Emitter* self, [Token*] buffer ) */
-do_return:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-
-    ldr     x2, [x1]
-    mov     x1, T_KW_FN
-    mov     x0, x19
-    bl      innermost_block_of
-    bl      block_id
-    mov     x22, x0                 ; stash current block id
-
-    ; todo: allow simple return w/ no value
-    mov     x0, x19
-    add     x1, x20, #8             ; pointer -> buffer[1] (pointer -> value token)
-    bl      do_expr
-    adrp    x0, tmpl_return@PAGE    ; pointer -> template
-    add     x0, x0, tmpl_return@PAGEOFF
-    mov     x1, x22
-    bl      __j_printf
-
-    ; restore frame
-    ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret
@@ -1242,6 +1208,8 @@ do_call:
     ret
 
 /* void do_expr( Emitter* self, [Token*] buffer ) */
+.global __j_Emitter_expr
+__j_Emitter_expr:
 do_expr:
     ; create frame
     stp     lr, x19, [sp, -0x10]!

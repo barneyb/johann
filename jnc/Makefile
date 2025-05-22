@@ -7,6 +7,7 @@ JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 VERSION = inc_version.jn
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
+	$(LIB)/emitter.jn.o \
 	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \

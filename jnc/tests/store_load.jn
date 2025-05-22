@@ -22,5 +22,5 @@ fn main() {
     d = itoa(b);
     puts(d);
     free(d);
-    return 0;
+    return;
 }
