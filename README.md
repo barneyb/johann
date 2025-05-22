@@ -240,11 +240,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20250518
-build_time: 2025-05-18T20:44:19+00:00
-commit_hash: ce70c8641c5cff548588f09da00ae1edc27153bb
+jnc 0.20250522
+build_time: 2025-05-22T15:12:03+00:00
+commit_hash: 8046f49bc8cecc81a60367d5ae757f8f28f24ed0
 % echo "fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20250518-ce70c86
+; Compiled with jnc 0.20250522-8046f49
     .text
     .align  3
 ... snip ...
@@ -257,7 +257,7 @@ The specific versions of the system software I have are listed below. Note that 
 <!--{systemsoftware}-->
 ```
 % uname -a
-Darwin mac.lan 24.4.0 Darwin Kernel Version 24.4.0: Fri Apr 11 18:33:46 PDT 2025; root:xnu-11417.101.15~117/RELEASE_ARM64_T8112 arm64
+Darwin mac.lan 24.5.0 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:26 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8112 arm64
 %
 % make --version
 GNU Make 3.81
@@ -270,7 +270,7 @@ This program built for i386-apple-darwin11.3.0
 %
 % gcc --version
 Apple clang version 17.0.0 (clang-1700.0.13.3)
-Target: arm64-apple-darwin24.4.0
+Target: arm64-apple-darwin24.5.0
 Thread model: posix
 InstalledDir: /Library/Developer/CommandLineTools/usr/bin
 %
