@@ -689,6 +689,7 @@ do_return:
     bl      block_id
     mov     x22, x0                 ; stash current block id
 
+    ; todo: allow simple return w/ no value
     mov     x0, x19
     add     x1, x20, #8             ; pointer -> buffer[1] (pointer -> value token)
     bl      do_expr

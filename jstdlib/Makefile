@@ -4,7 +4,7 @@ LIB = $(TGT)/lib
 OUT = $(TGT)/out
 JNC = ../bin/jnc
 OBJECTS = \
-	$(LIB)/allocator.o \
+	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
 	$(LIB)/table.o \
 	$(LIB)/string.o \
