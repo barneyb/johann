@@ -222,6 +222,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars
+* `25` - Non-local call parameter
 * `26` - Bad token/value
 * `27` - Bad statement
 * `28` - Bad expression

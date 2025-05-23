@@ -1,8 +1,43 @@
 Didn't find stop char ',' anywhere in 'no commas here!'?!
 Scanned 16 total chars
-Found ',' at position 11 of 'perhaps one, or more, commas?'.
-Found ',' at position 11 of 'eno spahrep, or more, commas?'.
-Scanned 40 total chars
+Found ',' at position 12 of 'perhaps four, or fewer, commas?'.
+swap 'p' for 'r', at 0 and 11
+swap 'e' for 'u', at 1 and 10
+swap 'r' for 'o', at 2 and 9
+swap 'h' for 'f', at 3 and 8
+swap 'a' for ' ', at 4 and 7
+swap 'p' for 's', at 5 and 6
+Found ',' at position 12 of 'ruof spahrep, or fewer, commas?'.
+Scanned 42 total chars
 Found ',' at position 59 of 'I am a significantly longer string of characters to examine, but still have a comma.'.
+swap 'I' for 'e', at 0 and 58
+swap ' ' for 'n', at 1 and 57
+swap 'a' for 'i', at 2 and 56
+swap 'm' for 'm', at 3 and 55
+swap ' ' for 'a', at 4 and 54
+swap 'a' for 'x', at 5 and 53
+swap ' ' for 'e', at 6 and 52
+swap 's' for ' ', at 7 and 51
+swap 'i' for 'o', at 8 and 50
+swap 'g' for 't', at 9 and 49
+swap 'n' for ' ', at 10 and 48
+swap 'i' for 's', at 11 and 47
+swap 'f' for 'r', at 12 and 46
+swap 'i' for 'e', at 13 and 45
+swap 'c' for 't', at 14 and 44
+swap 'a' for 'c', at 15 and 43
+swap 'n' for 'a', at 16 and 42
+swap 't' for 'r', at 17 and 41
+swap 'l' for 'a', at 18 and 40
+swap 'y' for 'h', at 19 and 39
+swap ' ' for 'c', at 20 and 38
+swap 'l' for ' ', at 21 and 37
+swap 'o' for 'f', at 22 and 36
+swap 'n' for 'o', at 23 and 35
+swap 'g' for ' ', at 24 and 34
+swap 'e' for 'g', at 25 and 33
+swap 'r' for 'n', at 26 and 32
+swap ' ' for 'i', at 27 and 31
+swap 's' for 'r', at 28 and 30
 Found ',' at position 59 of 'enimaxe ot sretcarahc fo gnirts regnol yltnacifingis a ma I, but still have a comma.'.
-Scanned 160 total chars
+Scanned 162 total chars

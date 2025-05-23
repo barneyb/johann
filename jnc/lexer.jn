@@ -99,3 +99,37 @@ fn parse_hex_digit(char c) {
     }
     return c - '0';
 }
+
+fn Lexer_lex_string() {
+    int len = 16;
+    int i = 0;
+    # todo: oh, for array syntax...
+    char* buffer = malloc(len);
+    char* buffer_i;
+
+    char c;
+    while true {
+        c = getchar();
+        if c = '"' { done; }
+        buffer_i = buffer + i;
+        i = i + 1;
+        if i < len {
+            *buffer_i = c;
+            again;
+        }
+        # need more!
+        int old_len = len;
+        len = len * 2;
+        char* next = malloc(len);
+        memcpy(next, buffer, old_len);
+        free(buffer);
+        buffer = next;
+        buffer_i = buffer + i;
+        buffer_i = buffer_i - 1; # i was already incremented
+        *buffer_i = c;
+    }
+
+    buffer_i = buffer + i;
+    *buffer_i = null;
+    return buffer;
+}

@@ -1,4 +1,33 @@
 fn main() {
+    test_globals();
+    test_dynamic();
+}
+
+int EIGHT = 8;
+int* A = null; # todo: shouldn't require an initializer if null/zero
+
+fn test_globals() {
+    char* format = "global: %i\n";
+    int n = EIGHT;
+    void* mem = malloc(n);
+    A = mem;
+    *A = n;
+#    n = A;
+#    printf(format, n); # some random pointer
+    n = *A;
+    printf(format, n);
+    n = A;
+    free(n);
+    n = n = A;
+    char* f2 = "global: %b\n";
+    printf(f2, n);
+    A = null;
+    n = *A;
+    printf(format, n);
+}
+
+fn test_dynamic() {
+    char* format = "dynamic: %i\n";
     int e = 16;
     int f = 1;
     int g = 2;
@@ -8,19 +37,13 @@ fn main() {
     a = a + 8;
     *a = 2;             # a[1] = 2;
     int b = *a;         # b = 2;
-    char* d = itoa(b);
-    puts(d);
-    free(d);
+    printf(format, b);
     a = a - 8;
     int c = *a;         # c = 1;
-    d = itoa(c);
-    puts(d);
-    free(d);
+    printf(format, c);
     *a = b + c;         # a[0] = 3;
     b = *a;             # b = 3;
     free(a);
-    d = itoa(b);
-    puts(d);
-    free(d);
+    printf(format, b);
     return;
 }

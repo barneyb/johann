@@ -14,7 +14,8 @@
 struct Symbol {
     int width       ; byte width of a value
     int nptr        ; number of pointer indirections
-    int offset      ; storage offset of the symbol (local/global semantics vary)
+    int offset      ; locals : register number (x20-7)
+                    ; statics: negative sequence
 }
 */
 OFF_WIDTH   = 0
