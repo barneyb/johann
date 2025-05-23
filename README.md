@@ -96,7 +96,7 @@ Strings are double-quoted, characters are single-quoted, and identifiers start w
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change.
 
-Integers are signed 64-bit values, but literals requiring more than 15-bits will compile into invalid assembly. If you need a greater magnitude, build it up with arithmetic. Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case.
+Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (aside from zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. A leading `-` indicates a negative value. A second `-` (associating right-to-left!) is a unary negate (for now).
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 

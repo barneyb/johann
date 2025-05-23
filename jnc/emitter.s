@@ -317,8 +317,9 @@ leave_block:
     ldp     lr, x19, [sp], 0x10
     ret
 
-/* int seqnum( Emitter* self ) */
-seqnum:
+/* int __j_Emitter_seqnum( Emitter* self ) */
+.global __j_Emitter_seqnum
+__j_Emitter_seqnum:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
@@ -1413,7 +1414,7 @@ do_unary_op:
 
     do_un_not:
     mov     x0, x19
-    bl      seqnum
+    bl      __j_Emitter_seqnum
     mov     x4, x0
     mov     x3, x0
     mov     x2, x0
@@ -1579,7 +1580,7 @@ do_binary_op:
 
     do_logic_emit:
     mov     x0, x19
-    bl      seqnum
+    bl      __j_Emitter_seqnum
     mov     x5, x0
     mov     x4, x0
     mov     x3, x0
@@ -1636,53 +1637,22 @@ do_token:
     do_token_int:
     mov     x0, x20
     bl      __j_Token_value            ; value of the literal
-    bl      do_value_literal
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_Emitter_do_value_integer
     b       do_token_return
     do_token_string:
     mov     x0, x20                 ; pointer -> token
     bl      __j_Token_value         ; pointer -> value
     mov     x1, x0
     mov     x0, x19
-    bl      do_value_string
+    bl      __j_Emitter_do_value_string
     b       do_token_return
 
     do_token_return:
     ; restore frame
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_token_string: .asciz "        .data ; tmpl_token_string\n\
-          _j_str_%i: .asciz \"%s\"\n\
-        .text\n\
-        adrp    x0, _j_str_%i@PAGE\n\
-        add     x0, x0, _j_str_%i@PAGEOFF\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_value_string( Emitter* self, char* name ) */
-do_value_string:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    str     x20, [sp, -0x10]!
-    ; end frame
-    mov     x20, x1                 ; stash pointer -> name
-    bl      seqnum                  ; self.seqnum()
-
-    mov     x4, x0
-    mov     x3, x0
-    mov     x2, x20                 ; pointer -> name
-    mov     x1, x0
-    adrp    x0, tmpl_token_string@PAGE
-    add     x0, x0, tmpl_token_string@PAGEOFF
-    bl      __j_printf
-
-    ; restore frame
-    ldr     x20, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1746,26 +1716,6 @@ do_value_id:
     add     sp, sp, 0x10            ; release locals
     ldp     x19, x21, [sp], 0x10
     ldp     fp, lr, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-; todo: values too large to fit in a imm16 (>65,535) won't work...
-tmpl_token_literal: .asciz "        mov     x0, #%i ; tmpl_token_literal\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_value_literal( int v ) */
-do_value_literal:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
-    mov     x1, x0
-    adrp    x0, tmpl_token_literal@PAGE
-    add     x0, x0, tmpl_token_literal@PAGEOFF
-    bl      __j_printf
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
     ret
 
 /* void drop( Emitter* self ) */
