@@ -1,91 +1,117 @@
-int ALIGN       = 16;
-int PAGE_SIZE   = 16384; # todo: compile-time dynamic!
-int MAP_ANON    = 4096;
+int MALLOC_ALIGN= 0x10;
+int PAGE_SIZE   = 0x4000;
+int MAP_ANON    = 0x1000;
 int MAP_PRIVATE = 2;
 int PROT_READ   = 1;
 int PROT_WRITE  = 2;
 
-# todo: these should be void*, but "variable" is still confused
-void start = null;
-void end = null;
+void START = 0;
+void CURR = 0;
+void END = 0;
 
-int alloc_stat_count = 0;
-int alloc_stat_size = 0;
-int free_stat_count = 0;
+int ALLOC_STAT_COUNT = 0;
+int ALLOC_STAT_SIZE = 0;
+int FREE_STAT_COUNT = 0;
+int FREE_STAT_SIZE = 0;
 
 fn mem_stats__() {
-    int ac = alloc_stat_count;
-    int fc = free_stat_count;
-    if ac ! fc {
-        # todo: free SIZE too
-        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees\n";
-        int as = alloc_stat_size;
-        printf(format, ac, as, fc);
+    int ac = ALLOC_STAT_COUNT;
+    int as = ALLOC_STAT_SIZE;
+    int fc = FREE_STAT_COUNT;
+    int fs = FREE_STAT_SIZE;
+    bool c = ac ! fc;
+    bool s = as ! fs;
+    if c + s {
+        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
+        printf(format, ac, as, fc, fs);
     }
 }
 
-fn free(void* ptr) {
-    if ptr = null {
+fn free(void* mem) {
+    if mem = null {
         return 0;
     }
-    free_stat_count = free_stat_count + 1;
-    # todo: size too
-
-#    char* format = "    ;; free : %p\n";
-#    eprintf(format, ptr); # todo: size too
+    # load the size/bytes from the header
+    mem = mem - 0x8;
+    int bytes = *mem;
+#        char* f = " ; free  %x bytes at %p\n";
+#        mem = mem + 0x8;
+#        printf(f, bytes, mem);
+    FREE_STAT_COUNT = FREE_STAT_COUNT + 1;
+    FREE_STAT_SIZE = FREE_STAT_SIZE + bytes;
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
 fn malloc(int bytes) {
-    bytes = align(bytes);
+    int aln = MALLOC_ALIGN;
+    bytes = align(bytes, aln);
 
-    if start = null {
+    void mem = CURR;
+    int thru = mem + bytes;
+    thru = thru + 0x8; # for the header
+    if END < thru {
         get_more_memory(bytes);
+        mem = CURR;
     }
-#    int e = start + bytes;
-#    if end < e {
-#        # todo: get more pages
-#    }
 
-    return allocate_chunk(bytes);
-}
+    # the header
+    *mem = bytes;
+    mem = mem + 0x8;
+#    bytes = bytes + 0x8;
 
-fn allocate_chunk(int bytes) {
-    void mem = start;
-    start = start + bytes;
-#    char* format = "    ;; alloc: %p (%x b)\n";
-#    eprintf(format, mem, bytes);
-    alloc_stat_count = alloc_stat_count + 1;
-    alloc_stat_size = alloc_stat_size + bytes;
+#        char* f = " ; alloc %x bytes at %p\n";
+#        printf(f, bytes, mem);
+
+    CURR = mem + bytes;
+    ALLOC_STAT_COUNT = ALLOC_STAT_COUNT + 1;
+    ALLOC_STAT_SIZE = ALLOC_STAT_SIZE + bytes;
     return mem;
 }
 
-fn align(int bytes) {
+fn align(int bytes, int alignment) {
     # todo: bitwise ops would be nice...
-    int remainder = bytes % ALIGN;
+    int remainder = bytes % alignment;
     if remainder ! 0 {
         bytes = bytes - remainder;
-        bytes = bytes + ALIGN;
+        bytes = bytes + alignment;
     }
     return bytes;
 }
 
-fn get_more_memory() {
-    # todo: having to use vars for constants is sorta silly...
-    int zero = 0;
-    int bytes = PAGE_SIZE;
-    bytes = bytes * 4;
-    int protocol = PROT_READ + PROT_WRITE;
-    int flags = MAP_ANON + MAP_PRIVATE;
-    int negOne = -1;
-    void mem = sys_mmap(zero, bytes, protocol, flags, negOne, zero);
+fn get_more_memory(int bytes) {
+#        char* f = "get_more_memory(%x)\n";
+#        eprintf(f, bytes);
+    int aln = PAGE_SIZE;
+    bytes = align(bytes, aln);
+#        f = "  -> get_more_memory(%x)\n";
+#        eprintf(f, bytes);
+    void at = END;
+    void mem = mmap_internal(at, bytes);
     if mem = null {
         failed_to_mmap();
     }
-    start = mem;
-    end = start + bytes;
+
+#        f = "  -> got %x bytes @ %p (%x total)\n";
+#        aln = END - START;
+#        aln = aln + bytes;
+#        eprintf(f, bytes, mem, aln);
+
+    if START = END {
+        START = mem; # this was the first page
+    }
+    CURR = mem;
+    END = mem + bytes;
+}
+
+fn mmap_internal(void at, int bytes) {
+    # todo: having to use vars for constants is sorta silly...
+    int protocol = PROT_READ + PROT_WRITE;
+    int flags = MAP_ANON + MAP_PRIVATE;
+    int negOne = -1;
+    int zero = 0;
+    return sys_mmap(at, bytes, protocol, flags, negOne, zero);
 }
 
 fn failed_to_mmap() {

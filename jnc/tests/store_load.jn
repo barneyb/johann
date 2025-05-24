@@ -28,16 +28,18 @@ fn test_locals() {
 }
 
 int EIGHT = 8;
-int* A = null; # todo: shouldn't require an initializer if null/zero
+void A = null; # todo: shouldn't require an initializer if null/zero
 
 fn test_globals() {
     char* format = "global: %i\n";
     int n = EIGHT;
     void* mem = malloc(n);
     A = mem;
-    *A = n;
-#    n = A;
-#    printf(format, n); # some random pointer
+    *mem = n;
+#    printf(format, mem); # some random pointer
+    printf(format, n); # 8
+#        n = A;
+#        printf(format, n); # the same "random" pointer
     n = *A;
     printf(format, n);
     n = A;
@@ -46,7 +48,7 @@ fn test_globals() {
     char* f2 = "global: %b\n";
     printf(f2, n);
     A = null;
-    n = *A;
+    n = A;
     printf(format, n);
 
     int* ptr = &EIGHT;
