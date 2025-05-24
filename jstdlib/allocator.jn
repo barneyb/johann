@@ -5,9 +5,11 @@ int MAP_PRIVATE = 2;
 int PROT_READ   = 1;
 int PROT_WRITE  = 2;
 
-void START = 0;
-void CURR = 0;
-void END = 0;
+void HEAP_START = null;
+void HEAP_TOP = null;
+void HEAP_END = null;
+
+void FREE_LIST = null;
 
 int ALLOC_STAT_COUNT = 0;
 int ALLOC_STAT_SIZE = 0;
@@ -24,49 +26,178 @@ fn mem_stats__() {
     if c + s {
         char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
         printf(format, ac, as, fc, fs);
+        eprintf(format, ac, as, fc, fs);
     }
 }
 
 fn free(void* mem) {
+    char* f;
     if mem = null {
         return 0;
     }
     # load the size/bytes from the header
-    mem = mem - 0x8;
-    int bytes = *mem;
-#        char* f = " ; free  %x bytes at %p\n";
-#        mem = mem + 0x8;
+    int a = mem - 0x8;
+    int bytes = *a;
+
+#        f = " ; free  %x bytes at %p\n";
 #        printf(f, bytes, mem);
+
     FREE_STAT_COUNT = FREE_STAT_COUNT + 1;
     FREE_STAT_SIZE = FREE_STAT_SIZE + bytes;
 
+    # header remains "len"
+    # first quad is "prev" pointer
+    # second quad is "next" pointer
+
+    void prev = FREE_LIST; # pointer -> a chunk
+    void next = null; # last chunk always has a null next
+    while prev ! null {
+        if mem = prev {
+            # already in the free list?!
+            a = 98;
+            exit(a);
+        }
+        if mem < prev {
+            next = prev;
+            prev = *prev;
+            again;
+        }
+        done;
+    }
+
+    *mem = prev;
+    if prev = null {
+        FREE_LIST = mem;
+    }
+    if prev ! null {
+        prev = prev + 8;
+        *prev = mem;
+    }
+    if next ! null {
+        *next = mem;
+    }
+    mem = mem + 8;
+    *mem = next;
+
+        print_free_list();
+
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
+}
+
+fn print_free_list() {
+    return;
+    char* f = "[FREE LIST: %p\n";
+    void curr = FREE_LIST;
+    printf(f, curr);
+    while curr ! null {
+        f = "  -> %x bytes at %p < %p : %p >\n";
+        curr = curr - 0x8;
+        int bytes = *curr;
+        curr = curr + 0x10;
+        void* next = *curr;
+        curr = curr - 0x8;
+        void* prev = *curr;
+        printf(f, bytes, curr, prev, next);
+        curr = next;
+    }
+    f = "]";
+    puts(f);
+}
+
+fn find_free_chunk(int bytes) {
+#    char* f;
+    if FREE_LIST = null {
+#            f = "   No free chunks!";
+#            puts(f);
+        return null;
+    }
+    void curr = FREE_LIST; # pointer -> a chunk
+#        f = "   CURR %p\n";
+#        printf(f, curr);
+    int a;
+    while curr ! null {
+        a = curr - 0x8;
+        int size = *a; # size of chunk
+#            f = "   FREE: %x bytes at %p\n";
+#            printf(f, size, curr);
+        # todo: <= sure would be nice...
+        if bytes > size {
+            curr = *curr; # pointer -> previous chunk
+            again;
+        }
+        done;
+    }
+    if curr = null {
+        # didn't find one
+#            f = "   No free chunk >= %x bytes\n";
+#            printf(f, bytes);
+        return null;
+    }
+    # unlink and return the chunk's address
+#        f = "   Recycle %x byte chunk at %p\n";
+#        printf(f, size, curr);
+    void prev = *curr;
+    a = curr + 0x8;
+    void next = *a;
+    if curr = FREE_LIST {
+        FREE_LIST = next; # null or not
+    }
+#        f = "   CURR %p is preceded by %p and succeeded by %p\n";
+#        printf(f, curr, prev, next);
+    if next ! null {
+        *next = prev;
+    }
+    if prev ! null {
+        prev = prev + 0x8;
+        *prev = next;
+    }
+    return curr;
 }
 
 fn malloc(int bytes) {
     int aln = MALLOC_ALIGN;
     bytes = align(bytes, aln);
 
-    void mem = CURR;
-    int thru = mem + bytes;
-    thru = thru + 0x8; # for the header
-    if END < thru {
-        get_more_memory(bytes);
-        mem = CURR;
+    # first, see if there's a free chunk to recycle
+    void mem = find_free_chunk(bytes);
+
+    if mem = null {
+        # need to allocate a new chunk
+        # first, see if we need to get more from the OS
+        mem = HEAP_TOP;
+        int thru = mem + bytes;
+        thru = thru + 0x8; # for the header
+        if HEAP_END < thru {
+            get_more_memory(bytes);
+            mem = HEAP_TOP;
+        }
+
+        # then, allocate a chunk at the top of the heap
+        *mem = bytes; # the header
+        mem = mem + 0x8; # user chunk
+        HEAP_TOP = mem + bytes;
     }
+    int chunk_size = mem - 0x8;
+    chunk_size = *chunk_size;
 
-    # the header
-    *mem = bytes;
-    mem = mem + 0x8;
-#    bytes = bytes + 0x8;
+#        char* f;
+#        if chunk_size = bytes {
+#            f = " ; alloc %x bytes at %p\n";
+#            printf(f, bytes, mem);
+#        }
+#        if chunk_size ! bytes {
+#            f = " ; alloc %x bytes at %p (CHUNK OF %x)\n";
+#            printf(f, bytes, mem, chunk_size);
+#        }
+#        if FREE_LIST ! null {
+#            print_free_list();
+#        }
 
-#        char* f = " ; alloc %x bytes at %p\n";
-#        printf(f, bytes, mem);
-
-    CURR = mem + bytes;
     ALLOC_STAT_COUNT = ALLOC_STAT_COUNT + 1;
-    ALLOC_STAT_SIZE = ALLOC_STAT_SIZE + bytes;
+    # Only 'bytes` were requested, but the chunk size is what free can correlate
+    # with, so that's what gets recorded.
+    ALLOC_STAT_SIZE = ALLOC_STAT_SIZE + chunk_size;
     return mem;
 }
 
@@ -87,22 +218,22 @@ fn get_more_memory(int bytes) {
     bytes = align(bytes, aln);
 #        f = "  -> get_more_memory(%x)\n";
 #        eprintf(f, bytes);
-    void at = END;
+    void at = HEAP_END;
     void mem = mmap_internal(at, bytes);
     if mem = null {
         failed_to_mmap();
     }
 
 #        f = "  -> got %x bytes @ %p (%x total)\n";
-#        aln = END - START;
+#        aln = HEAP_END - HEAP_START;
 #        aln = aln + bytes;
 #        eprintf(f, bytes, mem, aln);
 
-    if START = END {
-        START = mem; # this was the first page
+    if HEAP_START = HEAP_END {
+        HEAP_START = mem; # this was the first page
     }
-    CURR = mem;
-    END = mem + bytes;
+    HEAP_TOP = mem;
+    HEAP_END = mem + bytes;
 }
 
 fn mmap_internal(void at, int bytes) {

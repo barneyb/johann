@@ -146,9 +146,14 @@ Johann provides no debugging support, but you might be able to use various third
 
 ## Dynamic Memory Allocation
 
-Currently, the "allocator" `mmap`s anonymous pages, on demand, and each `malloc` gets the next however many bytes from there. `free` does nothing, so one `malloc`-ed, memory is never released.
+The allocator only uses anonymously `mmap`ed pages, which are acquired on-demand. Currently, they are never `unmmap`ed. Each `malloc` call will return a suitable memory chunk. Chunks passed back to `free` are marked for recycling. Recycling is always preferred to requesting more space from the OS. Recycled chunks are neither coalesced nor re-chunked more finely. `malloc` only looks for "big enough", not "reasonably sized," so an allocation request may recycle a wildly oversize chunk, "wasting" the overage. This also means overflow errors are less predictable than one might hope.
 
-When a program exits (without panicking), the count/size of `malloc` and `free` calls is compared. If they don't match, a warning is printed to STDERR, but that's it for runtime checking.
+When a program exits (without panicking), the count of `malloc` and `free` calls over the life of the execution is compared, as are the total bytes allocated and freed. If they don't match, a warning is printed to both STDOUT and STDERR with the details. Here's one which leaked pretty dramatically, almost 20% of its allocations:
+
+    ; MEM: 279 allocs (0x2db0 bytes)
+    ;      227 frees  (0x2290 bytes)
+
+Certain double-free errors cause a `98` panic, but only a minority of them. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
 
 ## Standard Library
 
@@ -159,7 +164,7 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 Eventually, these will go away in favor of `new`/`drop` or something. And hopefully be taken over by the compiler itself, so programmers can't screw it up.
 
 * `void free( void* )` - free the allocation pointed to by the passed pointer.
-* `void* malloc( size_t size )` - allocate the specified number of bytes of memory and return a pointer to it.
+* `void* malloc( size_t size )` - allocate (at least) the specified number of bytes of memory and return a pointer to it.
 
 ### `io`
 
@@ -224,8 +229,9 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `28` - Bad expression
 * `29` - Bad operator
 * `37` - Certain types of invalid block nesting
-* `47` - Unrecognized format conversion spec for `printf`.
-* `99` - Failed to get memory from the OS.
+* `47` - Unrecognized format conversion spec for `printf`
+* `98` - Certain double-`free` errors
+* `99` - Failed to get memory from the OS
 
 Most errors are not caught and result in compiler crashes, invalid assembly code, or code which will crash when executed.
 
