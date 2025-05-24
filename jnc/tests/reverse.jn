@@ -1,5 +1,5 @@
 char* STRING_A = "no commas here!";
-char* STRING_B = "perhaps one, or more, commas?";
+char* STRING_B = "perhaps four, or fewer, commas?";
 char* STRING_C = "I am a significantly longer string of characters to examine, but still have a comma.";
 char STOP_AT = ',';
 int CHARS_SCANNED = 0;
@@ -46,7 +46,6 @@ fn do_string(char* a) {
 fn strpos(char* a, char b) {
     char* d = a;
     char c = scan(d);
-    char* g = "is char '%c' actually '%c'? %b\n";
     while c ! b {
         if c = 0 {
             return -1;
@@ -72,17 +71,19 @@ fn strcpy(char* a) {
     return b;
 }
 
-fn strrev(char* a, int b) {
-    int d = 0;
-    b = b - 1; # don't move the stop char itself
-    while b > d {
-        char* c = a + b;
-        char* g = a + d;
+fn strrev(char* str, int end) {
+    int start = 0;
+    end = end - 1; # don't move the stop char itself
+    char* format = "swap '%c' for '%c', at %i and %i\n";
+    while end > start {
+        char* c = str + end;
+        char* g = str + start;
         char e = *c;
         char f = *g;
+        printf(format, f, e, start, end);
         *c = f;
         *g = e;
-        b = b - 1;
-        d = d + 1;
+        end = end - 1;
+        start = start + 1;
     }
 }

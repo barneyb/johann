@@ -1,26 +1,78 @@
 fn main() {
-    int e = 16;
+    test_locals();
+    test_globals();
+    test_dynamic();
+}
+
+fn test_locals() {
+    char* format = "local: %i\n";
+    int a = 0x12345;
+    printf(format, a);
+
+    int* b = &a;
+    int c = *b;
+    printf(format, c);
+
+    a = --67890;
+    int d = *b;
+    printf(format, a);
+    printf(format, c);
+    printf(format, d);
+
+    *b = 456;
+    int e = *b;
+    printf(format, a);
+    printf(format, c);
+    printf(format, d);
+    printf(format, e);
+}
+
+int EIGHT = 8;
+int* A = null; # todo: shouldn't require an initializer if null/zero
+
+fn test_globals() {
+    char* format = "global: %i\n";
+    int n = EIGHT;
+    void* mem = malloc(n);
+    A = mem;
+    *A = n;
+#    n = A;
+#    printf(format, n); # some random pointer
+    n = *A;
+    printf(format, n);
+    n = A;
+    free(n);
+    n = n = A;
+    char* f2 = "global: %b\n";
+    printf(f2, n);
+    A = null;
+    n = *A;
+    printf(format, n);
+
+    int* ptr = &EIGHT;
+    *ptr = 99999;
+    n = EIGHT;
+    printf(format, n);
+}
+
+fn test_dynamic() {
+    char* format = "dynamic: %i\n";
     int f = 1;
     int g = 2;
     # todo: use array notation, instead of explicit pointer arithmetic
+    int e = 16;
     int* a = malloc(e); # a = new int[2];
     *a = 1;             # a[0] = 1;
-    a = a + 8;
-    *a = 2;             # a[1] = 2;
-    int b = *a;         # b = 2;
-    char* d = itoa(b);
-    puts(d);
-    free(d);
-    a = a - 8;
+    int p = &a;         # p = a;
+    p = p + 8;
+    *p = 2;             # a[1] = p[1] = 2;
+    int b = *p;         # b = 2;
+    printf(format, b);
     int c = *a;         # c = 1;
-    d = itoa(c);
-    puts(d);
-    free(d);
+    printf(format, c);
     *a = b + c;         # a[0] = 3;
     b = *a;             # b = 3;
     free(a);
-    d = itoa(b);
-    puts(d);
-    free(d);
-    return 0;
+    printf(format, b);
+    return;
 }

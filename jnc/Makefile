@@ -2,18 +2,22 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
+JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
-VERSION = $(OUT)/inc_version.s
+VERSION = inc_version.jn
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/emitter.o \
+	$(LIB)/emitter.jn.o \
+	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.o \
+	$(LIB)/lexer.jn.o \
 	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
-	$(LIB)/token.o
+	$(LIB)/token.o \
+	$(LIB)/inc_version.jn.o \
 
 INCLUDES = \
 	inc_token_table.s \
-	$(VERSION)
 
 all: $(BIN)/jnc
 	@echo --------------------------------------------------
@@ -22,12 +26,10 @@ all: $(BIN)/jnc
 	$(BIN)/jnc -v
 	@echo --------------------------------------------------
 
-$(VERSION):
-	@mkdir -p $(OUT)
-	echo ".global __j_jnc_short_version" > $(VERSION)
-	echo "__j_jnc_short_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"' >> $(VERSION)
-	echo ".global __j_jnc_long_version" >> $(VERSION)
-	echo "__j_jnc_long_version: .asciz "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'"' >> $(VERSION)
+$(LIB)/inc_version.jn.o:
+	echo "char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\
+ 	char* JNC_LONG_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'";' \
+	| $(JNC) | gcc -o $(LIB)/inc_version.jn.o -x assembler -c -
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
@@ -37,8 +39,17 @@ $(JSTDLIB)::
 $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
 	gcc -o $@ -dead_strip $^
+	@rm -f $(LIB)/inc_version.jn.o # blow away version info, so it'll rebuild next time
 
 $(LIB)/%.o: %.s $(INCLUDES)
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
+
+$(OUT)/%.jn.s: %.jn
+	@mkdir -p $(OUT)
+	$(JNC) < $< > $@
+
+$(LIB)/%.jn.o: $(OUT)/%.jn.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 

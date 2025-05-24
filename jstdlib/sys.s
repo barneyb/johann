@@ -13,9 +13,11 @@ __j_exit:
     bl      __flush_stdout
     ldr     x0, [sp], 0x10
 
-    ; dump mem stats
+    ; dump mem stats if non-error
+    cmp     x0, #0
+    b.ne    sys_exit
     str     x0, [sp, -0x10]!
-    bl      __mem_stats
+    bl      __j_mem_stats__
     ldr     x0, [sp], 0x10
 
     sys_exit:
@@ -42,6 +44,16 @@ __j_panic:
     ; exit with status code
     ldr     x0, [sp], 0x10          ; load status
     b       sys_exit
+
+/* 197 - user_addr_t mmap( caddr_t addr, size_t len, int prot, int flags, int fd, off_t pos ) */
+.global __j_sys_mmap
+__j_sys_mmap:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    mov     x16, #197               ; 197 = mmap system call
+    svc     #0x80                   ; Call kernel
+    ldp     fp, lr, [sp], 0x10
+    ret
 
 /* ssize_t read( int fd, void *buf, size_t nbyte ) */
 .global __j_sys_read

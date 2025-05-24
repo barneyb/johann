@@ -1,0 +1,96 @@
+int ALIGN       = 16;
+int PAGE_SIZE   = 16384; # todo: compile-time dynamic!
+int MAP_ANON    = 4096;
+int MAP_PRIVATE = 2;
+int PROT_READ   = 1;
+int PROT_WRITE  = 2;
+
+# todo: these should be void*, but "variable" is still confused
+void start = null;
+void end = null;
+
+int alloc_stat_count = 0;
+int alloc_stat_size = 0;
+int free_stat_count = 0;
+
+fn mem_stats__() {
+    int ac = alloc_stat_count;
+    int fc = free_stat_count;
+    if ac ! fc {
+        # todo: free SIZE too
+        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees\n";
+        int as = alloc_stat_size;
+        printf(format, ac, as, fc);
+    }
+}
+
+fn free(void* ptr) {
+    if ptr = null {
+        return 0;
+    }
+    free_stat_count = free_stat_count + 1;
+    # todo: size too
+
+#    char* format = "    ;; free : %p\n";
+#    eprintf(format, ptr); # todo: size too
+
+
+    # todo /* 73 - int munmap(caddr_t addr, size_t len) */
+}
+
+fn malloc(int bytes) {
+    bytes = align(bytes);
+
+    if start = null {
+        get_more_memory(bytes);
+    }
+#    int e = start + bytes;
+#    if end < e {
+#        # todo: get more pages
+#    }
+
+    return allocate_chunk(bytes);
+}
+
+fn allocate_chunk(int bytes) {
+    void mem = start;
+    start = start + bytes;
+#    char* format = "    ;; alloc: %p (%x b)\n";
+#    eprintf(format, mem, bytes);
+    alloc_stat_count = alloc_stat_count + 1;
+    alloc_stat_size = alloc_stat_size + bytes;
+    return mem;
+}
+
+fn align(int bytes) {
+    # todo: bitwise ops would be nice...
+    int remainder = bytes % ALIGN;
+    if remainder ! 0 {
+        bytes = bytes - remainder;
+        bytes = bytes + ALIGN;
+    }
+    return bytes;
+}
+
+fn get_more_memory() {
+    # todo: having to use vars for constants is sorta silly...
+    int zero = 0;
+    int bytes = PAGE_SIZE;
+    bytes = bytes * 4;
+    int protocol = PROT_READ + PROT_WRITE;
+    int flags = MAP_ANON + MAP_PRIVATE;
+    int negOne = -1;
+    void mem = sys_mmap(zero, bytes, protocol, flags, negOne, zero);
+    if mem = null {
+        failed_to_mmap();
+    }
+    start = mem;
+    end = start + bytes;
+}
+
+fn failed_to_mmap() {
+    int err = 99;
+    char* msg = "ERROR: Failed to allocate\n";
+    int len = strlen(msg);
+    panic(err, msg, len);
+}

@@ -1,0 +1,46 @@
+int T_KW_FN = 1094; # 0x400 'F'
+int T_SEMI = 59;    #       ';'
+
+fn Emitter_return(void* self, void** buffer) {
+    int kw = T_KW_FN;
+    void* token = *buffer;
+    void* block = Emitter_innermost_block_of(self, kw, token);
+    int id = Emitter_Block_id(block);
+    token = buffer + 8;
+    token = *token;
+    kw = T_SEMI;
+    int type = Token_type(token);
+    if type ! kw {
+        buffer = buffer + 8;
+        Emitter_expr(self, buffer);
+    }
+    char* tmpl = "        b       _return_%i\n";
+    printf(tmpl, id);
+}
+
+fn Emitter_do_value_string(void* self, char* name) {
+    int seq = Emitter_seqnum(self);
+    char q = '"';
+    char* tmpl = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
+    printf(tmpl, seq, q, name, q, seq, seq);
+}
+
+fn Emitter_do_value_integer(void* self, int i) {
+    # todo: compound expressions sure would be handy...
+    if i > 32767 {
+        Emitter_do_value_integer_large(self, i);
+        return null;
+    } # todo: where's my else?!
+    if i < -32767 {
+        Emitter_do_value_integer_large(self, i);
+        return null;
+    }
+    char* tmpl = "        mov     x0, #%i ; tmpl_token_integer\n";
+    printf(tmpl, i);
+}
+
+fn Emitter_do_value_integer_large(void* self, int i) {
+    int seq = Emitter_seqnum(self);
+    char* tmpl = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+    printf(tmpl, seq, i, i, seq, seq);
+}

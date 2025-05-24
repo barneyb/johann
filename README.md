@@ -33,7 +33,7 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
-Functions are defined with the `fn` keyword. Use `return` to return a value. The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
+Functions are defined with the `fn` keyword. Use `return` to return (with a value or not). The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
 
     fn main() {
         return 0;
@@ -78,15 +78,15 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to take an address. A `*` can also be used on the left side of an assignment to write to the pointed-at memory.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Four unary operators are supported: `!`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
     *a = 1;             # a[0] = 1;
-    a = a + 8;          
-    *a = 2;             # a[1] = 2;
-    int b = *a;         # b = 2;
-    a = a - 8;
+    int p = &a;         # p = a;
+    p = p + 8;
+    *p = 2;             # a[1] = p[1] = 2;
+    int b = *p;         # b = 2;
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 
@@ -96,7 +96,7 @@ Strings are double-quoted, characters are single-quoted, and identifiers start w
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change.
 
-Integers are signed 64-bit values, but literals requiring more than 15-bits will compile into invalid assembly. If you need a greater magnitude, build it up with arithmetic. This will change.
+Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (aside from zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. A leading `-` indicates a negative value. A second `-` (associating right-to-left!) is a unary negate (for now).
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
 
@@ -222,6 +222,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars
+* `25` - Non-local call parameter
 * `26` - Bad token/value
 * `27` - Bad statement
 * `28` - Bad expression

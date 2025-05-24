@@ -66,7 +66,7 @@ __j_main:
 get_name:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    ; sp[8] : int read
+    ; sp[8] : int nchars
     ; sp[0] : char* buffer
     stp     xzr, xzr, [sp, -0x10]!
 
@@ -83,17 +83,17 @@ get_name:
         b.lt    get_name_done
         cmp     x0, '\n'
         b.eq    get_name_done
-        ldp     x1, x2, [sp]        ; load pointer -> buffer and read
+        ldp     x1, x2, [sp]        ; load pointer -> buffer and nchars
         add     x1, x1, x2          ; pointer -> buffer[len]
-        add     x2, x2, #1          ; increment read
+        add     x2, x2, #1          ; increment nchars
         cmp     x2, BUF_SIZE
         b.ge    get_name_done       ; out of room (with the null to come)
         strb    w0, [x1]            ; store char
-        str     x2, [sp, 0x8]       ; store read
+        str     x2, [sp, 0x8]       ; store nchars
         b       get_name_again
 
     get_name_done:
-    ldp     x0, x1, [sp]            ; load pointer -> buffer and read
+    ldp     x0, x1, [sp]            ; load pointer -> buffer and nchars
     cmp     x1, #1
     b.ge    get_name_doit           ; read at least one 'real' byte
     ; read nothing

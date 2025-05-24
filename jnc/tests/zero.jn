@@ -1,1 +1,22 @@
-fn main() {}
+fn main() {
+    char* format = "zero: %i (%x)\n";
+    int zero = make_zero();
+    printf(format, zero, zero);
+    return zero;
+}
+
+fn make_zero() {
+    char* format = "n: %i\n";
+    int one = 1; printf(format, one);
+    int two = one + one; printf(format, two);
+    int three = two + one; printf(format, three);
+    int four = two * two; printf(format, four);
+    int seven = three + four; printf(format, seven);
+    three = seven / two; printf(format, three);
+    int eight = four * two; printf(format, eight);
+    two = eight % three; printf(format, two);
+#    int six = three * two; printf(format, six); todo
+#    int five = six - one; printf(format, five); todo
+    int zero = four % two; printf(format, zero);
+    return zero;
+}

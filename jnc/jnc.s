@@ -1,21 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-.include "target/out/inc_version.s"
 opt_v: .asciz "-v"
 opt_version: .asciz "--version"
-
-err_panic: .ascii "Compilation error\n"
-err_panic_len = . - err_panic
-
-tmpl_panic: .asciz ".data\n\
-err_compiler_fail: .ascii \"Prior compilation error\\n\"\n\
-err_compiler_fail_len = . - err_compiler_fail\n\
-.text\n\
-mov x0, #%i\n\
-adrp x1, err_compiler_fail@PAGE\n\
-add x1, x1, err_compiler_fail@PAGEOFF\n\
-mov x2, err_compiler_fail_len\n\
-bl __j_panic\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
@@ -57,79 +43,22 @@ __j_main:
         b       main_arg_loop
 
     main_short_version:
-        adrp    x0, __j_jnc_short_version@PAGE
-        add     x0, x0, __j_jnc_short_version@PAGEOFF
+        adrp    x0, _j_gbl_JNC_SHORT_VERSION@PAGE
+        add     x0, x0, _j_gbl_JNC_SHORT_VERSION@PAGEOFF
         bl      __j_puts
         b       main_success
 
     main_long_version:
-        adrp    x0, __j_jnc_long_version@PAGE
-        add     x0, x0, __j_jnc_long_version@PAGEOFF
+        adrp    x0, _j_gbl_JNC_LONG_VERSION@PAGE
+        add     x0, x0, _j_gbl_JNC_LONG_VERSION@PAGEOFF
         bl      __j_puts
         b       main_success
 
     _main_jnc:
-    bl      jnc
+    bl      __j_jnc_compile
 
     main_success:
     mov     x0, xzr
     main_exit:
     ldp     fp, lr, [sp], 0x10
     ret
-
-jnc:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x20, x21, [sp, -0x10]!
-    ; end frame
-
-    bl      __j_Lexer__new          ; lex = new Lexer(r)
-    mov     x20, x0                 ; stash pointer -> lex
-    bl      __j_Parser__new         ; parser = new Parser(lex);
-    mov     x21, x0                 ; stash pointer -> parser
-
-    bl      _parser_parse
-
-    mov     x0, x21
-    bl      __j_Parser_drop         ; parser.drop()
-    mov     x0, x20
-    bl      __j_Lexer_drop          ; lex.drop()
-
-    ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* void jnc_panic( char* format, [val, line, char]* token, int code ) */
-.global __j_jnc_panic
-__j_jnc_panic:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x0, x1, [sp, -0x10]!; store format & token
-    str     x2, [sp, -0x10]!    ; store status code
-
-    ; to StdErr
-    ldr     x3, [x1, 0x8]
-    ldr     x4, [x1, 0x10]
-    ldr     x2, [x1]
-    ldr     x1, [sp]            ; load status code
-    bl      __j_eprintf
-    ; to the output file
-    ldp     x0, x1, [sp, 0x10]  ; load format & token
-    ldr     x3, [x1, 0x8]
-    ldr     x4, [x1, 0x10]
-    ldr     x2, [x1]
-    ldr     x1, [sp]            ; load status code
-    bl      __j_printf
-    ; ensure the output file will error if executed
-    ldr     x1, [sp]            ; load status code
-    adrp    x0, tmpl_panic@PAGE
-    add     x0, x0, tmpl_panic@PAGEOFF
-    bl      __j_printf
-    ; panic!
-    ldr     x0, [sp], 0x10      ; load status code
-    adrp    x1, err_panic@PAGE
-    add     x1, x1, err_panic@PAGEOFF
-    mov     x2, err_panic_len
-    b       __j_panic

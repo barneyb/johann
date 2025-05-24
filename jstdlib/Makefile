@@ -2,11 +2,13 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
+JNC = ../bin/jnc
 OBJECTS = \
-	$(LIB)/allocator.o \
+	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
 	$(LIB)/table.o \
 	$(LIB)/string.o \
+	$(LIB)/string.jn.o \
 	$(LIB)/sys.o \
 
 all: $(LIB)/jstdlib.o
@@ -18,6 +20,14 @@ $(LIB)/jstdlib.o: $(OBJECTS)
 # Pattern targets
 
 $(LIB)/%.o: %.s
+	@mkdir -p $(LIB)
+	gcc -o $@ -c $<
+
+$(OUT)/%.jn.s: %.jn
+	@mkdir -p $(OUT)
+	$(JNC) < $< > $@
+
+$(LIB)/%.jn.o: $(OUT)/%.jn.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 

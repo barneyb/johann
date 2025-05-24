@@ -1,3 +1,16 @@
-2
-1
-3
+local: 74565
+local: 74565
+local: 67890
+local: 74565
+local: 67890
+local: 456
+local: 74565
+local: 67890
+local: 456
+global: 8
+global: true
+global: 0
+global: 99999
+dynamic: 2
+dynamic: 1
+dynamic: 3

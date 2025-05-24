@@ -179,7 +179,7 @@ _lexer_token:
     cmp     x0, '9'
     b.le    token_int
 
-    ; print the char that fell through
+    ; indicate the char that fell through
         str     x22, [sp, -0x10]!
         stp     x0, x21, [sp, -0x10]!
         adrp    x0, err_bad_char@PAGE
@@ -258,7 +258,7 @@ _lexer_token:
     b       token_return
 
     token_string:
-    bl      lex_string
+    bl      __j_Lexer_lex_string
     mov     x23, x0                 ; stash pointer -> name
     mov     x0, T_STRING
     bl      __j_Token__new
@@ -325,43 +325,13 @@ lex_digits:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!  ; stash negative, value
-    stp     x21, x8, [sp, -0x10]!   ; stash consumed, XR
 
-    mov     x21, xzr                ; chars consumed
-    cmp     x0, '-'
-    b.eq    lex_digits_negative
-    mov     x19, FALSE              ; not negative
-    sub     x20, x0, '0'            ; parse first digit
-    b       lex_digits_go
-    lex_digits_negative:
-    mov     x19, TRUE               ; negative
-    mov     x20, xzr
-    lex_digits_go:
-
-    lex_digits_again:
-    bl      __j_peekchar
-    bl      __j_isdigit
-    cmp     x0, FALSE
-    b.eq    lex_digits_done
-    bl      __j_getchar
-    sub     x0, x0, '0'             ; parse
-    mov     x1, #10                 ; base
-    madd    x20, x20, x1, x0        ; add to result
-    add     x21, x21, #1            ; count char
-    b       lex_digits_again
-
-    lex_digits_done:
-    cmp     x19, FALSE
-    b.eq    lex_digits_return
-    neg     x20, x20
-
-    lex_digits_return:
-    ldr     x19, [sp, 0x8]          ; load pointer -> indirect return
-    stp     x20, x21, [x19]         ; indirect return
-
-    ldp     x21, xzr, [sp], 0x10
-    ldp     x19, x20, [sp], 0x10
+    str     x8, [sp, -0x10]!        ; store pointer -> indirect return
+    add     x1, x8, 0x8             ; pointer -> consumed
+    str     xzr, [x1]               ; start counting at zero
+    bl      __j_Lexer_lex_digits
+    ldr     x8, [sp], 0x10          ; load pointer -> indirect return
+    str     x0, [x8]                ; store val
     ldp     fp, lr, [sp], 0x10
     ret
 
@@ -411,57 +381,6 @@ lex_identifier:
     ldr     x22, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
-    ret
-
-/* char* lex_string( ) */
-lex_string:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!
-    stp     x21, x22, [sp, -0x10]!
-    ; end frame
-    mov     x22, 0x10
-    mov     x0, x22
-    bl      __j_malloc
-    mov     x20, x0                 ; pointer -> start of buffer
-    mov     x21, x20                ; pointer -> buffer[pos] to write
-
-    lex_string_char:
-    ; forgo the EOF check - there's no valid syntax for that case.
-    bl      __j_getchar
-    cmp     x0, '"'
-    b.eq    lex_string_return
-    sub     x5, x21, x20
-    cmp     x5, x22
-    b.lt    lex_string_append
-        ; todo: this _should_ be `realloc`, but the allocator doesn't know length!
-        str     x0, [sp, -0x10]!    ; store the char just read
-        lsl     x22, x22, #1        ; double it
-        mov     x0, x22
-        bl      __j_malloc
-        mov     x1, x20
-        sub     x2, x21, x20
-        stp     x0, x2, [sp, -0x10]!; store pointer -> new & len
-        bl      __j_memcpy          ; copy from old to new
-        mov     x0, x20             ; free old
-        bl      __j_free
-        ldp     x20, x2, [sp], 0x10 ; restore pointer -> new & len
-        add     x21, x20, x2        ; pointer -> buffer[pos] to write
-        ldr     x0, [sp], 0x10      ; load the char just read
-    lex_string_append:
-    strb    w0, [x21], #1           ; add it to the string
-    b       lex_string_char
-
-    lex_string_return:
-    mov     x0, NULL                ; null-terminator
-    strb    w0, [x21], #1           ; add it to the string
-
-    mov     x0, x20                 ; return pointer -> buffer
-    ; restore frame
-    ldp     x21, x22, [sp], 0x10
-    ldp     x19, x20, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
     ret
 
 /* void convert_keyword( Token* token ) */
