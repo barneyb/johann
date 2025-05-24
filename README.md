@@ -78,15 +78,15 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Three unary operators are supported: `!`, `-`, and `*` (pointer dereference). There is no `&` to take an address. A `*` can also be used on the left side of an assignment to write to the pointed-at memory.
+Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Four unary operators are supported: `!`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
     *a = 1;             # a[0] = 1;
-    a = a + 8;          
-    *a = 2;             # a[1] = 2;
-    int b = *a;         # b = 2;
-    a = a - 8;
+    int p = &a;         # p = a;
+    p = p + 8;
+    *p = 2;             # a[1] = p[1] = 2;
+    int b = *p;         # b = 2;
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 

@@ -1286,7 +1286,7 @@ do_expr:
     ldr     x1, [x20]               ; pointer -> first token
     bl      do_token
     b       do_expr_return
-    ; if second token is OBRACE, it's a condition
+    ; if second token is OBRACE, it's a condition (of if/while)
     do_expr_cond:
     cmp     x23, T_OBRACE
     b.ne    do_expr_call
@@ -1335,8 +1335,10 @@ do_expr:
     mov     x0, x22
     bl      __j_Token_type
     mov     x23, x0                 ; type of first token
-    ; if the first token is BANG, MINUS, STAR, do unary op
+    ; if the first token is AMP, BANG, MINUS, STAR, do unary op
     do_expr_deref:
+    cmp     x23, T_AMP
+    b.eq    do_expr_unop
     cmp     x23, T_BANG
     b.eq    do_expr_unop
     cmp     x23, T_MINUS
@@ -1373,6 +1375,10 @@ tmpl_un_not:    .asciz "        cmp     x0, FALSE ; tmpl_un_not\n\
         expr_%i_was_true:\n\
         mov     x0, FALSE\n\
         expr_%i_end:\n"
+; "add-a-negative" so it matches the addressing offsets
+tmpl_un_take_addr_local: .asciz "        add     x0, fp, -%x ; tmpl_un_take_addr_local\n"
+tmpl_un_take_addr_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE ; tmpl_un_take_addr_global\n\
+        add     x0, x0, _j_gbl_%s@PAGEOFF\n"
 tmpl_un_negate: .asciz "        neg     x0, x0 ; tmpl_un_negate\n"
 tmpl_un_deref_quad: .asciz "        ldr     x0, [x0] ; tmpl_un_deref_quad\n"
 tmpl_un_deref_byte: .asciz "        ldrb    w0, [x0] ; tmpl_un_deref_byte\n"
@@ -1388,15 +1394,19 @@ do_unary_op:
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
 
-    ; second token is the operand
-    mov     x0, x19
-    ldr     x1, [x20, 0x8]
-    bl      do_token
-
     ; first token is the operator
     ldr     x0, [x20]
     bl      __j_Token_type          ; token.type()
     mov     x21, x0                 ; stash token type
+
+    ; this one needs different operand handling
+    cmp     x21, T_AMP
+    b.eq    do_un_take_addr
+
+    ; second token is the operand
+    mov     x0, x19
+    ldr     x1, [x20, 0x8]
+    bl      do_token
 
     cmp     x21, T_BANG
     b.eq    do_un_not
@@ -1412,6 +1422,28 @@ do_unary_op:
         mov     x2, #29             ; error code
         bl      __j_jnc_panic       ; print and terminate
 
+    do_un_take_addr:
+    mov     x0, x19
+    ldr     x1, [x20, 0x8]
+    bl      lookup_symbol_by_token
+    bl      __j_Symbol_offset
+    cmp     x0, xzr
+    b.gt    do_un_take_addr_local
+        ldr     x0, [x20, 0x8]
+        bl      __j_Token_value
+        mov     x2, x0
+        mov     x1, x0
+        adrp    x0, tmpl_un_take_addr_global@PAGE
+        add     x0, x0, tmpl_un_take_addr_global@PAGEOFF
+        bl      __j_printf
+        b       do_un_take_addr_go
+    do_un_take_addr_local:
+        lsl     x1, x0, 3
+        adrp    x0, tmpl_un_take_addr_local@PAGE
+        add     x0, x0, tmpl_un_take_addr_local@PAGEOFF
+        bl      __j_printf
+    do_un_take_addr_go:
+    b       do_un_return
     do_un_not:
     mov     x0, x19
     bl      __j_Emitter_seqnum

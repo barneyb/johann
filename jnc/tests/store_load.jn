@@ -1,6 +1,30 @@
 fn main() {
+    test_locals();
     test_globals();
     test_dynamic();
+}
+
+fn test_locals() {
+    char* format = "local: %i\n";
+    int a = 0x12345;
+    printf(format, a);
+
+    int* b = &a;
+    int c = *b;
+    printf(format, c);
+
+    a = --67890;
+    int d = *b;
+    printf(format, a);
+    printf(format, c);
+    printf(format, d);
+
+    *b = 456;
+    int e = *b;
+    printf(format, a);
+    printf(format, c);
+    printf(format, d);
+    printf(format, e);
 }
 
 int EIGHT = 8;
@@ -24,21 +48,26 @@ fn test_globals() {
     A = null;
     n = *A;
     printf(format, n);
+
+    int* ptr = &EIGHT;
+    *ptr = 99999;
+    n = EIGHT;
+    printf(format, n);
 }
 
 fn test_dynamic() {
     char* format = "dynamic: %i\n";
-    int e = 16;
     int f = 1;
     int g = 2;
     # todo: use array notation, instead of explicit pointer arithmetic
+    int e = 16;
     int* a = malloc(e); # a = new int[2];
     *a = 1;             # a[0] = 1;
-    a = a + 8;
-    *a = 2;             # a[1] = 2;
-    int b = *a;         # b = 2;
+    int p = &a;         # p = a;
+    p = p + 8;
+    *p = 2;             # a[1] = p[1] = 2;
+    int b = *p;         # b = 2;
     printf(format, b);
-    a = a - 8;
     int c = *a;         # c = 1;
     printf(format, c);
     *a = b + c;         # a[0] = 3;
