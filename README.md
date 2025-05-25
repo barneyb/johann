@@ -27,7 +27,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters aren't _forbidden_, but they also don't work. There is no locale/language awareness.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters are forbidden; only ASCII characters are supported. There is no locale/language awareness.
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
@@ -222,7 +222,7 @@ One obsolete function remains available, and will eventually be removed.
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
-* `17` - Unrecognized token
+* `17` - Unrecognized character
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars
@@ -233,6 +233,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `29` - Bad operator
 * `37` - Certain types of invalid block nesting
 * `47` - Unrecognized format conversion spec for `printf`
+* `77` - Multibyte character
 * `98` - Certain double-`free` errors
 * `99` - Failed to get memory from the OS
 

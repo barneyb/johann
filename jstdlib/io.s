@@ -95,6 +95,20 @@ __j_peekchar:
     add     x1, x1, buf_stdin@PAGEOFF
     add     x1, x1, x2              ; pointer -> buf[pos]
     ldrb    w0, [x1]
+        cmp x0, 0xFF                ; EOF (-1)
+        b.eq peekchar_ascii
+        cmp x0, 0x7F                ; end of ASCII
+        b.le peekchar_ascii
+        .data
+        err_no_multibyte: .asciz "Multibyte character %x is forbidden\n"
+        .text
+        mov x1, x0
+        adrp x0, err_no_multibyte@PAGE
+        add x0, x0, err_no_multibyte@PAGEOFF
+        bl __j_eprintf
+        mov x0, 77
+        bl  __j_exit
+        peekchar_ascii:
     sxtb    x0, w0
 
     ldp     fp, lr, [sp], 0x10
