@@ -1,7 +1,7 @@
 int T_KW_FN = 1094; # 0x400 'F'
 int T_SEMI = 59;    #       ';'
 
-fn Emitter_return(void* self, void** buffer) {
+pub fn Emitter_return(void* self, void** buffer) {
     int kw = T_KW_FN;
     void* token = *buffer;
     void* block = Emitter_innermost_block_of(self, kw, token);
@@ -18,14 +18,14 @@ fn Emitter_return(void* self, void** buffer) {
     printf(tmpl, id);
 }
 
-fn Emitter_do_value_string(void* self, char* name) {
+pub fn Emitter_do_value_string(void* self, char* name) {
     int seq = Emitter_seqnum(self);
     char q = '"';
     char* tmpl = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
     printf(tmpl, seq, q, name, q, seq, seq);
 }
 
-fn Emitter_do_value_integer(void* self, int i) {
+pub fn Emitter_do_value_integer(void* self, int i) {
     # todo: compound expressions sure would be handy...
     if i > 32767 {
         Emitter_do_value_integer_large(self, i);

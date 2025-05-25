@@ -14,10 +14,10 @@ fn reuse() {
     int* end = addrs + 0x40;
     char* f = "  pointer of interest: %p\n";
     int n;
-    n = addrs % 0x1000; printf(f, n); print_free_list();
+    n = addrs % 0x1000; printf(f, n);
 
     int* a = malloc(len);
-    n = a % 0x1000; printf(f, n); print_free_list();
+    n = a % 0x1000; printf(f, n);
     if a < end {
         f = "expected %p to be > %p\n";
         printf(f, a, end);
@@ -26,15 +26,15 @@ fn reuse() {
     free(a); a = null;
 
     int* a_i = addrs + 0x20; # addrs[4]
-    n = a_i % 0x1000; printf(f, n); print_free_list();
+    n = a_i % 0x1000; printf(f, n);
     a = *a_i;
-    n = a % 0x1000; printf(f, n); print_free_list();
+    n = a % 0x1000; printf(f, n);
     *a_i = null;
     free(a);
     a_i = a;
-    n = a_i % 0x1000; printf(f, n); print_free_list();
+    n = a_i % 0x1000; printf(f, n);
     a = malloc(len);
-    n = a % 0x1000; printf(f, n); print_free_list();
+    n = a % 0x1000; printf(f, n);
     if a ! a_i {
         f = "expected %p to be = %p\n";
         printf(f, a, a_i);

@@ -1,17 +1,17 @@
-fn isdigit(char c) {
+pub fn isdigit(char c) {
     if c < '0' { return false; }
     if c > '9' { return false; }
     return true;
 }
 
-fn isspace(char c) {
+pub fn isspace(char c) {
     if c = ' ' { return  true; }
     if c < 9   { return false; } # < \t
     if c > 13  { return false; } # > \r
     return true;
 }
 
-fn isxdigit(char c) {
+pub fn isxdigit(char c) {
     if c < '0' { return false; }
     if c < ':' { return  true; } # <= 9
     if c < 'A' { return false; }
@@ -21,7 +21,7 @@ fn isxdigit(char c) {
     return false;
 }
 
-fn strclone(char* src) {
+pub fn strclone(char* src) {
     int len = strlen(src);
     len = len + 1; # for the null terminator
     char* dest = malloc(len);
@@ -30,7 +30,7 @@ fn strclone(char* src) {
 }
 
 # Once apple's CPUs support FEAT_MOPS, use the CPYP/CPYM/CPYE instructions.
-fn memcpy(void* dest, void* src, int count) {
+pub fn memcpy(void* dest, void* src, int count) {
     # copy byte-by-byte up to an 8-byte boundary
     int i = count % 8;
     int* d = dest;

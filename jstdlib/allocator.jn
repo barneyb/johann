@@ -16,7 +16,7 @@ int ALLOC_STAT_SIZE = 0;
 int FREE_STAT_COUNT = 0;
 int FREE_STAT_SIZE = 0;
 
-fn mem_stats__() {
+pub fn mem_stats__() {
     int ac = ALLOC_STAT_COUNT;
     int as = ALLOC_STAT_SIZE;
     int fc = FREE_STAT_COUNT;
@@ -30,7 +30,7 @@ fn mem_stats__() {
     }
 }
 
-fn free(void* mem) {
+pub fn free(void* mem) {
     char* f;
     if mem = null {
         return 0;
@@ -79,14 +79,13 @@ fn free(void* mem) {
     mem = mem + 8;
     *mem = next;
 
-        print_free_list();
+#        print_free_list();
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
 fn print_free_list() {
-    return;
     char* f = "[FREE LIST: %p\n";
     void curr = FREE_LIST;
     printf(f, curr);
@@ -155,7 +154,7 @@ fn find_free_chunk(int bytes) {
     return curr;
 }
 
-fn malloc(int bytes) {
+pub fn malloc(int bytes) {
     int aln = MALLOC_ALIGN;
     bytes = align(bytes, aln);
 

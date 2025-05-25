@@ -1,7 +1,7 @@
 # This one's tricky. The value lexed is returned, and char_count is incremented
 # for each character read. In assembly, it was a composite return (via x8), but
 # Johann's not that capable (yet).
-fn Lexer_lex_digits(char first_char, int* char_count) {
+pub fn Lexer_lex_digits(char first_char, int* char_count) {
     bool is_negative = false;
     int n;
     # deal with negatives first
@@ -100,7 +100,7 @@ fn parse_hex_digit(char c) {
     return c - '0';
 }
 
-fn Lexer_lex_string() {
+pub fn Lexer_lex_string() {
     int len = 16;
     int i = 0;
     # todo: oh, for array syntax...

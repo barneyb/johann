@@ -1,6 +1,6 @@
 char* ERR_PANIC = "Compilation error";
 
-fn jnc_compile() {
+pub fn jnc_compile() {
     void* lex = Lexer__new();
     void* parser = Parser__new(lex);
 
@@ -11,7 +11,7 @@ fn jnc_compile() {
 }
 
 # token is a [val, line, char] tuple to dissect for the format
-fn jnc_panic(char* format, void* token, int status) {
+pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
     int val = *token;
     token = token + 8;
