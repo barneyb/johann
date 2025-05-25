@@ -772,23 +772,22 @@ do_loop_thinger:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 tmpl_global_pub: .asciz "    .global _j_gbl_%s ; tmpl_global_pub\n"
-tmpl_global_bool: .asciz "    .data ; tmpl_global_bool\n\
-        _j_gbl_%s: .byte %i\n\
-    .text\n"
-tmpl_global_int: .asciz "    .data ; tmpl_global_int\n\
-        _j_gbl_%s: .quad %i\n\
+tmpl_width_byte: .asciz ".byte"
+tmpl_width_quad: .asciz ".quad"
+tmpl_width_string: .asciz ".asciz"
+tmpl_global_raw: .asciz "    .data ; tmpl_global_raw\n\
+        _j_gbl_%s: %s %i\n\
     .text\n"
 tmpl_global_char: .asciz "    .data ; tmpl_global_char\n\
-        _j_gbl_%s: .byte '%c'\n\
+        _j_gbl_%s: %s '%c'\n\
     .text\n"
 tmpl_global_string: .asciz "    .data ; tmpl_global_string\n\
-        _j_gbl_%s: .asciz \"%s\"\n\
+        _j_gbl_%s: %s \"%s\"\n\
     .text\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
-/* void do_decl( Emitter* self, [Token*] buffer ) */
-
+/* Symbol* vardecl( Emitter* self, [Token*] buffer ) */
 .global __j_Emitter_vardecl
 __j_Emitter_vardecl:
     stp     fp, lr, [sp, -0x10]!
@@ -919,6 +918,7 @@ __j_Emitter_vardecl:
 ;        add x0, x0, ns@PAGEOFF
 ;        bl __j_printf
 
+    mov     x0, x23                 ; return pointer -> symbols
     add     sp, sp, 0x10            ; release locals
 
     ldp     x23, x24, [sp], 0x10
@@ -927,6 +927,7 @@ __j_Emitter_vardecl:
     ldp     fp, lr, [sp], 0x10
     ret
 
+/* void do_decl( Emitter* self, [Token*] buffer ) */
 do_decl:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
@@ -937,6 +938,8 @@ do_decl:
     mov     x20, x1                 ; stash pointer -> buffer
 
     bl      __j_Emitter_vardecl
+    bl      __j_Symbol_offset
+    mov     x23, x0                 ; stash width
 
     ; scan until find an ASSIGN or SEMI
     add     x21, x20, #8            ; first token is type
@@ -975,15 +978,24 @@ do_decl:
     str     x0, [sp, -0x10]!        ; store pointer -> name
     mov     x0, x20                 ; pointer -> value token
     bl      __j_Token_value         ; pointer -> value
-    mov     x2, x0
+    mov     x3, x0
+    cmp     x23, #1
+    b.eq    do_decl_byte_width
+        adrp    x2, tmpl_width_quad@PAGE
+        add     x2, x2, tmpl_width_quad@PAGEOFF
+        b       do_decl_width_ready
+    do_decl_byte_width:
+        adrp    x2, tmpl_width_byte@PAGE
+        add     x2, x2, tmpl_width_byte@PAGEOFF
+    do_decl_width_ready:
     ldr     x1, [sp], 0x10          ; load pointer -> name
 
     cmp     x21, T_BOOL
-    b.eq    do_decl_bool
+    b.eq    do_decl_raw
     cmp     x21, T_CHAR
     b.eq    do_decl_char
     cmp     x21, T_INT
-    b.eq    do_decl_int
+    b.eq    do_decl_raw
     cmp     x21, T_STRING
     b.eq    do_decl_string
 
@@ -994,14 +1006,9 @@ do_decl:
         mov     x2, #26             ; error code
         bl      __j_jnc_panic       ; print and terminate
 
-    do_decl_bool:
-    adrp    x0, tmpl_global_bool@PAGE
-    add     x0, x0, tmpl_global_bool@PAGEOFF
-    b       do_decl_emit_global
-
-    do_decl_int:
-    adrp    x0, tmpl_global_int@PAGE
-    add     x0, x0, tmpl_global_int@PAGEOFF
+    do_decl_raw:
+    adrp    x0, tmpl_global_raw@PAGE
+    add     x0, x0, tmpl_global_raw@PAGEOFF
     b       do_decl_emit_global
 
     do_decl_char:
@@ -1012,6 +1019,8 @@ do_decl:
     do_decl_string:
     adrp    x0, tmpl_global_string@PAGE
     add     x0, x0, tmpl_global_string@PAGEOFF
+    adrp    x2, tmpl_width_string@PAGE
+    add     x2, x2, tmpl_width_string@PAGEOFF
     b       do_decl_emit_global
 
     do_decl_emit_global:
