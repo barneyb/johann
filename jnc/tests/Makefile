@@ -19,7 +19,7 @@ all: \
 	zero \
 
 	# verify there aren't any memory complaints
-	find $(OUT) -name '*.s' | (! xargs grep -A1 '; MEM: ' )
+	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )
 
 # non-standard targets
 

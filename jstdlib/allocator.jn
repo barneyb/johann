@@ -11,20 +11,31 @@ void HEAP_END = null;
 
 void FREE_LIST = null;
 
-int ALLOC_STAT_COUNT = 0;
-int ALLOC_STAT_SIZE = 0;
-int FREE_STAT_COUNT = 0;
-int FREE_STAT_SIZE = 0;
+int STAT_MMAP_COUNT = 0;
+int STAT_MMAP_SIZE = 0;
+int STAT_CHUNK_COUNT = 0;
+int STAT_CHUNK_SIZE = 0;
+int STAT_ALLOC_COUNT = 0;
+int STAT_ALLOC_SIZE = 0;
+int STAT_FREE_COUNT = 0;
+int STAT_FREE_SIZE = 0;
 
 pub fn mem_stats__() {
-    int ac = ALLOC_STAT_COUNT;
-    int as = ALLOC_STAT_SIZE;
-    int fc = FREE_STAT_COUNT;
-    int fs = FREE_STAT_SIZE;
+    int ac = STAT_ALLOC_COUNT;
+    int as = STAT_ALLOC_SIZE;
+    int fc = STAT_FREE_COUNT;
+    int fs = STAT_FREE_SIZE;
     bool c = ac ! fc;
     bool s = as ! fs;
     if c + s {
         char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
+        printf(format, ac, as, fc, fs);
+        eprintf(format, ac, as, fc, fs);
+        format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%x bytes)\n";
+        ac = STAT_CHUNK_COUNT;
+        as = STAT_CHUNK_SIZE;
+        fc = STAT_MMAP_COUNT;
+        fs = STAT_MMAP_SIZE;
         printf(format, ac, as, fc, fs);
         eprintf(format, ac, as, fc, fs);
     }
@@ -33,7 +44,7 @@ pub fn mem_stats__() {
 pub fn free(void* mem) {
     char* f;
     if mem = null {
-        return 0;
+        return null;
     }
     # load the size/bytes from the header
     int a = mem - 0x8;
@@ -42,8 +53,20 @@ pub fn free(void* mem) {
 #        f = " ; free  %x bytes at %p\n";
 #        printf(f, bytes, mem);
 
-    FREE_STAT_COUNT = FREE_STAT_COUNT + 1;
-    FREE_STAT_SIZE = FREE_STAT_SIZE + bytes;
+    if bytes = 0 {
+        f = "Zero-byte free at %p. First quadword of chunk: %x\n";
+        a = *mem;
+        eprintf(f, mem, a);
+        f = "  Last quadword of prev chunk: %x\n";
+        a = mem - 0x10; # go back to last quadword of prev chunk
+        a = *a;
+        eprintf(f, a);
+        a = 88;
+        exit(a);
+    }
+
+    STAT_FREE_COUNT = STAT_FREE_COUNT + 1;
+    STAT_FREE_SIZE = STAT_FREE_SIZE + bytes;
 
     # header remains "len"
     # first quad is "prev" pointer
@@ -155,6 +178,7 @@ fn find_free_chunk(int bytes) {
 }
 
 pub fn malloc(int bytes) {
+    char* f;
     int aln = MALLOC_ALIGN;
     bytes = align(bytes, aln);
 
@@ -176,27 +200,31 @@ pub fn malloc(int bytes) {
         *mem = bytes; # the header
         mem = mem + 0x8; # user chunk
         HEAP_TOP = mem + bytes;
+#            f = " ; new %x byte chunk\n";
+#            printf(f, bytes);
+        STAT_CHUNK_COUNT = STAT_CHUNK_COUNT + 1;
+        STAT_CHUNK_SIZE = STAT_CHUNK_SIZE + bytes;
     }
     int chunk_size = mem - 0x8;
     chunk_size = *chunk_size;
 
-#        char* f;
 #        if chunk_size = bytes {
 #            f = " ; alloc %x bytes at %p\n";
-#            printf(f, bytes, mem);
+#            printf(f, chunk_size, mem);
 #        }
 #        if chunk_size ! bytes {
-#            f = " ; alloc %x bytes at %p (CHUNK OF %x)\n";
-#            printf(f, bytes, mem, chunk_size);
+#            f = " ; alloc %x bytes at %p (waste %x)\n";
+#            int waste = chunk_size - bytes;
+#            printf(f, chunk_size, mem, waste);
 #        }
 #        if FREE_LIST ! null {
 #            print_free_list();
 #        }
 
-    ALLOC_STAT_COUNT = ALLOC_STAT_COUNT + 1;
+    STAT_ALLOC_COUNT = STAT_ALLOC_COUNT + 1;
     # Only 'bytes` were requested, but the chunk size is what free can correlate
     # with, so that's what gets recorded.
-    ALLOC_STAT_SIZE = ALLOC_STAT_SIZE + chunk_size;
+    STAT_ALLOC_SIZE = STAT_ALLOC_SIZE + chunk_size;
     return mem;
 }
 
@@ -233,6 +261,8 @@ fn get_more_memory(int bytes) {
     }
     HEAP_TOP = mem;
     HEAP_END = mem + bytes;
+    STAT_MMAP_COUNT = STAT_MMAP_COUNT + 1;
+    STAT_MMAP_SIZE = STAT_MMAP_SIZE + bytes;
 }
 
 fn mmap_internal(void at, int bytes) {

@@ -15,7 +15,7 @@ all: \
 	allocations \
 
 	# verify there aren't any memory complaints
-	find $(OUT) -name '*.s' | (! xargs grep -A1 '; MEM: ' )
+	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
