@@ -1,0 +1,33 @@
+
+TEST reuse:
+{NEW: alloc 8 slots
+    NEW> 0x000000008
+    NEW> 0x000000050
+    NEW> 0x000000068
+    NEW> 0x000000080
+    NEW> 0x000000098
+    NEW> 0x0000000b0
+    NEW> 0x0000000c8
+    NEW> 0x0000000e0
+    NEW> 0x0000000f8
+    NEW complete!
+}
+  pointer of interest: 0x000000008
+  pointer of interest: 0x000000110
+  pointer of interest: 0x000000028
+  pointer of interest: 0x0000000b0
+  pointer of interest: 0x0000000b0
+  pointer of interest: 0x0000000b0
+{DROP: free 8 slots at 0x000000008
+    DROP> 0x0000000f8
+    DROP> 0x0000000e0
+    DROP> 0x0000000c8
+    <ALREADY DROPPED>
+    DROP> 0x000000098
+    DROP> 0x000000080
+    DROP> 0x000000068
+    DROP> 0x000000050
+    DROP> 0x000000008
+    DROP complete!
+}
+/reuse

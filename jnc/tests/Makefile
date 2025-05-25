@@ -18,6 +18,9 @@ all: \
 	sum \
 	zero \
 
+	# verify there aren't any memory complaints
+	find $(OUT) -name '*.s' | (! xargs grep -A1 '; MEM: ' )
+
 # non-standard targets
 
 not_quite_lisp: $(BIN)/not_quite_lisp not_quite_lisp.expected.txt

@@ -1,91 +1,248 @@
-int ALIGN       = 16;
-int PAGE_SIZE   = 16384; # todo: compile-time dynamic!
-int MAP_ANON    = 4096;
+int MALLOC_ALIGN= 0x10;
+int PAGE_SIZE   = 0x4000;
+int MAP_ANON    = 0x1000;
 int MAP_PRIVATE = 2;
 int PROT_READ   = 1;
 int PROT_WRITE  = 2;
 
-# todo: these should be void*, but "variable" is still confused
-void start = null;
-void end = null;
+void HEAP_START = null;
+void HEAP_TOP = null;
+void HEAP_END = null;
 
-int alloc_stat_count = 0;
-int alloc_stat_size = 0;
-int free_stat_count = 0;
+void FREE_LIST = null;
+
+int ALLOC_STAT_COUNT = 0;
+int ALLOC_STAT_SIZE = 0;
+int FREE_STAT_COUNT = 0;
+int FREE_STAT_SIZE = 0;
 
 fn mem_stats__() {
-    int ac = alloc_stat_count;
-    int fc = free_stat_count;
-    if ac ! fc {
-        # todo: free SIZE too
-        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees\n";
-        int as = alloc_stat_size;
-        printf(format, ac, as, fc);
+    int ac = ALLOC_STAT_COUNT;
+    int as = ALLOC_STAT_SIZE;
+    int fc = FREE_STAT_COUNT;
+    int fs = FREE_STAT_SIZE;
+    bool c = ac ! fc;
+    bool s = as ! fs;
+    if c + s {
+        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
+        printf(format, ac, as, fc, fs);
+        eprintf(format, ac, as, fc, fs);
     }
 }
 
-fn free(void* ptr) {
-    if ptr = null {
+fn free(void* mem) {
+    char* f;
+    if mem = null {
         return 0;
     }
-    free_stat_count = free_stat_count + 1;
-    # todo: size too
+    # load the size/bytes from the header
+    int a = mem - 0x8;
+    int bytes = *a;
 
-#    char* format = "    ;; free : %p\n";
-#    eprintf(format, ptr); # todo: size too
+#        f = " ; free  %x bytes at %p\n";
+#        printf(f, bytes, mem);
+
+    FREE_STAT_COUNT = FREE_STAT_COUNT + 1;
+    FREE_STAT_SIZE = FREE_STAT_SIZE + bytes;
+
+    # header remains "len"
+    # first quad is "prev" pointer
+    # second quad is "next" pointer
+
+    void prev = FREE_LIST; # pointer -> a chunk
+    void next = null; # last chunk always has a null next
+    while prev ! null {
+        if mem = prev {
+            # already in the free list?!
+            a = 98;
+            exit(a);
+        }
+        if mem < prev {
+            next = prev;
+            prev = *prev;
+            again;
+        }
+        done;
+    }
+
+    *mem = prev;
+    if prev = null {
+        FREE_LIST = mem;
+    }
+    if prev ! null {
+        prev = prev + 8;
+        *prev = mem;
+    }
+    if next ! null {
+        *next = mem;
+    }
+    mem = mem + 8;
+    *mem = next;
+
+        print_free_list();
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
-fn malloc(int bytes) {
-    bytes = align(bytes);
-
-    if start = null {
-        get_more_memory(bytes);
+fn print_free_list() {
+    return;
+    char* f = "[FREE LIST: %p\n";
+    void curr = FREE_LIST;
+    printf(f, curr);
+    while curr ! null {
+        f = "  -> %x bytes at %p < %p : %p >\n";
+        curr = curr - 0x8;
+        int bytes = *curr;
+        curr = curr + 0x10;
+        void* next = *curr;
+        curr = curr - 0x8;
+        void* prev = *curr;
+        printf(f, bytes, curr, prev, next);
+        curr = next;
     }
-#    int e = start + bytes;
-#    if end < e {
-#        # todo: get more pages
-#    }
-
-    return allocate_chunk(bytes);
+    f = "]";
+    puts(f);
 }
 
-fn allocate_chunk(int bytes) {
-    void mem = start;
-    start = start + bytes;
-#    char* format = "    ;; alloc: %p (%x b)\n";
-#    eprintf(format, mem, bytes);
-    alloc_stat_count = alloc_stat_count + 1;
-    alloc_stat_size = alloc_stat_size + bytes;
+fn find_free_chunk(int bytes) {
+#    char* f;
+    if FREE_LIST = null {
+#            f = "   No free chunks!";
+#            puts(f);
+        return null;
+    }
+    void curr = FREE_LIST; # pointer -> a chunk
+#        f = "   CURR %p\n";
+#        printf(f, curr);
+    int a;
+    while curr ! null {
+        a = curr - 0x8;
+        int size = *a; # size of chunk
+#            f = "   FREE: %x bytes at %p\n";
+#            printf(f, size, curr);
+        # todo: <= sure would be nice...
+        if bytes > size {
+            curr = *curr; # pointer -> previous chunk
+            again;
+        }
+        done;
+    }
+    if curr = null {
+        # didn't find one
+#            f = "   No free chunk >= %x bytes\n";
+#            printf(f, bytes);
+        return null;
+    }
+    # unlink and return the chunk's address
+#        f = "   Recycle %x byte chunk at %p\n";
+#        printf(f, size, curr);
+    void prev = *curr;
+    a = curr + 0x8;
+    void next = *a;
+    if curr = FREE_LIST {
+        FREE_LIST = next; # null or not
+    }
+#        f = "   CURR %p is preceded by %p and succeeded by %p\n";
+#        printf(f, curr, prev, next);
+    if next ! null {
+        *next = prev;
+    }
+    if prev ! null {
+        prev = prev + 0x8;
+        *prev = next;
+    }
+    return curr;
+}
+
+fn malloc(int bytes) {
+    int aln = MALLOC_ALIGN;
+    bytes = align(bytes, aln);
+
+    # first, see if there's a free chunk to recycle
+    void mem = find_free_chunk(bytes);
+
+    if mem = null {
+        # need to allocate a new chunk
+        # first, see if we need to get more from the OS
+        mem = HEAP_TOP;
+        int thru = mem + bytes;
+        thru = thru + 0x8; # for the header
+        if HEAP_END < thru {
+            get_more_memory(bytes);
+            mem = HEAP_TOP;
+        }
+
+        # then, allocate a chunk at the top of the heap
+        *mem = bytes; # the header
+        mem = mem + 0x8; # user chunk
+        HEAP_TOP = mem + bytes;
+    }
+    int chunk_size = mem - 0x8;
+    chunk_size = *chunk_size;
+
+#        char* f;
+#        if chunk_size = bytes {
+#            f = " ; alloc %x bytes at %p\n";
+#            printf(f, bytes, mem);
+#        }
+#        if chunk_size ! bytes {
+#            f = " ; alloc %x bytes at %p (CHUNK OF %x)\n";
+#            printf(f, bytes, mem, chunk_size);
+#        }
+#        if FREE_LIST ! null {
+#            print_free_list();
+#        }
+
+    ALLOC_STAT_COUNT = ALLOC_STAT_COUNT + 1;
+    # Only 'bytes` were requested, but the chunk size is what free can correlate
+    # with, so that's what gets recorded.
+    ALLOC_STAT_SIZE = ALLOC_STAT_SIZE + chunk_size;
     return mem;
 }
 
-fn align(int bytes) {
+fn align(int bytes, int alignment) {
     # todo: bitwise ops would be nice...
-    int remainder = bytes % ALIGN;
+    int remainder = bytes % alignment;
     if remainder ! 0 {
         bytes = bytes - remainder;
-        bytes = bytes + ALIGN;
+        bytes = bytes + alignment;
     }
     return bytes;
 }
 
-fn get_more_memory() {
-    # todo: having to use vars for constants is sorta silly...
-    int zero = 0;
-    int bytes = PAGE_SIZE;
-    bytes = bytes * 4;
-    int protocol = PROT_READ + PROT_WRITE;
-    int flags = MAP_ANON + MAP_PRIVATE;
-    int negOne = -1;
-    void mem = sys_mmap(zero, bytes, protocol, flags, negOne, zero);
+fn get_more_memory(int bytes) {
+#        char* f = "get_more_memory(%x)\n";
+#        eprintf(f, bytes);
+    int aln = PAGE_SIZE;
+    bytes = align(bytes, aln);
+#        f = "  -> get_more_memory(%x)\n";
+#        eprintf(f, bytes);
+    void at = HEAP_END;
+    void mem = mmap_internal(at, bytes);
     if mem = null {
         failed_to_mmap();
     }
-    start = mem;
-    end = start + bytes;
+
+#        f = "  -> got %x bytes @ %p (%x total)\n";
+#        aln = HEAP_END - HEAP_START;
+#        aln = aln + bytes;
+#        eprintf(f, bytes, mem, aln);
+
+    if HEAP_START = HEAP_END {
+        HEAP_START = mem; # this was the first page
+    }
+    HEAP_TOP = mem;
+    HEAP_END = mem + bytes;
+}
+
+fn mmap_internal(void at, int bytes) {
+    # todo: having to use vars for constants is sorta silly...
+    int protocol = PROT_READ + PROT_WRITE;
+    int flags = MAP_ANON + MAP_PRIVATE;
+    int negOne = -1;
+    int zero = 0;
+    return sys_mmap(at, bytes, protocol, flags, negOne, zero);
 }
 
 fn failed_to_mmap() {

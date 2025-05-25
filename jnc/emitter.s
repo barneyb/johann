@@ -91,7 +91,10 @@ block_drop:
     mov     fp, sp
 
     ldr     x0, [x0, B_OFF_SYMBOLS] ; load block's symbol table
-    bl      __j_Table_drop_values   ; drop nodes AND their values
+    adrp    x1, __j_free@PAGE
+    add     x1, x1, __j_free@PAGEOFF; use free to drop keys (names)
+    mov     x2, x1                  ; use free to drop values (symbols)
+    bl      __j_Table_drop_owned    ; drop nodes AND their values
 
     ldp     fp, lr, [sp], 0x10
     ret
@@ -868,8 +871,10 @@ __j_Emitter_vardecl:
     bl      __j_Symbol_set_offset
 
     ; add to table
+    ldr     x0, [sp]                ; load pointer -> name
+    bl      __j_strclone            ; clone it, so the token can be dropped
     mov     x2, x24                 ; pointer -> symbol
-    ldr     x1, [sp]                ; load pointer -> name
+    mov     x1, x0                  ; cloned name
     mov     x0, x23                 ; pointer -> symbols
     bl      __j_Table_put
 ;        .data

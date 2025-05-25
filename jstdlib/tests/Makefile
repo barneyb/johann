@@ -2,16 +2,20 @@ TGT = target
 BIN = $(TGT)/bin
 LIB = $(TGT)/lib
 OUT = $(TGT)/out
-JNC = ../../jnc/$(BIN)/jnc
 JSTDLIB = ../$(LIB)/jstdlib.o
 
-all: hello_world \
+all: \
+	hello_world \
 	isspace \
 	isdigit \
 	printf \
 	putchar \
 	symbols \
 	getchar \
+	allocations \
+
+	# verify there aren't any memory complaints
+	find $(OUT) -name '*.s' | (! xargs grep -A1 '; MEM: ' )
 
 hello_world: $(BIN)/hello_world hello_world.expected.txt
 	@mkdir -p $(OUT)
@@ -24,37 +28,19 @@ hello_world: $(BIN)/hello_world hello_world.expected.txt
 	echo "three\nshort\nlines" | $(BIN)/hello_world >> $(OUT)/hello_world.actual.txt
 	diff -u hello_world.expected.txt $(OUT)/hello_world.actual.txt
 
-isspace: $(BIN)/isspace isspace.expected.txt
-	@mkdir -p $(OUT)
-	$(BIN)/isspace > $(OUT)/isspace.actual.txt
-	diff -u isspace.expected.txt $(OUT)/isspace.actual.txt
-
-isdigit: $(BIN)/isdigit isdigit.expected.txt
-	@mkdir -p $(OUT)
-	$(BIN)/isdigit > $(OUT)/isdigit.actual.txt
-	diff -u isdigit.expected.txt $(OUT)/isdigit.actual.txt
-
-printf: $(BIN)/printf printf.expected.txt
-	@mkdir -p $(OUT)
-	$(BIN)/printf > $(OUT)/printf.actual.txt
-	diff -u printf.expected.txt $(OUT)/printf.actual.txt
-
-putchar: $(BIN)/putchar putchar.expected.txt
-	@mkdir -p $(OUT)
-	$(BIN)/putchar > $(OUT)/putchar.actual.txt
-	diff -u putchar.expected.txt $(OUT)/putchar.actual.txt
-
-symbols: $(BIN)/symbols symbols.expected.txt
-	@mkdir -p $(OUT)
-	$(BIN)/symbols > $(OUT)/symbols.actual.txt
-	diff -u symbols.expected.txt $(OUT)/symbols.actual.txt
-
 getchar: $(BIN)/getchar getchar.expected.txt
 	@mkdir -p $(OUT)
 	echo "qwerty\nasdf" | $(BIN)/getchar > $(OUT)/getchar.actual.txt
 	diff -u getchar.expected.txt $(OUT)/getchar.actual.txt
 
 # Pattern targets
+
+% : %.s # cancel this (default) rule
+
+%: $(BIN)/% %.expected.txt
+	@mkdir -p $(OUT)
+	$< > $(OUT)/$@.actual.txt
+	diff -u $@.expected.txt $(OUT)/$@.actual.txt
 
 $(BIN)/%: $(LIB)/%.o $(JSTDLIB)
 	@mkdir -p $(BIN)
@@ -68,13 +54,13 @@ $(LIB)/%.o: %.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
 
-$(OUT)/%.s: %.jn $(JNC)
+$(OUT)/%.s: %.jn
 	@mkdir -p $(OUT)
-	$(JNC) < $< > $@
+	../../bin/jnc < $< > $@
 
 # Utility targets
 
-$(JSTDLIB)::
+$(JSTDLIB):
 	$(MAKE) -C ..
 
 clean:

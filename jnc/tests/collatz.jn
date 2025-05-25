@@ -1,7 +1,7 @@
 int ONE = 1;
 char C_ZERO = '0';
-char* START = "%i";
-char* NEXT_NUM = ", %i";
+char* F_START = "%i";
+char* F_NEXT_NUM = ", %i";
 
 fn main(int argc, char** argv) {
     # skip the command name
@@ -17,9 +17,9 @@ fn main(int argc, char** argv) {
 
 fn print_series(char* c) {
     int a = read_int(c);
-    char* f = START;
+    char* f = F_START;
     printf(f, a);
-    f = NEXT_NUM;
+    f = F_NEXT_NUM;
     while a > 1 {
         int b = a % 2;
         if b = 0 {

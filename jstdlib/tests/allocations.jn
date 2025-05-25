@@ -1,0 +1,104 @@
+fn main() {
+    char* f_start = "\nTEST %s:\n";
+    char* f_end = "/%s\n";
+    char* name;
+
+    name = "reuse"; printf(f_start, name);
+    reuse();
+    printf(f_end, name);
+}
+
+fn reuse() {
+    int len = 8;
+    int** addrs = new_array(len);
+    int* end = addrs + 0x40;
+    char* f = "  pointer of interest: %p\n";
+    int n;
+    n = addrs % 0x1000; printf(f, n); print_free_list();
+
+    int* a = malloc(len);
+    n = a % 0x1000; printf(f, n); print_free_list();
+    if a < end {
+        f = "expected %p to be > %p\n";
+        printf(f, a, end);
+        exit(a);
+    }
+    free(a); a = null;
+
+    int* a_i = addrs + 0x20; # addrs[4]
+    n = a_i % 0x1000; printf(f, n); print_free_list();
+    a = *a_i;
+    n = a % 0x1000; printf(f, n); print_free_list();
+    *a_i = null;
+    free(a);
+    a_i = a;
+    n = a_i % 0x1000; printf(f, n); print_free_list();
+    a = malloc(len);
+    n = a % 0x1000; printf(f, n); print_free_list();
+    if a ! a_i {
+        f = "expected %p to be = %p\n";
+        printf(f, a, a_i);
+        f = "  next alloc is %p\n";
+        a = malloc(len);
+        printf(f, a);
+        a = malloc(len);
+        printf(f, a);
+        a = malloc(len);
+        printf(f, a);
+        exit(a);
+    }
+    *a_i = null;
+    free(a); a = null;
+
+    # clean up...
+    drop_array(addrs, len);
+}
+
+fn new_array(int len) {
+    char* f = "{NEW: alloc %i slots\n";
+    printf(f, len);
+    f = "    NEW> %p\n";
+    int n = len * 0x8;
+    void* addrs = malloc(n); # addrs = int[len]
+    n=addrs; n=n%0x1000; printf(f, n);
+    int i = 0;
+    while i < len {
+        n = i * 0x8;
+        int a_i = addrs + n;
+        *a_i = malloc(len);
+        n = *a_i;
+        n = n % 0x1000;
+        printf(f, n);
+        i = i + 1;
+    }
+    f = "    NEW complete!\n}";
+    puts(f);
+    return addrs;
+}
+
+fn drop_array(void* addrs, int len) {
+    char* f = "{DROP: free %i slots at %p\n";
+    int n = addrs % 0x1000;
+    printf(f, len, n);
+    f = "    DROP> %p\n";
+    n = len * 0x8;
+    int a_i = addrs + n;
+    while a_i > addrs {
+        a_i = a_i - 0x8;
+        n = *a_i;
+        if n ! null {
+            free(n);
+            n = n % 0x1000;
+            printf(f, n);
+        }
+        if n = null {
+            char* g = "    <ALREADY DROPPED>";
+            puts(g);
+        }
+    }
+    free(addrs);
+    n = addrs % 0x1000;
+    printf(f, n);
+    f = "    DROP complete!\n}";
+    puts(f);
+}

@@ -8,6 +8,7 @@ local: 74565
 local: 67890
 local: 456
 global: 8
+global: 8
 global: true
 global: 0
 global: 99999
