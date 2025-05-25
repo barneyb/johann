@@ -1,9 +1,5 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-.set    TRUE, 1
-.set    FALSE, 0
-
-err_bad_char: .asciz "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n"
 err_long_id: .asciz "\n; ERROR(%i): >7 char identifier '%s' at line %i, char %i\n"
 err_long_string: .asciz "\n; ERROR(%i): >7 char string '%s' at line %i, char %i\n"
 
@@ -25,8 +21,9 @@ KW_WHILE    : .asciz    "while"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
-.set    NULL, 0
-.set    FALSE, 0
+NULL    = 0
+TRUE    = 1
+FALSE   = 0
 
 .include "inc_token_table.s"
 
@@ -36,9 +33,9 @@ struct Lexer {
     int char_pos                    ; position in the line
 }
 */
-.set    OFF_LINE, 0
-.set    OFF_CHAR, 0x8
-.set    SIZEOF  , OFF_CHAR + 0x8    ; buffer is always last
+OFF_LINE    = 0
+OFF_CHAR    = 0x8
+SIZEOF      = OFF_CHAR + 0x8
 
 /* Lexer new( ) */
 .global __j_Lexer__new
@@ -55,8 +52,8 @@ __j_Lexer__new:
     ret
 
 /* Token token( Lexer* self ) */
-.global _lexer_token
-_lexer_token:
+.global __j_Lexer_token
+__j_Lexer_token:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
@@ -66,6 +63,15 @@ _lexer_token:
 
     mov     x19, x0                 ; pointer -> this
     ldp     x21, x22, [x19, OFF_LINE]   ; load this.line_num and .char_pos
+
+;        .data
+;        msda:.asciz "; NEXT TOKEN (from %d, %d)\n"
+;        .text
+;        adrp x0, msda@PAGE
+;        add x0, x0, msda@PAGEOFF
+;        mov x1, x21
+;        mov x2, x22
+;        bl __j_printf
 
     token_skip_char:
     bl      __j_iseof
@@ -96,7 +102,7 @@ _lexer_token:
     ; see if it's a comment, and consume until end of line if so
     cmp     x0, T_HASH
     b.ne    token_keep_going
-    bl      lex_comment
+    bl      __j_Lexer_lex_comment
     b       token_handle_newline
 
     token_keep_going:
@@ -160,6 +166,12 @@ _lexer_token:
     cmp     x0, '"'                 ; T_STRING
     b.ge    token_string
 
+    token_bad_char:
+    ; indicate the char that fell through
+        mov     x1, x0
+        mov     x0, x19
+        bl      __j_Lexer_bad_char
+
     token_minus:
     bl      __j_peekchar
     bl      __j_isdigit
@@ -171,111 +183,46 @@ _lexer_token:
     token_id_ish:
     cmp     x0, 'z'
     b.le    token_id
+    b       token_bad_char
 
     token_ID_ish:
     cmp     x0, 'Z'
     b.le    token_id
+    b       token_bad_char
 
     token_int_ish:
     cmp     x0, '9'
     b.le    token_int
-
-    ; indicate the char that fell through
-        str     x22, [sp, -0x10]!
-        stp     x0, x21, [sp, -0x10]!
-        adrp    x0, err_bad_char@PAGE
-        add     x0, x0, err_bad_char@PAGEOFF
-        mov     x1, sp
-        mov     x2, #17
-        bl      __j_jnc_panic
+    b       token_bad_char
 
     token_punct:
-    bl      __j_Token__new
-    mov     x24, x0                 ; pointer -> token
-    mov     x1, x21
-    mov     x2, x22
-    bl      __j_Token_set_coords
-    mov     x0, x24
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_token_punct
     b       token_return
 
     token_int:
-    sub     sp, sp, 0x10            ; two-int return "structure"
-    mov     x8, sp
-    bl      lex_digits
-    mov     x0, T_INT
-    bl      __j_Token__new
-    mov     x24, x0                 ; pointer -> token
-    mov     x1, x21
-    mov     x2, x22
-    bl      __j_Token_set_coords    ; set coords of start
-    ldp     x1, x23, [sp], 0x10     ; load value/consumed
-    mov     x0, x24
-    bl      __j_Token_set_value     ; set value
-    add     x22, x22, x23           ; add the consumed char count
-    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x24
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_token_int
     b       token_return
 
     token_id:
-    bl      lex_identifier
-    mov     x23, x0                 ; stash pointer -> name
-    mov     x0, T_ID
-    bl      __j_Token__new
-    mov     x24, x0                 ; pointer -> token
-    mov     x1, x21
-    mov     x2, x22
-    bl      __j_Token_set_coords    ; set coords of start
-    mov     x0, x24
-    mov     x1, x23
-    bl      __j_Token_set_value     ; set value
-    mov     x0, x23                 ; unstash name
-    bl      _strlen ; todo: silly to remeasure...
-    sub     x0, x0, #1              ; first char was already counted
-    add     x22, x22, x0            ; add the scanned char count
-    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x24
-    bl      convert_keyword
-    mov     x0, x24
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_token_id
     b       token_return
 
     token_char:
-    mov     x0, x20
-    bl      __j_getchar            ; the actual char
-    mov     x23, x0
-    mov     x0, x20
-    bl      __j_getchar            ; the second single quote
-    mov     x0, T_CHAR
-    bl      __j_Token__new
-    mov     x24, x0                 ; pointer -> token
-    mov     x1, x21
-    mov     x2, x22
-    bl      __j_Token_set_coords       ; set coords of start
-    mov     x0, x24
-    mov     x1, x23                 ; the character
-    bl      __j_Token_set_value        ; set value
-    add     x22, x22, #2            ; add the char and close quote
-    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x24
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_token_char
     b       token_return
 
     token_string:
-    bl      __j_Lexer_lex_string
-    mov     x23, x0                 ; stash pointer -> name
-    mov     x0, T_STRING
-    bl      __j_Token__new
-    mov     x24, x0                 ; pointer -> token
-    mov     x1, x21
-    mov     x2, x22
-    bl      __j_Token_set_coords    ; set coords of start
-    mov     x0, x24
-    mov     x1, x23
-    bl      __j_Token_set_value     ; set value
-    mov     x0, x23                 ; unstash name
-    bl      _strlen ; todo: silly to remeasure...
-    add     x0, x0, #1              ; and close quote (open was already counted)
-    add     x22, x22, x0            ; add the scanned char count
-    str     x22, [x19, OFF_CHAR]    ; store this.char_pos
-    mov     x0, x24
+    mov     x1, x0
+    mov     x0, x19
+    bl      __j_token_string
     b       token_return
 
     token_null:
@@ -304,7 +251,8 @@ __j_Lexer_drop:
 
 ; Eats characters up to and including the next newline.
 /* void lex_comment( ) */
-lex_comment:
+.global __j_Lexer_lex_comment
+__j_Lexer_lex_comment:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
@@ -321,71 +269,9 @@ lex_comment:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* [val, consumed] lex_digits( char first_char ) */
-lex_digits:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-
-    str     x8, [sp, -0x10]!        ; store pointer -> indirect return
-    add     x1, x8, 0x8             ; pointer -> consumed
-    str     xzr, [x1]               ; start counting at zero
-    bl      __j_Lexer_lex_digits
-    ldr     x8, [sp], 0x10          ; load pointer -> indirect return
-    str     x0, [x8]                ; store val
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* char* lex_identifier( char first_char ) */
-lex_identifier:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
-    ; end frame
-    mov     x22, x0                 ; stash first char
-    mov     x0, #64                 ; todo: max identifier length
-    bl      __j_malloc
-    mov     x20, x0                 ; pointer -> start of buffer
-    mov     x21, x20                ; pointer -> buffer[pos] to write
-    strb    w22, [x21], #1          ; put first char in the string
-
-    lex_identifier_char:
-    ; forgo the EOF check - there's no valid syntax for that case.
-    bl      __j_peekchar
-    cmp     x0, 'z'
-    b.gt    lex_identifier_return
-    cmp     x0, 'a'
-    b.ge    lex_identifier_consume
-    cmp     x0, '_'
-    b.eq    lex_identifier_consume
-    cmp     x0, 'Z'
-    b.gt    lex_identifier_return
-    cmp     x0, 'A'
-    b.ge    lex_identifier_consume
-    cmp     x0, '9'
-    b.gt    lex_identifier_return
-    cmp     x0, '0'
-    b.ge    lex_identifier_consume
-    b       lex_identifier_return
-    lex_identifier_consume:
-    bl      __j_getchar            ; consume the char
-    strb    w0, [x21], #1           ; add it to the string
-    b       lex_identifier_char
-
-    lex_identifier_return:
-    mov     x0, NULL                ; null-terminator
-    strb    w0, [x21], #1           ; add it to the string
-
-    mov     x0, x20                 ; return pointer -> buffer
-    ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
 /* void convert_keyword( Token* token ) */
-convert_keyword:
+.global __j_Lexer_convert_keyword
+__j_Lexer_convert_keyword:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     str     x20, [sp, -0x10]!

@@ -1,21 +1,84 @@
-# This one's tricky. The value lexed is returned, and char_count is incremented
-# for each character read. In assembly, it was a composite return (via x8), but
-# Johann's not that capable (yet).
-pub fn Lexer_lex_digits(char first_char, int* char_count) {
+int T_CHAR      = 0x163; # 0x100 + 'c';
+int T_ID        = 0x169; # 0x100 + 'i';
+int T_INT       = 0x16e; # 0x100 + 'n';  # not 'i'
+int T_STRING    = 0x173; # 0x100 + 's';
+
+pub fn Lexer_bad_char(void* self, int ch) { # todo: private
+    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n";
+    void* token = new_token(self, ch);
+    int status = 17;
+    jnc_panic(f, token, status);
+}
+
+fn new_token(void* self, int type) {
+    int line_num = *self;
+    self = self + 0x8;
+    int char_pos = *self;
+    void* token = Token__new(type);
+    Token_set_coords(token, line_num, char_pos);
+    return token;
+}
+
+pub fn token_punct(void* self, int type) { # todo: not public
+    return new_token(self, type);
+}
+
+pub fn token_int(void* self, int first_char) { # todo: not public
+    int type = T_INT;
+    void* token = new_token(self, type);
+    int value = lex_digits(self, first_char);
+    Token_set_value(token, value);
+    return token;
+}
+
+pub fn token_id(void* self, int first_char) { # todo: not public
+    int type = T_ID;
+    void* token = new_token(self, type);
+    char* name = lex_id(self, first_char);
+    Token_set_value(token, name);
+    Lexer_convert_keyword(token);
+    return token;
+}
+
+pub fn token_char(void* self, int first_char) { # todo: not public
+    first_char = T_CHAR;
+    void* token = new_token(self, first_char);
+    char c = next_char(); # the actual char
+    # todo: escape sequences
+    Token_set_value(token, c);
+    next_char(); # close quote
+    return token;
+}
+
+pub fn token_string(void* self, int first_char) { # todo: not public
+    first_char = T_STRING;
+    void* token = new_token(self, first_char);
+    char* name = lex_string(self);
+    Token_set_value(token, name);
+    return token;
+}
+
+fn next_char(void* self) {
+    int c = getchar();
+    self = self + 0x8;
+    int char_pos = *self;
+    char_pos = char_pos + 1;
+    *self = char_pos;
+    return c;
+}
+
+fn lex_digits(void* self, char first_char) {
     bool is_negative = false;
     int n;
     # deal with negatives first
     if first_char = '-' {
         is_negative = true;
-        first_char = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        first_char = next_char(self);
     }
     int val = 12345;
     if first_char ! '0' {
         # decimal
-        val = Lexer_lex_digits_dec(first_char, char_count);
+        val = lex_digits_dec(self, first_char);
     }
     if first_char = '0' {
         # might be zero, might be hex
@@ -23,17 +86,14 @@ pub fn Lexer_lex_digits(char first_char, int* char_count) {
         bool d;
         if c = 'x' {
             # hex
-            getchar(); # soak up the 'x'
-            first_char = getchar();
-            n = *char_count;
-            n = n + 2; # count both chars at once
-            *char_count = n;
+            next_char(self); # soak up the 'x'
+            first_char = next_char(self);
             d = isxdigit(first_char);
             if !d {
                 n = 16;
                 panic(n); # todo: issue a proper error
             }
-            val = Lexer_lex_digits_hex(first_char, char_count);
+            val = lex_digits_hex(self, first_char);
         } # todo: else would be nice...
         if c ! 'x' {
             d = isdigit(c);
@@ -52,16 +112,13 @@ pub fn Lexer_lex_digits(char first_char, int* char_count) {
     return val;
 }
 
-fn Lexer_lex_digits_dec(char first_char, int* char_count) {
+fn lex_digits_dec(void* self, char first_char) {
     int val = first_char - '0';
     char c = peekchar();
     bool d = isdigit(c);
     int n;
     while d {
-        c = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        c = next_char(self);
         n = c - '0';
         val = val * 10;
         val = val + n;
@@ -71,16 +128,13 @@ fn Lexer_lex_digits_dec(char first_char, int* char_count) {
     return val;
 }
 
-fn Lexer_lex_digits_hex(char first_char, int* char_count) {
+fn lex_digits_hex(void* self, char first_char) {
     int val = parse_hex_digit(first_char);
     char c = peekchar();
     bool d = isxdigit(c);
     int n;
     while d {
-        c = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        c = next_char(self);
         n = parse_hex_digit(c);
         val = val * 16;
         val = val + n;
@@ -100,36 +154,43 @@ fn parse_hex_digit(char c) {
     return c - '0';
 }
 
-pub fn Lexer_lex_string() {
-    int len = 16;
-    int i = 0;
-    # todo: oh, for array syntax...
-    char* buffer = malloc(len);
-    char* buffer_i;
+fn lex_string(void* self) {
+    int cap = 16;
+    void* buf = Buffer__new(cap);
 
     char c;
     while true {
-        c = getchar();
+        c = next_char(self);
         if c = '"' { done; }
-        buffer_i = buffer + i;
-        i = i + 1;
-        if i < len {
-            *buffer_i = c;
-            again;
-        }
-        # need more!
-        int old_len = len;
-        len = len * 2;
-        char* next = malloc(len);
-        memcpy(next, buffer, old_len);
-        free(buffer);
-        buffer = next;
-        buffer_i = buffer + i;
-        buffer_i = buffer_i - 1; # i was already incremented
-        *buffer_i = c;
+        Buffer_push(buf, c);
     }
 
-    buffer_i = buffer + i;
-    *buffer_i = null;
-    return buffer;
+    return Buffer_into_chars(buf);
+}
+
+fn lex_id(void* self, char first_char) {
+    int cap = 16;
+    void* buf = Buffer__new(cap);
+    Buffer_push(buf, first_char);
+
+    char c;
+    while true {
+        c = peekchar();
+        # below zero is bad
+        if c < '0' { done; }
+        # digits are fin
+        if c > '9' { if c < 'A' { done; } }
+        # uppercase are fine
+        if c > 'Z' { if c < '_' { done; } }
+        # _ is fine
+        if c = '`' { done; } # single char between '_' and 'a'
+        # lowercase are fine
+        if c > 'z' { done; }
+        # above z is bad
+
+        c = next_char(self);
+        Buffer_push(buf, c);
+    }
+
+    return Buffer_into_chars(buf);
 }

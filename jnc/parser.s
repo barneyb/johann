@@ -129,9 +129,9 @@ load_buffer:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    str     x19, [sp, -0x10]!        ; this
-    stp     x20, x21, [sp, -0x10]!   ; lexer & buffer
-    stp     x24, x25, [sp, -0x10]!   ; token & pos
+    str     x19, [sp, -0x10]!       ; this
+    stp     x20, x21, [sp, -0x10]!  ; lexer & buffer
+    stp     x24, x25, [sp, -0x10]!  ; token & pos
     ; end frame
 
     mov     x19, x0                 ; stash pointer -> this
@@ -142,7 +142,7 @@ load_buffer:
     load_buffer_token:
     ; next token
     mov     x0, x20
-    bl      _lexer_token            ; lex.token()
+    bl      __j_Lexer_token         ; lex.token()
     cmp     x0, NULL
     b.eq    load_buffer_return
     mov     x24, x0                 ; stash pointer -> token
