@@ -5,7 +5,7 @@ bool* HIDE_NUMBER_1 = false;
 int* ten = 10;
 char* world = "world!";
 
-fn main() {
+pub fn main() {
     char* c = world;
     char* a_greeting = THE_GREETING;
     printf();

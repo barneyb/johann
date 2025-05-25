@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     test_locals();
     test_globals();
     test_dynamic();

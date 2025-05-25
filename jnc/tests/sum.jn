@@ -1,6 +1,6 @@
 # I read a series of integers and add them up, printing each number and the
 # running total as they are read.
-fn main() {
+pub fn main() {
     char* g = "0";
     puts(g);
     int a = 0;          # answer

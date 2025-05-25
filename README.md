@@ -31,19 +31,21 @@ Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` ex
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
-Functions are defined with the `fn` keyword. Use `return` to return (with a value or not). The entry point for a program is always a function named `main`, which returns an exit code. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
+Functions are declared with the `fn` keyword. Use `return` to return (with a value or not). The entry point for a program is always a `pub` function named `main`. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
 
-    fn main() {
+    pub fn main() {
         return 0;
     }
 
-`main` can be declared with zero, one, or two arguments, which will be passed C-style `argc` and `argv` values if present. This program will print its name and exit with the number of command line arguments it received.
+`main` can be declared with zero, one, or two arguments, which will be passed POSIX `argc` and `argv` values. This program will print its name and exit with the number of command line arguments it received.
 
-    fn main(int a, char** b) {
+    pub fn main(int a, char** b) {
         b = *b;
         puts(b);
         return a - 1;
     }
+
+By default, declarations are private to the file they're declared in. Use `pub` to make a declaration globally available, whether a function or a global variable. 
 
 Conditionals use the `if` keyword and loops use `while`. Parentheses are not permitted around the conditional expression. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
@@ -184,6 +186,7 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int isspace( int ch )` - is the passed character whitespace?
 * `int isxdigit( int ch )` - is the passed character a hexidecimal digit?
 * `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
+* `char* strclone( char* str )` - clone the passed string into a new allocation. 
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
 
@@ -246,7 +249,7 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 jnc 0.20250524
 build_time: 2025-05-24T02:28:55+00:00
 commit_hash: 0a077af0a150d2942dbbdf4c96e0e14755cb5370
-% echo "fn main(){}" | ./jnc/target/bin/jnc
+% echo "pub fn main(){}" | ./jnc/target/bin/jnc
 ; Compiled with jnc 0.20250524-0a077af ; tmpl_prelude
     .text
     .align  3

@@ -16,6 +16,7 @@ KW_FN       : .asciz    "fn"
 KW_IF       : .asciz    "if"
 KW_INT      : .asciz    "int"
 KW_NULL     : .asciz    "null"
+KW_PUB      : .asciz    "pub"
 KW_RETURN   : .asciz    "return"
 KW_TRUE     : .asciz    "true"
 KW_VOID     : .asciz    "void"
@@ -392,7 +393,7 @@ convert_keyword:
     mov     x19, x0                 ; stash pointer -> token
     bl      __j_Token_value
     mov     x20, x0                 ; stash pointer -> token.value
-    b       convert_keyword_fn
+    b       convert_keyword_pub
 
     /* bool test( int type, char* kw ), closed over x19=token, x20=token.value */
     convert_keyword_test:
@@ -422,6 +423,15 @@ convert_keyword:
         add     sp, sp, 0x10
         ldp     fp, lr, [sp], 0x10
         ret
+
+    convert_keyword_pub:
+    mov     x0, T_KW_PUB
+    adrp    x1, KW_PUB@PAGE
+    add     x1, x1, KW_PUB@PAGEOFF
+    bl      convert_keyword_test
+    cmp     x0, FALSE
+    b.eq    convert_keyword_fn     ; next!
+    b       convert_keyword_done    ; done!
 
     convert_keyword_fn:
     mov     x0, T_KW_FN

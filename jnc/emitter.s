@@ -357,6 +357,10 @@ is_global:
     ldp     fp, lr, [sp], 0x10
     ret
 
+.data
+is_pub: .quad 0 ; this is so gross
+.text
+
 /* void emit( Emitter* self, [Token*] stmt ) */
 .global _emitter_emit
 _emitter_emit:
@@ -371,6 +375,20 @@ _emitter_emit:
     ldr     x21, [x20]              ; stash pointer -> first token
     mov     x0, x21
     bl      __j_Token_type
+    adrp    x7, is_pub@PAGE
+    add     x7, x7, is_pub@PAGEOFF
+    cmp     x0, T_KW_PUB
+    b.ne    __emit_noviz
+        mov     x1, TRUE
+        str     x1, [x7]
+        ldr     x21, [x20, 0x8]!    ; stash pointer -> new "first" token
+        mov     x0, x21
+        bl      __j_Token_type
+        b       __emit_proceed
+    __emit_noviz:
+        mov     x1, FALSE
+        str     x1, [x7]
+    __emit_proceed:
     mov     x22, x0                 ; stash type of first token
 
     cmp     x22, T_SEMI
@@ -513,15 +531,14 @@ _emitter_emit:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 s_main: .asciz "main"
-tmpl_main: .asciz "    .global _main ; tmpl_main\n\
-    _main:\n\
+tmpl_main_pub: .asciz "    .global _main ; tmpl_main_pub\n"
+tmpl_main: .asciz "    _main: ; tmpl_main\n\
         bl      __j_main\n\
         b       __j_exit\n\
 "
 
-; todo: viz support
-tmpl_fn_intro: .asciz "    .global __j_%s ; tmpl_fn_intro\n\
-    __j_%s:\n\
+tmpl_fn_pub: .asciz "    .global __j_%s ; tmpl_fn_pub\n"
+tmpl_fn_intro: .asciz "    __j_%s:\n\
         ; create frame\n\
         stp     fp, lr, [sp, -0x10]!\n\
         mov     fp, sp\n\
@@ -549,6 +566,11 @@ do_fn:
     mov     x1, T_KW_FN
     bl      enter_block             ; this.enter_block()
 
+    ; see if the function is public
+    adrp    x23, is_pub@PAGE
+    add     x23, x23, is_pub@PAGEOFF
+    ldr     x23, [x23]
+
     ; see if we need to introduce main
     mov     x0, x22
     adrp    x1, s_main@PAGE
@@ -556,13 +578,25 @@ do_fn:
     bl      _strcmp
     cmp     x0, #0
     b.ne    do_fn_intro
-    adrp    x0, tmpl_main@PAGE
-    add     x0, x0, tmpl_main@PAGEOFF
-    bl      __j_puts
+        adrp    x0, tmpl_main@PAGE
+        add     x0, x0, tmpl_main@PAGEOFF
+        bl      __j_puts
+; todo: initially, always tag _main global...
+;    cmp     x23, FALSE
+;    b.eq    do_fn_intro
+        adrp    x0, tmpl_main_pub@PAGE
+        add     x0, x0, tmpl_main_pub@PAGEOFF
+        bl      __j_puts
 
     do_fn_intro:
+    cmp     x23, FALSE
+    b.eq    do_fn_intro_noviz
+        mov     x1, x22
+        adrp    x0, tmpl_fn_pub@PAGE
+        add     x0, x0, tmpl_fn_pub@PAGEOFF
+        bl      __j_printf
+    do_fn_intro_noviz:
     mov     x1, x22
-    mov     x2, x22
     adrp    x0, tmpl_fn_intro@PAGE ; pointer -> template
     add     x0, x0, tmpl_fn_intro@PAGEOFF
     bl      __j_printf
@@ -737,21 +771,17 @@ do_loop_thinger:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-; todo: viz support
+tmpl_global_pub: .asciz "    .global _j_gbl_%s ; tmpl_global_pub\n"
 tmpl_global_bool: .asciz "    .data ; tmpl_global_bool\n\
-        .global _j_gbl_%s\n\
         _j_gbl_%s: .byte %i\n\
     .text\n"
 tmpl_global_int: .asciz "    .data ; tmpl_global_int\n\
-        .global _j_gbl_%s\n\
         _j_gbl_%s: .quad %i\n\
     .text\n"
 tmpl_global_char: .asciz "    .data ; tmpl_global_char\n\
-        .global _j_gbl_%s\n\
         _j_gbl_%s: .byte '%c'\n\
     .text\n"
 tmpl_global_string: .asciz "    .data ; tmpl_global_string\n\
-        .global _j_gbl_%s\n\
         _j_gbl_%s: .asciz \"%s\"\n\
     .text\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -945,9 +975,8 @@ do_decl:
     str     x0, [sp, -0x10]!        ; store pointer -> name
     mov     x0, x20                 ; pointer -> value token
     bl      __j_Token_value         ; pointer -> value
-    mov     x3, x0
-    ldr     x2, [sp], 0x10          ; load pointer -> name
-    mov     x1, x2
+    mov     x2, x0
+    ldr     x1, [sp], 0x10          ; load pointer -> name
 
     cmp     x21, T_BOOL
     b.eq    do_decl_bool
@@ -986,7 +1015,17 @@ do_decl:
     b       do_decl_emit_global
 
     do_decl_emit_global:
+    mov     x22, x1                 ; stash pointer -> name
     bl      __j_printf
+    adrp    x23, is_pub@PAGE
+    add     x23, x23, is_pub@PAGEOFF
+    ldr     x23, [x23]
+    cmp     x23, FALSE
+    b.eq    do_decl_return
+        adrp    x0, tmpl_global_pub@PAGE
+        add     x0, x0, tmpl_global_pub@PAGEOFF
+        mov     x1, x22
+        bl      __j_printf
 
     do_decl_return:
     ; restore frame

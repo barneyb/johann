@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     char g = '!';
     int a = 16;
     # todo: use let to make a new var (with the same name)

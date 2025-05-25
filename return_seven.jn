@@ -55,7 +55,7 @@ class adder {
 }
 
 # Functions are global. Prefer classes, in general, except for main.
-fn main(): int {
+pub fn main(): int {
     # local variables are mutable
     adder a = adder.zero();
     bool nope = false;

@@ -20,6 +20,7 @@
     T_KW_CONST  = 0x400 + 'C'
     T_KW_FN     = 0x400 + 'F'
     T_KW_LET    = 0x400 + 'L'
+    T_KW_PUB    = 0x400 + 'P'
 ; ambiguous character tokens (ASCII, for now)
     T_ASSIGN    = '='           ; double-alias, for now
     T_BANG      = '!'
