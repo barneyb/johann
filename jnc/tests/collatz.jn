@@ -3,7 +3,7 @@ char C_ZERO = '0';
 char* F_START = "%i";
 char* F_NEXT_NUM = ", %i";
 
-fn main(int argc, char** argv) {
+pub fn main(int argc, char** argv) {
     # skip the command name
     int b = ONE;
     while b < argc {
