@@ -46,33 +46,50 @@ __j_Table_size:
 /* void Table_drop( Table* t ) */
 .global __j_Table_drop
 __j_Table_drop:
-    mov     x1, FALSE
-    b       drop
+    mov     x2, NULL
+    mov     x1, NULL
+    ; fall through
 
-/* void Table_drop_values( Table* t ) */
-.global __j_Table_drop_values
-__j_Table_drop_values:
-    mov     x1, TRUE
-    b       drop
-
-/* void drop( Table* t, bool values ) */
-drop:
+/* void Table_drop_owned( Table* t, fn* drop_key, fn* drop_value ) */
+.global __j_Table_drop_owned
+__j_Table_drop_owned:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
+    stp     x1, x2, [sp, -0x10]!    ; store drop callbacks
     ldr     x2, [x0, 0x10]          ; load t.head
-    stp     x2, x1, [sp, -0x10]!    ; store curr & values
+    stp     x2, x0, [sp, -0x10]!        ; store curr (& t)
+
+;        ldp     x1, x2, [sp, 0x10]      ; load drop callbacks
+;        .data
+;        lasd:.asciz "; drop table(%p, %p, %p)\n"
+;        .text
+;        mov x3, x2
+;        mov x2, x1
+;        mov x1, x0
+;        adrp x0, lasd@PAGE
+;        add x0, x0, lasd@PAGEOFF
+;        bl __j_printf
+;        b drop_done
+;        ldr x0, [sp, 0x8]
     bl      __j_free                ; free t
 
     drop_again:
-    ldp     x0, x1, [sp]            ; load curr & values
+    ldr     x0, [sp]                ; load curr
     cmp     x0, NULL
     b.eq    drop_done
-    cmp     x1, FALSE
+    ldp     x1, x2, [sp, 0x10]      ; load drop callbacks
+    cmp     x1, NULL
+    b.eq    drop_value
+        ldr     x0, [x0, 0x8]       ; load curr.key
+        blr     x1                  ; drop_key(curr.key)
+        ldr     x0, [sp]            ; load curr
+        ldp     x1, x2, [sp, 0x10]  ; load drop callbacks
+    drop_value:
+    cmp     x2, NULL
     b.eq    drop_node
-        ; drop the value first
         ldr     x0, [x0, 0x10]      ; load curr.value
-        bl      __j_free
+        blr     x2                  ; drop_value(curr.value)
         ldr     x0, [sp]            ; load curr
     drop_node:
     ldr     x1, [x0, 0x18]          ; load curr.next
@@ -81,7 +98,7 @@ drop:
     b       drop_again
 
     drop_done:
-    add     sp, sp, 0x10
+    add     sp, sp, 0x20
     ldp     fp, lr, [sp], 0x10
     ret
 

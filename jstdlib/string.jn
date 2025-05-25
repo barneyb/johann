@@ -21,6 +21,14 @@ fn isxdigit(char c) {
     return false;
 }
 
+fn strclone(char* src) {
+    int len = strlen(src);
+    len = len + 1; # for the null terminator
+    char* dest = malloc(len);
+    memcpy(dest, src, len);
+    return dest;
+}
+
 # Once apple's CPUs support FEAT_MOPS, use the CPYP/CPYM/CPYE instructions.
 fn memcpy(void* dest, void* src, int count) {
     # copy byte-by-byte up to an 8-byte boundary

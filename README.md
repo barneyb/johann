@@ -198,12 +198,12 @@ Those starting with `sys_` (thin syscall wrappers) are not expected to remain av
 
 ### `table`
 
-A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `drop_values` method can help if the values happen to be pointers to owned objects.
+A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `Table_drop_owned` method can help if the table owns the key and/or value objects.
 
 * `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
 * `bool Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
 * `void Table_drop( Table* t )` - drops `t`, freeing all internal structure.
-* `void Table_drop_values( Table* t )` - drops `t`, freeing all internal structure **AND** values' pointed-at allocations (but not keys).
+* `void Table_drop_owned( Table* t, fn* drop_key, fn* drop_value )` - drops `t`, freeing all internal structure, and passing each key & value to the corresponding drop-function's pointer (if non-`null`).
 * `? Table_get( Table* t, ? key )` - return the value associated with `key` in `t`, otherwise `null`.
 * `? Table_remove( Table* t, ? key )` - ensure `key` doesn't exist in `t`, returning its previous value (or `null`).
 * `? Table_put( Table* t, ? key, ? value )` - associate `key` with `value` in `t`, returning its previous value (or `null`).
