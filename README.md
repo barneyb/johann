@@ -186,6 +186,7 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int isspace( int ch )` - is the passed character whitespace?
 * `int isxdigit( int ch )` - is the passed character a hexidecimal digit?
 * `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
+* `char* strclone( char* str )` - clone the passed string into a new allocation. 
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
 
