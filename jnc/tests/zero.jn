@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     char* format = "zero: %i (%x)\n";
     int zero = make_zero();
     printf(format, zero, zero);

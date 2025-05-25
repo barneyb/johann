@@ -48,7 +48,7 @@ LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' README.md | cut -d : -f 1)
     LINE=$(( LINE + 4))
     tail -n +$LINE README.md | head -n 1
     LINE=$(( LINE + 4))
-    echo "fn main(){}" | ./bin/jnc | head -n 3
+    echo "pub fn main(){}" | ./bin/jnc | head -n 3
     tail -n +$LINE README.md
 } > tmp.md
 mv tmp.md README.md

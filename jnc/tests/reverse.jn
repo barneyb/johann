@@ -4,7 +4,7 @@ char* STRING_C = "I am a significantly longer string of characters to examine, b
 char STOP_AT = ',';
 int CHARS_SCANNED = 0;
 
-fn main() {
+pub fn main() {
     char* str = STRING_A;
     do_string(str);
     scan_stats();

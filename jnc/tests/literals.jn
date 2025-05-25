@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     char* f = "value: %i\n";
     int n;
     n = 0; printf(f, n);
