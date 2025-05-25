@@ -17,11 +17,11 @@ struct Token {
     ? value                         ; a 64-bit "something"
 }
 */
-.set    OFF_TYPE    , 0
-.set    OFF_LINE    , 8
-.set    OFF_CHAR    , 16
-.set    OFF_VALUE   , 24
-.set    SIZEOF      , OFF_VALUE + 8
+OFF_TYPE    = 0
+OFF_LINE    = 0x8
+OFF_CHAR    = 0x10
+OFF_VALUE   = 0x18
+SIZEOF      = OFF_VALUE + 0x8
 
 /* Token* new( int type ) */
 .global __j_Token__new

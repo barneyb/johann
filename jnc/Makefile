@@ -4,8 +4,8 @@ LIB = $(TGT)/lib
 OUT = $(TGT)/out
 JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
-VERSION = inc_version.jn
 OBJECTS = $(JSTDLIB) \
+	$(LIB)/Buffer.jn.o \
 	$(LIB)/emitter.o \
 	$(LIB)/emitter.jn.o \
 	$(LIB)/jnc.jn.o \
@@ -16,9 +16,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/token.o \
 	$(LIB)/inc_version.jn.o \
 
-INCLUDES = \
-	inc_token_table.s \
-
 all: $(BIN)/jnc
 	@echo --------------------------------------------------
 	$(BIN)/jnc --version
@@ -27,9 +24,14 @@ all: $(BIN)/jnc
 	@echo --------------------------------------------------
 
 $(LIB)/inc_version.jn.o:
+	@mkdir -p $(LIB)
 	echo "pub char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\
  	pub char* JNC_LONG_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'";' \
 	| $(JNC) | gcc -o $(LIB)/inc_version.jn.o -x assembler -c -
+
+inc_token_table.s: token_table.jn
+	@mkdir -p $(OUT)
+	sed -e 's/^#/;/' -e 's/^pub int /    /' token_table.jn > inc_token_table.s
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
@@ -41,7 +43,7 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	gcc -o $@ -dead_strip $^
 	@rm -f $(LIB)/inc_version.jn.o # blow away version info, so it'll rebuild next time
 
-$(LIB)/%.o: %.s $(INCLUDES)
+$(LIB)/%.o: %.s inc_token_table.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
@@ -65,8 +67,6 @@ clean:
 
 # configuration targets
 
-# if there's an error making a target, delete the target as it's in an unknown state
-.DELETE_ON_ERROR:
 # don't delete intermediate files created by pattern rules
 .SECONDARY:
 # never clean up partially-compiled assembly files (with errors)
