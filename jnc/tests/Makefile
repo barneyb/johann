@@ -6,6 +6,7 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
+	BufferTest \
 	collatz \
 	constants \
 	control_flow \
@@ -36,6 +37,10 @@ collatz: $(BIN)/collatz collatz.expected.txt
 	diff -u collatz.expected.txt $(OUT)/collatz.actual.txt
 
 # Pattern targets
+
+$(BIN)/%Test: $(LIB)/%Test.o ../$(LIB)/%.jn.o $(JSTDLIB)
+	@mkdir -p $(BIN)
+	gcc $^ -o $@
 
 %: $(BIN)/% %.expected.txt
 	$< > $(OUT)/$@.actual.txt

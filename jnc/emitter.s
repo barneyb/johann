@@ -12,7 +12,7 @@ err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i
 err_dupe_decl: .asciz "; ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n"
 err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n"
 err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
-err_global_param: .asciz "ERROR(%i): global call param '%s' at line %i, char %i\n"
+err_nonlocal_param: .asciz "ERROR(%i): non-local param (%x) at line %i, char %i\n"
 
 tmpl_prelude: .asciz "; Compiled with %s ; tmpl_prelude\n\
     .text\n\
@@ -1269,27 +1269,19 @@ do_call:
     b.eq    do_call_invoke          ; done!
     cmp     x0, T_COMMA
     b.eq    do_call_next_arg        ; again!
+    cmp     x0, T_ID
+    b.ne    do_call_icky
 
-    ; todo: respect globals...
     mov     x1, x23                 ; pointer -> token
     mov     x0, x19
     bl      lookup_symbol_by_token  ; self.lookup_symbol_by_token(token)
     bl      __j_Symbol_offset
     cmp     x0, #0
     b.gt    do_call_local_param
-        ; assemble a "token" on the stack
-        mov     x0, x23                 ; pointer -> token
-        bl      __j_Token_char
-        str     x0, [sp, -0x10]!
-        mov     x0, x23                 ; pointer -> token
-        bl      __j_Token_value
-        str     x0, [sp, -0x10]!
-        mov     x0, x23                 ; pointer -> token
-        bl      __j_Token_line
-        str     x0, [sp, 0x8]
-        adrp    x0, err_global_param@PAGE
-        add     x0, x0, err_global_param@PAGEOFF
-        mov     x1, sp
+        do_call_icky:
+        adrp    x0, err_nonlocal_param@PAGE
+        add     x0, x0, err_nonlocal_param@PAGEOFF
+        mov     x1, x23
         mov     x2, #25             ; error code
         bl      __j_jnc_panic
     do_call_local_param:

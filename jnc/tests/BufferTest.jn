@@ -1,0 +1,28 @@
+pub fn main() {
+    int n;
+    n = 14; build_up_to(n);
+    n = 15; build_up_to(n);
+    n = 16; build_up_to(n);
+    n = 17; build_up_to(n);
+}
+
+fn build_up_to(int count) {
+    int cap = 16;
+    char* prefix = malloc(cap);
+    void* buf = Buffer__new(cap);
+    char* middle = malloc(cap);
+    while count > 0 {
+        char c = 'a' + count;
+        c = c - 1;
+        count = count - 1;
+        Buffer_push(buf, c);
+    }
+    char* str = Buffer_into_chars(buf);
+    char* suffix = malloc(cap);
+
+    free(prefix);
+    free(middle);
+    puts(str);
+    free(str);
+    free(suffix);
+}
