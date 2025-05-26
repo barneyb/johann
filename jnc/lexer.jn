@@ -1,7 +1,39 @@
+int T_BOOL      = 0x162; # 0x100 + 'b';
 int T_CHAR      = 0x163; # 0x100 + 'c';
 int T_ID        = 0x169; # 0x100 + 'i';
 int T_INT       = 0x16e; # 0x100 + 'n';  # not 'i'
 int T_STRING    = 0x173; # 0x100 + 's';
+
+int T_KW_AGAIN  = 0x241; # 0x200 + 'A';
+int T_KW_BOOL   = 0x342; # 0x300 + 'B';
+int T_KW_CHAR   = 0x343; # 0x300 + 'C';
+int T_KW_CONST  = 0x443; # 0x400 + 'C';
+int T_KW_DONE   = 0x244; # 0x200 + 'D';
+int T_KW_FN     = 0x446; # 0x400 + 'F';
+int T_KW_IF     = 0x249; # 0x200 + 'I';
+int T_KW_INT    = 0x349; # 0x300 + 'I';
+int T_KW_LET    = 0x44c; # 0x400 + 'L';
+int T_KW_PUB    = 0x450; # 0x400 + 'P';
+int T_KW_RETURN = 0x252; # 0x200 + 'R';
+int T_KW_VOID   = 0x356; # 0x300 + 'V';
+int T_KW_WHILE  = 0x257; # 0x200 + 'W';
+
+char* KW_AGAIN  = "again";
+char* KW_BOOL   = "bool";
+char* KW_CHAR   = "char";
+char* KW_CONST  = "const";
+char* KW_DONE   = "done";
+char* KW_FALSE  = "false";
+char* KW_FN     = "fn";
+char* KW_IF     = "if";
+char* KW_INT    = "int";
+char* KW_LET    = "let";
+char* KW_NULL   = "null";
+char* KW_PUB    = "pub";
+char* KW_RETURN = "return";
+char* KW_TRUE   = "true";
+char* KW_VOID   = "void";
+char* KW_WHILE  = "while";
 
 pub fn Lexer_bad_char(void* self, int ch) { # todo: private
     char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n";
@@ -36,7 +68,7 @@ pub fn token_id(void* self, int first_char) { # todo: not public
     void* token = new_token(self, type);
     char* name = lex_id(self, first_char);
     Token_set_value(token, name);
-    Lexer_convert_keyword(token);
+    convert_keyword(token);
     return token;
 }
 
@@ -193,4 +225,120 @@ fn lex_id(void* self, char first_char) {
     }
 
     return Buffer_into_chars(buf);
+}
+
+fn to_keyword(void* token, char* name, char* kw, int type) {
+    if strcmp(name, kw) { return false; }
+    Token_set_value(token, kw);
+    free(name);
+    Token_set_type(token, type);
+    return true;
+}
+
+# modifies the token in-place!
+fn convert_keyword(void* token) {
+    char* name = Token_value(token);
+    char* kw;
+    int type;
+    char c = *name;
+    void v;
+    if c = 'a' {
+        kw = KW_AGAIN;
+        type = T_KW_AGAIN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'b' {
+        kw = KW_BOOL;
+        type = T_KW_BOOL;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'c' {
+        kw = KW_CHAR;
+        type = T_KW_CHAR;
+        if to_keyword(token, name, kw, type) { return; }
+        kw = KW_CONST;
+        type = T_KW_CONST;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'd' {
+        kw = KW_DONE;
+        type = T_KW_DONE;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'f' {
+        kw = KW_FALSE;
+        type = T_BOOL;
+        if to_keyword(token, name, kw, type) {
+            v = false;
+            Token_set_value(token, v);
+            return;
+        }
+        kw = KW_FN;
+        type = T_KW_FN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'i' {
+        kw = KW_IF;
+        type = T_KW_IF;
+        if to_keyword(token, name, kw, type) { return; }
+        kw = KW_INT;
+        type = T_KW_INT;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'l' {
+        kw = KW_LET;
+        type = T_KW_LET;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'n' {
+        kw = KW_NULL;
+        type = T_INT;
+        if to_keyword(token, name, kw, type) {
+            v = null;
+            Token_set_value(token, v);
+            return;
+        }
+        return;
+    }
+    if c = 'p' {
+        kw = KW_PUB;
+        type = T_KW_PUB;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'r' {
+        kw = KW_RETURN;
+        type = T_KW_RETURN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 't' {
+        kw = KW_TRUE;
+        type = T_BOOL;
+        if to_keyword(token, name, kw, type) {
+            v = true;
+            Token_set_value(token, v);
+            return;
+        }
+        return;
+    }
+    if c = 'v' {
+        kw = KW_VOID;
+        type = T_KW_VOID;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'w' {
+        kw = KW_WHILE;
+        type = T_KW_WHILE;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
 }
