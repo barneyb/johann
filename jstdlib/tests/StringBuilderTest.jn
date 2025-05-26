@@ -9,15 +9,15 @@ pub fn main() {
 fn build_up_to(int count) {
     int cap = 16;
     char* prefix = malloc(cap);
-    void* buf = Buffer__new(cap);
+    void* buf = StringBuilder__new(cap);
     char* middle = malloc(cap);
     while count > 0 {
         char c = 'a' + count;
         c = c - 1;
         count = count - 1;
-        Buffer_push(buf, c);
+        StringBuilder_push(buf, c);
     }
-    char* str = Buffer_into_chars(buf);
+    char* str = StringBuilder_into_chars(buf);
     char* suffix = malloc(cap);
 
     free(prefix);

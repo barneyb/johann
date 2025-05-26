@@ -190,6 +190,18 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
 
+<!--{johanndoc:jstdlib/StringBuilder.jn}-->
+
+### `StringBuilder`
+
+I am a dynamically resizing builder for null-terminated byte strings. 
+
+* `pub fn StringBuilder__new(int capacity) ` - I create new builder, with the given initial capacity. 
+* `pub fn StringBuilder_push(void* buf, char c) ` - I push a single character into the buffer, which will be automatically extended if the character won't fit. 
+* `pub fn StringBuilder_into_chars(void* buf) ` - I consume the builder and produce a null-terminated byte string from it. 
+
+<!--{/johanndoc:jstdlib/StringBuilder.jn}-->
+
 ### `sys`
 
 Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.

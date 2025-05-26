@@ -318,22 +318,22 @@ fn parse_hex_digit(char c) {
 
 fn lex_string(void* self) {
     int cap = 16;
-    void* buf = Buffer__new(cap);
+    void* buf = StringBuilder__new(cap);
 
     char c;
     while true {
         c = next_char(self);
         if c = '"' { done; }
-        Buffer_push(buf, c);
+        StringBuilder_push(buf, c);
     }
 
-    return Buffer_into_chars(buf);
+    return StringBuilder_into_chars(buf);
 }
 
 fn lex_id(void* self, char first_char) {
     int cap = 16;
-    void* buf = Buffer__new(cap);
-    Buffer_push(buf, first_char);
+    void* buf = StringBuilder__new(cap);
+    StringBuilder_push(buf, first_char);
 
     char c;
     while true {
@@ -351,10 +351,10 @@ fn lex_id(void* self, char first_char) {
         # above z is bad
 
         c = next_char(self);
-        Buffer_push(buf, c);
+        StringBuilder_push(buf, c);
     }
 
-    return Buffer_into_chars(buf);
+    return StringBuilder_into_chars(buf);
 }
 
 fn to_keyword(void* token, char* name, char* kw, int type) {

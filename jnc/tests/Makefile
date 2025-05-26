@@ -6,7 +6,6 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
-	BufferTest \
 	collatz \
 	constants \
 	control_flow \

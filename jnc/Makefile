@@ -5,15 +5,14 @@ OUT = $(TGT)/out
 JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 OBJECTS = $(JSTDLIB) \
-	$(LIB)/Buffer.jn.o \
-	$(LIB)/emitter.o \
 	$(LIB)/emitter.jn.o \
+	$(LIB)/emitter.o \
+	$(LIB)/inc_version.jn.o \
 	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.jn.o \
 	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
 	$(LIB)/token.o \
-	$(LIB)/inc_version.jn.o \
 
 all: $(BIN)/jnc
 	@echo --------------------------------------------------
