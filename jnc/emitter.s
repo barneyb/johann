@@ -362,8 +362,8 @@ is_pub: .quad 0 ; this is so gross
 .text
 
 /* void emit( Emitter* self, [Token*] stmt ) */
-.global _emitter_emit
-_emitter_emit:
+.global __j_Emitter_emit
+__j_Emitter_emit:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!

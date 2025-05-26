@@ -11,7 +11,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.jn.o \
 	$(LIB)/parser.jn.o \
-	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
 	$(LIB)/Token.jn.o \
 
