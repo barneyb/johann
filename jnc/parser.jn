@@ -1,13 +1,13 @@
 # I am a Parser for Tokens produced by a Lexer.
 
-int T_BOOL      = 0x162; # 0x100 + 'b';
-int T_CHAR      = 0x163; # 0x100 + 'c';
-int T_ID        = 0x169; # 0x100 + 'i';
-int T_INT       = 0x16e; # 0x100 + 'n';  # not 'i'
-int T_STRING    = 0x173; # 0x100 + 's';
-int T_CBRACE    = '}';
-int T_OBRACE    = '{';
-int T_SEMI      = ';';
+int T_BOOL;
+int T_CHAR;
+int T_ID;
+int T_INT;
+int T_STRING;
+int T_CBRACE;
+int T_OBRACE;
+int T_SEMI;
 
 # struct Parser {
 #   Lexer* lexer                    ; pointer -> source of Tokens

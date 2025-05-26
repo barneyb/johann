@@ -5,6 +5,7 @@ OUT = $(TGT)/out
 JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 OBJECTS = $(JSTDLIB) \
+	$(LIB)/Token.jn.o \
 	$(LIB)/emitter.jn.o \
 	$(LIB)/emitter.o \
 	$(LIB)/inc_version.jn.o \
@@ -12,7 +13,7 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/lexer.jn.o \
 	$(LIB)/parser.jn.o \
 	$(LIB)/symbol.o \
-	$(LIB)/Token.jn.o \
+	$(LIB)/token_table.jn.o \
 
 all: $(BIN)/jnc
 	@echo --------------------------------------------------
@@ -36,7 +37,7 @@ $(JSTDLIB)::
 
 # Pattern targets
 
-$(BIN)/%: $(LIB)/%.o $(OBJECTS)
+$(BIN)/%: $(LIB)/%.jn.o $(OBJECTS)
 	@mkdir -p $(BIN)
 	gcc -o $@ -dead_strip $^
 	@rm -f $(LIB)/inc_version.jn.o # blow away version info, so it'll rebuild next time

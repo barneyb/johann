@@ -1,5 +1,5 @@
-int T_KW_FN = 1094; # 0x400 'F'
-int T_SEMI = 59;    #       ';'
+int T_KW_FN;
+int T_SEMI;
 
 pub fn Emitter_return(void* self, void** buffer) {
     int kw = T_KW_FN;
@@ -35,7 +35,7 @@ pub fn Emitter_do_value_integer(void* self, int i) {
         Emitter_do_value_integer_large(self, i);
         return null;
     }
-    char* tmpl = "        mov     x0, #%i ; tmpl_token_integer\n";
+    char* tmpl = "        mov     x0, #%i\n";
     printf(tmpl, i);
 }
 

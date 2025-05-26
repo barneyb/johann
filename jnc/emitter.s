@@ -14,7 +14,7 @@ err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i
 err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
 err_nonlocal_param: .asciz "ERROR(%i): non-local param (%x) at line %i, char %i\n"
 
-tmpl_prelude: .asciz "; Compiled with %s ; tmpl_prelude\n\
+tmpl_prelude: .asciz "; Compiled with %s\n\
     .text\n\
     .align  3\n\
     NULL  = 0\n\
@@ -531,13 +531,13 @@ __j_Emitter_emit:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 s_main: .asciz "main"
-tmpl_main_pub: .asciz "    .global _main ; tmpl_main_pub\n"
-tmpl_main: .asciz "    _main: ; tmpl_main\n\
+tmpl_main_pub: .asciz "    .global _main\n"
+tmpl_main: .asciz "    _main:\n\
         bl      __j_main\n\
         b       __j_exit\n\
 "
 
-tmpl_fn_pub: .asciz "    .global __j_%s ; tmpl_fn_pub\n"
+tmpl_fn_pub: .asciz "    .global __j_%s\n"
 tmpl_fn_intro: .asciz "    __j_%s:\n\
         ; create frame\n\
         stp     fp, lr, [sp, -0x10]!\n\
@@ -546,7 +546,7 @@ tmpl_fn_intro: .asciz "    __j_%s:\n\
             sub sp, sp, 0x40\n\
         ; end frame\n"
 
-tmpl_fn_arg: .asciz "        str     x%i, [fp, -%x] ; tmpl_fn_arg\n"
+tmpl_fn_arg: .asciz "        str     x%i, [fp, -%x]\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -650,7 +650,7 @@ do_fn:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_if_intro: .asciz "        cmp     x0, FALSE ; tmpl_if_intro\n\
+tmpl_if_intro: .asciz "        cmp     x0, FALSE\n\
         b.eq    if_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -686,8 +686,8 @@ do_if:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_while_intro_a: .asciz "        while_%i_again: ; tmpl_while_intro_a\n"
-tmpl_while_intro_b: .asciz "        cmp     x0, FALSE ; tmpl_while_intro_b\n\
+tmpl_while_intro_a: .asciz "        while_%i_again:\n"
+tmpl_while_intro_b: .asciz "        cmp     x0, FALSE\n\
         b.eq    while_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -727,8 +727,8 @@ do_while:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_again: .asciz "        b       while_%i_again ; tmpl_again\n"
-tmpl_done : .asciz "        b       while_%i_done ; tmpl_done\n"
+tmpl_again: .asciz "        b       while_%i_again\n"
+tmpl_done : .asciz "        b       while_%i_done\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -771,17 +771,17 @@ do_loop_thinger:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_global_pub: .asciz "    .global _j_gbl_%s ; tmpl_global_pub\n"
+tmpl_global_pub: .asciz "    .global _j_gbl_%s\n"
 tmpl_width_byte: .asciz ".byte"
 tmpl_width_quad: .asciz ".quad"
 tmpl_width_string: .asciz ".asciz"
-tmpl_global_raw: .asciz "    .data ; tmpl_global_raw\n\
+tmpl_global_raw: .asciz "    .data\n\
         _j_gbl_%s: %s %i\n\
     .text\n"
-tmpl_global_char: .asciz "    .data ; tmpl_global_char\n\
+tmpl_global_char: .asciz "    .data\n\
         _j_gbl_%s: %s '%c'\n\
     .text\n"
-tmpl_global_string: .asciz "    .data ; tmpl_global_string\n\
+tmpl_global_string: .asciz "    .data\n\
         _j_gbl_%s: %s \"%s\"\n\
     .text\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -909,7 +909,7 @@ __j_Emitter_vardecl:
 ;        .data
 ;        ns:.asciz "; added '%s' to table w/ type %x width %d and nptr %d\n"
 ;        .text
-;        ldp x3, x4, [x24]           ; load width and nptr
+;        ldp x3, x4, [x24]           ; load width and nptr - nasty!
 ;        ldr x0, [x20]               ; load pointer -> tokens[0]
 ;        bl __j_Token_type           ; token.type()
 ;        mov x2, x0
@@ -1045,11 +1045,11 @@ do_decl:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_assign: .asciz "        str     x0, [fp, -%x] ; tmpl_assign\n"
-tmpl_assign_global_quad: .asciz "        adrp    x7, _j_gbl_%s@PAGE ; tmpl_assign_global_quad\n\
+tmpl_assign: .asciz "        str     x0, [fp, -%x]\n"
+tmpl_assign_global_quad: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
         add     x7, x7, _j_gbl_%s@PAGEOFF\n\
         str     x0, [x7]\n"
-tmpl_assign_global_byte: .asciz "        adrp    x7, _j_gbl_%s@PAGE ; tmpl_assign_global_byte\n\
+tmpl_assign_global_byte: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
         add     x7, x7, _j_gbl_%s@PAGEOFF\n\
         strb    w0, [x7]\n"
 
@@ -1110,11 +1110,11 @@ do_assign:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_get_addr_local: .asciz "        ldr     x7, [fp, -%x] ; tmpl_get_addr_local\n"
-tmpl_get_addr_global: .asciz "        adrp    x7, _j_gbl_%s@PAGE ; tmpl_token_id_global\n\
+tmpl_get_addr_local: .asciz "        ldr     x7, [fp, -%x]\n"
+tmpl_get_addr_global: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
         add     x7, x7, _j_gbl_%s@PAGEOFF\n"
-tmpl_assign_ptr_quad: .asciz "        str     x0, [x7] ; tmpl_assign_ptr_quad\n"
-tmpl_assign_ptr_byte: .asciz "        strb    w0, [x7] ; tmpl_assign_ptr_byte\n"
+tmpl_assign_ptr_quad: .asciz "        str     x0, [x7]\n"
+tmpl_assign_ptr_byte: .asciz "        strb    w0, [x7]\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1153,7 +1153,7 @@ do_assign_pointer:
         bl      __j_printf
 
     do_assign_pointer_go:
-    ldp     x3, x4, [sp], 0x10      ; load width/nptr
+    ldp     x3, x4, [sp], 0x10      ; load width/nptr - nasty!
     cmp     x3, #1
     b.ne    do_assign_pointer_quad  ; if width != 1, use quad
     cmp     x4, #1
@@ -1175,15 +1175,15 @@ do_assign_pointer:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_fn_outro: .asciz "        mov      x0, #0             ; fell off end; return zero ; tmpl_fn_outro\n\
+tmpl_fn_outro: .asciz "        mov      x0, #0             ; fell off end; return zero\n\
         _return_%i:\n\
         ; restore frame\n\
             ; todo: this was enough space for the same 8 locals as before\n\
             add sp, sp, 0x40\n\
         ldp     fp, lr, [sp], 0x10\n\
         ret\n\n\n"
-tmpl_if_outro: .asciz "        if_%i_done: ; tmpl_if_outro\n"
-tmpl_while_outro: .asciz "        b     while_%i_again ; tmpl_while_outro\n\
+tmpl_if_outro: .asciz "        if_%i_done:\n"
+tmpl_while_outro: .asciz "        b     while_%i_again\n\
         while_%i_done:\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -1242,8 +1242,8 @@ do_close_block:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_call_param: .asciz "        ldr     x%i, [fp, -%x] ; tmpl_call_param\n"
-tmpl_call: .asciz "        bl      __j_%s ; tmpl_call\n"
+tmpl_call_param: .asciz "        ldr     x%i, [fp, -%x]\n"
+tmpl_call: .asciz "        bl      __j_%s\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1413,7 +1413,7 @@ do_expr:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_un_not:    .asciz "        cmp     x0, FALSE ; tmpl_un_not\n\
+tmpl_un_not:    .asciz "        cmp     x0, FALSE\n\
         b.ne    expr_%i_was_true\n\
         mov     x0, TRUE\n\
         b       expr_%i_end\n\
@@ -1421,12 +1421,12 @@ tmpl_un_not:    .asciz "        cmp     x0, FALSE ; tmpl_un_not\n\
         mov     x0, FALSE\n\
         expr_%i_end:\n"
 ; "add-a-negative" so it matches the addressing offsets
-tmpl_un_take_addr_local: .asciz "        add     x0, fp, -%x ; tmpl_un_take_addr_local\n"
-tmpl_un_take_addr_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE ; tmpl_un_take_addr_global\n\
+tmpl_un_take_addr_local: .asciz "        add     x0, fp, -%x\n"
+tmpl_un_take_addr_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE\n\
         add     x0, x0, _j_gbl_%s@PAGEOFF\n"
-tmpl_un_negate: .asciz "        neg     x0, x0 ; tmpl_un_negate\n"
-tmpl_un_deref_quad: .asciz "        ldr     x0, [x0] ; tmpl_un_deref_quad\n"
-tmpl_un_deref_byte: .asciz "        ldrb    w0, [x0] ; tmpl_un_deref_byte\n"
+tmpl_un_negate: .asciz "        neg     x0, x0\n"
+tmpl_un_deref_quad: .asciz "        ldr     x0, [x0]\n"
+tmpl_un_deref_byte: .asciz "        ldrb    w0, [x0]\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 
@@ -1532,14 +1532,14 @@ do_unary_op:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_bin_push:  .asciz "        str     x0, [sp, -0x10]! ; tmpl_bin_push"
-tmpl_bin_pop_x1:.asciz "        ldr     x1, [sp], 0x10 ; tmpl_bin_pop_x1"
+tmpl_bin_push:  .asciz "        str     x0, [sp, -0x10]!"
+tmpl_bin_pop_x1:.asciz "        ldr     x1, [sp], 0x10"
 
-tmpl_bin_add:   .asciz "        add     x0, x0, x1 ; tmpl_bin_add"
-tmpl_bin_sub:   .asciz "        sub     x0, x0, x1 ; tmpl_bin_sub"
-tmpl_bin_mul:   .asciz "        mul     x0, x0, x1 ; tmpl_bin_mul"
-tmpl_bin_div:   .asciz "        sdiv    x0, x0, x1 ; tmpl_bin_div"
-tmpl_bin_mod:   .asciz "        str     x2, [sp, -0x10]! ; tmpl_bin_mod\n\
+tmpl_bin_add:   .asciz "        add     x0, x0, x1"
+tmpl_bin_sub:   .asciz "        sub     x0, x0, x1"
+tmpl_bin_mul:   .asciz "        mul     x0, x0, x1"
+tmpl_bin_div:   .asciz "        sdiv    x0, x0, x1"
+tmpl_bin_mod:   .asciz "        str     x2, [sp, -0x10]!\n\
         sdiv    x2, x0, x1\n\
         msub    x0, x2, x1, x0\n\
         ldr     x2, [sp], 0x10"
@@ -1547,7 +1547,7 @@ tmpl_b_gt:    .asciz "gt"
 tmpl_b_lt:    .asciz "lt"
 tmpl_b_eq:    .asciz "eq"
 tmpl_b_ne:    .asciz "ne"
-tmpl_bin_comp:    .asciz "        cmp     x0, x1 ; tmpl_bin_comp\n\
+tmpl_bin_comp:    .asciz "        cmp     x0, x1\n\
         b.%s    expr_%i\n\
         mov     x0, FALSE\n\
         b       expr_%i_end\n\
@@ -1734,8 +1734,8 @@ do_token:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
-tmpl_token_id: .asciz "        ldr     x0, [fp, -%x] ; tmpl_token_id\n"
-tmpl_token_id_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE ; tmpl_token_id_global\n\
+tmpl_token_id: .asciz "        ldr     x0, [fp, -%x]\n"
+tmpl_token_id_global: .asciz "        adrp    x0, _j_gbl_%s@PAGE\n\
         add     x0, x0, _j_gbl_%s@PAGEOFF\n"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
