@@ -1,0 +1,36 @@
+# I store information about a symbol in a Johann program. I was originally an
+# unencapsulated memory location, and there are still assumptions that the first
+# and second quad of my layout are width and nptr.
+
+int T_KW_BOOL;
+int T_KW_CHAR;
+
+# struct Symbol {
+#   int width       ; byte width of a value
+#   int nptr        ; number of pointer indirections
+#   int offset      ; locals : offset from fp (one-indexed)
+#                   ; statics: non-positive
+# }
+
+# I create a new symbol, computing its width from its type (ick).
+pub fn Symbol__new(int type, int nptr) {
+    int bytes = 0x18;
+    int s = malloc(bytes);
+    bytes = 0x8;
+    if type = T_KW_BOOL { bytes = 0x1; }
+    if type = T_KW_CHAR { bytes = 0x1; }
+    *s = bytes;
+    s = s + 0x8;                    # -> nptr
+    *s = nptr;
+    return s - 0x8;                 # -> width
+}
+
+pub fn Symbol_offset(void* self) {
+    self = self + 0x10;             # -> offset
+    return *self;
+}
+
+pub fn Symbol_set_offset(void* self, int offset) {
+    self = self + 0x10;             # -> offset
+    *self = offset;
+}
