@@ -10,9 +10,10 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/inc_version.jn.o \
 	$(LIB)/jnc.jn.o \
 	$(LIB)/lexer.jn.o \
+	$(LIB)/parser.jn.o \
 	$(LIB)/parser.o \
 	$(LIB)/symbol.o \
-	$(LIB)/token.o \
+	$(LIB)/Token.jn.o \
 
 all: $(BIN)/jnc
 	@echo --------------------------------------------------

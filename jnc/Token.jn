@@ -1,0 +1,83 @@
+# I represent a token, lexed from the input stream.
+
+int T_ID        = 0x169; # 0x100 + 'i';
+int T_STRING    = 0x173; # 0x100 + 's';
+
+# struct Token {
+#   int type                        ; type of token
+#   int line_num                    ; line of the source the token started on
+#   int char_offset                 ; position in the line the token started on
+#   ? value                         ; a 64-bit "something"
+#   ? moar                          ; another 64-bit "something"
+# }
+
+# I create a new token, with the given type.
+pub fn Token__new(int type) {
+    int bytes = 0x28;
+    void* token = malloc(bytes);
+    *token = type;
+#    int zero = 0;
+#    Token_set_coords(token, zero, zero);
+#    Token_set_value(token, zero);
+##    Token_set_moar(token, zero);
+    return token;
+}
+
+pub fn Token_drop(void* token) {
+    int type = *token;
+    void* val;
+    if type = T_ID {
+        val = Token_value(token);
+        free(val);
+    }
+    if type = T_STRING {
+        val = Token_value(token);
+        free(val);
+    }
+    free(token);
+}
+
+pub fn Token_type(void* token) {
+    return *token;
+}
+
+pub fn Token_set_type(void* token, int type) {
+    *token = type;
+}
+
+pub fn Token_line(void* token) {
+    token = token + 0x8;            # -> line_num
+    return *token;
+}
+
+pub fn Token_char(void* token) {
+    token = token + 0x10;           # -> char_offset
+    return *token;
+}
+
+pub fn Token_set_coords(void* token, int line_num, int char_offset) {
+    token = token + 0x8;            # -> line_num
+    *token = line_num;
+    token = token + 0x8;            # -> char_offset
+    *token = char_offset;
+}
+
+pub fn Token_value(void* token) {
+    token = token + 0x18;           # -> value
+    return *token;
+}
+
+pub fn Token_set_value(void* token, void value) {
+    token = token + 0x18;           # -> value
+    *token = value;
+}
+
+pub fn Token_moar(void* token) {
+    token = token + 0x28;           # -> moar
+    return *token;
+}
+
+pub fn Token_set_moar(void* token, void moar) {
+    token = token + 0x20;           # -> moar
+    *token = moar;
+}

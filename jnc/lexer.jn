@@ -217,10 +217,10 @@ fn token_id(void* self, int first_char) {
 fn token_char(void* self, int first_char) {
     first_char = T_CHAR;
     void* token = new_token(self, first_char);
-    char c = next_char(); # the actual char
+    char c = next_char(self); # the actual char
     # todo: escape sequences
     Token_set_value(token, c);
-    next_char(); # close quote
+    next_char(self); # close quote
     return token;
 }
 
