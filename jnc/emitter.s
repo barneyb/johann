@@ -14,13 +14,6 @@ err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i
 err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
 err_nonlocal_param: .asciz "ERROR(%i): non-local param (%x) at line %i, char %i\n"
 
-tmpl_prelude: .asciz "; Compiled with %s\n\
-    .text\n\
-    .align  3\n\
-    NULL  = 0\n\
-    TRUE  = 1\n\
-    FALSE = 0\n"
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
 .align 3 ; 8-byte/64-bit alignment
@@ -30,113 +23,15 @@ FALSE   = 0
 
 .include "inc_token_table.s"
 
-/*
-struct Emitter {
-    int seq                         ; sequence for unique label names
-    int depth
-    [Block] blocks                  ; array/stack of "lexical" Blocks
-}
-*/
 OFF_SEQ     = 0
 OFF_DEPTH   = 0x8
 OFF_BLOCKS  = 0x10
-BLOCKS_CAP  = 10
-SIZEOF      = OFF_BLOCKS + BLOCKS_CAP * SIZEOF_BLOCK    ; blocks is always last
 
-/* Emitter new( ) */
-.global __j_Emitter__new
-__j_Emitter__new:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x21, [sp, -0x10]!
+SIZEOF_BLOCK  = 0x20
 
-    mov     x0, SIZEOF              ; how much to allocate
-    bl      __j_malloc              ; allocate
-    mov     x19, x0                 ; stash pointer -> this
-    stp     xzr, xzr, [x0]          ; initialize seq and depth
-    ; enter global "block"
-    mov     x0, x19
-    mov     x1, NULL
-    bl      enter_block             ; this.enter_block()
-
-    adrp    x0, tmpl_prelude@PAGE
-    add     x0, x0, tmpl_prelude@PAGEOFF
-    adrp    x1, _j_gbl_JNC_SHORT_VERSION@PAGE
-    add     x1, x1, _j_gbl_JNC_SHORT_VERSION@PAGEOFF
-    bl      __j_printf
-
-    mov     x0, x19
-
-    ldp     x19, x21, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/*
-struct Block {
-    int type                        ; type of the block, identified by its token
-    int id                          ; unique id num of the block
-    int nvars                       ; number of vars (function only)
-    Table* symbols
-}
-*/
-B_OFF_TYPE    = 0
-B_OFF_ID      = 0x8
-B_OFF_NVARS   = 0x10
-B_OFF_SYMBOLS = 0x18
-SIZEOF_BLOCK  = B_OFF_SYMBOLS + 0x8
-
-/* void drop( Block* b ) */
-block_drop:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-
-    ldr     x0, [x0, B_OFF_SYMBOLS] ; load block's symbol table
-    adrp    x1, __j_free@PAGE
-    add     x1, x1, __j_free@PAGEOFF; use free to drop keys (names)
-    mov     x2, x1                  ; use free to drop values (symbols)
-    bl      __j_Table_drop_owned    ; drop nodes AND their values
-
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* int id( Block* b ) */
-.global __j_Emitter_Block_id
-__j_Emitter_Block_id:
-block_id:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
-    ldr     x0, [x0, B_OFF_ID]
-
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* int type( Block* b ) */
-block_type:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
-    ldr     x0, [x0, B_OFF_TYPE]
-
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* int symbols( Block* b ) */
-.global __j_Emitter_Block_symbols
-__j_Emitter_Block_symbols:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    ; end frame
-    ldr     x0, [x0, B_OFF_SYMBOLS]
-
-    ; restore frame
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* Block* enter_block( Emitter* self, int type ) */
-enter_block:
+/* Block* __j_Emitter_enter_block( Emitter* self, int type ) */
+.global __j_Emitter_enter_block
+__j_Emitter_enter_block:
     ; create frame
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
@@ -151,22 +46,9 @@ enter_block:
     add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x0, x22, x1, x0         ; pointer -> block
-    stp     x20, x21, [x0]          ; initialize type & id
-
-    mov     x20, x0                 ; stash pointer -> block
-    adrp    x0, __j_strcmp@PAGE
-    add     x0, x0, __j_strcmp@PAGEOFF
-    bl      __j_Table__new
-    stp     xzr, x0, [x20, B_OFF_NVARS]; initialize nvars & symbol table
-;        .data
-;        bt:.asciz "; block: %p, table: %p\n"
-;        .text
-;        mov x2, x0
-;        mov x1, x20
-;        adrp x0, bt@PAGE
-;        add x0, x0, bt@PAGEOFF    ; pointer -> msg
-;        bl __j_printf
-    mov     x0, x20                 ; restore pointer -> block
+    mov     x1, x20
+    mov     x2, x21
+    bl      __j_Block_init
 
     add     x22, x22, 1             ; increment depth
     stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
@@ -177,8 +59,8 @@ enter_block:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* Symbol* lookup_symbol_by_token( Emitter* self, Token* id_token ) */
-lookup_symbol_by_token:
+/* Symbol* Emitter_lookup_symbol_for( Emitter* self, Token* id_token ) */
+__j_Emitter_lookup_symbol_for:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
@@ -217,7 +99,7 @@ lookup_symbol_by_name_and_token:
     add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x0, x20, x1, x0         ; pointer -> block
-    ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
+    bl      __j_Block_symbols
     ldr     x1, [sp]                ; load pointer -> name
     bl      __j_Table_get
     cmp     x0, NULL
@@ -247,7 +129,6 @@ lookup_symbol_by_name_and_token:
 /* Block* innermost_block_of( Emitter* self, int type, Token* t ) */
 .global __j_Emitter_innermost_block_of
 __j_Emitter_innermost_block_of:
-innermost_block_of:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
@@ -265,7 +146,7 @@ innermost_block_of:
     mov     x1, SIZEOF_BLOCK        ; size of block
     madd    x22, x21, x1, x22       ; pointer -> block
     mov     x0, x22
-    bl      block_type
+    bl      __j_Block_type
     cmp     x0, x20
     b.ne    innermost_block_of_loop
     mov     x0, x22
@@ -302,7 +183,8 @@ current_block:
     ret
 
 /* Block* leave_block( Emitter* self ) */
-leave_block:
+.global __j_Emitter_leave_block
+__j_Emitter_leave_block:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
@@ -318,21 +200,6 @@ leave_block:
     ; restore frame
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
-    ret
-
-/* int __j_Emitter_seqnum( Emitter* self ) */
-.global __j_Emitter_seqnum
-__j_Emitter_seqnum:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    ; end frame
-    mov     x1, x0                  ; stash pointer -> this
-    ldr     x0, [x1, OFF_SEQ]       ; load seq
-    add     x0, x0, 1               ; increment seq
-    str     x0, [x1, OFF_SEQ]       ; store seq
-    ; restore frame
-    ldp     fp, lr, [sp], 0x10
     ret
 
 /* bool is_global( Emitter* self ) */
@@ -358,7 +225,7 @@ is_global:
     ret
 
 .data
-is_pub: .quad 0 ; this is so gross
+is_pub: .quad 0 ; todo: this is so gross
 .text
 
 /* void emit( Emitter* self, [Token*] stmt ) */
@@ -439,7 +306,7 @@ __j_Emitter_emit:
     b.ne    __emit_again            ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_while                ; this.do_while( buffer )
+    bl      __j_Emitter_do_while                ; this.__j_Emitter_do_while( buffer )
     b       __emit_return__
 
     __emit_again:
@@ -447,7 +314,7 @@ __j_Emitter_emit:
     b.ne    __emit_done             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_again                ; this.do_again( buffer )
+    bl      __j_Emitter_do_again                ; this.__j_Emitter_do_again( buffer )
     b       __emit_return__
 
     __emit_done:
@@ -455,7 +322,7 @@ __j_Emitter_emit:
     b.ne    __emit_if               ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_done                 ; this.do_done( buffer )
+    bl      __j_Emitter_do_done                 ; this.__j_Emitter_do_done( buffer )
     b       __emit_return__
 
     __emit_if:
@@ -463,7 +330,7 @@ __j_Emitter_emit:
     b.ne    __emit_return           ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_if                   ; this.do_if( buffer )
+    bl      __j_Emitter_do_if                   ; this.__j_Emitter_do_if( buffer )
     b       __emit_return__
 
     __emit_return:
@@ -564,7 +431,7 @@ do_fn:
     mov     x22, x0                 ; stash pointer -> name
     mov     x0, x19
     mov     x1, T_KW_FN
-    bl      enter_block             ; this.enter_block()
+    bl      __j_Emitter_enter_block             ; this.__j_Emitter_enter_block()
 
     ; see if the function is public
     adrp    x23, is_pub@PAGE
@@ -631,7 +498,7 @@ do_fn:
     do_fn_argname:
     mov     x1, x23                 ; pointer -> token
     mov     x0, x19
-    bl      lookup_symbol_by_token  ; self.lookup_symbol_by_token(token)
+    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
     bl      __j_Symbol_offset       ; symbol.offset();
     mov     x1, x22
     lsl     x2, x0, 3
@@ -646,127 +513,6 @@ do_fn:
     ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_if_intro: .asciz "        cmp     x0, FALSE\n\
-        b.eq    if_%i_done\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_if( Emitter* self, [Token*] buffer ) */
-do_if:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-    mov     x0, x19
-    mov     x1, T_KW_IF
-    bl      enter_block             ; this.enter_block()
-    bl      block_id
-    mov     x22, x0                 ; stash current block id
-
-    mov     x0, x19
-    add     x1, x20, #8             ; pointer -> condition token
-    bl      do_expr
-    mov     x1, x22
-    adrp    x0, tmpl_if_intro@PAGE   ; pointer -> template
-    add     x0, x0, tmpl_if_intro@PAGEOFF
-    bl      __j_printf
-
-    ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_while_intro_a: .asciz "        while_%i_again:\n"
-tmpl_while_intro_b: .asciz "        cmp     x0, FALSE\n\
-        b.eq    while_%i_done\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_while( Emitter* self, [Token*] buffer ) */
-do_while:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    str     x22, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-    mov     x0, x19
-    mov     x1, T_KW_WHILE
-    bl      enter_block             ; this.enter_block()
-    bl      block_id
-    mov     x22, x0                 ; stash current block id
-
-    mov     x1, x22
-    adrp    x0, tmpl_while_intro_a@PAGE   ; pointer -> template
-    add     x0, x0, tmpl_while_intro_a@PAGEOFF
-    bl      __j_printf
-    mov     x0, x19
-    add     x1, x20, #8             ; pointer -> condition token
-    bl      do_expr
-    mov     x1, x22
-    adrp    x0, tmpl_while_intro_b@PAGE   ; pointer -> template
-    add     x0, x0, tmpl_while_intro_b@PAGEOFF
-    bl      __j_printf
-
-    ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_again: .asciz "        b       while_%i_again\n"
-tmpl_done : .asciz "        b       while_%i_done\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_again( Emitter* self, [Token*] buffer ) */
-do_again:
-    adrp    x2, tmpl_again@PAGE   ; pointer -> template
-    add     x2, x2, tmpl_again@PAGEOFF
-    b       do_loop_thinger
-
-/* void do_done( Emitter* self, [Token*] buffer ) */
-do_done:
-    adrp    x2, tmpl_done@PAGE   ; pointer -> template
-    add     x2, x2, tmpl_done@PAGEOFF
-    b       do_loop_thinger
-
-/* void do_loop_thinger( Emitter* self, [Token*] buffer, char* tmpl ) */
-do_loop_thinger:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x21, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x21, x2                 ; pointer -> template
-
-    ldr     x2, [x1]
-    mov     x1, T_KW_WHILE
-    mov     x0, x19
-    bl      innermost_block_of
-    bl      block_id
-    mov     x1, x0
-
-    mov     x0, x21
-    bl      __j_printf
-
-    ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
     ret
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -831,7 +577,7 @@ __j_Emitter_vardecl:
         mov     x0, x19
         mov     x1, T_KW_FN
         mov     x2, x23
-        bl      innermost_block_of
+        bl      __j_Emitter_innermost_block_of
         b       vardecl_got_block
     vardecl_global:
         mov     x0, x19
@@ -839,7 +585,7 @@ __j_Emitter_vardecl:
 
     vardecl_got_block:
     ; get its symbol table
-    ldr     x0, [x0, B_OFF_SYMBOLS] ; block.symbol_table()
+    bl      __j_Block_symbols
     mov     x23, x0                 ; stash pointer -> symbols
     ; if already defined, panic
     ldr     x1, [sp]                ; load pointer -> name
@@ -1072,7 +818,7 @@ do_assign:
 
     ldr     x1, [x20]               ; pointer -> name token
     mov     x0, x19                 ; pointer -> self
-    bl      lookup_symbol_by_token  ; self.lookup_symbol_by_token(token)
+    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
     str     x0, [sp, -0x10]!        ; store pointer -> symbol
     bl      __j_Symbol_offset
         cmp     x0, #0
@@ -1132,7 +878,7 @@ do_assign_pointer:
 
     ldr     x1, [x20, 0x8]          ; pointer -> name token
     mov     x0, x19
-    bl      lookup_symbol_by_token  ; self.lookup_symbol_by_token(token)
+    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
     ldp     x3, x4, [x0]            ; load width and nptr from the symbol - nasty!
     stp     x3, x4, [sp, -0x10]!    ; store width/nptr
     bl      __j_Symbol_offset
@@ -1197,12 +943,12 @@ do_close_block:
     ; end frame
     mov     x19, x0                 ; stash pointer -> this
     mov     x20, x1                 ; stash pointer -> buffer
-    bl      leave_block             ; this.leave_block()
+    bl      __j_Emitter_leave_block             ; this.__j_Emitter_leave_block()
     mov     x22, x0                 ; stash pointer -> block
-    bl      block_id                ; block.id()
+    bl      __j_Block_id                ; block.id()
     mov     x23, x0                 ; stash id
     mov     x0, x22
-    bl      block_type              ; block.type()
+    bl      __j_Block_type              ; block.type()
 
     cmp     x0, T_KW_FN
     b.ne    do_close_block_if
@@ -1233,7 +979,7 @@ do_close_block:
 
     do_close_block_return:
     mov     x0, x22
-    bl      block_drop
+    bl      __j_Block_drop
     ; restore frame
     ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
@@ -1274,7 +1020,7 @@ do_call:
 
     mov     x1, x23                 ; pointer -> token
     mov     x0, x19
-    bl      lookup_symbol_by_token  ; self.lookup_symbol_by_token(token)
+    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
     bl      __j_Symbol_offset
     cmp     x0, #0
     b.gt    do_call_local_param
@@ -1470,7 +1216,7 @@ do_unary_op:
     do_un_take_addr:
     mov     x0, x19
     ldr     x1, [x20, 0x8]
-    bl      lookup_symbol_by_token
+    bl      __j_Emitter_lookup_symbol_for
     bl      __j_Symbol_offset
     cmp     x0, xzr
     b.gt    do_un_take_addr_local
@@ -1509,7 +1255,7 @@ do_unary_op:
     ; get the symbol
     mov     x0, x19
     ldr     x1, [x20, 0x8]          ; pointer -> name token
-    bl      lookup_symbol_by_token
+    bl      __j_Emitter_lookup_symbol_for
     ldp     x2, x3, [x0]            ; load width and nptr from the symbol - nasty!
     cmp     x2, #1
     b.ne    do_un_deref_quad        ; if width != 1, use quad
@@ -1752,7 +1498,7 @@ do_value_id:
 
     mov     x1, x21
     mov     x0, x19
-    bl      lookup_symbol_by_token
+    bl      __j_Emitter_lookup_symbol_for
     str     x0, [sp, -0x10]!        ; store pointer -> symbol
     bl      __j_Symbol_offset
     cmp     x0, #0
@@ -1792,20 +1538,5 @@ do_value_id:
     ; restore frame
     add     sp, sp, 0x10            ; release locals
     ldp     x19, x21, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* void drop( Emitter* self ) */
-.global __j_Emitter_drop
-__j_Emitter_drop:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    str     x0, [sp, -0x10]!
-
-    bl      leave_block
-    bl      block_drop
-    ldr     x0, [sp], 0x10
-    bl      __j_free
-
     ldp     fp, lr, [sp], 0x10
     ret

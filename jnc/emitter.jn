@@ -1,11 +1,52 @@
 int T_KW_FN;
+int T_KW_WHILE;
 int T_SEMI;
+
+char* JNC_SHORT_VERSION;
+
+# struct Emitter {
+#   int seq                         ; sequence for unique label names
+#   int depth
+#   [Block] blocks                  ; array/stack of "lexical" Blocks
+# }
+
+int SIZEOF_BLOCK= 0x20;
+int BLOCKS_CAP  = 10;
+
+pub fn Emitter__new() {
+    int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
+    bytes = bytes + 0x10;
+    void* self = malloc(bytes);
+    *self = 0;
+    self = self + 0x8;              # -> depth
+    *self = 0;
+    self = self - 0x8;              # -> seq
+    int type = null;
+    Emitter_enter_block(self, type);
+    char* f = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+    char* ver = JNC_SHORT_VERSION;
+    printf(f, ver);
+    return self;
+}
+
+pub fn Emitter_drop(void* self) {
+    void* block = Emitter_leave_block(self);
+    Block_drop(block);
+    free(self);
+}
+
+pub fn Emitter_seqnum(void* self) {
+    int seq = *self;
+    seq = seq + 1;
+    *self = seq;
+    return seq;
+}
 
 pub fn Emitter_return(void* self, void** buffer) {
     int kw = T_KW_FN;
     void* token = *buffer;
     void* block = Emitter_innermost_block_of(self, kw, token);
-    int id = Emitter_Block_id(block);
+    int id = Block_id(block);
     token = buffer + 8;
     token = *token;
     kw = T_SEMI;
@@ -15,6 +56,47 @@ pub fn Emitter_return(void* self, void** buffer) {
         Emitter_expr(self, buffer);
     }
     char* tmpl = "        b       _return_%i\n";
+    printf(tmpl, id);
+}
+
+pub fn Emitter_do_if(void* self, void* buffer) {
+    char* prelude = null;
+    char* intro = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+    do_conditional(self, buffer, prelude, intro);
+}
+
+pub fn Emitter_do_while(void* self, void* buffer) {
+    char* prelude = "        while_%i_again:\n";
+    char* intro = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
+    do_conditional(self, buffer, prelude, intro);
+}
+
+fn do_conditional(void* self, void* buffer, char* prelude, char* intro) {
+    void* token = *buffer; # keyword
+    buffer = buffer + 0x8; # conditional expression
+    char* type = Token_type(token);
+    void* block = Emitter_enter_block(self, type, token);
+    int id = Block_id(block);
+    if prelude ! null { printf(prelude, id); }
+    Emitter_expr(self, buffer);
+    if intro ! null { printf(intro, id); }
+}
+
+pub fn Emitter_do_again(void* self, void* buffer) {
+    char* tmpl = "        b       while_%i_again\n";
+    loop_control_flow(self, buffer, tmpl);
+}
+
+pub fn Emitter_do_done(void* self, void* buffer) {
+    char* tmpl = "        b       while_%i_done\n";
+    loop_control_flow(self, buffer, tmpl);
+}
+
+fn loop_control_flow(void* self, void* buffer, char* tmpl) {
+    void* token = *buffer;
+    char* kw = T_KW_WHILE;
+    void* block = Emitter_innermost_block_of(self, kw, token);
+    int id = Block_id(block);
     printf(tmpl, id);
 }
 
