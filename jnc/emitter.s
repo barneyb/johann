@@ -226,7 +226,8 @@ is_global:
     ret
 
 .data
-is_pub: .quad 0 ; todo: this is so gross
+.global _j_gbl_IS_PUB
+_j_gbl_IS_PUB: .byte 0 ; todo: this is so gross
 .text
 
 /* void emit( Emitter* self, [Token*] stmt ) */
@@ -243,19 +244,19 @@ __j_Emitter_emit:
     ldr     x21, [x20]              ; stash pointer -> first token
     mov     x0, x21
     bl      __j_Token_type
-    adrp    x7, is_pub@PAGE
-    add     x7, x7, is_pub@PAGEOFF
+    adrp    x7, _j_gbl_IS_PUB@PAGE
+    add     x7, x7, _j_gbl_IS_PUB@PAGEOFF
     cmp     x0, T_KW_PUB
     b.ne    __emit_noviz
         mov     x1, TRUE
-        str     x1, [x7]
+        strb    w1, [x7]
         ldr     x21, [x20, 0x8]!    ; stash pointer -> new "first" token
         mov     x0, x21
         bl      __j_Token_type
         b       __emit_proceed
     __emit_noviz:
         mov     x1, FALSE
-        str     x1, [x7]
+        strb    w1, [x7]
     __emit_proceed:
     mov     x22, x0                 ; stash type of first token
 
@@ -267,7 +268,7 @@ __j_Emitter_emit:
     b.ne    __emit_int              ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_fn                   ; this.do_fn( buffer )
+    bl      __j_Emitter_do_fn                   ; this.__j_Emitter_do_fn( buffer )
     b       __emit_return__
 
     __emit_int:
@@ -347,7 +348,7 @@ __j_Emitter_emit:
     b.ne    __emit_star             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_close_block          ; this.do_close_block( buffer )
+    bl      __j_Emitter_do_close_block          ; this.__j_Emitter_do_close_block( buffer )
     b       __emit_return__
 
     __emit_star:
@@ -392,126 +393,6 @@ __j_Emitter_emit:
     __emit_return__:
     ; restore frame
     ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-s_main: .asciz "main"
-tmpl_main_pub: .asciz "    .global _main\n"
-tmpl_main: .asciz "    _main:\n\
-        bl      __j_main\n\
-        b       __j_exit\n\
-"
-
-tmpl_fn_pub: .asciz "    .global __j_%s\n"
-tmpl_fn_intro: .asciz "    __j_%s:\n\
-        ; create frame\n\
-        stp     fp, lr, [sp, -0x10]!\n\
-        mov     fp, sp\n\
-            ; todo: this is enough space for the same 8 locals as before\n\
-            sub sp, sp, 0x40\n\
-        ; end frame\n"
-
-tmpl_fn_arg: .asciz "        str     x%i, [fp, -%x]\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_fn( Emitter* self, [Token*] buffer ) */
-do_fn:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-    ldr     x0, [x20, #8]           ; load pointer -> name token
-    bl      __j_Token_value         ; token.value()
-    mov     x22, x0                 ; stash pointer -> name
-    mov     x0, x19
-    mov     x1, T_KW_FN
-    bl      __j_Emitter_enter_block             ; this.__j_Emitter_enter_block()
-    
-    ; see if the function is public
-    adrp    x23, is_pub@PAGE
-    add     x23, x23, is_pub@PAGEOFF
-    ldr     x23, [x23]
-
-    ; see if we need to introduce main
-    mov     x0, x22
-    adrp    x1, s_main@PAGE
-    add     x1, x1, s_main@PAGEOFF
-    bl      _strcmp
-    cmp     x0, #0
-    b.ne    do_fn_intro
-        adrp    x0, tmpl_main@PAGE
-        add     x0, x0, tmpl_main@PAGEOFF
-        bl      __j_puts
-; todo: initially, always tag _main global...
-;    cmp     x23, FALSE
-;    b.eq    do_fn_intro
-        adrp    x0, tmpl_main_pub@PAGE
-        add     x0, x0, tmpl_main_pub@PAGEOFF
-        bl      __j_puts
-
-    do_fn_intro:
-    cmp     x23, FALSE
-    b.eq    do_fn_intro_noviz
-        mov     x1, x22
-        adrp    x0, tmpl_fn_pub@PAGE
-        add     x0, x0, tmpl_fn_pub@PAGEOFF
-        bl      __j_printf
-    do_fn_intro_noviz:
-    mov     x1, x22
-    adrp    x0, tmpl_fn_intro@PAGE ; pointer -> template
-    add     x0, x0, tmpl_fn_intro@PAGEOFF
-    bl      __j_printf
-
-    add     x20, x20, 0x18          ; skip to first arg or close paren
-    mov     x22, #0                 ; index of param's register
-    do_fn_next_arg:
-    ldr     x0, [x20], 0x8          ; load pointer -> token to interrogate
-    mov     x23, x0                 ; stash pointer -> token
-    bl      __j_Token_type          ; token.type()
-    cmp     x0, T_CPAREN
-    b.eq    do_fn_return            ; done!
-    cmp     x0, T_KW_INT
-    b.eq    do_fn_decl
-    cmp     x0, T_KW_CHAR
-    b.eq    do_fn_decl
-    cmp     x0, T_KW_BOOL
-    b.eq    do_fn_decl
-    cmp     x0, T_KW_VOID
-    b.eq    do_fn_decl
-    cmp     x0, T_ID
-    b.eq    do_fn_argname
-    b       do_fn_next_arg          ; again!
-
-    do_fn_decl:
-    mov     x0, x19
-    mov     x1, x20
-    sub     x1, x1, 0x8
-    bl      __j_Emitter_vardecl
-    b       do_fn_next_arg          ; again!
-
-    do_fn_argname:
-    mov     x1, x23                 ; pointer -> token
-    mov     x0, x19
-    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
-    bl      __j_Symbol_offset       ; symbol.offset();
-    mov     x1, x22
-    lsl     x2, x0, 3
-    adrp    x0, tmpl_fn_arg@PAGE    ; pointer -> template
-    add     x0, x0, tmpl_fn_arg@PAGEOFF
-    bl      __j_printf
-    add     x22, x22, #1            ; increment arg register
-    b       do_fn_next_arg          ; again!
-
-    do_fn_return:
-    ; restore frame
-    ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret
@@ -773,9 +654,9 @@ do_decl:
     do_decl_emit_global:
     mov     x22, x1                 ; stash pointer -> name
     bl      __j_printf
-    adrp    x23, is_pub@PAGE
-    add     x23, x23, is_pub@PAGEOFF
-    ldr     x23, [x23]
+    adrp    x23, _j_gbl_IS_PUB@PAGE
+    add     x23, x23, _j_gbl_IS_PUB@PAGEOFF
+    ldrb    w23, [x23]
     cmp     x23, FALSE
     b.eq    do_decl_return
         adrp    x0, tmpl_global_pub@PAGE
@@ -916,73 +797,6 @@ do_assign_pointer:
 
     do_assign_pointer_return:
     ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_fn_outro: .asciz "        mov      x0, #0             ; fell off end; return zero\n\
-        _return_%i:\n\
-        ; restore frame\n\
-            ; todo: this was enough space for the same 8 locals as before\n\
-            add sp, sp, 0x40\n\
-        ldp     fp, lr, [sp], 0x10\n\
-        ret\n\n\n"
-tmpl_if_outro: .asciz "        if_%i_done:\n"
-tmpl_while_outro: .asciz "        b     while_%i_again\n\
-        while_%i_done:\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_close_block( Emitter* self, [Token*] buffer ) */
-do_close_block:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-    bl      __j_Emitter_leave_block             ; this.__j_Emitter_leave_block()
-    mov     x22, x0                 ; stash pointer -> block
-    bl      __j_Block_id                ; block.id()
-    mov     x23, x0                 ; stash id
-    mov     x0, x22
-    bl      __j_Block_type              ; block.type()
-
-    cmp     x0, T_KW_FN
-    b.ne    do_close_block_if
-    mov     x1, x23
-    adrp    x0, tmpl_fn_outro@PAGE ; pointer -> template
-    add     x0, x0, tmpl_fn_outro@PAGEOFF
-    bl      __j_printf
-    b       do_close_block_return
-
-    do_close_block_if:
-    cmp     x0, T_KW_IF
-    b.ne    do_close_block_while
-    mov     x1, x23
-    adrp    x0, tmpl_if_outro@PAGE ; pointer -> template
-    add     x0, x0, tmpl_if_outro@PAGEOFF
-    bl      __j_printf
-    b       do_close_block_return
-
-    do_close_block_while:
-    cmp     x0, T_KW_WHILE
-    b.ne    do_close_block_return
-    mov     x2, x23
-    mov     x1, x23
-    adrp    x0, tmpl_while_outro@PAGE ; pointer -> template
-    add     x0, x0, tmpl_while_outro@PAGEOFF
-    bl      __j_printf
-    b       do_close_block_return
-
-    do_close_block_return:
-    mov     x0, x22
-    bl      __j_Block_drop
-    ; restore frame
-    ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret

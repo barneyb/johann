@@ -8,7 +8,12 @@ int T_EQ;
 int T_GT;
 int T_ID;
 int T_INT;
+int T_KW_BOOL;
+int T_KW_CHAR;
 int T_KW_FN;
+int T_KW_IF;
+int T_KW_INT;
+int T_KW_VOID;
 int T_KW_WHILE;
 int T_LT;
 int T_MINUS;
@@ -22,6 +27,8 @@ int T_STAR;
 int T_STRING;
 
 char* JNC_SHORT_VERSION;
+
+bool IS_PUB;
 
 # struct Emitter {
 #   int seq                         ; sequence for unique label names
@@ -39,6 +46,18 @@ char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char 
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 
 char* TMPL_PRELUDE          = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+
+char* TMPL_FN_ARG           =  "        str     x%i, [fp, -%x]\n";
+
+char* TMPL_FN_PUB           =  "    .global __j_%s\n";
+char* TMPL_FN_INTRO         =  "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n            ; todo: this is enough space for the same 8 locals as before\n            sub sp, sp, 0x40\n";
+
+char* TMPL_MAIN_PUB         =  "    .global _main\n";
+char* TMPL_MAIN             =  "    _main:\n        bl      __j_main\n        b       __j_exit\n\n";
+
+char* TMPL_FN_OUTRO         = "        mov      x0, #0\n        _return_%i:\n            ; todo: this was enough space for the same 8 locals as before\n            add sp, sp, 0x40\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
+char* TMPL_IF_OUTRO         = "        if_%i_done:\n";
+char* TMPL_WHILE_OUTRO      = "        b     while_%i_again\n        while_%i_done:\n";
 
 char* TMPL_RETURN           = "        b       _return_%i\n";
 
@@ -111,6 +130,99 @@ pub fn Emitter_seqnum(void* self) {
     return seq;
 }
 
+# todo: make is_pub less ridiculous
+
+# todo: emit itself
+
+# todo: var / global declarations
+# todo: fn declarations (not just args!)
+
+pub fn Emitter_do_fn(void* self, void* buffer) {
+    void* token = buffer + 0x8;     # -> name token
+    token = *token;
+    char* name = Token_value(token);
+    introduce_fn(self, name);
+
+    void* buf_i = buffer + 0x18;          # -> first arg or close paren
+    int reg_offset = 0;
+    while true {
+        token = *buf_i;
+        int type = Token_type(token);
+        if type = T_CPAREN { return; }
+        # introduce a local variable
+        bool decl = false;
+        if type = T_KW_INT  { decl = true; }
+        if type = T_KW_CHAR { decl = true; }
+        if type = T_KW_BOOL { decl = true; }
+        if type = T_KW_VOID { decl = true; }
+        if decl {
+            Emitter_vardecl(self, buf_i);
+            buf_i = buf_i + 0x8;
+            again;
+        }
+        # read the argument
+        if type = T_ID {
+            read_fn_arg(self, token, reg_offset);
+            reg_offset = reg_offset + 1;
+        }
+        buf_i = buf_i + 0x8;
+    }
+}
+
+fn read_fn_arg(void* self, void* token, int reg_offset) {
+    void* symbol = Emitter_lookup_symbol_for(self, token);
+    int offset = Symbol_offset(symbol);
+    offset = offset * 0x8;
+    char* tmpl = TMPL_FN_ARG;
+    printf(tmpl, reg_offset, offset);
+}
+
+fn introduce_fn(void* self, char* name) {
+    int kw = T_KW_FN;
+    Emitter_enter_block(self, kw);
+    bool is_pub = IS_PUB;
+    introduce_main(name, is_pub);
+    char* tmpl;
+    if is_pub {
+        tmpl = TMPL_FN_PUB;
+        printf(tmpl, name);
+    }
+    tmpl = TMPL_FN_INTRO;
+    printf(tmpl, name);
+}
+
+fn introduce_main(char* name, bool is_pub) {
+    char* tmpl = "main";
+    int cmp = strcmp(tmpl, name);
+    if cmp ! 0 { return; }
+    if is_pub {
+        tmpl = TMPL_MAIN_PUB;
+        printf(tmpl);
+    }
+    tmpl = TMPL_MAIN;
+    printf(tmpl);
+}
+
+pub fn Emitter_do_close_block(void* self, void* buffer) {
+    void* block = Emitter_leave_block(self);
+    int id = Block_id(block);
+    int type = Block_type(block);
+    Block_drop(block);
+    char* tmpl;
+    if type = T_KW_FN {
+        tmpl = TMPL_FN_OUTRO;
+        printf(tmpl, id);
+    }
+    if type = T_KW_IF {
+        tmpl = TMPL_IF_OUTRO;
+        printf(tmpl, id);
+    }
+    if type = T_KW_WHILE {
+        tmpl = TMPL_WHILE_OUTRO;
+        printf(tmpl, id, id);
+    }
+}
+
 pub fn Emitter_return(void* self, void** buffer) {
     int kw = T_KW_FN;
     void* token = *buffer;
@@ -168,6 +280,9 @@ fn loop_control_flow(void* self, void* buffer, char* tmpl) {
     int id = Block_id(block);
     printf(tmpl, id);
 }
+
+# todo: assign
+# todo: assign pointer
 
 pub fn Emitter_expr(void* self, void* buffer) {
     # start with the second token
@@ -230,8 +345,8 @@ pub fn Emitter_do_call(void* self, void* buffer) {
             # only variable derefs
             return non_local_param(token);
         }
-        void* sym = Emitter_lookup_symbol_for(self, token);
-        type = Symbol_offset(sym);
+        void* symbol = Emitter_lookup_symbol_for(self, token);
+        type = Symbol_offset(symbol);
         if type < 1 {
             # and not globals, only locals
             return non_local_param(token);
@@ -242,9 +357,9 @@ pub fn Emitter_do_call(void* self, void* buffer) {
     }
     tmpl = TMPL_CALL;
     token = *buffer; # first token is the name of the function
-    # this makes no sense, but gotta reuse SOMETHING, and sym is out of scope
-    sym = Token_value(token);
-    printf(tmpl, sym);
+    # this makes no sense, but gotta reuse SOMETHING, and symbol is out of scope
+    symbol = Token_value(token);
+    printf(tmpl, symbol);
 }
 
 fn non_local_param(void* token) {
@@ -386,8 +501,8 @@ fn Emitter_do_value_integer_large(void* self, int i) {
 }
 
 pub fn Emitter_do_value_id(void* self, void* t) {
-    void* sym = Emitter_lookup_symbol_for(self, t);
-    int offset = Symbol_offset(sym);
+    void* symbol = Emitter_lookup_symbol_for(self, t);
+    int offset = Symbol_offset(symbol);
     char* tmpl;
 
     if offset > 0 {
@@ -397,10 +512,10 @@ pub fn Emitter_do_value_id(void* self, void* t) {
         return printf(tmpl, offset);
     }
     # global
-    do_address_of(self, t, sym);
-    int nptr = Symbol_nptr(sym);
+    do_address_of(self, t, symbol);
+    int nptr = Symbol_nptr(symbol);
     if nptr = 0 {
-        do_load_addr(self, t, sym);
+        do_load_addr(self, t, symbol);
     }
 }
 
