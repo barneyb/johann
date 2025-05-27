@@ -356,7 +356,7 @@ __j_Emitter_emit:
     b.ne    __emit_second_token     ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_assign_pointer       ; this.do_assign_pointer( buffer )
+    bl      __j_Emitter_do_assign_pointer       ; this.__j_Emitter_do_assign_pointer( buffer )
     b       __emit_return__
 
     ; now need to check the second token...
@@ -372,7 +372,7 @@ __j_Emitter_emit:
     b.ne    __emit_call             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_assign               ; this.do_assign( buffer )
+    bl      __j_Emitter_do_assign               ; this.__j_Emitter_do_assign( buffer )
     b       __emit_return__
 
     __emit_call:
@@ -586,10 +586,10 @@ do_decl:
     cmp     x0, FALSE
     b.ne    do_decl_global
 
-    ; go back one and delegate to do_assign
+    ; go back one and delegate to __j_Emitter_do_assign
     sub     x1, x21, #8             ; go back one token (to the name)
     mov     x0, x19
-    bl      do_assign
+    bl      __j_Emitter_do_assign
     b       do_decl_return
 
     ; go back one and set up a named data value
@@ -667,136 +667,6 @@ do_decl:
     do_decl_return:
     ; restore frame
     ldp     x22, x23, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_assign: .asciz "        str     x0, [fp, -%x]\n"
-tmpl_assign_global_quad: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
-        add     x7, x7, _j_gbl_%s@PAGEOFF\n\
-        str     x0, [x7]\n"
-tmpl_assign_global_byte: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
-        add     x7, x7, _j_gbl_%s@PAGEOFF\n\
-        strb    w0, [x7]\n"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_assign( Emitter* self, [Token*] buffer ) */
-do_assign:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-
-    mov     x0, x19
-    add     x1, x20, 0x10            ; pointer -> buffer[2] (the RHS)
-    bl      __j_Emitter_expr
-
-    ldr     x1, [x20]               ; pointer -> name token
-    mov     x0, x19                 ; pointer -> self
-    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
-    str     x0, [sp, -0x10]!        ; store pointer -> symbol
-    bl      __j_Symbol_offset
-        cmp     x0, #0
-        b.le    do_assign_global
-    lsl     x1, x0, 3
-    adrp    x0, tmpl_assign@PAGE    ; pointer -> template
-    add     x0, x0, tmpl_assign@PAGEOFF
-    bl      __j_printf
-    b       do_assign_return
-
-    do_assign_global:
-        ldr     x0, [x20]               ; pointer -> name token
-        bl      __j_Token_value
-        mov     x2, x0              ; set up template params
-        mov     x1, x0
-        ldr     x0, [sp]            ; load pointer -> symbol
-        ldr     x7, [x0]            ; load width from the symbol - nasty!
-        cmp     x7, #1
-        b.eq    do_assign_global_byte
-            adrp    x0, tmpl_assign_global_quad@PAGE    ; pointer -> template
-            add     x0, x0, tmpl_assign_global_quad@PAGEOFF
-            bl      __j_printf
-            b       do_assign_return
-        do_assign_global_byte:
-            adrp    x0, tmpl_assign_global_byte@PAGE    ; pointer -> template
-            add     x0, x0, tmpl_assign_global_byte@PAGEOFF
-            bl      __j_printf
-
-    do_assign_return:
-    ; restore frame
-    add     sp, sp, 0x10            ; release locals
-    ldp     x21, x20, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_get_addr_local: .asciz "        ldr     x7, [fp, -%x]\n"
-tmpl_get_addr_global: .asciz "        adrp    x7, _j_gbl_%s@PAGE\n\
-        add     x7, x7, _j_gbl_%s@PAGEOFF\n"
-tmpl_assign_ptr_quad: .asciz "        str     x0, [x7]\n"
-tmpl_assign_ptr_byte: .asciz "        strb    w0, [x7]\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-do_assign_pointer:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-
-    mov     x0, x19
-    add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)
-    bl      __j_Emitter_expr
-
-    ldr     x1, [x20, 0x8]          ; pointer -> name token
-    mov     x0, x19
-    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
-    ldp     x3, x4, [x0]            ; load width and nptr from the symbol - nasty!
-    stp     x3, x4, [sp, -0x10]!    ; store width/nptr
-    bl      __j_Symbol_offset
-    cmp     x0, #0
-    b.le    do_assign_pointer_global
-        lsl     x1, x0, 3
-        adrp    x0, tmpl_get_addr_local@PAGE
-        add     x0, x0, tmpl_get_addr_local@PAGEOFF
-        bl      __j_printf
-        b       do_assign_pointer_go
-    do_assign_pointer_global:
-        ldr     x0, [x20, 0x8]          ; pointer -> name token
-        bl      __j_Token_value
-        mov     x2, x0
-        mov     x1, x0
-        adrp    x0, tmpl_get_addr_global@PAGE
-        add     x0, x0, tmpl_get_addr_global@PAGEOFF
-        bl      __j_printf
-
-    do_assign_pointer_go:
-    ldp     x3, x4, [sp], 0x10      ; load width/nptr - nasty!
-    cmp     x3, #1
-    b.ne    do_assign_pointer_quad  ; if width != 1, use quad
-    cmp     x4, #1
-    b.gt    do_assign_pointer_quad  ; if npts > 1, use quad (deref is a pointer)
-    adrp    x0, tmpl_assign_ptr_byte@PAGE
-    add     x0, x0, tmpl_assign_ptr_byte@PAGEOFF
-    bl      __j_printf
-    b       do_assign_pointer_return
-    do_assign_pointer_quad:
-    adrp    x0, tmpl_assign_ptr_quad@PAGE
-    add     x0, x0, tmpl_assign_ptr_quad@PAGEOFF
-    bl      __j_printf
-
-    do_assign_pointer_return:
-    ; restore frame
     ldp     x20, x21, [sp], 0x10
     ldp     lr, x19, [sp], 0x10
     ret

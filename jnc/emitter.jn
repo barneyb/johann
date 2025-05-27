@@ -45,61 +45,70 @@ char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 
-char* TMPL_PRELUDE          = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 
-char* TMPL_FN_ARG           =  "        str     x%i, [fp, -%x]\n";
+char* TMPL_FN_ARG               = "        str     x%i, [fp, -%x]\n";
 
-char* TMPL_FN_PUB           =  "    .global __j_%s\n";
-char* TMPL_FN_INTRO         =  "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n            ; todo: this is enough space for the same 8 locals as before\n            sub sp, sp, 0x40\n";
+char* TMPL_FN_PUB               = "    .global __j_%s\n";
+char* TMPL_FN_INTRO             = "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n            ; todo: this is enough space for the same 8 locals as before\n            sub sp, sp, 0x40\n";
 
-char* TMPL_MAIN_PUB         =  "    .global _main\n";
-char* TMPL_MAIN             =  "    _main:\n        bl      __j_main\n        b       __j_exit\n\n";
+char* TMPL_MAIN_PUB             = "    .global _main\n";
+char* TMPL_MAIN                 = "    _main:\n        bl      __j_main\n        b       __j_exit\n\n";
 
-char* TMPL_FN_OUTRO         = "        mov      x0, #0\n        _return_%i:\n            ; todo: this was enough space for the same 8 locals as before\n            add sp, sp, 0x40\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
-char* TMPL_IF_OUTRO         = "        if_%i_done:\n";
-char* TMPL_WHILE_OUTRO      = "        b     while_%i_again\n        while_%i_done:\n";
+char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\n            ; todo: this was enough space for the same 8 locals as before\n            add sp, sp, 0x40\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
+char* TMPL_IF_OUTRO             = "        if_%i_done:\n";
+char* TMPL_WHILE_OUTRO          = "        b     while_%i_again\n        while_%i_done:\n";
 
-char* TMPL_RETURN           = "        b       _return_%i\n";
+char* TMPL_RETURN               = "        b       _return_%i\n";
 
-char* TMPL_IF_INTRO         = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+char* TMPL_IF_INTRO             = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
 
-char* TMPL_WHILE_PRELUDE    = "        while_%i_again:\n";
-char* TMPL_WHILE_INTRO      = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
-char* TMPL_WHILE_AGAIN      = "        b       while_%i_again\n";
-char* TMPL_WHILE_DONE       = "        b       while_%i_done\n";
+char* TMPL_WHILE_PRELUDE        = "        while_%i_again:\n";
+char* TMPL_WHILE_INTRO          = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
+char* TMPL_WHILE_AGAIN          = "        b       while_%i_again\n";
+char* TMPL_WHILE_DONE           = "        b       while_%i_done\n";
 
-char* TMPL_CALL_PARAM       = "        ldr     x%i, [fp, -%x]\n";
-char* TMPL_CALL             = "        bl      __j_%s\n";
+char* TMPL_ASSIGN_LOCAL         = "        str     x0, [fp, -%x]\n";
+char* TMPL_ASSIGN_GLOBAL_BYTE   = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n        strb    w0, [x7]\n";
+char* TMPL_ASSIGN_GLOBAL_QUAD   = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n        str     x0, [x7]\n";
 
-char* TMPL_UN_NOT           = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
-char* TMPL_UN_NEGATE        = "        neg     x0, x0\n";
+char* TMPL_GET_ADDR_LOCAL       = "        ldr     x7, [fp, -%x]\n";
+char* TMPL_GET_ADDR_GLOBAL      = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n";
+char* TMPL_ASSIGN_PTR_BYTE      = "        strb    w0, [x7]\n";
+char* TMPL_ASSIGN_PTR_QUAD      = "        str     x0, [x7]\n";
 
-char* TMPL_STASH            = "        str     x0, [sp, -0x10]!\n";
-char* TMPL_UNSTASH_X1       = "        ldr     x1, [sp], 0x10\n";
+char* TMPL_CALL_PARAM           = "        ldr     x%i, [fp, -%x]\n";
+char* TMPL_CALL                 = "        bl      __j_%s\n";
 
-char* TMPL_BIN_ADD          = "        add     x0, x0, x1\n";
-char* TMPL_BIN_SUB          = "        sub     x0, x0, x1\n";
-char* TMPL_BIN_MUL          = "        mul     x0, x0, x1\n";
-char* TMPL_BIN_DIV          = "        sdiv    x0, x0, x1\n";
-char* TMPL_BIN_MOD          = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
+char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
+char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
+
+char* TMPL_STASH                = "        str     x0, [sp, -0x10]!\n";
+char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10\n";
+
+char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
+char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
+char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
+char* TMPL_BIN_DIV              = "        sdiv    x0, x0, x1\n";
+char* TMPL_BIN_MOD              = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
 
 char* COMP_GT = "gt";
 char* COMP_LT = "lt";
 char* COMP_EQ = "eq";
 char* COMP_NE = "ne";
-char* TMPL_BIN_LOGICAL      = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
+char* TMPL_BIN_LOGICAL          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
 
-char* TMPL_VALUE_STRING     = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
-char* TMPL_VALUE_INT        = "        mov     x0, #%i\n";
-char* TMPL_VALUE_INT_LARGE  = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
-char* TMPL_VALUE_OF_LOCAL   = "        ldr     x0, [fp, -%x]\n";
+char* TMPL_VALUE_STRING         = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
+char* TMPL_VALUE_INT            = "        mov     x0, #%i\n";
+char* TMPL_VALUE_INT_LARGE      = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 
 # "add-a-negative" so it matches the addressing offsets
-char* TMPL_ADDR_LOCAL       = "        add     x0, fp, -%x\n";
-char* TMPL_ADDR_GLOBAL      = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
+char* TMPL_ADDR_LOCAL           = "        add     x0, fp, -%x\n";
+char* TMPL_ADDR_GLOBAL          = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
 
-char* TMPL_BYTE_AT_ADDR     = "        ldrb    w0, [x0]\n";
-char* TMPL_QUAD_AT_ADDR     = "        ldr     x0, [x0]\n";
+char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
+char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
@@ -281,8 +290,67 @@ fn loop_control_flow(void* self, void* buffer, char* tmpl) {
     printf(tmpl, id);
 }
 
-# todo: assign
-# todo: assign pointer
+pub fn Emitter_do_assign(void* self, void* buffer) {
+    void* token = *buffer; # LHS
+    buffer = buffer + 0x10; # RHS
+    Emitter_expr(self, buffer);
+
+    void* symbol = Emitter_lookup_symbol_for(self, token);
+    int offset = Symbol_offset(symbol);
+    char* tmpl;
+    if offset > 0 {
+        # local
+        tmpl = TMPL_ASSIGN_LOCAL;
+        offset = offset * 0x8;
+        return printf(tmpl, offset);
+    }
+    # global
+    char* name = Token_value(token);
+    int width = Symbol_width(symbol);
+    if width = 1 {
+        tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
+    }
+    if width ! 1 {
+        tmpl = TMPL_ASSIGN_GLOBAL_QUAD;
+    }
+    printf(tmpl, name, name);
+}
+
+pub fn Emitter_do_assign_pointer(void* self, void* buffer) {
+    buffer = buffer + 0x8; # name
+    void* token = *buffer;
+    buffer = buffer + 0x10; # RHS
+    Emitter_expr(self, buffer);
+
+    # compute address
+    void* symbol = Emitter_lookup_symbol_for(self, token);
+    int offset = Symbol_offset(symbol);
+    char* tmpl;
+    if offset > 0 {
+        # local
+        tmpl = TMPL_GET_ADDR_LOCAL;
+        offset = offset * 0x8;
+        printf(tmpl, offset);
+    }
+    if offset < 1 {
+        # global
+        tmpl = TMPL_GET_ADDR_GLOBAL;
+        char* name = Token_value(token);
+        printf(tmpl, name, name);
+    }
+
+    # now write to address
+    tmpl = TMPL_ASSIGN_PTR_BYTE;
+    int n = Symbol_width(symbol);
+    if n ! 1 {
+        tmpl = TMPL_ASSIGN_PTR_QUAD;
+    }
+    n = Symbol_nptr(symbol);
+    if n > 1 {
+        tmpl = TMPL_ASSIGN_PTR_QUAD;
+    }
+    printf(tmpl);
+}
 
 pub fn Emitter_expr(void* self, void* buffer) {
     # start with the second token
