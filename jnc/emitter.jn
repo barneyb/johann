@@ -1,6 +1,21 @@
+int T_AMP;
+int T_BOOL;
+int T_CHAR;
+int T_ID;
+int T_INT;
 int T_KW_FN;
 int T_KW_WHILE;
 int T_SEMI;
+int T_STRING;
+int T_PLUS;
+int T_MINUS;
+int T_STAR;
+int T_SLASH;
+int T_PERCENT;
+int T_EQ;
+int T_BANG;
+int T_LT;
+int T_GT;
 
 char* JNC_SHORT_VERSION;
 
@@ -13,6 +28,51 @@ char* JNC_SHORT_VERSION;
 int SIZEOF_BLOCK= 0x20;
 int BLOCKS_CAP  = 10;
 
+char* ERR_BAD_TOKEN = "; ERROR(%i): Bad token %x at line %i, char %i\n";
+char* ERR_BAD_OPERATOR = "; ERROR(%i): Bad operator %x at line %i, char %i\n";
+
+char* TMPL_PRELUDE          = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+
+char* TMPL_RETURN           = "        b       _return_%i\n";
+
+char* TMPL_IF_INTRO         = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+
+char* TMPL_WHILE_PRELUDE    = "        while_%i_again:\n";
+char* TMPL_WHILE_INTRO      = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
+char* TMPL_WHILE_AGAIN      = "        b       while_%i_again\n";
+char* TMPL_WHILE_DONE       = "        b       while_%i_done\n";
+
+char* TMPL_VALUE_STRING     = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
+char* TMPL_VALUE_INT        = "        mov     x0, #%i\n";
+char* TMPL_VALUE_INT_LARGE  = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+char* TMPL_VALUE_OF_LOCAL   = "        ldr     x0, [fp, -%x]\n";
+
+# "add-a-negative" so it matches the addressing offsets
+char* TMPL_ADDR_LOCAL       = "        add     x0, fp, -%x\n";
+char* TMPL_ADDR_GLOBAL      = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
+
+char* TMPL_BYTE_AT_ADDR     = "        ldrb    w0, [x0]\n";
+char* TMPL_QUAD_AT_ADDR     = "        ldr     x0, [x0]\n";
+
+char* TMPL_STASH            = "        str     x0, [sp, -0x10]!\n";
+char* TMPL_UNSTASH_X1       = "        ldr     x1, [sp], 0x10\n";
+
+char* TMPL_BIN_ADD          = "        add     x0, x0, x1\n";
+char* TMPL_BIN_SUB          = "        sub     x0, x0, x1\n";
+char* TMPL_BIN_MUL          = "        mul     x0, x0, x1\n";
+char* TMPL_BIN_DIV          = "        sdiv    x0, x0, x1\n";
+char* TMPL_BIN_MOD          = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
+
+char* COMP_GT = "gt";
+char* COMP_LT = "lt";
+char* COMP_EQ = "eq";
+char* COMP_NE = "ne";
+
+char* TMPL_BIN_LOGICAL = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
+
+char* TMPL_UN_NOT = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
+char* TMPL_UN_NEGATE = "        neg     x0, x0\n";
+
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
     bytes = bytes + 0x10;
@@ -23,9 +83,9 @@ pub fn Emitter__new() {
     self = self - 0x8;              # -> seq
     int type = null;
     Emitter_enter_block(self, type);
-    char* f = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+    char* tmpl = TMPL_PRELUDE;
     char* ver = JNC_SHORT_VERSION;
-    printf(f, ver);
+    printf(tmpl, ver);
     return self;
 }
 
@@ -55,19 +115,19 @@ pub fn Emitter_return(void* self, void** buffer) {
         buffer = buffer + 8;
         Emitter_expr(self, buffer);
     }
-    char* tmpl = "        b       _return_%i\n";
+    char* tmpl = TMPL_RETURN;
     printf(tmpl, id);
 }
 
 pub fn Emitter_do_if(void* self, void* buffer) {
     char* prelude = null;
-    char* intro = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+    char* intro = TMPL_IF_INTRO;
     do_conditional(self, buffer, prelude, intro);
 }
 
 pub fn Emitter_do_while(void* self, void* buffer) {
-    char* prelude = "        while_%i_again:\n";
-    char* intro = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
+    char* prelude = TMPL_WHILE_PRELUDE;
+    char* intro = TMPL_WHILE_INTRO;
     do_conditional(self, buffer, prelude, intro);
 }
 
@@ -83,12 +143,12 @@ fn do_conditional(void* self, void* buffer, char* prelude, char* intro) {
 }
 
 pub fn Emitter_do_again(void* self, void* buffer) {
-    char* tmpl = "        b       while_%i_again\n";
+    char* tmpl = TMPL_WHILE_AGAIN;
     loop_control_flow(self, buffer, tmpl);
 }
 
 pub fn Emitter_do_done(void* self, void* buffer) {
-    char* tmpl = "        b       while_%i_done\n";
+    char* tmpl = TMPL_WHILE_DONE;
     loop_control_flow(self, buffer, tmpl);
 }
 
@@ -100,10 +160,109 @@ fn loop_control_flow(void* self, void* buffer, char* tmpl) {
     printf(tmpl, id);
 }
 
+pub fn Emitter_do_unary_op(void* self, void* buffer) {
+    # first token is the operator
+    void* token = *buffer;
+    int type = Token_type(token);
+    # second token is the operand
+    token = buffer + 0x8;
+    token = *token;
+
+    char* tmpl;
+    void* symbol = null;
+    if type = T_AMP {
+        symbol = Emitter_lookup_symbol_for(self, token);
+        return do_address_of(self, token, symbol);
+    }
+
+    Emitter_do_token(self, token);
+    if type = T_STAR {
+        symbol = Emitter_lookup_symbol_for(self, token);
+        return do_load_addr(self, token, symbol);
+    }
+    if type = T_BANG {
+        type = Emitter_seqnum(self);
+        tmpl = TMPL_UN_NOT;
+        return printf(tmpl, type, type, type, type);
+    }
+    if type = T_MINUS {
+        tmpl = TMPL_UN_NEGATE;
+        return printf(tmpl);
+    }
+
+    tmpl = ERR_BAD_OPERATOR;
+    token = *buffer; # want to point at the operator, not the operand
+    type = 29;
+    jnc_panic(tmpl, token, type);
+}
+
+pub fn Emitter_do_binary_op(void* self, void* buffer) {
+    # third token is right operand
+    void* token = buffer + 0x10;
+    token = *token;
+    Emitter_do_token(self, token);
+    char* tmpl = TMPL_STASH;
+    printf(tmpl);
+
+    # first token is the left operand
+    token = *buffer;
+    Emitter_do_token(self, token);
+
+    # restore the right operand
+    tmpl = TMPL_UNSTASH_X1;
+    printf(tmpl);
+
+    # second token is operator
+    token = buffer + 0x8;
+    token = *token;
+    int type = Token_type(token);
+
+    if type = T_PLUS    { tmpl = TMPL_BIN_ADD; return printf(tmpl); }
+    if type = T_MINUS   { tmpl = TMPL_BIN_SUB; return printf(tmpl); }
+    if type = T_STAR    { tmpl = TMPL_BIN_MUL; return printf(tmpl); }
+    if type = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
+    if type = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
+
+    if type = T_EQ   { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
+    if type = T_BANG { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
+    if type = T_LT   { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
+    if type = T_GT   { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
+
+    char* err = ERR_BAD_OPERATOR;
+    int status = 29;
+    jnc_panic(err, token, status);
+}
+
+fn do_binary_op_logical(void* self, char* comp) {
+    int seq = Emitter_seqnum(self);
+    char* tmpl = TMPL_BIN_LOGICAL;
+    printf(tmpl, comp, seq, seq, seq, seq);
+}
+
+pub fn Emitter_do_token(void* self, void* token) {
+    int type = Token_type(token);
+    if type = T_BOOL { return do_token_num(self, token); }
+    if type = T_CHAR { return do_token_num(self, token); }
+    if type = T_INT  { return do_token_num(self, token); }
+    if type = T_ID   { return Emitter_do_value_id(self, token); }
+    if type = T_STRING {
+        char* value = Token_value(token);
+        return Emitter_do_value_string(self, value);;
+    }
+    char* err = ERR_BAD_TOKEN;
+    int status = 26;
+    jnc_panic(err, token, status);
+}
+
+fn do_token_num(void* self, void* token) {
+    int value = Token_value(token);
+    Emitter_do_value_integer(self, value);
+}
+
 pub fn Emitter_do_value_string(void* self, char* name) {
     int seq = Emitter_seqnum(self);
     char q = '"';
-    char* tmpl = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
+    char* tmpl = TMPL_VALUE_STRING;
     printf(tmpl, seq, q, name, q, seq, seq);
 }
 
@@ -117,12 +276,62 @@ pub fn Emitter_do_value_integer(void* self, int i) {
         Emitter_do_value_integer_large(self, i);
         return null;
     }
-    char* tmpl = "        mov     x0, #%i\n";
+    char* tmpl = TMPL_VALUE_INT;
     printf(tmpl, i);
 }
 
 fn Emitter_do_value_integer_large(void* self, int i) {
     int seq = Emitter_seqnum(self);
-    char* tmpl = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+    char* tmpl = TMPL_VALUE_INT_LARGE;
     printf(tmpl, seq, i, i, seq, seq);
+}
+
+pub fn Emitter_do_value_id(void* self, void* t) {
+    void* sym = Emitter_lookup_symbol_for(self, t);
+    int offset = Symbol_offset(sym);
+    char* tmpl;
+
+    if offset > 0 {
+        # local
+        offset = offset * 0x8;
+        tmpl = TMPL_VALUE_OF_LOCAL;
+        return printf(tmpl, offset);
+    }
+    # global
+    do_address_of(self, t, sym);
+    int nptr = Symbol_nptr(sym);
+    if nptr = 0 {
+        do_load_addr(self, t, sym);
+    }
+}
+
+fn do_address_of(void* self, void* token, void* symbol) {
+    int offset = Symbol_offset(symbol);
+    char* tmpl;
+    if offset > 0 {
+        # local
+        tmpl = TMPL_ADDR_LOCAL;
+        offset = offset * 0x8;
+        return printf(tmpl, offset);
+    }
+    # global
+    tmpl = TMPL_ADDR_GLOBAL;
+    char* name = Token_value(token);
+    printf(tmpl, name, name);
+}
+
+fn do_load_addr(void* self, void* token, void* symbol) {
+    char* tmpl;
+    int width = Symbol_width(symbol);
+    if width ! 1 {
+        tmpl = TMPL_QUAD_AT_ADDR;
+        return printf(tmpl);
+    }
+    int nptr = Symbol_nptr(symbol);
+    if nptr > 1 {
+        tmpl = TMPL_QUAD_AT_ADDR;
+        return printf(tmpl);
+    }
+    tmpl = TMPL_BYTE_AT_ADDR;
+    printf(tmpl);
 }

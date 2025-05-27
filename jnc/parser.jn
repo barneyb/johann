@@ -71,7 +71,7 @@ fn load_buffer(void* self) {
     while true {
         void* t = Lexer_token(lexer);
         if t = null { done; }
-        print_token(self, t);
+        print_token(t);
         buf_i = i * 0x8;
         buf_i = buf_i + buf;
         *buf_i = t;
@@ -87,7 +87,7 @@ fn load_buffer(void* self) {
     putchar(i); # newline after printed tokens
 }
 
-fn print_token(void* self, void* t) {
+pub fn print_token(void* t) {
     int type = Token_type(t);
     int ln = Token_line(t);
     int ch = Token_char(t);

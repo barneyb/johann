@@ -25,6 +25,15 @@ pub fn Symbol__new(int type, int nptr) {
     return s - 0x8;                 # -> width
 }
 
+pub fn Symbol_width(void* self) {
+    return *self;
+}
+
+pub fn Symbol_nptr(void* self) {
+    self = self + 0x8;             # -> nptr
+    return *self;
+}
+
 pub fn Symbol_offset(void* self) {
     self = self + 0x10;             # -> offset
     return *self;
