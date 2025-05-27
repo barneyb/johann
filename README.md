@@ -108,7 +108,7 @@ Functions can declare formal arguments within their parentheses, to create local
         return a + b;
     }
 
-Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
+Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! At the moment, a given call can have a max of eight parameters (which really only matters for `printf`). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     # convoluted:
     char* c = "one: ";
@@ -235,6 +235,7 @@ One obsolete function remains available, and will eventually be removed.
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
 * `17` - Unrecognized character
+* `21` - Too many call parameters
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars

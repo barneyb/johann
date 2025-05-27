@@ -379,7 +379,7 @@ __j_Emitter_emit:
     b.ne    __emit_bad__; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_call                 ; this.do_call( buffer )
+    bl      __j_Emitter_do_call                 ; this.__j_Emitter_do_call( buffer )
     b       __emit_return__
 
     __emit_bad__:
@@ -815,7 +815,7 @@ do_assign:
 
     mov     x0, x19
     add     x1, x20, 0x10            ; pointer -> buffer[2] (the RHS)
-    bl      do_expr
+    bl      __j_Emitter_expr
 
     ldr     x1, [x20]               ; pointer -> name token
     mov     x0, x19                 ; pointer -> self
@@ -875,7 +875,7 @@ do_assign_pointer:
 
     mov     x0, x19
     add     x1, x20, #24            ; pointer -> buffer[3] (the RHS)
-    bl      do_expr
+    bl      __j_Emitter_expr
 
     ldr     x1, [x20, 0x8]          ; pointer -> name token
     mov     x0, x19
@@ -981,177 +981,6 @@ do_close_block:
     do_close_block_return:
     mov     x0, x22
     bl      __j_Block_drop
-    ; restore frame
-    ldp     x22, x23, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .data
-tmpl_call_param: .asciz "        ldr     x%i, [fp, -%x]\n"
-tmpl_call: .asciz "        bl      __j_%s\n"
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-                                    .text
-
-/* void do_call( Emitter* self, [Token*] buffer ) */
-do_call:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
-    str     x24, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-
-    ; pass parameters
-    add     x24, x20, 0x10          ; skip to first arg or close paren
-    mov     x22, #0                 ; index of param's register
-    do_call_next_arg:
-    ldr     x0, [x24], #8           ; load pointer -> token to interrogate
-    mov     x23, x0                 ; stash pointer -> token
-    bl      __j_Token_type          ; token.type()
-    cmp     x0, T_CPAREN
-    b.eq    do_call_invoke          ; done!
-    cmp     x0, T_COMMA
-    b.eq    do_call_next_arg        ; again!
-    cmp     x0, T_ID
-    b.ne    do_call_icky
-
-    mov     x1, x23                 ; pointer -> token
-    mov     x0, x19
-    bl      __j_Emitter_lookup_symbol_for  ; self.__j_Emitter_lookup_symbol_for(token)
-    bl      __j_Symbol_offset
-    cmp     x0, #0
-    b.gt    do_call_local_param
-        do_call_icky:
-        adrp    x0, err_nonlocal_param@PAGE
-        add     x0, x0, err_nonlocal_param@PAGEOFF
-        mov     x1, x23
-        mov     x2, #25             ; error code
-        bl      __j_jnc_panic
-    do_call_local_param:
-    lsl     x2, x0, 3
-    mov     x1, x22
-    adrp    x0, tmpl_call_param@PAGE   ; pointer -> template
-    add     x0, x0, tmpl_call_param@PAGEOFF
-    bl      __j_printf
-    add     x22, x22, #1            ; increment register
-    b.eq    do_call_next_arg        ; again!
-
-    do_call_invoke:
-    ldr     x0, [x20]               ; load pointer -> name token
-    bl      __j_Token_value         ; token.value_ptr()
-    mov     x1, x0
-    adrp    x0, tmpl_call@PAGE
-    add     x0, x0, tmpl_call@PAGEOFF
-    bl      __j_printf
-
-    ; restore frame
-    ldr     x24, [sp], 0x10
-    ldp     x22, x23, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* void do_expr( Emitter* self, [Token*] buffer ) */
-.global __j_Emitter_expr
-__j_Emitter_expr:
-do_expr:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x23, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> buffer
-    ldr     x22, [x20, #8]          ; stash pointer -> second token
-    mov     x0, x22
-    bl      __j_Token_type
-    mov     x23, x0                 ; type of second token
-
-    ; if second token is SEMI, it's a copy
-    cmp     x23, T_SEMI
-    b.ne    do_expr_cond
-    mov     x0, x19
-    ldr     x1, [x20]               ; pointer -> first token
-    bl      __j_Emitter_do_token
-    b       do_expr_return
-    ; if second token is OBRACE, it's a condition (of if/while)
-    do_expr_cond:
-    cmp     x23, T_OBRACE
-    b.ne    do_expr_call
-    mov     x0, x19
-    ldr     x1, [x20]               ; pointer -> first token
-    bl      __j_Emitter_do_token
-    b       do_expr_return
-    ; if second token is OPAREN, it's a function call
-    do_expr_call:
-    cmp     x23, T_OPAREN
-    b.ne    do_expr_bool
-    mov     x0, x19
-    mov     x1, x20
-    bl      do_call
-    b       do_expr_return
-    ; if second token is EQ, BANG, LT, GT, PLUS, MINUS, SLASH, STAR, PERCENT, do binary op
-    do_expr_bool:
-    cmp     x23, T_EQ
-    b.eq    do_expr_binop
-    cmp     x23, T_BANG
-    b.eq    do_expr_binop
-    cmp     x23, T_LT
-    b.eq    do_expr_binop
-    cmp     x23, T_GT
-    b.eq    do_expr_binop
-    cmp     x23, T_PLUS
-    b.eq    do_expr_binop
-    cmp     x23, T_MINUS
-    b.eq    do_expr_binop
-    cmp     x23, T_SLASH
-    b.eq    do_expr_binop
-    cmp     x23, T_STAR
-    b.eq    do_expr_binop
-    cmp     x23, T_PERCENT
-    b.eq    do_expr_binop
-    b       do_expr_first_token
-    do_expr_binop:
-    mov     x0, x19
-    mov     x1, x20
-    bl      __j_Emitter_do_binary_op
-    b       do_expr_return
-
-    ; now the first token
-    do_expr_first_token:
-    ldr     x22, [x20]              ; stash pointer -> first token
-    mov     x0, x22
-    bl      __j_Token_type
-    mov     x23, x0                 ; type of first token
-    ; if the first token is AMP, BANG, MINUS, STAR, do unary op
-    do_expr_deref:
-    cmp     x23, T_AMP
-    b.eq    do_expr_unop
-    cmp     x23, T_BANG
-    b.eq    do_expr_unop
-    cmp     x23, T_MINUS
-    b.eq    do_expr_unop
-    cmp     x23, T_STAR
-    b.eq    do_expr_unop
-    b       do_expr_bad
-    do_expr_unop:
-    mov     x0, x19
-    mov     x1, x20
-    bl      __j_Emitter_do_unary_op
-    b       do_expr_return
-
-    do_expr_bad:
-        adrp    x0, err_bad_expr@PAGE
-        add     x0, x0, err_bad_expr@PAGEOFF    ; pointer -> msg
-        mov     x1, x22             ; pointer -> token
-        mov     x2, #28             ; error code
-        bl      __j_jnc_panic            ; print and terminate
-
-    do_expr_return:
     ; restore frame
     ldp     x22, x23, [sp], 0x10
     ldp     x20, x21, [sp], 0x10

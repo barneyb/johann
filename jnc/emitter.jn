@@ -1,21 +1,25 @@
 int T_AMP;
+int T_BANG;
 int T_BOOL;
 int T_CHAR;
+int T_COMMA;
+int T_CPAREN;
+int T_EQ;
+int T_GT;
 int T_ID;
 int T_INT;
 int T_KW_FN;
 int T_KW_WHILE;
-int T_SEMI;
-int T_STRING;
-int T_PLUS;
-int T_MINUS;
-int T_STAR;
-int T_SLASH;
-int T_PERCENT;
-int T_EQ;
-int T_BANG;
 int T_LT;
-int T_GT;
+int T_MINUS;
+int T_OBRACE;
+int T_OPAREN;
+int T_PERCENT;
+int T_PLUS;
+int T_SEMI;
+int T_SLASH;
+int T_STAR;
+int T_STRING;
 
 char* JNC_SHORT_VERSION;
 
@@ -28,8 +32,11 @@ char* JNC_SHORT_VERSION;
 int SIZEOF_BLOCK= 0x20;
 int BLOCKS_CAP  = 10;
 
-char* ERR_BAD_TOKEN = "; ERROR(%i): Bad token %x at line %i, char %i\n";
-char* ERR_BAD_OPERATOR = "; ERROR(%i): Bad operator %x at line %i, char %i\n";
+char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
+char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
+char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
+char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
+char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 
 char* TMPL_PRELUDE          = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 
@@ -42,17 +49,11 @@ char* TMPL_WHILE_INTRO      = "        cmp     x0, FALSE\n        b.eq    while_
 char* TMPL_WHILE_AGAIN      = "        b       while_%i_again\n";
 char* TMPL_WHILE_DONE       = "        b       while_%i_done\n";
 
-char* TMPL_VALUE_STRING     = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
-char* TMPL_VALUE_INT        = "        mov     x0, #%i\n";
-char* TMPL_VALUE_INT_LARGE  = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
-char* TMPL_VALUE_OF_LOCAL   = "        ldr     x0, [fp, -%x]\n";
+char* TMPL_CALL_PARAM       = "        ldr     x%i, [fp, -%x]\n";
+char* TMPL_CALL             = "        bl      __j_%s\n";
 
-# "add-a-negative" so it matches the addressing offsets
-char* TMPL_ADDR_LOCAL       = "        add     x0, fp, -%x\n";
-char* TMPL_ADDR_GLOBAL      = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
-
-char* TMPL_BYTE_AT_ADDR     = "        ldrb    w0, [x0]\n";
-char* TMPL_QUAD_AT_ADDR     = "        ldr     x0, [x0]\n";
+char* TMPL_UN_NOT           = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
+char* TMPL_UN_NEGATE        = "        neg     x0, x0\n";
 
 char* TMPL_STASH            = "        str     x0, [sp, -0x10]!\n";
 char* TMPL_UNSTASH_X1       = "        ldr     x1, [sp], 0x10\n";
@@ -67,11 +68,19 @@ char* COMP_GT = "gt";
 char* COMP_LT = "lt";
 char* COMP_EQ = "eq";
 char* COMP_NE = "ne";
+char* TMPL_BIN_LOGICAL      = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
 
-char* TMPL_BIN_LOGICAL = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
+char* TMPL_VALUE_STRING     = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
+char* TMPL_VALUE_INT        = "        mov     x0, #%i\n";
+char* TMPL_VALUE_INT_LARGE  = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+char* TMPL_VALUE_OF_LOCAL   = "        ldr     x0, [fp, -%x]\n";
 
-char* TMPL_UN_NOT = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
-char* TMPL_UN_NEGATE = "        neg     x0, x0\n";
+# "add-a-negative" so it matches the addressing offsets
+char* TMPL_ADDR_LOCAL       = "        add     x0, fp, -%x\n";
+char* TMPL_ADDR_GLOBAL      = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
+
+char* TMPL_BYTE_AT_ADDR     = "        ldrb    w0, [x0]\n";
+char* TMPL_QUAD_AT_ADDR     = "        ldr     x0, [x0]\n";
 
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
@@ -158,6 +167,96 @@ fn loop_control_flow(void* self, void* buffer, char* tmpl) {
     void* block = Emitter_innermost_block_of(self, kw, token);
     int id = Block_id(block);
     printf(tmpl, id);
+}
+
+pub fn Emitter_expr(void* self, void* buffer) {
+    # start with the second token
+    void* token = buffer + 0x8;
+    token = *token;
+    int type = Token_type(token);
+
+    if type = T_SEMI {
+        # copy/assignment
+        token = *buffer;
+        return Emitter_do_token(self, token);
+    }
+    if type = T_OBRACE {
+        # simple conditional (if/while)
+        token = *buffer;
+        return Emitter_do_token(self, token);
+    }
+    if type = T_OPAREN {
+        # function call
+        return Emitter_do_call(self, buffer);
+    }
+    if type = T_BANG    { return Emitter_do_binary_op(self, buffer); }
+    if type = T_EQ      { return Emitter_do_binary_op(self, buffer); }
+    if type = T_GT      { return Emitter_do_binary_op(self, buffer); }
+    if type = T_LT      { return Emitter_do_binary_op(self, buffer); }
+    if type = T_MINUS   { return Emitter_do_binary_op(self, buffer); }
+    if type = T_PERCENT { return Emitter_do_binary_op(self, buffer); }
+    if type = T_PLUS    { return Emitter_do_binary_op(self, buffer); }
+    if type = T_SLASH   { return Emitter_do_binary_op(self, buffer); }
+    if type = T_STAR    { return Emitter_do_binary_op(self, buffer); }
+
+    # now the first token...
+    token = *buffer;
+    type = Token_type(token);
+    if type = T_AMP   { return Emitter_do_unary_op(self, buffer); }
+    if type = T_BANG  { return Emitter_do_unary_op(self, buffer); }
+    if type = T_MINUS { return Emitter_do_unary_op(self, buffer); }
+    if type = T_STAR  { return Emitter_do_unary_op(self, buffer); }
+
+    char* tmpl = ERR_BAD_EXPRESSION;
+    type = 28;
+    jnc_panic(tmpl, token, type);
+}
+
+pub fn Emitter_do_call(void* self, void* buffer) {
+    void* buf_i = buffer + 0x10; # buffer[2] is either first arg or close paren
+    void* token;
+    int reg_offset = 0;
+    char* tmpl = TMPL_CALL_PARAM; # not guaranteed to need this, but likely
+    while true {
+        token = *buf_i;
+        buf_i = buf_i + 0x8;
+        int type = Token_type(token);
+        if type = T_CPAREN { done; }
+        if type = T_COMMA { again; }
+        if reg_offset = 8 {
+            too_many_params(token);
+        }
+        if type ! T_ID {
+            # only variable derefs
+            return non_local_param(token);
+        }
+        void* sym = Emitter_lookup_symbol_for(self, token);
+        type = Symbol_offset(sym);
+        if type < 1 {
+            # and not globals, only locals
+            return non_local_param(token);
+        }
+        type = type * 0x8;
+        printf(tmpl, reg_offset, type);
+        reg_offset = reg_offset + 1;
+    }
+    tmpl = TMPL_CALL;
+    token = *buffer; # first token is the name of the function
+    # this makes no sense, but gotta reuse SOMETHING, and sym is out of scope
+    sym = Token_value(token);
+    printf(tmpl, sym);
+}
+
+fn non_local_param(void* token) {
+    char* err = ERR_NONLOCAL_PARAM;
+    int status = 25;
+    jnc_panic(err, token, status);
+}
+
+fn too_many_params(void* token) {
+    char* err = ERR_TOO_MANY_PARAMS;
+    int status = 21;
+    jnc_panic(err, token, status);
 }
 
 pub fn Emitter_do_unary_op(void* self, void* buffer) {
