@@ -17,6 +17,7 @@ all: \
 	strings \
 	sum \
 	zero \
+	function_pointers \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )

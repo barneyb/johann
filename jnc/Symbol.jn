@@ -6,15 +6,16 @@ int T_KW_BOOL;
 int T_KW_CHAR;
 
 # struct Symbol {
-#   int width       ; byte width of a value
+#   int width       ; byte width of a value - ick!
 #   int nptr        ; number of pointer indirections
 #   int offset      ; locals : offset from fp (one-indexed)
 #                   ; statics: non-positive
+#   int type        ; type of the symbol
 # }
 
 # I create a new symbol, computing its width from its type (ick).
 pub fn Symbol__new(int type, int nptr) {
-    int bytes = 0x18;
+    int bytes = 0x20;
     int s = malloc(bytes);
     bytes = 0x8;
     if type = T_KW_BOOL { bytes = 0x1; }
@@ -22,7 +23,14 @@ pub fn Symbol__new(int type, int nptr) {
     *s = bytes;
     s = s + 0x8;                    # -> nptr
     *s = nptr;
-    return s - 0x8;                 # -> width
+    s = s + 0x10;                   # -> type
+    *s = type;
+    return s - 0x18;                # -> width
+}
+
+pub fn Symbol_type(void* self) {
+    self = self + 0x18;             # -> type
+    return *self;
 }
 
 pub fn Symbol_width(void* self) {

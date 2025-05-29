@@ -39,11 +39,13 @@ bool IS_PUB;
 int SIZEOF_BLOCK= 0x20;
 int BLOCKS_CAP  = 10;
 
-char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
+pub char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
 char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
 char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
+pub char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
+pub char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 
@@ -79,6 +81,8 @@ char* TMPL_ASSIGN_PTR_QUAD      = "        str     x0, [x7]\n";
 
 char* TMPL_CALL_PARAM           = "        ldr     x%i, [fp, -%x]\n";
 char* TMPL_CALL                 = "        bl      __j_%s\n";
+char* TMPL_CALL_PTR_INTRO       = "        str     x0, [sp, -0x10]!\n";
+char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr     x16\n";
 
 char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
@@ -106,6 +110,7 @@ char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 # "add-a-negative" so it matches the addressing offsets
 char* TMPL_ADDR_LOCAL           = "        add     x0, fp, -%x\n";
 char* TMPL_ADDR_GLOBAL          = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
+char* TMPL_ADDR_FN              = "        adrp    x0, __j_%s@PAGE\n        add     x0, x0, __j_%s@PAGEOFF\n";
 
 char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
@@ -144,12 +149,17 @@ pub fn Emitter_seqnum(void* self) {
 # todo: emit itself
 
 # todo: var / global declarations
-# todo: fn declarations (not just args!)
 
 pub fn Emitter_do_fn(void* self, void* buffer) {
     void* token = buffer + 0x8;     # -> name token
     token = *token;
     char* name = Token_value(token);
+    fn_symbol(self, name);
+
+    if is_fn_prototype(buffer) {
+        return;
+    }
+
     introduce_fn(self, name);
 
     void* buf_i = buffer + 0x18;          # -> first arg or close paren
@@ -175,6 +185,32 @@ pub fn Emitter_do_fn(void* self, void* buffer) {
             reg_offset = reg_offset + 1;
         }
         buf_i = buf_i + 0x8;
+    }
+}
+
+fn fn_symbol(void* self, char* name) {
+    name = strclone(name);
+    void* block = Emitter_current_block(self);
+    void* symbols = Block_symbols(block);
+    int type = T_KW_FN;
+    int zero = 0;
+    void* symbol = Symbol__new(type, zero);
+    void* old = Table_put(symbols, name, symbol);
+    if old ! null {
+        free(name);
+        free(old);
+    }
+}
+
+fn is_fn_prototype(void* buffer) {
+    # if there's a SEMI instead of an OBRACE, it's a prototype
+    void* bi = buffer;
+    while true {
+        void* t = *bi;
+        int type = Token_type(t);
+        if type = T_SEMI   { return  true; }
+        if type = T_OBRACE { return false; }
+        bi = bi + 0x8;
     }
 }
 
@@ -396,6 +432,36 @@ pub fn Emitter_expr(void* self, void* buffer) {
 }
 
 pub fn Emitter_do_call(void* self, void* buffer) {
+    void* token = *buffer; # first token is the name of the function
+    bool allow_null = true;
+    void* symbol = Emitter_lookup_symbol_for(self, token, allow_null);
+    char* tmpl;
+    if symbol ! null {
+        # function pointer - do setup first, as it corrupts x0
+        do_address_of(self, token, symbol);
+        int nptr = Symbol_nptr(symbol);
+        if nptr > 0 {
+            do_load_addr(self, token, symbol);
+        }
+        tmpl = TMPL_CALL_PTR_INTRO;
+        printf(tmpl);
+    }
+
+    call_params(self, buffer);
+
+    if symbol ! null {
+        # call the function pointer
+        tmpl = TMPL_CALL_PTR;
+        return
+        printf(tmpl);
+    }
+    # anonymous - hope it's there!
+    tmpl = TMPL_CALL;
+    char* name = Token_value(token);
+    printf(tmpl, name);
+}
+
+fn call_params(void* self, void* buffer) {
     void* buf_i = buffer + 0x10; # buffer[2] is either first arg or close paren
     void* token;
     int reg_offset = 0;
@@ -423,11 +489,6 @@ pub fn Emitter_do_call(void* self, void* buffer) {
         printf(tmpl, reg_offset, type);
         reg_offset = reg_offset + 1;
     }
-    tmpl = TMPL_CALL;
-    token = *buffer; # first token is the name of the function
-    # this makes no sense, but gotta reuse SOMETHING, and symbol is out of scope
-    symbol = Token_value(token);
-    printf(tmpl, symbol);
 }
 
 fn non_local_param(void* token) {
@@ -597,7 +658,13 @@ fn do_address_of(void* self, void* token, void* symbol) {
         return printf(tmpl, offset);
     }
     # global
-    tmpl = TMPL_ADDR_GLOBAL;
+    int type = Symbol_type(symbol);
+    if type = T_KW_FN {
+        tmpl = TMPL_ADDR_FN;
+    }
+    if type ! T_KW_FN {
+        tmpl = TMPL_ADDR_GLOBAL;
+    }
     char* name = Token_value(token);
     printf(tmpl, name, name);
 }

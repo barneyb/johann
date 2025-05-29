@@ -128,6 +128,19 @@ Parameters passed in a function call must be local variables, not expressions. T
     # not allowed:
     # printf("one: %i\n", 1);
 
+Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
+
+    char* GREETING;             # declare variable defined somewhere else
+    fn puts(char* str);         # declare jstdlib function
+
+    pub fn main() {
+        char* str = GREETING;   # deref global (declaration required)
+        void* puts_ptr = &puts; # take address of function (declaration required)
+        puts(str);              # call declared jstdlib function
+        puts_ptr(str);          # invoke through pointer
+        printf(str);            # call undeclared jstdlib function
+    }
+
 ## Building Johann Programs
 
 First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon, running macOS) to run on, with the command-line developer/Xcode tools installed.

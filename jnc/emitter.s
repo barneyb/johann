@@ -5,14 +5,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 err_bad_stmt: .asciz "; ERROR(%i): Bad statement %x at line %i, char %i\n"
-err_bad_expr: .asciz "; ERROR(%i): Bad expression %x at line %i, char %i\n"
-err_bad_token: .asciz "; ERROR(%i): Bad token %x at line %i, char %i\n"
-err_bad_operator: .asciz "; ERROR(%i): Bad operator %x at line %i, char %i\n"
 err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
-err_dupe_decl: .asciz "; ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n"
 err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n"
-err_too_many_locals: .asciz "; ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n"
-err_nonlocal_param: .asciz "ERROR(%i): non-local param (%x) at line %i, char %i\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -59,7 +53,7 @@ __j_Emitter_enter_block:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* Symbol* Emitter_lookup_symbol_for( Emitter* self, Token* id_token ) */
+/* Symbol* Emitter_lookup_symbol_for( Emitter* self, Token* id_token, bool allow_null ) */
 .global __j_Emitter_lookup_symbol_for
 __j_Emitter_lookup_symbol_for:
     stp     fp, lr, [sp, -0x10]!
@@ -75,7 +69,7 @@ __j_Emitter_lookup_symbol_for:
     ldp     fp, lr, [sp], 0x10
     ret
 
-/* Symbol* lookup_symbol_by_name_and_token( Emitter* self, char* name, Token* t ) */
+/* Symbol* lookup_symbol_by_name_and_token( Emitter* self, char* name, Token* t, bool allow_null ) */
 lookup_symbol_by_name_and_token:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
@@ -108,16 +102,17 @@ lookup_symbol_by_name_and_token:
     b       lookup_symbol_loop
 
     lookup_symbol_bad:
-        ; build a panic tuple on the stack, since the token itself won't work
+        cmp     x3, FALSE
+        b.ne    lookup_symbol_return
+        ; munge the token for printing
         ldp     x1, x0, [sp]
-        bl      __j_Token_char
-        str     x0, [sp, -0x10]!
-        ldp     x1, x0, [sp, 0x10]
-        bl      __j_Token_line
-        stp     x1, x0, [sp, -0x10]!
+        bl      __j_Token_value
+        mov     x1, x0
+        ldp     xzr, x0, [sp]
+        bl      __j_Token_set_type
         adrp    x0, err_unknown_symbol@PAGE
         add     x0, x0, err_unknown_symbol@PAGEOFF
-        mov     x1, sp
+        ldp     xzr, x1, [sp]
         mov     x2, #23             ; error code
         bl      __j_jnc_panic       ; print and terminate
 
@@ -276,7 +271,7 @@ __j_Emitter_emit:
     b.ne    __emit_char             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_decl                 ; this.do_decl( buffer )
+    bl      __j_Emitter_do_decl                 ; this.__j_Emitter_do_decl( buffer )
     b       __emit_return__
 
     __emit_char:
@@ -284,7 +279,7 @@ __j_Emitter_emit:
     b.ne    __emit_bool             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_decl                 ; this.do_decl( buffer )
+    bl      __j_Emitter_do_decl                 ; this.__j_Emitter_do_decl( buffer )
     b       __emit_return__
 
     __emit_bool:
@@ -292,7 +287,7 @@ __j_Emitter_emit:
     b.ne    __emit_void             ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_decl                 ; this.do_decl( buffer )
+    bl      __j_Emitter_do_decl                 ; this.__j_Emitter_do_decl( buffer )
     b       __emit_return__
 
     __emit_void:
@@ -300,7 +295,7 @@ __j_Emitter_emit:
     b.ne    __emit_while            ; next!
     mov     x0, x19
     mov     x1, x20
-    bl      do_decl                 ; this.do_decl( buffer )
+    bl      __j_Emitter_do_decl                 ; this.__j_Emitter_do_decl( buffer )
     b       __emit_return__
 
     __emit_while:
@@ -476,14 +471,13 @@ __j_Emitter_vardecl:
     b.eq    vardecl_non_dupe
         ; build a panic tuple on the stack, since the token itself won't work
         ldp     x1, x0, [sp]
-        bl      __j_Token_char
-        str     x0, [sp, -0x10]!
-        ldp     x1, x0, [sp, 0x10]
-        bl      __j_Token_line
-        stp     x1, x0, [sp, -0x10]!
-        adrp    x0, err_dupe_decl@PAGE
-        add     x0, x0, err_dupe_decl@PAGEOFF    ; pointer -> msg
-        mov     x1, sp
+        bl      __j_Token_value
+        mov     x1, x0
+        ldp     xzr, x0, [sp]
+        bl      __j_Token_set_type
+        adrp    x0, _j_gbl_ERR_DUPE_DECL@PAGE
+        add     x0, x0, _j_gbl_ERR_DUPE_DECL@PAGEOFF    ; pointer -> msg
+        ldp     xzr, x1, [sp]
         mov     x2, #22             ; error code
         bl      __j_jnc_panic       ; print and terminate
     vardecl_non_dupe:
@@ -505,16 +499,15 @@ __j_Emitter_vardecl:
         cmp     x0, #8                  ; max number of local vars
         b.lt    vardecl_few_enough
             ; todo: allocate stack space on demand, rather than locking to eight
-            ; build a panic tuple on the stack, since the token itself won't work
+            ; munge the token for paniking
             ldp     x1, x0, [sp]
-            bl      __j_Token_char
-            str     x0, [sp, -0x10]!
-            ldp     x1, x0, [sp, 0x10]
-            bl      __j_Token_line
-            stp     x1, x0, [sp, -0x10]!
-            adrp    x0, err_too_many_locals@PAGE
-            add     x0, x0, err_too_many_locals@PAGEOFF    ; pointer -> msg
-            mov     x1, sp
+            bl      __j_Token_value
+            mov     x1, x0
+            ldp     xzr, x0, [sp]
+            bl      __j_Token_set_type
+            adrp    x0, _j_gbl_ERR_TOO_MANY_LOCALS@PAGE
+            add     x0, x0, _j_gbl_ERR_TOO_MANY_LOCALS@PAGEOFF    ; pointer -> msg
+            ldp     xzr, x1, [sp]
             mov     x2, #24             ; error code
             bl      __j_jnc_panic       ; print and terminate
         vardecl_few_enough:
@@ -556,7 +549,8 @@ __j_Emitter_vardecl:
     ret
 
 /* void do_decl( Emitter* self, [Token*] buffer ) */
-do_decl:
+.global __j_Emitter_do_decl
+__j_Emitter_do_decl:
     ; create frame
     stp     lr, x19, [sp, -0x10]!
     stp     x20, x21, [sp, -0x10]!
@@ -566,7 +560,7 @@ do_decl:
     mov     x20, x1                 ; stash pointer -> buffer
 
     bl      __j_Emitter_vardecl
-    bl      __j_Symbol_offset
+    bl      __j_Symbol_offset ; todo: this has GOT to be a defect?!
     mov     x23, x0                 ; stash width
 
     ; scan until find an ASSIGN or SEMI
@@ -628,8 +622,8 @@ do_decl:
     b.eq    do_decl_string
 
     do_decl_bad:
-        adrp    x0, err_bad_token@PAGE
-        add     x0, x0, err_bad_token@PAGEOFF    ; pointer -> msg
+        adrp    x0, _j_gbl_ERR_DUPE_DECL@PAGE
+        add     x0, x0, _j_gbl_ERR_DUPE_DECL@PAGEOFF    ; pointer -> msg
         mov     x1, x20             ; pointer -> token
         mov     x2, #26             ; error code
         bl      __j_jnc_panic       ; print and terminate

@@ -1,0 +1,48 @@
+
+fn a() { return 'a'; }
+fn b();
+fn puts(char* str);
+
+pub fn main() {
+    non_pointers();
+    pointers();
+}
+
+fn non_pointers() {
+    # call a local, defined function
+    char c = a();
+    # call a global, non-prototyped function
+    putchar(c);
+    # call a local, prototyped function
+    c = b();
+    putchar(c);
+    # call a local, non-prototyped function
+    char* str = get_str();
+    # call a global, prototyped function
+    puts(str);
+}
+
+fn get_str() { return "\ni am string"; }
+
+fn pointers() {
+    # point to local, defined function
+    void* p_a = &a;
+    # point to global, non-prototyped function - nonsense!
+#    void* p_putchar = &putchar;
+    # point to local, prototyped function
+    void* p_b = &b;
+    # point to local, non-prototyped function
+    void* p_get_str = &get_str;
+    # point to global, prototyped function
+    void* p_puts = &puts;
+
+    char c = a();
+    c = p_a();
+    putchar(c);
+    c = p_b();
+    putchar(c);
+    char* str = p_get_str();
+    p_puts(str);
+}
+
+fn b() { return 'b'; }
