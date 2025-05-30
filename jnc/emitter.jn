@@ -30,22 +30,15 @@ char* JNC_SHORT_VERSION;
 
 bool IS_PUB;
 
-# struct Emitter {
-#   int seq                         ; sequence for unique label names
-#   int depth
-#   [Block] blocks                  ; array/stack of "lexical" Blocks
-# }
-
-int SIZEOF_BLOCK= 0x20;
-int BLOCKS_CAP  = 10;
-
-pub char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
+char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
 char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
 char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 pub char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 pub char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
+char* ERR_UNKNOWN_SYMBOL = "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
+char* ERR_INVALID_NESTING = "; ERROR(%i): Invalid nesting %x at line %i, char %i\n";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 
@@ -115,6 +108,15 @@ char* TMPL_ADDR_FN              = "        adrp    x0, __j_%s@PAGE\n        add 
 char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
+# struct Emitter {
+#   int seq                         ; sequence for unique label names
+#   int depth
+#   [Block] blocks                  ; array/stack of "lexical" Blocks
+# }
+
+int SIZEOF_BLOCK;
+int BLOCKS_CAP = 10;
+
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
     bytes = bytes + 0x10;
@@ -142,6 +144,97 @@ pub fn Emitter_seqnum(void* self) {
     seq = seq + 1;
     *self = seq;
     return seq;
+}
+
+pub fn Emitter_enter_block(void* self, int type) {
+    int id = Emitter_seqnum(self);
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    void* blocks = self + 0x8;
+    depth = depth * SIZEOF_BLOCK;
+    void* block = blocks + depth;
+    Block_init(block, type, id);
+    depth = *self;
+    depth = depth + 1;
+    *self = depth;
+    return block;
+}
+
+pub fn Emitter_current_block(void* self) {
+    void* blocks = self + 0x10;
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    depth = depth - 1;
+    depth = depth * SIZEOF_BLOCK;
+    blocks = blocks + depth;
+    return blocks;
+}
+
+pub fn Emitter_is_global(void* self) {
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    return depth = 1;
+}
+
+pub fn Emitter_innermost_block_of(void* self, int type, void* token) {
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    void* blocks = self + 0x8;
+    while depth > 0 {
+        depth = depth - 1;
+        void* block = depth * SIZEOF_BLOCK;
+        block = block + blocks;
+        int t = Block_type(block);
+        if type = t {
+            return block;
+        }
+    }
+
+    # out of blocks
+    char* err = ERR_INVALID_NESTING;
+    depth = 37;
+    jnc_panic(err, token, depth);
+}
+
+pub fn Emitter_leave_block(void* self) {
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    depth = depth - 1;
+    *self = depth;
+    self = self + 0x8;             # -> blocks
+    void* block = depth * SIZEOF_BLOCK;
+    block = block + self;
+    return block;
+}
+
+pub fn Emitter_lookup_symbol_for(void* self, void* id_token, bool allow_null) {
+    char* name = Token_value(id_token);
+    return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
+}
+
+pub fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool allow_null) {
+    self = self + 0x8;             # -> depth
+    int depth = *self;
+    void* blocks = self + 0x8;
+    while depth > 0 {
+        depth = depth - 1;
+        void* symbols = depth * SIZEOF_BLOCK;
+        symbols = symbols + blocks;
+        symbols = Block_symbols(symbols);
+        void* sym = Table_get(symbols, name);
+        if sym ! null {
+            return sym;
+        }
+    }
+
+    # out of blocks
+    if allow_null {
+        return null;
+    }
+    Token_set_type(t, name);
+    name = ERR_UNKNOWN_SYMBOL;
+    depth = 22;
+    jnc_panic(name, t, depth);
 }
 
 # todo: make is_pub less ridiculous

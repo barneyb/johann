@@ -5,8 +5,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .data
 err_bad_stmt: .asciz "; ERROR(%i): Bad statement %x at line %i, char %i\n"
-err_invalid_nesting: .asciz "; ERROR(%i): Invalid nesting %x at line %i, char %i\n"
-err_unknown_symbol: .asciz "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                                     .text
@@ -16,209 +14,6 @@ TRUE    = 1
 FALSE   = 0
 
 .include "inc_token_table.s"
-
-OFF_SEQ     = 0
-OFF_DEPTH   = 0x8
-OFF_BLOCKS  = 0x10
-
-SIZEOF_BLOCK  = 0x20
-
-/* Block* __j_Emitter_enter_block( Emitter* self, int type ) */
-.global __j_Emitter_enter_block
-__j_Emitter_enter_block:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!
-    stp     x21, x22, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> type
-    ldp     x21, x22, [x19, OFF_SEQ]; load seq and depth
-    add     x21, x21, 1             ; increment seq
-
-    add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
-    mov     x1, SIZEOF_BLOCK        ; size of block
-    madd    x0, x22, x1, x0         ; pointer -> block
-    mov     x1, x20
-    mov     x2, x21
-    bl      __j_Block_init
-
-    add     x22, x22, 1             ; increment depth
-    stp     x21, x22, [x19, OFF_SEQ]; store seq and depth
-
-    ; restore frame
-    ldp     x21, x22, [sp], 0x10
-    ldp     x19, x20, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* Symbol* Emitter_lookup_symbol_for( Emitter* self, Token* id_token, bool allow_null ) */
-.global __j_Emitter_lookup_symbol_for
-__j_Emitter_lookup_symbol_for:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-
-    stp     x0, x1, [sp, -0x10]!
-    mov     x0, x1
-    bl      __j_Token_value         ; pointer -> name
-    mov     x1, x0
-    ldp     x0, x2, [sp], 0x10
-    bl      lookup_symbol_by_name_and_token
-
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* Symbol* lookup_symbol_by_name_and_token( Emitter* self, char* name, Token* t, bool allow_null ) */
-lookup_symbol_by_name_and_token:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    stp     x19, x20, [sp, -0x10]!
-    stp     x1, x2, [sp, -0x10]!    ; store pointers -> name & -> t
-    mov     x19, x0                 ; stash pointer -> this
-    ldr     x20, [x19, OFF_DEPTH]   ; load depth
-;        .data
-;        asdf:.asciz "          ; LOOKUP name: '%s', type: %x, line: %i, char: %i, value: %x\n"
-;        .text
-;        ldp     x1, x6, [sp]
-;        ldp     x2, x3, [x6]
-;        ldp     x4, x5, [x6, 0x10]
-;        adrp x0, asdf@PAGE
-;        add x0, x0, asdf@PAGEOFF
-;        bl __j_printf
-
-    lookup_symbol_loop:
-    sub     x20, x20, 1             ; decrement depth
-    cmp     x20, #0
-    b.lt    lookup_symbol_bad       ; out of blocks!
-    add     x0, x19, OFF_BLOCKS     ; pointer -> stack of blocks
-    mov     x1, SIZEOF_BLOCK        ; size of block
-    madd    x0, x20, x1, x0         ; pointer -> block
-    bl      __j_Block_symbols
-    ldr     x1, [sp]                ; load pointer -> name
-    bl      __j_Table_get
-    cmp     x0, NULL
-    b.ne    lookup_symbol_return
-    b       lookup_symbol_loop
-
-    lookup_symbol_bad:
-        cmp     x3, FALSE
-        b.ne    lookup_symbol_return
-        ; munge the token for printing
-        ldp     x1, x0, [sp]
-        bl      __j_Token_value
-        mov     x1, x0
-        ldp     xzr, x0, [sp]
-        bl      __j_Token_set_type
-        adrp    x0, err_unknown_symbol@PAGE
-        add     x0, x0, err_unknown_symbol@PAGEOFF
-        ldp     xzr, x1, [sp]
-        mov     x2, #23             ; error code
-        bl      __j_jnc_panic       ; print and terminate
-
-    lookup_symbol_return:
-    add     sp, sp, 0x10            ; release locals
-    ldp     x19, x20, [sp], 0x10
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* Block* innermost_block_of( Emitter* self, int type, Token* t ) */
-.global __j_Emitter_innermost_block_of
-__j_Emitter_innermost_block_of:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    stp     x22, x2, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    mov     x20, x1                 ; stash pointer -> type
-    ldr     x21, [x19, OFF_DEPTH]   ; load depth
-
-    innermost_block_of_loop:
-    sub     x21, x21, 1             ; decrement depth
-    cmp     x21, #0
-    b.lt    innermost_block_of_bad  ; out of blocks!
-    add     x22, x19, OFF_BLOCKS    ; pointer -> stack of blocks
-    mov     x1, SIZEOF_BLOCK        ; size of block
-    madd    x22, x21, x1, x22       ; pointer -> block
-    mov     x0, x22
-    bl      __j_Block_type
-    cmp     x0, x20
-    b.ne    innermost_block_of_loop
-    mov     x0, x22
-    b       innermost_block_of_return
-
-    innermost_block_of_bad:
-        adrp    x0, err_invalid_nesting@PAGE
-        add     x0, x0, err_invalid_nesting@PAGEOFF
-        ldr     x1, [sp, 0x8]       ; load pointer -> token
-        mov     x2, #37             ; error code
-        bl      __j_jnc_panic       ; print and terminate
-
-    innermost_block_of_return:
-    ; restore frame
-    ldr     x22, [sp], 0x10
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* Block* current_block( Emitter* self ) */
-.global __j_Emitter_current_block
-__j_Emitter_current_block:
-current_block:
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-
-    add     x1, x0, OFF_BLOCKS      ; pointer -> stack of blocks
-    mov     x2, SIZEOF_BLOCK        ; size of block
-    ldr     x3, [x0, OFF_DEPTH]     ; load depth
-    sub     x3, x3, #1              ; decrement depth
-    madd    x0, x2, x3, x1          ; pointer -> block
-
-    ldp     fp, lr, [sp], 0x10
-    ret
-
-/* Block* leave_block( Emitter* self ) */
-.global __j_Emitter_leave_block
-__j_Emitter_leave_block:
-    ; create frame
-    stp     lr, x19, [sp, -0x10]!
-    stp     x20, x21, [sp, -0x10]!
-    ; end frame
-    mov     x19, x0                 ; stash pointer -> this
-    ldr     x20, [x19, OFF_DEPTH]   ; load depth
-    sub     x20, x20, 1             ; decrement depth
-    str     x20, [x19, OFF_DEPTH]   ; store depth
-    add     x21, x19, OFF_BLOCKS    ; pointer -> stack of blocks
-    mov     x1, SIZEOF_BLOCK        ; size of block
-    madd    x21, x20, x1, x21       ; pointer -> block
-    mov     x0, x21
-    ; restore frame
-    ldp     x20, x21, [sp], 0x10
-    ldp     lr, x19, [sp], 0x10
-    ret
-
-/* bool is_global( Emitter* self ) */
-.global __j_Emitter_is_global
-__j_Emitter_is_global:
-is_global:
-    ; create frame
-    stp     fp, lr, [sp, -0x10]!
-    mov     fp, sp
-    ; end frame
-    ldr     x1, [x0, OFF_DEPTH]     ; load depth
-    cmp     x1, #1
-    b.eq    is_global_yep
-    mov     x0, FALSE
-    b       is_global_return
-
-    is_global_yep:
-    mov     x0, TRUE
-
-    is_global_return:
-    ; restore frame
-    ldp     fp, lr, [sp], 0x10
-    ret
 
 .data
 .global _j_gbl_IS_PUB
@@ -448,7 +243,7 @@ __j_Emitter_vardecl:
     stp     x0, x23, [sp, -0x10]!   ; store pointers -> name & -> id token
     ; get the current block
     mov     x0, x19
-    bl      is_global
+    bl      __j_Emitter_is_global
     cmp     x0, FALSE
     b.ne    vardecl_global
         mov     x0, x19
@@ -458,7 +253,7 @@ __j_Emitter_vardecl:
         b       vardecl_got_block
     vardecl_global:
         mov     x0, x19
-        bl      current_block           ; self.current_block()
+        bl      __j_Emitter_current_block           ; self.current_block()
 
     vardecl_got_block:
     ; get its symbol table
@@ -490,7 +285,7 @@ __j_Emitter_vardecl:
     mov     x24, x0                 ; stash pointer -> symbol
 
     mov     x0, x19
-    bl      is_global
+    bl      __j_Emitter_is_global
     cmp     x0, FALSE
     b.ne    vardecl_global_offset
         ; set its register/offset
@@ -576,7 +371,7 @@ __j_Emitter_do_decl:
 
     do_decl_delegate:
     mov     x0, x19
-    bl      is_global               ; see if its global
+    bl      __j_Emitter_is_global               ; see if its global
     cmp     x0, FALSE
     b.ne    do_decl_global
 

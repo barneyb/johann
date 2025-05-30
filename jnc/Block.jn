@@ -11,6 +11,8 @@ fn strcmp(char* left, char* right);
 #   Table* symbols
 # }
 
+pub int SIZEOF_BLOCK = 0x20;
+
 pub fn Block_init(void* self, int type, int id) {
     void* cmp = &strcmp;
     void* symbols = Table__new(cmp);
