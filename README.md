@@ -273,11 +273,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20250526
-build_time: 2025-05-26T01:06:11+00:00
-commit_hash: fd1a54c70e53547599267a55f1ec29b9d670b5cf
+jnc 0.20250530
+build_time: 2025-05-30T04:48:30+00:00
+commit_hash: 42cd04363039a6e3c7f1a01ca6b910f01d1cf87f
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20250526-fd1a54c ; tmpl_prelude
+; Compiled with jnc 0.20250530-42cd043
     .text
     .align  3
 ... snip ...
