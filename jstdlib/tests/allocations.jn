@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     char* f_start = "\nTEST %s:\n";
     char* f_end = "/%s\n";
     char* name;

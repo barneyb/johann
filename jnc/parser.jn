@@ -1,0 +1,121 @@
+# I am a Parser for Tokens produced by a Lexer.
+
+int T_BOOL;
+int T_CHAR;
+int T_ID;
+int T_INT;
+int T_STRING;
+int T_CBRACE;
+int T_OBRACE;
+int T_SEMI;
+
+# struct Parser {
+#   Lexer* lexer                    ; pointer -> source of Tokens
+#   int pos                         ; next buffer index to write
+#   [Token*] buf                    ; buffered tokens
+# }
+pub fn Parser__new(void* lexer) {
+    int bytes = 0x8 * 25;           # todo: max of 25 tokens?!
+    bytes = bytes + 0x10;
+    void* p = malloc(bytes);
+    *p = lexer;
+    p = p + 0x8;
+    *p = 0;
+    p = p + 0x8;
+    *p = 0;
+    p = p - 0x10;
+    return p;
+}
+
+pub fn Parser_parse(void* self) {
+    void* emitter = Emitter__new();
+    void* pos = self + 0x8;
+    int len;
+    void* buf = self + 0x10;
+    while true {
+        load_buffer(self);
+        len = *pos;
+        if len = 0 { done; }
+        Emitter_emit(emitter, buf);
+        free_buffer(self);
+    }
+    Emitter_drop(emitter);
+}
+
+pub fn Parser_drop(void* self) {
+    free(self);
+}
+
+fn free_buffer(void* self) {
+    void* pos = self + 0x8;
+    int len = *pos;
+    void* buf = self + 0x10;
+    int i = 0;
+    void* t;
+    while i < len {
+        t = i * 0x8;
+        t = t + buf;
+        t = *t;
+        Token_drop(t);
+        i = i + 1;
+    }
+    *pos = 0;
+}
+
+fn load_buffer(void* self) {
+    void* lexer = *self;
+    void* pos = self + 0x8;
+    void* buf = self + 0x10;
+    int i = 0;
+    void* buf_i;
+    while true {
+        void* t = Lexer_token(lexer);
+        if t = null { done; }
+        print_token(t);
+        buf_i = i * 0x8;
+        buf_i = buf_i + buf;
+        *buf_i = t;
+        i = i + 1;
+        *pos = i;
+        int type = Token_type(t);
+        if type = T_SEMI { done; }
+        if type = T_OBRACE { done; }
+        if type = T_CBRACE { done; }
+    }
+    *pos = i;
+    i = 0xa;
+    putchar(i); # newline after printed tokens
+}
+
+pub fn print_token(void* t) {
+    int type = Token_type(t);
+    int ln = Token_line(t);
+    int ch = Token_char(t);
+    char* f;
+    if type > 0x7f {
+        f = "; %i/%c %i,%i";
+        int i = type / 256;
+        printf(f, i, type, ln, ch);
+    }
+    if type < 0x80 {
+        f = "; %c %i,%i";
+        printf(f, type, ln, ch);
+    }
+    f = null;
+    if type = T_INT { f = ": %i"; }
+    if type = T_ID { f = ": %s"; }
+    if type = T_CHAR { f = ": '%c'"; }
+    if type = T_STRING {
+        f = ": %c%s%c";
+        ln = Token_value(t);
+        ch = '"';
+        printf(f, ch, ln, ch);
+        return;
+    }
+    if type = T_BOOL { f = ": %b"; }
+    if type > 0x200 { f = ": %s"; }
+    if f ! null {
+        ln = Token_value(t);
+        printf(f, ln);
+    }
+}

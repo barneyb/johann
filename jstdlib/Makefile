@@ -4,12 +4,13 @@ LIB = $(TGT)/lib
 OUT = $(TGT)/out
 JNC = ../bin/jnc
 OBJECTS = \
+	$(LIB)/StringBuilder.jn.o \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
-	$(LIB)/table.o \
-	$(LIB)/string.o \
 	$(LIB)/string.jn.o \
+	$(LIB)/string.o \
 	$(LIB)/sys.o \
+	$(LIB)/table.o \
 
 all: $(LIB)/jstdlib.o
 

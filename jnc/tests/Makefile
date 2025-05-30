@@ -17,6 +17,7 @@ all: \
 	strings \
 	sum \
 	zero \
+	function_pointers \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )
@@ -36,6 +37,10 @@ collatz: $(BIN)/collatz collatz.expected.txt
 	diff -u collatz.expected.txt $(OUT)/collatz.actual.txt
 
 # Pattern targets
+
+$(BIN)/%Test: $(LIB)/%Test.o ../$(LIB)/%.jn.o $(JSTDLIB)
+	@mkdir -p $(BIN)
+	gcc $^ -o $@
 
 %: $(BIN)/% %.expected.txt
 	$< > $(OUT)/$@.actual.txt

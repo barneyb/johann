@@ -1,0 +1,23 @@
+# I store information about a block/scope. I used to be an implementation detail
+# of Emitter, which still hard-codes some layout information.
+
+# struct Block {
+#   int type                        ; type of the block, identified by its token
+#   int id                          ; unique id num of the block
+#   int nvars                       ; number of vars (function only)
+#   Table* symbols
+# }
+
+pub fn Block_type(void* self) {
+    return *self;
+}
+
+pub fn Block_id(void* self) {
+    self = self + 0x8;
+    return *self;
+}
+
+pub fn Block_symbols(void* self) {
+    self = self + 0x18;
+    return *self;
+}

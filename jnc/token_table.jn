@@ -1,0 +1,52 @@
+# value token types (0x100)
+pub int T_BOOL      = 0x162; # 0x100 + 'b';
+pub int T_CHAR      = 0x163; # 0x100 + 'c';
+pub int T_ID        = 0x169; # 0x100 + 'i';
+pub int T_INT       = 0x16e; # 0x100 + 'n';  # not 'i'
+pub int T_STRING    = 0x173; # 0x100 + 's';
+# literal keywords never become tokens, they become value tokens.
+# flow control keywords (0x200)
+pub int T_KW_AGAIN  = 0x241; # 0x200 + 'A';
+pub int T_KW_DONE   = 0x244; # 0x200 + 'D';
+pub int T_KW_IF     = 0x249; # 0x200 + 'I';
+pub int T_KW_RETURN = 0x252; # 0x200 + 'R';
+pub int T_KW_WHILE  = 0x257; # 0x200 + 'W';
+# type keywords (0x300)
+pub int T_KW_BOOL   = 0x342; # 0x300 + 'B';
+pub int T_KW_CHAR   = 0x343; # 0x300 + 'C';
+pub int T_KW_INT    = 0x349; # 0x300 + 'I';
+pub int T_KW_VOID   = 0x356; # 0x300 + 'V';
+# definition keywords (0x400)
+pub int T_KW_CONST  = 0x443; # 0x400 + 'C';
+pub int T_KW_FN     = 0x446; # 0x400 + 'F';
+pub int T_KW_LET    = 0x44c; # 0x400 + 'L';
+pub int T_KW_PUB    = 0x450; # 0x400 + 'P';
+# ambiguous character tokens (ASCII, for now)
+pub int T_ASSIGN    = '=';          # double-alias, for now
+pub int T_BANG      = '!';
+pub int T_EQ        = '=';          # double-alias, for now
+pub int T_GT        = '>';
+pub int T_LT        = '<';
+pub int T_MINUS     = '-';
+pub int T_PLUS      = '+';
+# simple character tokens (ASCII)
+pub int T_AMP       = '&';
+pub int T_CBRACE    = '}';
+pub int T_CBRACKET  = ']';
+pub int T_COLON     = ':';
+pub int T_COMMA     = ',';
+pub int T_CPAREN    = ')';
+pub int T_DOT       = '.';
+pub int T_HASH      = '#';
+pub int T_OBRACE    = '{';
+pub int T_OBRACKET  = '[';
+pub int T_OPAREN    = '(';
+pub int T_PERCENT   = '%';
+pub int T_PIPE      = '|';
+pub int T_QUESTION  = '?';
+pub int T_SEMI      = ';';
+pub int T_SLASH     = '/';
+pub int T_STAR      = '*';
+# punctuation
+pub int T_SQUOTE    = 0x27;         # no escapes (yet)
+pub int T_DQUOTE    = '"';

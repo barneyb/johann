@@ -1,4 +1,4 @@
-fn main() {
+pub fn main() {
     int floor = 0;
     int first_descent = -1;
     int idx = 0;

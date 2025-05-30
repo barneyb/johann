@@ -9,6 +9,8 @@ function nope() {
     exit $1
 }
 
+cd "$(dirname "$0")"
+
 BRANCH="$(git name-rev --name-only --exclude 'remotes/*' HEAD)"
 if [ "${BRANCH}" != "master" ]; then
     nope 1 "You can only release from 'master', not '${BRANCH}'."
@@ -40,39 +42,7 @@ if ! make not_quite_lisp; then
 fi
 git add --force bin/jnc lib/jstdlib.o
 
-# update readme
-LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' README.md | cut -d : -f 1)
-{
-    head -n $LINE README.md
-    ./bin/jnc --version
-    LINE=$(( LINE + 4))
-    tail -n +$LINE README.md | head -n 1
-    LINE=$(( LINE + 4))
-    echo "pub fn main(){}" | ./bin/jnc | head -n 3
-    tail -n +$LINE README.md
-} > tmp.md
-mv tmp.md README.md
-# system software
-LINE=$(grep -Fn '<!--{systemsoftware}-->' README.md | cut -d : -f 1)
-{
-    head -n $LINE README.md
-    echo '```'
-    echo '% uname -a'
-    uname -a
-    echo "%"
-    echo '% make --version'
-    make --version
-    echo "%"
-    echo '% gcc --version'
-    gcc --version
-    echo "%"
-    echo '% ld -v'
-    ld -v 2>&1
-    echo '```'
-    LINE=$(grep -Fn '<!--{/systemsoftware}-->' README.md | cut -d : -f 1)
-    tail -n +$LINE README.md
-} > tmp.md
-mv tmp.md README.md
+./docs.sh
 git add README.md
 
 # commit and tag

@@ -1,21 +1,249 @@
-# This one's tricky. The value lexed is returned, and char_count is incremented
-# for each character read. In assembly, it was a composite return (via x8), but
-# Johann's not that capable (yet).
-pub fn Lexer_lex_digits(char first_char, int* char_count) {
+int T_BOOL;
+int T_CHAR;
+int T_ID;
+int T_INT;
+int T_STRING;
+
+int T_KW_AGAIN;
+int T_KW_BOOL;
+int T_KW_CHAR;
+int T_KW_CONST;
+int T_KW_DONE;
+int T_KW_FN;
+int T_KW_IF;
+int T_KW_INT;
+int T_KW_LET;
+int T_KW_PUB;
+int T_KW_RETURN;
+int T_KW_VOID;
+int T_KW_WHILE;
+
+int T_ASSIGN;
+int T_BANG;
+int T_EQ;
+int T_GT;
+int T_LT;
+int T_MINUS;
+int T_PLUS;
+int T_AMP;
+int T_CBRACE;
+int T_CBRACKET;
+int T_COLON;
+int T_COMMA;
+int T_CPAREN;
+int T_DOT;
+int T_HASH;
+int T_OBRACE;
+int T_OBRACKET;
+int T_OPAREN;
+int T_PERCENT;
+int T_PIPE;
+int T_QUESTION;
+int T_SEMI;
+int T_SLASH;
+int T_STAR;
+int T_SQUOTE;
+int T_DQUOTE;
+
+char* KW_AGAIN  = "again";
+char* KW_BOOL   = "bool";
+char* KW_CHAR   = "char";
+char* KW_CONST  = "const";
+char* KW_DONE   = "done";
+char* KW_FALSE  = "false";
+char* KW_FN     = "fn";
+char* KW_IF     = "if";
+char* KW_INT    = "int";
+char* KW_LET    = "let";
+char* KW_NULL   = "null";
+char* KW_PUB    = "pub";
+char* KW_RETURN = "return";
+char* KW_TRUE   = "true";
+char* KW_VOID   = "void";
+char* KW_WHILE  = "while";
+
+pub fn Lexer__new() {
+    int bytes = 0x10;
+    void* lex = malloc(bytes);
+    *lex = 1;
+    lex = lex + 0x8;
+    *lex = 0;
+    lex = lex - 0x8;
+    return lex;
+}
+
+pub fn Lexer_drop(void* self) {
+    free(self);
+}
+
+pub fn Lexer_token(void* self) {
+    while true {
+        if iseof() {
+            return null;
+        }
+        char c = next_char(self);
+        if c = 0xa { # newline
+            next_line(self);
+            again;
+        }
+        if c = ' ' { again; }
+        if c = '	' { again; } # a literal tab # todo: char escapes
+        if c = '#' {
+            Lexer_lex_comment(self);
+            again;
+        }
+        if c = T_AMP { return token_punct(self, c); }
+        if c = T_CBRACE { return token_punct(self, c); }
+        if c = T_CBRACKET { return token_punct(self, c); }
+        if c = T_COLON { return token_punct(self, c); }
+        if c = T_COMMA { return token_punct(self, c); }
+        if c = T_CPAREN { return token_punct(self, c); }
+        if c = T_DOT { return token_punct(self, c); }
+        if c = T_OBRACE { return token_punct(self, c); }
+        if c = T_OBRACKET { return token_punct(self, c); }
+        if c = T_OPAREN { return token_punct(self, c); }
+        if c = T_PERCENT { return token_punct(self, c); }
+        if c = T_PIPE { return token_punct(self, c); }
+        if c = T_QUESTION { return token_punct(self, c); }
+        if c = T_SEMI { return token_punct(self, c); }
+        if c = T_SLASH { return token_punct(self, c); }
+        if c = T_STAR { return token_punct(self, c); }
+        # to-become-ambiguous character tokens are easy as well (for now)
+        if c = T_ASSIGN { return token_punct(self, c); }
+        if c = T_BANG { return token_punct(self, c); }
+        if c = T_GT { return token_punct(self, c); }
+        if c = T_LT { return token_punct(self, c); }
+        if c = T_PLUS { return token_punct(self, c); }
+        # ambiguous character tokens...
+        if c = T_MINUS { return token_minus(self, c); }
+        # multi-character tokens...
+        if c > '`' { return token_id_ish(self, c); } # char before 'a'
+        if c > '@' { return token_ID_ish(self, c); } # char before 'A'
+        if c > '/' { return token_int_ish(self, c); } # char before '0'
+        if c = T_SQUOTE { return token_char(self); }
+        if c = T_DQUOTE { return token_string(self); }
+    }
+}
+
+# eat chars through the next newline
+fn Lexer_lex_comment(void* self) {
+    while true {
+        if iseof() { return; }
+        char c = getchar();
+        if c = 0xa { # newline
+            done;
+        }
+    }
+    next_line(self);
+}
+
+fn token_minus(void* self, char c) {
+    char next = peekchar();
+    if isdigit(next) {
+        return token_int(self, c);
+    }
+    return token_punct(self, c);
+}
+
+fn token_id_ish(void* self, char c) {
+    if c > 'z' { return bad_char(self, c); }
+    return token_id(self, c);
+}
+
+fn token_ID_ish(void* self, char c) {
+    if c > 'Z' { return bad_char(self, c); }
+    return token_id(self, c);
+}
+
+fn token_int_ish(void* self, char c) {
+    if c > '9' { return bad_char(self, c); }
+    return token_int(self, c);
+}
+
+fn next_line(void* self) {
+    int line = *self;
+    line = line + 1;
+    *self = line;
+    self = self + 0x8;
+    *self = 0;
+}
+
+fn next_char(void* self) {
+    int c = getchar();
+    self = self + 0x8;
+    int char_pos = *self;
+    char_pos = char_pos + 1;
+    *self = char_pos;
+    return c;
+}
+
+fn bad_char(void* self, int ch) {
+    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n";
+    void* token = new_token(self, ch);
+    int status = 17;
+    jnc_panic(f, token, status);
+}
+
+fn new_token(void* self, int type) {
+    int line_num = *self;
+    self = self + 0x8;
+    int char_pos = *self;
+    void* token = Token__new(type);
+    Token_set_coords(token, line_num, char_pos);
+    return token;
+}
+
+fn token_punct(void* self, int type) {
+    return new_token(self, type);
+}
+
+fn token_int(void* self, int first_char) {
+    int type = T_INT;
+    void* token = new_token(self, type);
+    int value = lex_digits(self, first_char);
+    Token_set_value(token, value);
+    return token;
+}
+
+fn token_id(void* self, int first_char) {
+    int type = T_ID;
+    void* token = new_token(self, type);
+    char* name = lex_id(self, first_char);
+    Token_set_value(token, name);
+    convert_keyword(token);
+    return token;
+}
+
+fn token_char(void* self, int first_char) {
+    first_char = T_CHAR;
+    void* token = new_token(self, first_char);
+    char c = next_char(self); # the actual char
+    # todo: escape sequences
+    Token_set_value(token, c);
+    next_char(self); # close quote
+    return token;
+}
+
+fn token_string(void* self, int first_char) {
+    first_char = T_STRING;
+    void* token = new_token(self, first_char);
+    char* name = lex_string(self);
+    Token_set_value(token, name);
+    return token;
+}
+
+fn lex_digits(void* self, char first_char) {
     bool is_negative = false;
     int n;
     # deal with negatives first
     if first_char = '-' {
         is_negative = true;
-        first_char = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        first_char = next_char(self);
     }
     int val = 12345;
     if first_char ! '0' {
         # decimal
-        val = Lexer_lex_digits_dec(first_char, char_count);
+        val = lex_digits_dec(self, first_char);
     }
     if first_char = '0' {
         # might be zero, might be hex
@@ -23,24 +251,18 @@ pub fn Lexer_lex_digits(char first_char, int* char_count) {
         bool d;
         if c = 'x' {
             # hex
-            getchar(); # soak up the 'x'
-            first_char = getchar();
-            n = *char_count;
-            n = n + 2; # count both chars at once
-            *char_count = n;
+            next_char(self); # soak up the 'x'
+            first_char = next_char(self);
             d = isxdigit(first_char);
             if !d {
-                n = 16;
-                panic(n); # todo: issue a proper error
+                bad_char(self, first_char);
             }
-            val = Lexer_lex_digits_hex(first_char, char_count);
+            val = lex_digits_hex(self, first_char);
         } # todo: else would be nice...
         if c ! 'x' {
             d = isdigit(c);
             if d {
-                # malformed
-                n = 10;
-                panic(n); # todo: issue a proper error
+                bad_char(self, c);
             }
             # zero
             val = 0;
@@ -52,16 +274,13 @@ pub fn Lexer_lex_digits(char first_char, int* char_count) {
     return val;
 }
 
-fn Lexer_lex_digits_dec(char first_char, int* char_count) {
+fn lex_digits_dec(void* self, char first_char) {
     int val = first_char - '0';
     char c = peekchar();
     bool d = isdigit(c);
     int n;
     while d {
-        c = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        c = next_char(self);
         n = c - '0';
         val = val * 10;
         val = val + n;
@@ -71,16 +290,13 @@ fn Lexer_lex_digits_dec(char first_char, int* char_count) {
     return val;
 }
 
-fn Lexer_lex_digits_hex(char first_char, int* char_count) {
+fn lex_digits_hex(void* self, char first_char) {
     int val = parse_hex_digit(first_char);
     char c = peekchar();
     bool d = isxdigit(c);
     int n;
     while d {
-        c = getchar();
-        n = *char_count;
-        n = n + 1;
-        *char_count = n;
+        c = next_char(self);
         n = parse_hex_digit(c);
         val = val * 16;
         val = val + n;
@@ -100,36 +316,159 @@ fn parse_hex_digit(char c) {
     return c - '0';
 }
 
-pub fn Lexer_lex_string() {
-    int len = 16;
-    int i = 0;
-    # todo: oh, for array syntax...
-    char* buffer = malloc(len);
-    char* buffer_i;
+fn lex_string(void* self) {
+    int cap = 16;
+    void* buf = StringBuilder__new(cap);
 
     char c;
     while true {
-        c = getchar();
+        c = next_char(self);
         if c = '"' { done; }
-        buffer_i = buffer + i;
-        i = i + 1;
-        if i < len {
-            *buffer_i = c;
-            again;
-        }
-        # need more!
-        int old_len = len;
-        len = len * 2;
-        char* next = malloc(len);
-        memcpy(next, buffer, old_len);
-        free(buffer);
-        buffer = next;
-        buffer_i = buffer + i;
-        buffer_i = buffer_i - 1; # i was already incremented
-        *buffer_i = c;
+        StringBuilder_push(buf, c);
     }
 
-    buffer_i = buffer + i;
-    *buffer_i = null;
-    return buffer;
+    return StringBuilder_into_chars(buf);
+}
+
+fn lex_id(void* self, char first_char) {
+    int cap = 16;
+    void* buf = StringBuilder__new(cap);
+    StringBuilder_push(buf, first_char);
+
+    char c;
+    while true {
+        c = peekchar();
+        # below zero is bad
+        if c < '0' { done; }
+        # digits are fin
+        if c > '9' { if c < 'A' { done; } }
+        # uppercase are fine
+        if c > 'Z' { if c < '_' { done; } }
+        # _ is fine
+        if c = '`' { done; } # single char between '_' and 'a'
+        # lowercase are fine
+        if c > 'z' { done; }
+        # above z is bad
+
+        c = next_char(self);
+        StringBuilder_push(buf, c);
+    }
+
+    return StringBuilder_into_chars(buf);
+}
+
+fn to_keyword(void* token, char* name, char* kw, int type) {
+    if strcmp(name, kw) { return false; }
+    Token_set_value(token, kw);
+    free(name);
+    Token_set_type(token, type);
+    return true;
+}
+
+# modifies the token in-place!
+fn convert_keyword(void* token) {
+    char* name = Token_value(token);
+    char* kw;
+    int type;
+    char c = *name;
+    void v;
+    if c = 'a' {
+        kw = KW_AGAIN;
+        type = T_KW_AGAIN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'b' {
+        kw = KW_BOOL;
+        type = T_KW_BOOL;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'c' {
+        kw = KW_CHAR;
+        type = T_KW_CHAR;
+        if to_keyword(token, name, kw, type) { return; }
+        kw = KW_CONST;
+        type = T_KW_CONST;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'd' {
+        kw = KW_DONE;
+        type = T_KW_DONE;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'f' {
+        kw = KW_FALSE;
+        type = T_BOOL;
+        if to_keyword(token, name, kw, type) {
+            v = false;
+            Token_set_value(token, v);
+            return;
+        }
+        kw = KW_FN;
+        type = T_KW_FN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'i' {
+        kw = KW_IF;
+        type = T_KW_IF;
+        if to_keyword(token, name, kw, type) { return; }
+        kw = KW_INT;
+        type = T_KW_INT;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'l' {
+        kw = KW_LET;
+        type = T_KW_LET;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'n' {
+        kw = KW_NULL;
+        type = T_INT;
+        if to_keyword(token, name, kw, type) {
+            v = null;
+            Token_set_value(token, v);
+            return;
+        }
+        return;
+    }
+    if c = 'p' {
+        kw = KW_PUB;
+        type = T_KW_PUB;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'r' {
+        kw = KW_RETURN;
+        type = T_KW_RETURN;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 't' {
+        kw = KW_TRUE;
+        type = T_BOOL;
+        if to_keyword(token, name, kw, type) {
+            v = true;
+            Token_set_value(token, v);
+            return;
+        }
+        return;
+    }
+    if c = 'v' {
+        kw = KW_VOID;
+        type = T_KW_VOID;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c = 'w' {
+        kw = KW_WHILE;
+        type = T_KW_WHILE;
+        if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
 }

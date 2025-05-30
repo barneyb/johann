@@ -5,14 +5,15 @@ OUT = $(TGT)/out
 JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: \
+	StringBuilderTest \
+	allocations \
+	getchar \
 	hello_world \
-	isspace \
 	isdigit \
+	isspace \
 	printf \
 	putchar \
 	symbols \
-	getchar \
-	allocations \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )

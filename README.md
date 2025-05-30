@@ -108,7 +108,7 @@ Functions can declare formal arguments within their parentheses, to create local
         return a + b;
     }
 
-Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
+Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! At the moment, a given call can have a max of eight parameters (which really only matters for `printf`). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     # convoluted:
     char* c = "one: ";
@@ -127,6 +127,19 @@ Parameters passed in a function call must be local variables, not expressions. T
 
     # not allowed:
     # printf("one: %i\n", 1);
+
+Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
+
+    char* GREETING;             # declare variable defined somewhere else
+    fn puts(char* str);         # declare jstdlib function
+
+    pub fn main() {
+        char* str = GREETING;   # deref global (declaration required)
+        void* puts_ptr = &puts; # take address of function (declaration required)
+        puts(str);              # call declared jstdlib function
+        puts_ptr(str);          # invoke through pointer
+        printf(str);            # call undeclared jstdlib function
+    }
 
 ## Building Johann Programs
 
@@ -190,6 +203,18 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
 * `size_t strlen( const char* str )` - get the length of a null-terminated string.
 
+<!--{johanndoc:jstdlib/StringBuilder.jn}-->
+
+### `StringBuilder`
+
+I am a dynamically resizing builder for null-terminated byte strings. 
+
+* `pub fn StringBuilder__new(int capacity) ` - I create new builder, with the given initial capacity. 
+* `pub fn StringBuilder_push(void* buf, char c) ` - I push a single character into the buffer, which will be automatically extended if the character won't fit. 
+* `pub fn StringBuilder_into_chars(void* buf) ` - I consume the builder and produce a null-terminated byte string from it. 
+
+<!--{/johanndoc:jstdlib/StringBuilder.jn}-->
+
 ### `sys`
 
 Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.
@@ -201,7 +226,7 @@ Those starting with `sys_` (thin syscall wrappers) are not expected to remain av
 
 ### `table`
 
-A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `Table_drop_owned` method can help if the table owns the key and/or value objects.
+A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `Table_drop_owned` method can help if the keys and/or value are pointers to table-owned objects.
 
 * `Table* Table__new( fn* comparator )` - create a new empty table, where `comparator` points to a function which defines both equality and total order over the table's keys.
 * `bool Table_contains( Table* t, ? key )` - check whether `key` exists in `t`.
@@ -223,6 +248,7 @@ One obsolete function remains available, and will eventually be removed.
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
 * `17` - Unrecognized character
+* `21` - Too many call parameters
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars
