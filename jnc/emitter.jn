@@ -36,7 +36,7 @@ char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 pub char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
-pub char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
+char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
 char* ERR_UNKNOWN_SYMBOL = "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
 char* ERR_INVALID_NESTING = "; ERROR(%i): Invalid nesting %x at line %i, char %i\n";
 
@@ -242,6 +242,85 @@ pub fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, 
 # todo: emit itself
 
 # todo: var / global declarations
+
+pub fn Emitter_vardecl(void* self, void* buffer) {
+    void* token = decl_id_token(buffer);
+    char* name = Token_value(token);
+    void* symbols = decl_symbols(self, token);
+    # now the type info
+    int nptr = decl_num_pointers(buffer);
+    token = *buffer;
+    int type = Token_type(token);
+    void* symbol = Symbol__new(type, nptr);
+    # reuse type for offset, because "8 vars"
+    type = Emitter_is_global(self);
+    type = ! type;
+    if type {
+        type = Table_size(symbols);
+        type = type + 1; # local vars are one-indexed
+    }
+    Symbol_set_offset(symbol, type);
+    name = strclone(name);
+    Table_put(symbols, name, symbol);
+    return symbols;
+}
+
+fn decl_symbols(void* self, void* id_token) {
+    void * block;
+    bool global = Emitter_is_global(self);
+    int n;
+    if global {
+        block = Emitter_current_block(self);
+    }
+    if ! global {
+        n = T_KW_FN;
+        block = Emitter_innermost_block_of(self, n, id_token);
+    }
+    void* symbols = Block_symbols(block);
+    char* name = Token_value(id_token);
+    if Table_contains(symbols, name) {
+        # munge for panic
+        Token_set_type(id_token, name);
+        name = ERR_DUPE_DECL;
+        n = 22;
+        jnc_panic(name, id_token, n);
+    }
+    if ! global {
+        n = Table_size(symbols);
+        if n > 7 {
+            # already have eight
+            Token_set_type(id_token, name);
+            name = ERR_TOO_MANY_LOCALS;
+            n = 24;
+            jnc_panic(name, id_token, n);
+        }
+    }
+    return symbols;
+}
+
+fn decl_num_pointers(void* buffer) {
+    int nptr = 0;
+    while true {
+        buffer = buffer + 0x8;
+        void token = *buffer;
+        int type = Token_type(token);
+        if type ! T_STAR {
+            return nptr;
+        }
+        nptr = nptr + 1;
+    }
+}
+
+fn decl_id_token(void* buffer) {
+    while true {
+        buffer = buffer + 0x8;
+        void token = *buffer;
+        int type = Token_type(token);
+        if type = T_ID {
+            return token;
+        }
+    }
+}
 
 pub fn Emitter_do_fn(void* self, void* buffer) {
     void* token = buffer + 0x8;     # -> name token
