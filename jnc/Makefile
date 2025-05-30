@@ -8,7 +8,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/Block.jn.o \
 	$(LIB)/Symbol.jn.o \
 	$(LIB)/Token.jn.o \
-	$(LIB)/block.o \
 	$(LIB)/emitter.jn.o \
 	$(LIB)/emitter.o \
 	$(LIB)/jnc.jn.o \
