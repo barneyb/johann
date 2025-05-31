@@ -25,6 +25,12 @@ not_quite_lisp: not_quite_lisp.jn bin/jnc lib/jstdlib.o
 
 # utility targets
 
+build:
+	./build.sh
+
+docs:
+	./docs.sh
+
 test:
 	$(MAKE) -C jstdlib test
 	$(MAKE) -C jnc test
