@@ -5,16 +5,15 @@ OUT = $(TGT)/out
 JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 OBJECTS = $(JSTDLIB) \
-	$(LIB)/Block.jn.o \
-	$(LIB)/Symbol.jn.o \
-	$(LIB)/Token.jn.o \
-	$(LIB)/emitter.jn.o \
+	$(LIB)/Block.o \
+	$(LIB)/Symbol.o \
+	$(LIB)/Token.o \
 	$(LIB)/emitter.o \
-	$(LIB)/jnc.jn.o \
-	$(LIB)/lexer.jn.o \
-	$(LIB)/parser.jn.o \
-	$(LIB)/token_table.jn.o \
-	$(LIB)/version.jn.o \
+	$(LIB)/jnc.o \
+	$(LIB)/lexer.o \
+	$(LIB)/parser.o \
+	$(LIB)/token_table.o \
+	$(LIB)/version.o \
 
 all: $(BIN)/jnc
 	@echo --------------------------------------------------
@@ -23,35 +22,27 @@ all: $(BIN)/jnc
 	$(BIN)/jnc -v
 	@echo --------------------------------------------------
 
-$(LIB)/version.jn.o:
+$(LIB)/version.o:
 	@mkdir -p $(LIB)
 	echo "pub char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\
  	pub char* JNC_LONG_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'";' \
-	| $(JNC) | gcc -o $(LIB)/version.jn.o -x assembler -c -
-
-inc_token_table.s: token_table.jn
-	@mkdir -p $(OUT)
-	sed -e 's/^#/;/' -e 's/^pub int /    /' token_table.jn > inc_token_table.s
+	| $(JNC) | gcc -o $(LIB)/version.o -x assembler -c -
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
 
 # Pattern targets
 
-$(BIN)/%: $(LIB)/%.jn.o $(OBJECTS)
+$(BIN)/%: $(LIB)/%.o $(OBJECTS)
 	@mkdir -p $(BIN)
 	gcc -o $@ -dead_strip $^
-	@rm -f $(LIB)/version.jn.o # blow away version info, so it'll rebuild next time
+	@rm -f $(LIB)/version.o # blow away version info, so it'll rebuild next time
 
-$(LIB)/%.o: %.s inc_token_table.s
-	@mkdir -p $(LIB)
-	gcc -o $@ -c $<
-
-$(OUT)/%.jn.s: %.jn
+$(OUT)/%.s: %.jn
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
 
-$(LIB)/%.jn.o: $(OUT)/%.jn.s
+$(LIB)/%.o: $(OUT)/%.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
