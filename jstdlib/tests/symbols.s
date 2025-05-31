@@ -68,16 +68,16 @@ __j_main:
 ;        bl      __j_printf
     ldr     x0, [sp]                ; load pointer -> table
     bl      print_size
-        bl __flush_stdout
-        bl __flush_stdout
+        bl __j_flush_stdout__
+        bl __j_flush_stdout__
     ldr     x0, [sp]                ; load pointer -> table
     mov     x1, x19                 ; check key 1
     bl      print_contains
-        bl __flush_stdout
+        bl __j_flush_stdout__
     ldr     x0, [sp]                ; load pointer -> table
     mov     x1, x20                 ; check key 2
     bl      print_contains
-        bl __flush_stdout
+        bl __j_flush_stdout__
 
     ; add key
     ldr     x0, [sp]                ; load pointer -> table

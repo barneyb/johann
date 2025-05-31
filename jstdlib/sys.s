@@ -10,7 +10,7 @@ __j_exit:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
     str     x0, [sp, -0x10]!
-    bl      __flush_stdout
+    bl      __j_flush_stdout__
     ldr     x0, [sp], 0x10
 
     ; dump mem stats if non-error
@@ -32,7 +32,7 @@ __j_panic:
     mov     fp, sp
     str     x0, [sp, -0x10]!        ; store status
     stp     x1, x2, [sp, -0x10]!    ; store buf and count
-    bl      __flush_stdout
+    bl      __j_flush_stdout__
     mov     x0, NULL
     bl      __j_puts
     ldp     x1, x2, [sp], 0x10      ; load buf and count
@@ -74,3 +74,31 @@ __j_sys_write:
     svc     #0x80                   ; Call kernel
     ldp     fp, lr, [sp], 0x10
     ret                             ; transfer control back, propagating nbytes written
+
+.global __j_syscall
+__j_syscall:
+    stp     fp, lr, [sp, -0x10]!
+    mov     fp, sp
+    stp     x19, x20, [sp, -0x10]!
+    stp     x21, x22, [sp, -0x10]!
+    stp     x23, x24, [sp, -0x10]!
+    stp     x25, x26, [sp, -0x10]!
+    stp     x27, x28, [sp, -0x10]!
+
+    mov     x16, x0                 ; put the call number in the right spot
+    mov     x0, x1                  ; scoot any args "down" one register
+    mov     x1, x2
+    mov     x2, x3
+    mov     x3, x4
+    mov     x4, x5
+    mov     x5, x6
+    mov     x6, x7
+    svc     #0x80                   ; Call kernel
+
+    ldp     x27, x28, [sp], 0x10
+    ldp     x25, x26, [sp], 0x10
+    ldp     x23, x24, [sp], 0x10
+    ldp     x21, x22, [sp], 0x10
+    ldp     x19, x20, [sp], 0x10
+    ldp     fp, lr, [sp], 0x10
+    ret                             ; pass back whatever the kernel left in x0/1

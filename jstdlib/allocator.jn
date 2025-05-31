@@ -1,3 +1,7 @@
+# Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop`
+# or something. And hopefully be taken over by the compiler itself, so programmers
+# can't screw it up. We'll see.
+
 int MALLOC_ALIGN= 0x10;
 int PAGE_SIZE   = 0x4000;
 int MAP_ANON    = 0x1000;
@@ -42,6 +46,8 @@ pub fn mem_stats__() {
     }
 }
 
+# Free the allocation pointed to by the passed pointer, previously returned from
+# `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
     char* f;
     if mem = null {
@@ -178,6 +184,8 @@ fn find_free_chunk(int bytes) {
     return curr;
 }
 
+# Allocate (at least) the specified number of bytes of memory and return a
+# pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
     char* f;
     int aln = MALLOC_ALIGN;

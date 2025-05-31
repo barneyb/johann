@@ -1,0 +1,13 @@
+# Functions for interacting with the underlying operating system. `syscall` is
+# the magic sledgehammer, since Johann's pretty thin on wrappers.
+
+# Terminate the process, with the given exit status.
+pub fn exit(int status);
+
+# Print a character buffer to STDERR and terminate processing, as if by `exit`.
+pub fn panic(int status, char* buf, int nbytes);
+
+# Make an arbitrary system call, by number. All additional arguments passed will
+# be moved forward one "slot", so the second argument passed to `syscall` will
+# be the first argument passed to the kernel.
+pub fn syscall(int number);

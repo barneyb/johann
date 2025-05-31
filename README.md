@@ -172,12 +172,16 @@ Certain double-free errors cause a `98` panic, but only a minority of them. Both
 
 Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
 
+<!--{johanndoc:jstdlib/allocator.jn}-->
+
 ### `allocator`
 
-Eventually, these will go away in favor of `new`/`drop` or something. And hopefully be taken over by the compiler itself, so programmers can't screw it up.
+Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop` or something. And hopefully be taken over by the compiler itself, so programmers can't screw it up. We'll see. 
 
-* `void free( void* )` - free the allocation pointed to by the passed pointer.
-* `void* malloc( size_t size )` - allocate (at least) the specified number of bytes of memory and return a pointer to it.
+* `pub fn free(void* mem) ` - Free the allocation pointed to by the passed pointer, previously returned from `malloc`. A null pointer may be "freed" as a no-op. 
+* `pub fn malloc(int bytes) ` - Allocate (at least) the specified number of bytes of memory and return a pointer to it. The same pointer must be passed back to `free` at some point. 
+
+<!--{/johanndoc:jstdlib/allocator.jn}-->
 
 ### `io`
 
@@ -218,14 +222,17 @@ I am a dynamically resizing builder for null-terminated byte strings.
 
 <!--{/johanndoc:jstdlib/StringBuilder.jn}-->
 
+<!--{johanndoc:jstdlib/sys.jn}-->
+
 ### `sys`
 
-Those starting with `sys_` (thin syscall wrappers) are not expected to remain available.
+Functions for interacting with the underlying operating system. `syscall` is the magic sledgehammer, since Johann's pretty thin on wrappers. 
 
-* `void exit( int status )` - terminate the program with the given exit status.
-* `void panic( int status, const char *buf, size_t count )` - write bytes to STDERR and terminate.
-* `ssize_t sys_read( int fd, void *buf, size_t nbyte )` - read bytes from a file descriptor.
-* `ssize_t sys_write( int fd, const void *buf, size_t count )` - write bytes to a file descriptor.
+* `pub fn exit(int status)` - Terminate the process, with the given exit status. 
+* `pub fn panic(int status, char* buf, int nbytes)` - Print a character buffer to STDERR and terminate processing, as if by `exit`. 
+* `pub fn syscall(int number)` - Make an arbitrary system call, by number. All additional arguments passed will be moved forward one "slot", so the second argument passed to `syscall` will be the first argument passed to the kernel. 
+
+<!--{/johanndoc:jstdlib/sys.jn}-->
 
 ### `table`
 

@@ -8,6 +8,7 @@ OBJECTS = \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
 	$(LIB)/string.jn.o \
+	$(LIB)/sys.jn.o \
 	$(LIB)/sys.o \
 	$(LIB)/table.o \
 

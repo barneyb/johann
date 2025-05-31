@@ -430,7 +430,7 @@ __j_putchar:
     b       putchar_done
 
     putchar_flush:
-    ; manually inlined call to __flush_stdout
+    ; manually inlined call to __j_flush_stdout__
     str     x2, [sp, -0x10]!        ; store pointer -> len
     mov     x2, x4                  ; len
     mov     x0, #1                  ; 1 = StdOut
@@ -443,8 +443,8 @@ __j_putchar:
     ldp     fp, lr, [sp], 0x10
     ret
 
-.global __flush_stdout
-__flush_stdout:
+.global __j_flush_stdout__
+__j_flush_stdout__:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
 
@@ -475,7 +475,7 @@ __j_itoa:
     str     x0, [sp, -0x10]!
 
     ; flush
-    bl      __flush_stdout
+    bl      __j_flush_stdout__
 
     ; printf
     adrp    x0, itoa_cheat@PAGE
