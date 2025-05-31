@@ -22,7 +22,9 @@ fn build_up_to(int count) {
 
     free(prefix);
     free(middle);
-    puts(str);
+    middle = "%s: %i\n";
+    cap = strlen(str);
+    printf(middle, str, cap);
     free(str);
     free(suffix);
 }

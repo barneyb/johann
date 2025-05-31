@@ -1,0 +1,39 @@
+pub fn main() {
+    char* aa = "aa";
+    char* ab = "ab";
+    char* aaa = "aaa";
+    char* aab = "aab";
+
+    test(aa, aa);
+    test(aa, ab);
+    test(aa, aaa);
+    test(aa, aab);
+
+    test(ab, aa);
+    test(ab, ab);
+    test(ab, aaa);
+    test(ab, aab);
+
+    test(aaa, aa);
+    test(aaa, ab);
+    test(aaa, aaa);
+    test(aaa, aab);
+
+    test(aab, aa);
+    test(aab, ab);
+    test(aab, aaa);
+    test(aab, aab);
+}
+
+fn test(char* left, char* right) {
+    char* f = "strcmp('%s', '%s') : %i\n";
+    int c = strcmp(left, right);
+    c = signum(c);
+    printf(f, left, right, c);
+}
+
+fn signum(int n) {
+    if n < 0 { return -1; }
+    if n > 0 { return  1; }
+               return  0;
+}

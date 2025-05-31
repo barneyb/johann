@@ -191,16 +191,21 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
+<!--{johanndoc:jstdlib/string.jn}-->
+
 ### `string`
 
-* `int isdigit( int ch )` - is the passed character a decimal digit?
-* `int isspace( int ch )` - is the passed character whitespace?
-* `int isxdigit( int ch )` - is the passed character a hexidecimal digit?
-* `void* memcpy( void *dest, const void *src, size_t count )` - copy bytes between non-overlapping memory regions.
-* `char* strclone( char* str )` - clone the passed string into a new allocation. 
-* `int strcmp( const char* lhs, const char* rhs )` - compare two null-terminated strings.
-* `size_t strlen( const char* str )` - get the length of a null-terminated string.
+Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, because those C guys are weird. 
 
+* `pub fn isdigit(char c) ` - is the passed character a decimal digit? 
+* `pub fn isspace(char c) ` - is the passed character whitespace? 
+* `pub fn isxdigit(char c) ` - is the passed character a hexidecimal digit? 
+* `pub fn memcpy(void* dest, void* src, int count) ` - copy bytes between non-overlapping memory regions. 
+* `pub fn strclone(char* src) ` - clone the passed string into a new allocation. 
+* `pub fn strcmp(char* lhs, char* rhs) ` - I compare two null-terminated byte strings and return a negative number if `lhs` sorts lexicographically first, a positive number if `rhs` is first, and zero if they are equal. 
+* `pub fn strlen(char* str) ` - I return the length of the passed string, not including the terminating null byte. 
+
+<!--{/johanndoc:jstdlib/string.jn}-->
 <!--{johanndoc:jstdlib/StringBuilder.jn}-->
 
 ### `StringBuilder`

@@ -1,9 +1,14 @@
+# Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`,
+# because those C guys are weird.
+
+# is the passed character a decimal digit?
 pub fn isdigit(char c) {
     if c < '0' { return false; }
     if c > '9' { return false; }
     return true;
 }
 
+# is the passed character whitespace?
 pub fn isspace(char c) {
     if c = ' ' { return  true; }
     if c < 9   { return false; } # < \t
@@ -11,6 +16,7 @@ pub fn isspace(char c) {
     return true;
 }
 
+# is the passed character a hexidecimal digit?
 pub fn isxdigit(char c) {
     if c < '0' { return false; }
     if c < ':' { return  true; } # <= 9
@@ -21,16 +27,9 @@ pub fn isxdigit(char c) {
     return false;
 }
 
-pub fn strclone(char* src) {
-    int len = strlen(src);
-    len = len + 1; # for the null terminator
-    char* dest = malloc(len);
-    memcpy(dest, src, len);
-    return dest;
-}
-
-# Once apple's CPUs support FEAT_MOPS, use the CPYP/CPYM/CPYE instructions.
+# copy bytes between non-overlapping memory regions.
 pub fn memcpy(void* dest, void* src, int count) {
+    # Once apple's CPUs support FEAT_MOPS, use the CPYP/CPYM/CPYE instructions.
     # copy byte-by-byte up to an 8-byte boundary
     int i = count % 8;
     int* d = dest;
@@ -52,7 +51,7 @@ pub fn memcpy(void* dest, void* src, int count) {
     return dest;
 }
 
-fn memcpy_bytes(void* dest, void* src, int count) { # todo: not public!
+fn memcpy_bytes(void* dest, void* src, int count) {
     int i = 0;
     char* d = dest;
     char* s = src;
@@ -65,4 +64,41 @@ fn memcpy_bytes(void* dest, void* src, int count) { # todo: not public!
         i = i + 1;
     }
     return dest;
+}
+
+# clone the passed string into a new allocation.
+pub fn strclone(char* src) {
+    int len = strlen(src);
+    len = len + 1; # for the null terminator
+    char* dest = malloc(len);
+    memcpy(dest, src, len);
+    return dest;
+}
+
+# I compare two null-terminated byte strings and return a negative number if
+# `lhs` sorts lexicographically first, a positive number if `rhs` is first, and
+# zero if they are equal.
+pub fn strcmp(char* lhs, char* rhs) {
+    char l = *lhs;
+    char r = *rhs;
+    while l = r {
+        if l = null { done; }
+        lhs = lhs + 1;
+        rhs = rhs + 1;
+        l = *lhs;
+        r = *rhs;
+    }
+    return l - r;
+}
+
+# I return the length of the passed string, not including the terminating null
+# byte.
+pub fn strlen(char* str) {
+    char* end = str;
+    char c = *end;
+    while c ! null {
+        end = end + 1;
+        c = *end;
+    }
+    return end - str;
 }
