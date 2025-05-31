@@ -6,7 +6,7 @@ The only pre-existing software tools assumed are GCC's assembler and linker. No 
 
 > **Why `arm64-apple-darwin`?** My employer assigned me a mac, and I wasn't interested in flipping between OSes, so I replaced my personal machine. The funny part is they gave me an `x64` mac - in 2023! - but you can't buy those anymore. AArch64 it is.
 
-This is clearly a ridiculous undertaking. The nominal goal is to get this fall's [Advent of Code](https://adventofcode.com/) stars using only Johann, with a fully self-hosted compiler (no lingering assembly, aside from syscalls).
+This is clearly a ridiculous undertaking. The nominal goal is to get this fall's [Advent of Code](https://adventofcode.com/) stars using only Johann, with a fully self-hosted compiler (no lingering assembly, aside from syscalls). The compiler itself already meets this requirement, but the system library it's built atop does not.
 
 ## The Short Version
 
@@ -27,7 +27,7 @@ The `3` is the difference in number of `(` and `)`, and the `7` is the first cha
 
 ## Writing Johann Programs
 
-Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters are forbidden; only ASCII characters are supported. There is no locale/language awareness.
+Johann source code is always plain text, encoded with UTF-8, and uses a `.jn` extension by convention. Multibyte characters are forbidden; only ASCII characters are supported. There is no locale/language awareness/support.
 
 All keywords are case-sensitive. Comments are introduced with `#` and extend to end of line. Whitespace is merely a delimiter, not semantic, and braces are used for control flow blocks, but not scoping (yet). Variable declarations require a type specifier. They will move to the other side of the identifier (e.g., `int i = ...` will become `let i: int = ...`), and the type may become optional. There is no exception handling.
 
@@ -76,7 +76,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
         done;
     }
 
-Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. It's a _race!_
+Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
 Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Four unary operators are supported: `!`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
 
@@ -94,13 +94,11 @@ Semicolons are required to terminate statements which don't take a block. Blocks
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline; other escapes may work, but are unsupported. Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
-The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change.
+The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change. There is no support for compound values (structs/arrays/tuples), use a heap allocation and do the pointer arithmetic yourself (for now).
 
 Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (aside from zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. A leading `-` indicates a negative value. A second `-` (associating right-to-left!) is a unary negate (for now).
 
-Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`.
-
-The `null` keyword is recognized as an alias for `0`.
+Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`. The `null` keyword is also recognized as an alias for `0`.
 
 Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most eight arguments.
 
@@ -321,4 +319,4 @@ TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
 
 Johann-compiled code mostly conforms to (a subset of) the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
 
-The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines may forgo a record.
+The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines may forgo a record. Correct frames are emitted by `jnc`, but the parts of `jstdlib` still written in assembler exhibit a mixture of approaches.

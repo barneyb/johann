@@ -1,6 +1,9 @@
 # I store information about a block/scope. I used to be an implementation detail
 # of Emitter, which still hard-codes some layout information.
 
+fn free(void*);
+fn strcmp(char* left, char* right);
+
 # struct Block {
 #   int type                        ; type of the block, identified by its token
 #   int id                          ; unique id num of the block
@@ -8,16 +11,38 @@
 #   Table* symbols
 # }
 
+pub int SIZEOF_BLOCK = 0x20;
+
+pub fn Block_init(void* self, int type, int id) {
+    void* cmp = &strcmp;
+    void* symbols = Table__new(cmp);
+    *self = type;
+    self = self + 0x8;              # -> id
+    *self = id;
+    self = self + 0x8;              # -> nvars
+    *self = 0;
+    self = self + 0x8;              # -> symbols
+    *self = symbols;
+    self = self - 0x18;             # -> type
+    return self;
+}
+
+pub fn Block_drop(void* self) {
+    void* symbols = Block_symbols(self);
+    void* drop = &free;
+    Table_drop_owned(symbols, drop, drop);
+}
+
 pub fn Block_type(void* self) {
     return *self;
 }
 
 pub fn Block_id(void* self) {
-    self = self + 0x8;
+    self = self + 0x8;              # -> id
     return *self;
 }
 
 pub fn Block_symbols(void* self) {
-    self = self + 0x18;
+    self = self + 0x18;             # -> symbols
     return *self;
 }
