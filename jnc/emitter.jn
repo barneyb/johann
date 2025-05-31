@@ -1,4 +1,5 @@
 int T_AMP;
+int T_ASSIGN;
 int T_BANG;
 int T_BOOL;
 int T_CHAR;
@@ -35,12 +36,19 @@ char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n"
 char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
-pub char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
+char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
-char* ERR_UNKNOWN_SYMBOL = "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
-char* ERR_INVALID_NESTING = "; ERROR(%i): Invalid nesting %x at line %i, char %i\n";
+char* ERR_UNKNOWN_SYMBOL    = "; ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
+char* ERR_INVALID_NESTING   = "; ERROR(%i): Invalid nesting %x at line %i, char %i\n";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+
+char* TMPL_GLOBAL_PUB           = "    .global _j_gbl_%s\n";
+char* WIDTH_BYTE   = ".byte";
+char* WIDTH_QUAD   = ".quad";
+char* TMPL_GLOBAL_NUM           = "    .data\n        _j_gbl_%s: %s %i\n    .text\n";
+char* TMPL_GLOBAL_CHAR          = "    .data\n        _j_gbl_%s: %s '%c'\n    .text\n";
+char* TMPL_GLOBAL_STRING        = "    .data\n        _j_gbl_%s: .asciz %c%s%c\n    .text\n";
 
 char* TMPL_FN_ARG               = "        str     x%i, [fp, -%x]\n";
 
@@ -241,8 +249,6 @@ pub fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, 
 
 # todo: emit itself
 
-# todo: var / global declarations
-
 pub fn Emitter_vardecl(void* self, void* buffer) {
     void* token = decl_id_token(buffer);
     char* name = Token_value(token);
@@ -262,7 +268,7 @@ pub fn Emitter_vardecl(void* self, void* buffer) {
     Symbol_set_offset(symbol, type);
     name = strclone(name);
     Table_put(symbols, name, symbol);
-    return symbols;
+    return symbol;
 }
 
 fn decl_symbols(void* self, void* id_token) {
@@ -322,7 +328,74 @@ fn decl_id_token(void* buffer) {
     }
 }
 
-pub fn Emitter_do_fn(void* self, void* buffer) {
+pub fn Emitter_do_decl(void* self, void* buffer) {
+    void* symbol = Emitter_vardecl(self, buffer);
+
+    # scan until ASSIGN or SEMI to indicate end of declaration.
+    void* buf_i = buffer + 0x8; # first token is type
+    void* token;
+    int type;
+    while true {
+        buf_i = buf_i + 0x8;
+        token = *buf_i;
+        type = Token_type(token);
+        if type = T_ASSIGN { done; }
+        if type = T_SEMI   { return; }
+    }
+    buf_i = buf_i - 0x8; # go back one (to id)
+
+    bool global = Emitter_is_global(self);
+    if !global {
+        return Emitter_do_assign(self, buf_i);
+    }
+    token = *buf_i;
+    buf_i = buf_i + 0x10;
+    void* value_token = *buf_i;
+    decl_global(self, token, value_token, symbol);
+}
+
+fn decl_global(void* self, void* id_token, void* value_token, void* symbol) {
+    char* name = Token_value(id_token);
+    if IS_PUB {
+        char* tmpl = TMPL_GLOBAL_PUB;
+        printf(tmpl, name);
+    }
+    void value = Token_value(value_token);
+    int type = Token_type(value_token);
+    # strings are easy, storage and value must both be strings
+    if type = T_STRING {
+        return decl_global_string(name, value);
+    }
+    # the rest are messy, as any type of value can initialize any size of storage
+    decl_global_num(symbol, name, type, value);
+}
+
+fn decl_global_num(void* symbol, char* name, int val_type, char* value) {
+    int var_width = Symbol_width(symbol);
+    char* width;
+    if var_width = 1 {
+        width = WIDTH_BYTE;
+    }
+    if var_width ! 1 {
+        width = WIDTH_QUAD;
+    }
+    char* tmpl;
+    if val_type = T_CHAR {
+        tmpl = TMPL_GLOBAL_CHAR;
+    }
+    if val_type ! T_CHAR {
+        tmpl = TMPL_GLOBAL_NUM;
+    }
+    return printf(tmpl, name, width, value);
+}
+
+fn decl_global_string(char* name, char* value) {
+    char* tmpl = TMPL_GLOBAL_STRING;
+    char q = '"';
+    return printf(tmpl, name, q, value, q);
+}
+
+fn Emitter_do_fn(void* self, void* buffer) {
     void* token = buffer + 0x8;     # -> name token
     token = *token;
     char* name = Token_value(token);
