@@ -5,7 +5,7 @@ pub fn main() {
     n = 1; printf(f, n);
     n = 9; printf(f, n);
     n = 10; printf(f, n);
-    n = 1234; printf(f, n);
+    n = 1__23_4_; printf(f, n); # pathological underscores
     n = 0x0; printf(f, n);
     n = 0x1; printf(f, n);
     n = 0xe; printf(f, n);
@@ -13,7 +13,7 @@ pub fn main() {
     n = 0x10; printf(f, n);
     n = 0x7ff; printf(f, n);
     n = 0xE; printf(f, n);
-    n = 0x7FA; printf(f, n);
+    n = 0x7__F_A_; printf(f, n); # pathological underscores
 
     n = -0; printf(f, n);
     n = -1; printf(f, n);
@@ -28,4 +28,24 @@ pub fn main() {
     n = -0x7ff; printf(f, n);
     n = -0xE; printf(f, n);
     n = -0x7FA; printf(f, n);
+
+    n = 32_766; printf(f, n);
+    n = 32_767; printf(f, n);
+    n = 32_768; printf(f, n);
+    n = 32_769; printf(f, n);
+
+    n = 65_534; printf(f, n);
+    n = 65_535; printf(f, n);
+    n = 65_536; printf(f, n);
+    n = 65_537; printf(f, n);
+
+    n = -32_766; printf(f, n);
+    n = -32_767; printf(f, n);
+    n = -32_768; printf(f, n);
+    n = -32_769; printf(f, n);
+
+    n = -65_534; printf(f, n);
+    n = -65_535; printf(f, n);
+    n = -65_536; printf(f, n);
+    n = -65_537; printf(f, n);
 }

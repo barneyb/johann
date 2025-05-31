@@ -276,7 +276,7 @@ fn lex_digits(void* self, char first_char) {
 
 fn lex_digits_dec(void* self, char first_char) {
     int val = first_char - '0';
-    char c = peekchar();
+    char c = next_potential_digit(self);
     bool d = isdigit(c);
     int n;
     while d {
@@ -284,15 +284,25 @@ fn lex_digits_dec(void* self, char first_char) {
         n = c - '0';
         val = val * 10;
         val = val + n;
-        c = peekchar();
+        c = next_potential_digit(self);
         d = isdigit(c);
     }
     return val;
 }
 
+fn next_potential_digit(void* self) {
+    char c = peekchar();
+    while c = '_' {
+        # allow arbitrary underscores in literals
+        next_char(self);
+        c = peekchar();
+    }
+    return c;
+}
+
 fn lex_digits_hex(void* self, char first_char) {
     int val = parse_hex_digit(first_char);
-    char c = peekchar();
+    char c = next_potential_digit(self);
     bool d = isxdigit(c);
     int n;
     while d {
@@ -300,7 +310,7 @@ fn lex_digits_hex(void* self, char first_char) {
         n = parse_hex_digit(c);
         val = val * 16;
         val = val + n;
-        c = peekchar();
+        c = next_potential_digit(self);
         d = isxdigit(c);
     }
     return val;
