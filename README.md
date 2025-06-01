@@ -92,7 +92,7 @@ Compound expressions are not supported, so there is no operator precedence. The 
 
 Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change. 
 
-Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline; other escapes may work, but are unsupported. Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
+Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa` (`'\n'` doesn't yet lex). Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change. There is no support for compound values (structs/arrays/tuples), use a heap allocation and do the pointer arithmetic yourself (for now).
 
@@ -123,7 +123,7 @@ Parameters passed in a function call must be local variables, not expressions. T
     a = 1;
     printf(f, a);
 
-    # not allowed:
+    # not yet allowed:
     # printf("one: %i\n", 1);
 
 Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
@@ -246,6 +246,7 @@ One obsolete function remains available, and will eventually be removed.
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
 * `17` - Unrecognized character
+* `20` - Missing token
 * `21` - Too many call parameters
 * `22` - Duplicate declaration
 * `23` - Unknown symbol

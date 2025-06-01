@@ -36,9 +36,9 @@ char* JNC_SHORT_VERSION;
 
 bool IS_PUB = false; # this is just ridiculous
 
-char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
+pub char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
 char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
-char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
+pub char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
