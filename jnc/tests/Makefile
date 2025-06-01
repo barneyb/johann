@@ -9,6 +9,7 @@ all: \
 	collatz \
 	constants \
 	control_flow \
+	function_pointers \
 	literals \
 	not_quite_lisp \
 	print_one \
@@ -17,7 +18,6 @@ all: \
 	strings \
 	sum \
 	zero \
-	function_pointers \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )

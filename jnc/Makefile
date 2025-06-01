@@ -9,7 +9,6 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/Symbol.o \
 	$(LIB)/Token.o \
 	$(LIB)/emitter.o \
-	$(LIB)/jnc.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
 	$(LIB)/token_table.o \

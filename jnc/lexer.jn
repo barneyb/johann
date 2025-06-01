@@ -18,32 +18,32 @@ int T_KW_RETURN;
 int T_KW_VOID;
 int T_KW_WHILE;
 
+int T_AMP;
 int T_ASSIGN;
 int T_BANG;
-int T_EQ;
-int T_GT;
-int T_LT;
-int T_MINUS;
-int T_PLUS;
-int T_AMP;
 int T_CBRACE;
 int T_CBRACKET;
 int T_COLON;
 int T_COMMA;
 int T_CPAREN;
 int T_DOT;
+int T_DQUOTE;
+int T_EQ;
+int T_GT;
 int T_HASH;
+int T_LT;
+int T_MINUS;
 int T_OBRACE;
 int T_OBRACKET;
 int T_OPAREN;
 int T_PERCENT;
 int T_PIPE;
+int T_PLUS;
 int T_QUESTION;
 int T_SEMI;
 int T_SLASH;
-int T_STAR;
 int T_SQUOTE;
-int T_DQUOTE;
+int T_STAR;
 
 char* KW_AGAIN  = "again";
 char* KW_BOOL   = "bool";
@@ -62,13 +62,21 @@ char* KW_TRUE   = "true";
 char* KW_VOID   = "void";
 char* KW_WHILE  = "while";
 
+# struct Lexer {
+#   int line;
+#   int col;
+#   Token* next;
+# }
+
 pub fn Lexer__new() {
-    int bytes = 0x10;
+    int bytes = 0x18;
     void* lex = malloc(bytes);
     *lex = 1;
     lex = lex + 0x8;
     *lex = 0;
-    lex = lex - 0x8;
+    lex = lex + 0x8;
+    *lex = null;
+    lex = lex - 0x10;
     return lex;
 }
 
@@ -77,6 +85,23 @@ pub fn Lexer_drop(void* self) {
 }
 
 pub fn Lexer_token(void* self) {
+    void* token = Lexer_peek(self);
+    self = self + 0x10;
+    *self = null;
+    return token;
+}
+
+pub fn Lexer_peek(void* self) {
+    void* next = self + 0x10;
+    void* token = *next;
+    if token = null {
+        token = get_next_token(self);
+        *next = token;
+    }
+    return token;
+}
+
+pub fn get_next_token(void* self) {
     while true {
         if iseof() {
             return null;

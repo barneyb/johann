@@ -42,9 +42,9 @@ fn jnc_compile() {
 pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
     int val = *token;
-    token = token + 8;              # -> line
+    token = token + 0x8;            # -> line
     int ln = *token;
-    token = token + 8;              # -> char
+    token = token + 0x8;            # -> char
     int ch = *token;
     # to StdErr
     eprintf(format, status, val, ln, ch);
