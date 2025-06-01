@@ -221,8 +221,15 @@ fn Emitter_leave_block(void* self) {
     return block;
 }
 
-fn Emitter_lookup_symbol_for(void* self, void* id_token, bool allow_null) {
+fn Emitter_lookup_symbol_for(void* self, void* id_token) {
     char* name = Token_value(id_token);
+    bool allow_null = false;
+    return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
+}
+
+fn Emitter_try_lookup_symbol_for(void* self, void* id_token) {
+    char* name = Token_value(id_token);
+    bool allow_null = true;
     return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
 }
 
@@ -718,8 +725,7 @@ fn Emitter_expr(void* self, void* buffer) {
 
 fn Emitter_do_call(void* self, void* buffer) {
     void* token = *buffer; # first token is the name of the function
-    bool allow_null = true;
-    void* symbol = Emitter_lookup_symbol_for(self, token, allow_null);
+    void* symbol = Emitter_try_lookup_symbol_for(self, token);
     char* tmpl;
     if symbol ! null {
         # function pointer - do setup first, as it corrupts x0
