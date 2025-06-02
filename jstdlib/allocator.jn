@@ -31,11 +31,12 @@ pub fn mem_stats__() {
         char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
         printf(format, ac, as, fc, fs);
         eprintf(format, ac, as, fc, fs);
-        format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%x bytes)\n";
+        format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
         ac = STAT_CHUNK_COUNT;
         as = STAT_CHUNK_SIZE;
         fc = STAT_MMAP_COUNT;
         fs = STAT_MMAP_SIZE;
+        fs = fs / PAGE_SIZE;
         printf(format, ac, as, fc, fs);
         eprintf(format, ac, as, fc, fs);
     }
