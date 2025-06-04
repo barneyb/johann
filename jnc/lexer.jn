@@ -18,6 +18,9 @@ int T_KW_RETURN;
 int T_KW_VOID;
 int T_KW_WHILE;
 
+int T_LOG_AND;
+int T_LOG_OR;
+
 int T_AMP;
 int T_ASSIGN;
 int T_BANG;
@@ -117,30 +120,30 @@ pub fn get_next_token(void* self) {
             Lexer_lex_comment(self);
             again;
         }
-        if c = T_AMP { return token_punct(self, c); }
-        if c = T_CBRACE { return token_punct(self, c); }
-        if c = T_CBRACKET { return token_punct(self, c); }
-        if c = T_COLON { return token_punct(self, c); }
-        if c = T_COMMA { return token_punct(self, c); }
-        if c = T_CPAREN { return token_punct(self, c); }
-        if c = T_DOT { return token_punct(self, c); }
-        if c = T_OBRACE { return token_punct(self, c); }
-        if c = T_OBRACKET { return token_punct(self, c); }
-        if c = T_OPAREN { return token_punct(self, c); }
-        if c = T_PERCENT { return token_punct(self, c); }
-        if c = T_PIPE { return token_punct(self, c); }
-        if c = T_QUESTION { return token_punct(self, c); }
-        if c = T_SEMI { return token_punct(self, c); }
-        if c = T_SLASH { return token_punct(self, c); }
-        if c = T_STAR { return token_punct(self, c); }
+        if c = T_CBRACE { return new_token(self, c); }
+        if c = T_CBRACKET { return new_token(self, c); }
+        if c = T_COLON { return new_token(self, c); }
+        if c = T_COMMA { return new_token(self, c); }
+        if c = T_CPAREN { return new_token(self, c); }
+        if c = T_DOT { return new_token(self, c); }
+        if c = T_OBRACE { return new_token(self, c); }
+        if c = T_OBRACKET { return new_token(self, c); }
+        if c = T_OPAREN { return new_token(self, c); }
+        if c = T_PERCENT { return new_token(self, c); }
+        if c = T_QUESTION { return new_token(self, c); }
+        if c = T_SEMI { return new_token(self, c); }
+        if c = T_SLASH { return new_token(self, c); }
+        if c = T_STAR { return new_token(self, c); }
         # to-become-ambiguous character tokens are easy as well (for now)
-        if c = T_ASSIGN { return token_punct(self, c); }
-        if c = T_BANG { return token_punct(self, c); }
-        if c = T_GT { return token_punct(self, c); }
-        if c = T_LT { return token_punct(self, c); }
-        if c = T_PLUS { return token_punct(self, c); }
+        if c = T_ASSIGN { return new_token(self, c); }
+        if c = T_BANG { return new_token(self, c); }
+        if c = T_GT { return new_token(self, c); }
+        if c = T_LT { return new_token(self, c); }
+        if c = T_PLUS { return new_token(self, c); }
         # ambiguous character tokens...
+        if c = T_AMP { return token_ampersand(self, c); }
         if c = T_MINUS { return token_minus(self, c); }
+        if c = T_PIPE { return token_pipe(self, c); }
         # multi-character tokens...
         if c > '`' { return token_id_ish(self, c); } # char before 'a'
         if c > '@' { return token_ID_ish(self, c); } # char before 'A'
@@ -162,12 +165,34 @@ fn Lexer_lex_comment(void* self) {
     next_line(self);
 }
 
+fn token_ampersand(void* self, char c) {
+    char next = peekchar();
+    if next = T_AMP {
+        int t = T_LOG_AND;
+        void * tkn = new_token(self, t);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
 fn token_minus(void* self, char c) {
     char next = peekchar();
     if isdigit(next) {
         return token_int(self, c);
     }
-    return token_punct(self, c);
+    return new_token(self, c);
+}
+
+fn token_pipe(void* self, char c) {
+    char next = peekchar();
+    if next = T_PIPE {
+        int t = T_LOG_OR;
+        void * tkn = new_token(self, t);
+        next_char(self); # consume
+        return tkn;
+    }
+    bad_char(self, c); # solo | is illegal
 }
 
 fn token_id_ish(void* self, char c) {
@@ -216,10 +241,6 @@ fn new_token(void* self, int type) {
     void* token = Token__new(type);
     Token_set_coords(token, line_num, char_pos);
     return token;
-}
-
-fn token_punct(void* self, int type) {
-    return new_token(self, type);
 }
 
 fn token_int(void* self, int first_char) {

@@ -21,6 +21,9 @@ pub int T_KW_CONST  = 0x443; # 0x400 + 'C';
 pub int T_KW_FN     = 0x446; # 0x400 + 'F';
 pub int T_KW_LET    = 0x44c; # 0x400 + 'L';
 pub int T_KW_PUB    = 0x450; # 0x400 + 'P';
+# compound tokens
+pub int T_LOG_AND   = 0x526; # 0x500 + '&';
+pub int T_LOG_OR    = 0x57c; # 0x500 + '|';
 # ambiguous character tokens (ASCII, for now)
 pub int T_ASSIGN    = '=';          # double-alias, for now
 pub int T_BANG      = '!';
