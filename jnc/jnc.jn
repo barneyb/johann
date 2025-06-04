@@ -30,11 +30,16 @@ pub fn main(int argc, char** argv) {
 
 fn jnc_compile() {
     void* lex = Lexer__new();
-    void* parser = Parser__new(lex);
+    void* emitter = Emitter__new();
 
-    Parser_parse(parser);
+    parse_program(lex, emitter);
+#    void* parser = Parser__new(lex);
+#
+#    Parser_parse(parser);
+#
+#    Parser_drop(parser);
 
-    Parser_drop(parser);
+    Emitter_drop(emitter);
     Lexer_drop(lex);
 }
 
