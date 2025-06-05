@@ -139,10 +139,10 @@ pub fn get_next_token(void* self) {
         if c = T_BANG { return new_token(self, c); }
         if c = T_GT { return new_token(self, c); }
         if c = T_LT { return new_token(self, c); }
+        if c = T_MINUS { return new_token(self, c); }
         if c = T_PLUS { return new_token(self, c); }
         # ambiguous character tokens...
         if c = T_AMP { return token_ampersand(self, c); }
-        if c = T_MINUS { return token_minus(self, c); }
         if c = T_PIPE { return token_pipe(self, c); }
         # multi-character tokens...
         if c > '`' { return token_id_ish(self, c); } # char before 'a'
@@ -172,14 +172,6 @@ fn token_ampersand(void* self, char c) {
         void * tkn = new_token(self, t);
         next_char(self); # consume
         return tkn;
-    }
-    return new_token(self, c);
-}
-
-fn token_minus(void* self, char c) {
-    char next = peekchar();
-    if isdigit(next) {
-        return token_int(self, c);
     }
     return new_token(self, c);
 }
@@ -279,14 +271,8 @@ fn token_string(void* self, int first_char) {
 }
 
 fn lex_digits(void* self, char first_char) {
-    bool is_negative = false;
     int n;
-    # deal with negatives first
-    if first_char = '-' {
-        is_negative = true;
-        first_char = next_char(self);
-    }
-    int val = 12345;
+    int val;
     if first_char ! '0' {
         # decimal
         val = lex_digits_dec(self, first_char);
@@ -313,9 +299,6 @@ fn lex_digits(void* self, char first_char) {
             # zero
             val = 0;
         }
-    }
-    if is_negative {
-        val = 0 - val;
     }
     return val;
 }
