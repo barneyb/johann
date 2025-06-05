@@ -114,8 +114,9 @@ char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr 
 char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
 
-char* TMPL_STASH                = "        str     x0, [sp, -0x10]!\n";
-char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10\n";
+char* TMPL_STASH                = "        str     x0, [sp, -0x10]! ; stash!\n";
+char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10 ; unstash!\n";
+char* TMPL_UNSTASH_Xi           = "        ldr     x%i, [sp], 0x10 ; targeted unstash!\n";
 
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
 char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
@@ -427,12 +428,13 @@ fn decl_global(void* self, void* nameT, void* expr, void* symbol) {
         char* tmpl = TMPL_GLOBAL_PUB;
         printf(tmpl, name);
     }
-#    void value = Token_value(value_token);
-    int type = Symbol_type(symbol);
-#    # strings are easy, storage and value must both be strings
-#    if type = T_STRING {
-#        return decl_global_string(self, name, expr);
-#    }
+    int type = *expr;
+    # strings are easy, storage and value must both be strings
+    if type = AST_STRING {
+        expr = expr + 0x8;          # -> value
+        char* value = *expr;
+        return decl_global_string(self, name, value);
+    }
     # the rest are messy, as any type of value can initialize any size of storage
     decl_global_num(self, symbol, name, type, expr);
 }
@@ -480,11 +482,10 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
 
     introduce_fn(self, name);
 
-#
-#
 #    void* buf_i = buffer + 0x18;          # -> first arg or close paren
-#    int reg_offset = 0;
-#    while true {
+    if args = null { return; }
+    int reg_offset = 0;
+    while true {
 #        token = *buf_i;
 #        int type = Token_type(token);
 #        if type = T_CPAREN { return; }
@@ -499,13 +500,24 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
 #            buf_i = buf_i + 0x8;
 #            again;
 #        }
+        void name_and_type = *args;
+        if name_and_type = null { done; }
+        nameT = name_and_type + 0x8;
+        nameT = *nameT;
+        int type = name_and_type + 0x10;
+        type = *type;
+        int nptr = name_and_type + 0x18;
+        nptr = *nptr;
+        Emitter_vardecl(self, nameT, type, nptr);
 #        # read the argument
 #        if type = T_ID {
 #            read_fn_arg(self, token, reg_offset);
-#            reg_offset = reg_offset + 1;
+            read_fn_arg(self, nameT, reg_offset);
+            reg_offset = reg_offset + 1;
 #        }
 #        buf_i = buf_i + 0x8;
-#    }
+        args = args + 0x8;
+    }
 }
 
 pub fn Emitter_do_fn_outro(void* self, void* nameT) {
@@ -655,7 +667,7 @@ fn loop_control_flow(void* self, void* buffer, char* tmpl) {
     printf(tmpl, id);
 }
 
-fn Emitter_do_assign(void* self, void* nameT, void* expr) {
+pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
 #    void* token = *buffer; # LHS
 #    buffer = buffer + 0x10; # RHS
 #    Emitter_expr(self, buffer);
@@ -891,10 +903,25 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     if t = AST_BINARY { # [AST_BINARY, op, left, right]
         return Emitter_eval_expr_binary(self, expr);
     }
+    if t = AST_UNARY { # [AST_UNARY, op, *operand, null]
+        return Emitter_eval_expr_unary(self, expr);
+    }
+    if t = AST_STRING { # [AST_STRING, value, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_string(self, expr);
+    }
     if t = AST_ID { # [AST_ID, nameT, null, null]
         expr = expr + 0x8;          # -> nameT
         expr = *expr;
         return Emitter_do_value_id(self, expr);
+    }
+    if t = AST_CALL { # [AST_CALL, rcvr, args[], null]
+        void* rcvr = expr + 0x8;    # -> rcvr
+        rcvr = *rcvr;
+        void* args = expr + 0x10;   # -> args
+        args = *args;
+        return Emitter_do_call_but_sillier(self, rcvr, args);
     }
 
     char* f = "Can't eval expr of type %i\n";
@@ -902,6 +929,32 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     eprintf(f, t);
     t = 13;
     panic(t);
+}
+
+fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
+    # todo: this is a ridiculous way to do it
+    void* it;
+    char* tmpl = TMPL_STASH;
+    int n = 0;
+    while args ! null {
+        it = *args;
+        if it = null { done; }
+        Emitter_eval_expr(self, it);
+        printf(tmpl);
+        args = args + 0x8;
+        n = n + 1;
+    }
+    tmpl = TMPL_UNSTASH_Xi;
+    while n > 0 {
+        n = n - 1;
+        printf(tmpl, n);
+    }
+    # for the moment, the receiver is always a function name?
+    rcvr = rcvr + 0x8;              # -> nameT
+    rcvr = *rcvr;
+    rcvr = Token_value(rcvr);
+    tmpl = TMPL_CALL;
+    printf(tmpl, rcvr);
 }
 
 # [AST_BINARY, op, left, right]
@@ -924,8 +977,30 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     int op = expr + 0x8;            # -> op
     op = *op;
     if op = T_MINUS   { tmpl = TMPL_BIN_SUB; return printf(tmpl); }
+    if op = T_PLUS    { tmpl = TMPL_BIN_ADD; return printf(tmpl); }
+    if op = T_STAR    { tmpl = TMPL_BIN_MUL; return printf(tmpl); }
+    if op = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
+    if op = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
 
     char* f = "Can't eval binary operator %x (%c)\n";
+    printf(f, op, op);
+    eprintf(f, op, op);
+    op = 13;
+    panic(op);
+}
+
+# [AST_UNARY, op, *operand, null]
+fn Emitter_eval_expr_unary(void* self, void* expr) {
+    void* e = expr + 0x10;          # -> operand
+    e = *e;
+    Emitter_eval_expr(self, e);
+
+    int op = expr + 0x8;            # -> op
+    op = *op;
+    char* tmpl;
+    if op = T_MINUS { tmpl = TMPL_UN_NEGATE; return printf(tmpl); }
+
+    char* f = "Can't eval unary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
     op = 13;
@@ -995,11 +1070,11 @@ fn do_token_num(void* self, void* token) {
     Emitter_do_value_integer(self, value);
 }
 
-fn Emitter_do_value_string(void* self, char* name) {
+fn Emitter_do_value_string(void* self, char* value) {
     int seq = Emitter_seqnum(self);
     char q = '"';
     char* tmpl = TMPL_VALUE_STRING;
-    printf(tmpl, seq, q, name, q, seq, seq);
+    printf(tmpl, seq, q, value, q, seq, seq);
 }
 
 fn Emitter_do_value_integer(void* self, int i) {

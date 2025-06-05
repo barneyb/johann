@@ -96,57 +96,93 @@ fn node_a_b_c(int type, void value, void left, void right) {
 fn drop_node(void* node) {
     if node = null { return; }
     int type = *node;
-    void* n;
+    void* it;
 
     if type = AST_INT {
         return free(node);
     }
+    if type = AST_STRING {
+        it = node + 0x8;            # -> value
+        it = *it;
+        free(it);
+        return free(node);
+    }
     if type = AST_BINARY {
-        n = node + 0x10;            # -> left
-        n = *n;
-        drop_node(n);
-        n = node + 0x18;            # -> right
-        n = *n;
-        drop_node(n);
+        it = node + 0x10;           # -> left
+        it = *it;
+        drop_node(it);
+        it = node + 0x18;           # -> right
+        it = *it;
+        drop_node(it);
+        return free(node);
+    }
+    if type = AST_UNARY {
+        it = node + 0x10;           # -> operand
+        it = *it;
+        drop_node(it);
         return free(node);
     }
     if type = AST_FN {
-        n = node + 0x8;             # -> name_token
-        n = *n;
-        Token_drop(n);
-        n = node + 0x10;            # -> args
-        n = *n;
-        drop_node_array(n);
-        n = node + 0x18;            # -> stmts
-        n = *n;
-        drop_node_array(n);
+        it = node + 0x8;            # -> name_token
+        it = *it;
+        Token_drop(it);
+        it = node + 0x10;           # -> args
+        it = *it;
+        drop_node_array(it);
+        it = node + 0x18;           # -> stmts
+        it = *it;
+        drop_node_array(it);
         return free(node);
     }
     if type = AST_NAMETYPE {
-        n = node + 0x8;             # -> name_token
-        n = *n;
-        Token_drop(n);
+        it = node + 0x8;            # -> name_token
+        it = *it;
+        Token_drop(it);
         return free(node);
     }
     if type = AST_RETURN {
-        n = node + 0x8;             # -> expr
-        n = *n;
-        drop_node(n);
+        it = node + 0x8;            # -> expr
+        it = *it;
+        drop_node(it);
+        return free(node);
+    }
+    if type = AST_EVAL {
+        it = node + 0x8;            # -> expr
+        it = *it;
+        drop_node(it);
         return free(node);
     }
     if type = AST_VAR {
-        n = node + 0x8;             # -> name_and_type
-        n = *n;
-        drop_node(n);
-        n = node + 0x10;            # -> expr
-        n = *n;
-        drop_node(n);
+        it = node + 0x8;            # -> name_and_type
+        it = *it;
+        drop_node(it);
+        it = node + 0x10;           # -> expr
+        it = *it;
+        drop_node(it);
         return free(node);
     }
     if type = AST_ID {
-        n = node + 0x8;             # -> name_and_type
-        n = *n;
-        Token_drop(n);
+        it = node + 0x8;            # -> name_and_type
+        it = *it;
+        Token_drop(it);
+        return free(node);
+    }
+    if type = AST_CALL {
+        it = node + 0x8;            # -> rcvr
+        it = *it;
+        drop_node(it);
+        it = node + 0x10;           # -> args
+        it = *it;
+        drop_node_array(it);
+        return free(node);
+    }
+    if type = AST_ASSIGN {
+        it = node + 0x8;            # -> lhs
+        it = *it;
+        drop_node(it);
+        it = node + 0x10;           # -> rhs
+        it = *it;
+        drop_node(it);
         return free(node);
     }
 
@@ -159,9 +195,9 @@ fn drop_node_array(void* nodes) {
     if nodes = null { return; }
     void* n = nodes;
     while true {
-        void i = *n;
-        if i = null { done; }
-        drop_node(i);
+        void it = *n;
+        if it = null { done; }
+        drop_node(it);
         n = n + 0x8;
     }
     free(nodes);
@@ -415,6 +451,8 @@ fn parse_block(void* lex, void* emitter) {
 
 # [AST_VAR, name_and_type, init?, null]
 # [AST_RETURN, expr?, null, null]
+# [AST_EVAL, expr, null, null]
+# [AST_ASSIGN, rhs, expr, null]
 fn parse_statement(void* lex, void* emitter) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
@@ -424,41 +462,13 @@ fn parse_statement(void* lex, void* emitter) {
 #    if t = T_KW_DONE { return parse_done(lex); }
 #    if t = T_KW_AGAIN { return parse_again(lex); }
     if t = T_KW_RETURN { return parse_return(lex, emitter); }
-
-
-
-    bad_token(tkn); # .... for now
-#    if t = T_SEMI {
-#        # legal, if silly...
-#        consume_token(lex, t);
-#        return null;
-#    }
-#
-#    # could be a bare expression, or an assignment
-#    void* expr = parse_expr(lex);
-#    void* rhs = parse_opt_assign(lex);
-#    t = AST_ASSIGN;
-#    if rhs = null {
-#        # todo: see if "a EQ b" should be reparsed as "a ASSIGN b" (both use =)
-#        t = *expr;
-#        if t = AST_BINARY {
-#            t = expr + 0x8;
-#            t = *t;
-#            if t = T_ASSIGN {
-#                t = expr + 0x18;
-#                rhs = *t;
-#                t = expr + 0x10;
-#                expr = *t;
-#                t = AST_ASSIGN;
-#                return node_a_b(t, expr, rhs);
-#            }
-#        }
-#        # nope, just bare evaluation
-#        t = AST_EVAL;
-#        rhs = expr;
-#        expr = null;
-#    }
-#    return node_a_b(t, expr, rhs);
+    if t = T_SEMI {
+        # silly, but legal
+        consume_token(lex, t);
+        return null;
+    }
+    # a bare expression eval or an assignment
+    return parse_eval_or_assign(lex, emitter);
 }
 
 # [AST_IF, *cond, *block, null] todo
@@ -519,11 +529,56 @@ fn parse_return(void* lex, void* emitter) {
     return node_a(t, expr);
 }
 
+# [AST_EVAL, expr, null, null]
+# [AST_ASSIGN, rhs, expr, null]
+fn parse_eval_or_assign(void* lex, void* emitter) {
+    int t = AST_ASSIGN;
+    void* expr = parse_expr(lex);
+    void* rhs = parse_opt_assign(lex);
+#    if rhs = null {
+#        # see if "a EQ b" should be reparsed as "a ASSIGN b"
+#        t = *expr;
+#        if t = AST_BINARY {
+#            t = expr + 0x8;
+#            t = *t;
+#            if t = T_ASSIGN { # previously interpreted as T_EQ
+#                t = expr + 0x18;
+#                rhs = *t;
+#                t = expr + 0x10;
+#                drop_node(expr);
+#                expr = *t;
+#            }
+#        }
+#    }
+    if rhs = null {
+        # just bare evaluation
+        t = AST_EVAL;
+        Emitter_eval_expr(emitter, expr);
+        return node_a_b(t, expr);
+    }
+    # right now, the lhs MUST be AST_ID, so unwrap
+    t = *expr;
+    if t ! AST_ID {
+        rhs = "Can't assign to a %i node\n";
+        eprintf(rhs, t);
+        t = 14;
+        panic(t);
+    }
+    t = expr + 0x8;                 # -> name
+    char* name = *t;
+    Emitter_do_assign(emitter, name, rhs);
+    t = AST_ASSIGN;
+        char*f = "                  ; rewrite %i w/ %x = %x\n";
+        printf(f, t, expr, rhs);
+    return node_a_b(t, expr, rhs);
+}
 
 # [AST_BINARY, op, *left, *right]
 # [AST_UNARY, op, *operand, null]
+# [AST_CALL, rcvr, args[], null]
 # [AST_ID, name, null, null]
-# [AST_type, value, null, null]
+# [AST_INT, value, null, null]
+# [AST_STRING, value, null, null]
 fn parse_expr(void* lex) {
     return parse_expr_cond(lex);
 }
@@ -620,7 +675,6 @@ fn parse_expr_shift(void* lex) {
     return parse_expr_add(lex);
 }
 
-# [AST_BINARY, op, left, right]
 fn parse_expr_add(void* lex) {
     void* expr = parse_expr_mult(lex);
     void* right;
@@ -630,7 +684,7 @@ fn parse_expr_add(void* lex) {
         int t = Token_type(tkn);
         bool doit = false;
         if t = T_MINUS { doit = true; }
-#        if t = T_PLUS  { doit = true; }
+        if t = T_PLUS  { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         right = parse_expr_mult(lex);
@@ -641,21 +695,63 @@ fn parse_expr_add(void* lex) {
 
 fn parse_expr_mult(void* lex) {
     void* expr = parse_expr_cast(lex);
-#    void* right;
-#    while true {
-#        void* tkn = peek_token(lex);
-#        if tkn = null { done; }
-#        int t = Token_type(tkn);
-#        bool doit = false;
-#        if t = T_PERCENT { doit = true; }
-#        if t = T_SLASH   { doit = true; }
-#        if t = T_STAR    { doit = true; }
-#        if !doit { done; }
-#        consume_token(lex, t);
-#        right = parse_expr_cast(lex);
-#        expr = join_bin_op(lex, t, expr, right);
-#    }
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn = null { done; }
+        int t = Token_type(tkn);
+        bool doit = false;
+        if t = T_PERCENT { doit = true; }
+        if t = T_SLASH   { doit = true; }
+        if t = T_STAR    { doit = true; }
+        if !doit { done; }
+        consume_token(lex, t);
+        right = parse_expr_cast(lex);
+        expr = join_bin_op(lex, t, expr, right);
+    }
     return expr;
+}
+
+# this will take the left AST and join it with the next AST, into a new AST for
+# the given operator. If both sides are literal, the operator will be evaluated
+# as its result will be returned as a new literal AST instead.
+fn join_bin_op(void* lex, int op, void* left, void* right) {
+    int ttl = *left;
+    int ttr = *right;
+
+    if ttl < 10 { if ttr < 10 {
+        # both literal values, evaluate
+        if ttl < ttr { ttl = ttr; }
+        ttr = left + 0x8;
+        ttr = *ttr;
+        drop_node(left);
+        left = ttr;
+        ttr = right + 0x8;
+        ttr = *ttr;
+        drop_node(right);
+        right = ttr;
+        bool did_it = false; # todo: remove
+#        if op = T_EQ      { ttr = left = right; did_it = true; }
+#        if op = T_BANG    { ttr = left ! right; did_it = true; }
+#        if op = T_LT      { ttr = left < right; did_it = true; }
+#        if op = T_GT      { ttr = left > right; did_it = true; }
+        if op = T_PLUS    { ttr = left + right; did_it = true; }
+        if op = T_MINUS   { ttr = left - right; did_it = true; }
+        if op = T_STAR    { ttr = left * right; did_it = true; }
+        if op = T_SLASH   { ttr = left / right; did_it = true; }
+        if op = T_PERCENT { ttr = left % right; did_it = true; }
+        if did_it {
+            return node_a(ttl, ttr);
+        }
+        char* tmpl = "Can't statically eval %x (%c) with %i and %i\n";
+        printf(tmpl, op, op, left, right);
+        eprintf(tmpl, op, op, left, right);
+        ttl = 16;
+        panic(ttl);
+    } }
+
+    ttl = AST_BINARY;
+    return node_a_b_c(ttl, op, left, right);
 }
 
 fn parse_expr_cast(void* lex) {
@@ -663,59 +759,80 @@ fn parse_expr_cast(void* lex) {
 }
 
 fn parse_expr_unary(void* lex) {
-#    void* tkn = peek_token(lex);
-#    if tkn ! null {
-#        int t = Token_type(tkn);
+    void* tkn = peek_token(lex);
+    if tkn ! null {
+        int t = Token_type(tkn);
 #        if t = T_AMP   { return join_un_op_rtl(lex, t); }
 #        if t = T_BANG  { return join_un_op_rtl(lex, t); }
-#        if t = T_MINUS { return join_un_op_rtl(lex, t); }
-#        if t = T_PLUS  { return join_un_op_rtl(lex, t); }
+        if t = T_MINUS { return join_un_op_rtl(lex, t); }
+        if t = T_PLUS  { return join_un_op_rtl(lex, t); }
 #        if t = T_STAR  { return join_un_op_rtl(lex, t); }
-#    }
+    }
     return parse_expr_postfix(lex);
 }
 
-# [AST_CALL, fn, args[], null]
+fn join_un_op_rtl(void* lex, int op) {
+    # If this ends up being called elsewhere than parse_expr_unary, it'll need
+    # to be recast along the lines of join_bin_op.
+    consume_token(lex, op);
+    void operand = parse_expr_unary(lex);
+    int tto = *operand;
+
+    if tto < 10 {
+        # a literal, evaluate
+        int v = operand + 0x8;
+        v = *v;
+        drop_node(operand);
+        if op = T_MINUS { v = -v; }
+        if op = T_PLUS {} # for completeness
+        return node_a(tto, v);
+    }
+
+    int type = AST_UNARY;
+    return node_a_b(type, op, operand);
+}
+
+# [AST_CALL, rcvr, args[], null]
 fn parse_expr_postfix(void* lex) {
     void* expr = parse_expr_primary(lex);
-#    void* tkn = peek_token(lex);
-#    if tkn ! null {
-#        int t = Token_type(tkn);
-#        if t = T_OPAREN {
-#            # function call
-#            consume_token(lex, t);
-#            void* args = null;
-#            tkn = peek_token(lex);
-#            t = Token_type(tkn);
-#            if t ! T_CPAREN {
-#                args = parse_arg_list(lex);
-#            }
-#            t = T_CPAREN;
-#            consume_token(lex, t);
-#            t = AST_CALL;
-#            expr = node_a_b(t, expr, args);
-#        }
-#    }
+    void* tkn = peek_token(lex);
+    if tkn ! null {
+        int t = Token_type(tkn);
+        if t = T_OPAREN {
+            # function call
+            consume_token(lex, t);
+            void* args = null;
+            tkn = peek_token(lex);
+            t = Token_type(tkn);
+            if t ! T_CPAREN {
+                args = parse_arg_list(lex);
+            }
+            t = T_CPAREN;
+            consume_token(lex, t);
+            t = AST_CALL;
+            expr = node_a_b(t, expr, args);
+        }
+    }
     return expr;
 }
 
-# [expr*]
+# expr[]
 fn parse_arg_list(void* lex) {
-#    void bytes = 0x8 * 9; # todo: can't have more than eight at the moment...
-#    void* args = malloc(bytes);
-#    void* curr = args;
-#    *curr = parse_expr(lex);
-#    curr = curr + 0x8;
-#    while true {
-#        void* tkn = peek_token(lex);
-#        int t = Token_type(tkn);
-#        if t ! T_COMMA { done; }
-#        consume_token(lex, t);
-#        *curr = parse_expr(lex);
-#        curr = curr + 0x8;
-#    }
-#    *curr = null;
-#    return args;
+    void bytes = 0x8 * 9; # todo: can't have more than eight at the moment...
+    void* args = malloc(bytes);
+    void* curr = args;
+    *curr = parse_expr(lex);
+    curr = curr + 0x8;
+    while true {
+        void* tkn = peek_token(lex);
+        int t = Token_type(tkn);
+        if t ! T_COMMA { done; }
+        consume_token(lex, t);
+        *curr = parse_expr(lex);
+        curr = curr + 0x8;
+    }
+    *curr = null;
+    return args;
 }
 
 fn parse_expr_primary(void* lex) {
@@ -725,7 +842,7 @@ fn parse_expr_primary(void* lex) {
 #    if t = T_BOOL   { t = AST_BOOL;   return parse_val(lex, t); }
 #    if t = T_CHAR   { t = AST_CHAR;   return parse_val(lex, t); }
     if t = T_INT    { t = AST_INT;    return parse_val(lex, t); }
-#    if t = T_STRING { t = AST_STRING; return parse_val(lex, t); }
+    if t = T_STRING { t = AST_STRING; return parse_val(lex, t); }
     if t = T_ID     { return parse_id(lex); }
 #    if t = T_OPAREN {
 #        tkn = next_token(lex);
@@ -749,7 +866,7 @@ fn parse_val(void* lex, int type) {
 
 # [AST_ID, nameT, null, null]
 fn parse_id(void* lex) {
-    void* tkn = next_token(lex);
+    void* tkn = id_token(lex);
     int type = AST_ID;
     return node_a(type, tkn);
 }
@@ -761,53 +878,4 @@ fn id_token(void* lex) {
         return tkn;
     }
     bad_token(tkn);
-}
-
-# this will take the left AST and join it with the next AST, into a new AST for
-# the given operator. If both sides are literal, the operator will be evaluated
-# as its result will be returned as a new literal AST instead.
-fn join_bin_op(void* lex, int op, void* left, void* right) {
-    int ttl = *left;
-    int ttr = *right;
-
-#    if ttl < 10 { if ttr < 10 {
-#        # both literal values, evaluate
-#        if ttl < ttr { ttl = ttr; }
-#        left = left + 0x8;
-#        left = *left;
-#        right = right + 0x8;
-#        right = *right;
-#        if op = T_EQ      { ttr = left = right; }
-#        if op = T_BANG    { ttr = left ! right; }
-#        if op = T_LT      { ttr = left < right; }
-#        if op = T_GT      { ttr = left > right; }
-#        if op = T_PLUS    { ttr = left + right; }
-#        if op = T_MINUS   { ttr = left - right; }
-#        if op = T_STAR    { ttr = left * right; }
-#        if op = T_SLASH   { ttr = left / right; }
-#        if op = T_PERCENT { ttr = left % right; }
-#        return node_a(ttl, ttr);
-#    } }
-
-    ttl = AST_BINARY;
-    return node_a_b_c(ttl, op, left, right);
-}
-
-fn join_un_op_rtl(void* lex, int op) {
-#    consume_token(lex, op);
-#
-#    void operand = parse_expr_unary(lex);
-#    int tto = *operand;
-#
-#    if tto < 10 {
-#        # a literal, evaluate
-#        operand = operand + 0x8;
-#        operand = *operand;
-#        if op = T_MINUS { operand = -operand; }
-#        if op = T_PLUS {} # for completeness
-#        return node_a(tto, operand);
-#    }
-#
-#    int type = AST_UNARY;
-#    return node_a_b(type, op, operand);
 }
