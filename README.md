@@ -78,7 +78,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
-Compound expressions are not supported, so there is no operator precedence. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Four unary operators are supported: `!`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
+Operator precedence is as in C-family languages, with the exception that equality operators currently associate right-to-left. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -90,15 +90,15 @@ Compound expressions are not supported, so there is no operator precedence. The 
     int c = *a;         # c = 1;
     *a = b + c;         # a[0] = 3;
 
-Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change. 
+Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change, so don't abuse it.
 
 Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa` (`'\n'` doesn't yet lex). Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change. There is no support for compound values (structs/arrays/tuples), use a heap allocation and do the pointer arithmetic yourself (for now).
 
-Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (aside from zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. Underscores inserted between digits (e.g., `32_767`) are ignored. A leading `-` indicates a negative value. A second `-` (associating right-to-left!) is a unary negate (for now).
+Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (aside from zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. Underscores inserted between digits (e.g., `32_767`) are ignored. Use `-` to get a negative value.
 
-Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`. The `null` keyword is also recognized as an alias for `0`.
+Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`. The `null` keyword is also recognized as an alias for `0`. At some point these will have identity separate from their numeric value.
 
 Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most eight arguments.
 
@@ -106,7 +106,7 @@ Functions can declare formal arguments within their parentheses, to create local
         return a + b;
     }
 
-Parameters passed in a function call must be local variables, not expressions. This includes literals and global variables! At the moment, a given call can have a max of eight parameters (which really only matters for `printf`). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
+A given function call can have a max of eight parameters (which really only matters for `printf`). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     # convoluted:
     char* c = "one: ";
@@ -123,8 +123,8 @@ Parameters passed in a function call must be local variables, not expressions. T
     a = 1;
     printf(f, a);
 
-    # not yet allowed:
-    # printf("one: %i\n", 1);
+    # easiest:
+    printf("one: %i\n", 1);
 
 Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
 
@@ -161,10 +161,12 @@ Johann provides no debugging support, but you might be able to use various third
 
 The allocator only uses anonymously `mmap`ed pages, which are acquired on-demand. Currently, they are never `unmmap`ed. Each `malloc` call will return a suitable memory chunk. Chunks passed back to `free` are marked for recycling. Recycling is always preferred to requesting more space from the OS. Recycled chunks are neither coalesced nor re-chunked more finely. `malloc` only looks for "big enough", not "reasonably sized," so an allocation request may recycle a wildly oversize chunk, "wasting" the overage. This also means overflow errors are less predictable than one might hope.
 
-When a program exits (without panicking), the count of `malloc` and `free` calls over the life of the execution is compared, as are the total bytes allocated and freed. If they don't match, a warning is printed to both STDOUT and STDERR with the details. Here's one which leaked pretty dramatically, almost 20% of its allocations:
+When a program exits (without panicking), the count of `malloc` and `free` calls over the life of the execution is compared, as are the total bytes allocated and freed. If they don't match, a warning is printed to both STDOUT and STDERR with the details. Here's one which leaked pretty dramatically, almost 50% of its allocations:
 
-    ; MEM: 279 allocs (0x2db0 bytes)
-    ;      227 frees  (0x2290 bytes)
+    ; MEM: 2990 allocs (0x1dd10 bytes)
+    ;      1561 frees  (0xf050 bytes)
+    ;      1876 chunks (0x12dc0 bytes)
+    ;      6 mmaps  (6 pages)
 
 Certain double-free errors cause a `98` panic, but only a minority of them. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
 
