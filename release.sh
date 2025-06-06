@@ -36,6 +36,7 @@ if ! git diff --quiet; then
     nope 4 "Build created dirtiness"
 fi
 cp jnc/target/bin/jnc bin
+strip bin/jnc
 cp jstdlib/target/lib/jstdlib.o lib
 if ! make not_quite_lisp; then
     nope 7 "Not Quite Lisp doesn't work anymore"
