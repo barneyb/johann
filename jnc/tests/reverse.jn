@@ -29,8 +29,9 @@ fn do_string(char* a) {
     char g = STOP_AT;
     int b = strpos(a, g);
 
+    char* f;
     if b < 0 {
-        char* f = "Didn't find stop char '%c' anywhere in '%s'?!\n";
+        f = "Didn't find stop char '%c' anywhere in '%s'?!\n";
         printf(f, g, a);
         return b;
     }

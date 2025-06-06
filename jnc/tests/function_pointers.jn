@@ -36,8 +36,7 @@ fn pointers() {
     # point to global, prototyped function
     void* p_puts = &puts;
 
-    char c = a();
-    c = p_a();
+    char c = p_a();
     putchar(c);
     c = p_b();
     putchar(c);

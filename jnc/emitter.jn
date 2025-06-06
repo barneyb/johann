@@ -34,25 +34,25 @@ int T_STRING;
 
 char* JNC_SHORT_VERSION;
 
-int AST_BOOL;
-int AST_CHAR;
-int AST_INT;
-# static eval is possible <10, largest type is (promoted) result type
-int AST_STRING;
-int AST_ID;
-int AST_UNARY;
-int AST_BINARY;
-int AST_CALL;
-int AST_VAR;
-int AST_FN;
-int AST_NAMETYPE;
-int AST_EVAL;
-int AST_ASSIGN;
-int AST_IF;
-int AST_WHILE;
-int AST_DONE;
+int AST_ADDR_OP;
 int AST_AGAIN;
+int AST_ASSIGN;
+int AST_BINARY;
+int AST_BOOL;
+int AST_CALL;
+int AST_CHAR;
+int AST_DONE;
+int AST_EVAL;
+int AST_FN;
+int AST_ID;
+int AST_IF;
+int AST_INT;
+int AST_NAMETYPE;
 int AST_RETURN;
+int AST_STRING;
+int AST_UNARY;
+int AST_VAR;
+int AST_WHILE;
 
 pub bool IS_PUB = false; # this is just ridiculous
 
@@ -398,6 +398,7 @@ fn decl_id_token(void* buffer) {
 
 pub fn Emitter_do_decl(void* self, void* nameT, int type, int nptr, void* expr) {
     void* symbol = Emitter_vardecl(self, nameT, type, nptr);
+    if expr = null { return; }
 
 #    # scan until ASSIGN or SEMI to indicate end of declaration.
 #    void* buf_i = buffer + 0x8; # first token is type
@@ -589,7 +590,7 @@ fn introduce_main(char* name, bool is_pub) {
     printf(tmpl);
 }
 
-fn Emitter_do_close_block(void* self, void* buffer) {
+pub fn Emitter_do_close_block(void* self) {
     void* block = Emitter_leave_block(self);
     int id = Block_id(block);
     int type = Block_type(block);
@@ -626,41 +627,39 @@ pub fn Emitter_do_return(void* self, void* token) {
     printf(tmpl, id);
 }
 
-fn Emitter_do_if(void* self, void* buffer) {
+pub fn Emitter_do_if(void* self, void* cond) {
+    int type = T_KW_IF;
     char* prelude = null;
     char* intro = TMPL_IF_INTRO;
-    do_conditional(self, buffer, prelude, intro);
+    do_conditional(self, type, prelude, intro, cond);
 }
 
-fn Emitter_do_while(void* self, void* buffer) {
+pub fn Emitter_do_while(void* self, void* cond) {
+    int type = T_KW_WHILE;
     char* prelude = TMPL_WHILE_PRELUDE;
     char* intro = TMPL_WHILE_INTRO;
-    do_conditional(self, buffer, prelude, intro);
+    do_conditional(self, type, prelude, intro, cond);
 }
 
-fn do_conditional(void* self, void* buffer, char* prelude, char* intro) {
-    void* token = *buffer; # keyword
-    buffer = buffer + 0x8; # conditional expression
-    char* type = Token_type(token);
-    void* block = Emitter_enter_block(self, type, token);
+fn do_conditional(void* self, int type, char* prelude, char* intro, void* cond) {
+    void* block = Emitter_enter_block(self, type);
     int id = Block_id(block);
     if prelude ! null { printf(prelude, id); }
-    Emitter_expr(self, buffer);
+    Emitter_eval_expr(self, cond);
     if intro ! null { printf(intro, id); }
 }
 
-fn Emitter_do_again(void* self, void* buffer) {
+pub fn Emitter_do_again(void* self, void* token) {
     char* tmpl = TMPL_WHILE_AGAIN;
-    loop_control_flow(self, buffer, tmpl);
+    loop_control_flow(self, token, tmpl);
 }
 
-fn Emitter_do_done(void* self, void* buffer) {
+pub fn Emitter_do_done(void* self, void* token) {
     char* tmpl = TMPL_WHILE_DONE;
-    loop_control_flow(self, buffer, tmpl);
+    loop_control_flow(self, token, tmpl);
 }
 
-fn loop_control_flow(void* self, void* buffer, char* tmpl) {
-    void* token = *buffer;
+fn loop_control_flow(void* self, void* token, char* tmpl) {
     char* kw = T_KW_WHILE;
     void* block = Emitter_innermost_block_of(self, kw, token);
     int id = Block_id(block);
@@ -682,26 +681,27 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
         offset = offset * 0x8;
         return printf(tmpl, offset);
     }
-#    # global
-#    char* name = Token_value(token);
-#    int width = Symbol_width(symbol);
-#    if width = 1 {
-#        tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
-#    }
-#    if width ! 1 {
-#        tmpl = TMPL_ASSIGN_GLOBAL_QUAD;
-#    }
-#    printf(tmpl, name, name);
+    # global
+    char* name = Token_value(nameT);
+    int width = Symbol_width(symbol);
+    if width = 1 {
+        tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
+    }
+    if width ! 1 {
+        tmpl = TMPL_ASSIGN_GLOBAL_QUAD;
+    }
+    printf(tmpl, name, name);
 }
 
-fn Emitter_do_assign_pointer(void* self, void* buffer) {
-    buffer = buffer + 0x8; # name
-    void* token = *buffer;
-    buffer = buffer + 0x10; # RHS
-    Emitter_expr(self, buffer);
+pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
+#    buffer = buffer + 0x8; # name
+#    void* token = *buffer;
+#    buffer = buffer + 0x10; # RHS
+#    Emitter_expr(self, buffer);
+    Emitter_eval_expr(self, expr);
 
     # compute address
-    void* symbol = Emitter_lookup_symbol_for(self, token);
+    void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
     char* tmpl;
     if offset > 0 {
@@ -713,7 +713,7 @@ fn Emitter_do_assign_pointer(void* self, void* buffer) {
     if offset < 1 {
         # global
         tmpl = TMPL_GET_ADDR_GLOBAL;
-        char* name = Token_value(token);
+        char* name = Token_value(nameT);
         printf(tmpl, name, name);
     }
 
@@ -793,8 +793,7 @@ fn Emitter_do_call(void* self, void* buffer) {
     if symbol ! null {
         # call the function pointer
         tmpl = TMPL_CALL_PTR;
-        return
-        printf(tmpl);
+        return printf(tmpl);
     }
     # anonymous - hope it's there!
     tmpl = TMPL_CALL;
@@ -884,6 +883,8 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     int t = *expr;
     int v = expr + 0x8;             # -> val
     v = *v;
+    if t = AST_BOOL { return v; }
+    if t = AST_CHAR { return v; }
     if t = AST_INT { return v; }
 
     char* f = "Expr type %i isn't constant.\n";
@@ -895,21 +896,34 @@ pub fn Emitter_eval_const(void* self, void* expr) {
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
     int t = *expr;
+    if t = AST_BOOL { # [AST_BOOL, val, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_integer(self, expr);
+    }
+    if t = AST_CHAR { # [AST_CHAR, val, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_integer(self, expr);
+    }
     if t = AST_INT { # [AST_INT, val, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t = AST_BINARY { # [AST_BINARY, op, left, right]
-        return Emitter_eval_expr_binary(self, expr);
-    }
-    if t = AST_UNARY { # [AST_UNARY, op, *operand, null]
-        return Emitter_eval_expr_unary(self, expr);
-    }
     if t = AST_STRING { # [AST_STRING, value, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_string(self, expr);
+    }
+    if t = AST_BINARY { # [AST_BINARY, op, left, right]
+        return Emitter_eval_expr_binary(self, expr);
+    }
+    if t = AST_UNARY { # [AST_UNARY, op, operand, null]
+        return Emitter_eval_expr_unary(self, expr);
+    }
+    if t = AST_ADDR_OP { # [AST_ADDR_OP, op, nameT, null]
+        return Emitter_eval_expr_addr(self, expr);
     }
     if t = AST_ID { # [AST_ID, nameT, null, null]
         expr = expr + 0x8;          # -> nameT
@@ -931,8 +945,38 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     panic(t);
 }
 
+# [AST_CALL, rcvr, args[], null]
 fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
-    # todo: this is a ridiculous way to do it
+    void* nameT = rcvr + 0x8;       # -> nameT
+    nameT = *nameT;
+    void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
+    char* tmpl;
+    if symbol ! null {
+        # function pointer - do setup first, as it corrupts x0
+        do_address_of(self, nameT, symbol);
+        int nptr = Symbol_nptr(symbol);
+        if nptr > 0 {
+            do_load_addr(self, nameT, symbol);
+        }
+        tmpl = TMPL_CALL_PTR_INTRO;
+        printf(tmpl);
+    }
+
+    call_params_but_sillier(self, args);
+
+    if symbol ! null {
+        # call the function pointer
+        tmpl = TMPL_CALL_PTR;
+        return printf(tmpl);
+    }
+    # anonymous - hope it's there!
+    tmpl = TMPL_CALL;
+    char* name = Token_value(nameT);
+    printf(tmpl, name);
+}
+
+fn call_params_but_sillier(void* self, void* args) {
+    # todo: this is a ridiculous way to do params
     void* it;
     char* tmpl = TMPL_STASH;
     int n = 0;
@@ -949,12 +993,6 @@ fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
         n = n - 1;
         printf(tmpl, n);
     }
-    # for the moment, the receiver is always a function name?
-    rcvr = rcvr + 0x8;              # -> nameT
-    rcvr = *rcvr;
-    rcvr = Token_value(rcvr);
-    tmpl = TMPL_CALL;
-    printf(tmpl, rcvr);
 }
 
 # [AST_BINARY, op, left, right]
@@ -982,6 +1020,11 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     if op = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
     if op = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
 
+    if op = T_EQ   { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
+    if op = T_BANG { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
+    if op = T_LT   { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
+    if op = T_GT   { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
+
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
@@ -989,16 +1032,44 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     panic(op);
 }
 
-# [AST_UNARY, op, *operand, null]
+# [AST_ADDR_OP, op, nameT, null]
+fn Emitter_eval_expr_addr(void* self, void* expr) {
+    void* nameT = expr + 0x10;      # -> nameT
+    nameT = *nameT;
+    void * symbol = Emitter_lookup_symbol_for(self, nameT);
+
+    int op = expr + 0x8;            # -> op
+    op = *op;
+    if op = T_AMP  { return do_address_of(self, nameT, symbol); }
+    if op = T_STAR {
+        Emitter_do_value_id(self, nameT);
+        return do_load_addr(self, nameT, symbol);
+    }
+
+    char* f = "Can't eval address operator %x (%c)\n";
+    printf(f, op, op);
+    eprintf(f, op, op);
+    op = 13;
+    panic(op);
+}
+
+# [AST_UNARY, op, operand, null]
 fn Emitter_eval_expr_unary(void* self, void* expr) {
-    void* e = expr + 0x10;          # -> operand
-    e = *e;
-    Emitter_eval_expr(self, e);
+    void* operand = expr + 0x10;    # -> operand
+    operand = *operand;
+
+    Emitter_eval_expr(self, operand);
 
     int op = expr + 0x8;            # -> op
     op = *op;
     char* tmpl;
+    if op = T_BANG {
+        op = Emitter_seqnum(self);
+        tmpl = TMPL_UN_NOT;
+        return printf(tmpl, op, op, op, op);
+    }
     if op = T_MINUS { tmpl = TMPL_UN_NEGATE; return printf(tmpl); }
+    if op = T_PLUS  { return; } # no code
 
     char* f = "Can't eval unary operator %x (%c)\n";
     printf(f, op, op);
