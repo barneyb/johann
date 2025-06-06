@@ -251,19 +251,39 @@ fn is_type_kw(int t) {
     return false;
 }
 
-fn dump__(char* action, void* token) {
-    int val = *token;
-    token = token + 0x8;            # -> line
-    int ln = *token;
-    token = token + 0x8;            # -> char
-    int ch = *token;
-    char* tmpl = "; %i:%i %s";
-    printf(tmpl, ln, ch, action);
-    tmpl = " %x (%c)\n";
-    if val < 128 { if val > 31 {
-        tmpl = " '%c'\n";
-    } }
-    printf(tmpl, val, val);
+pub fn print_token(void* t) {
+    int type = Token_type(t);
+    int ln = Token_line(t);
+    int ch = Token_char(t);
+    char* f;
+    if type > 0x7f {
+        f = "; %i/%c %i,%i";
+        int i = type / 256;
+        printf(f, i, type, ln, ch);
+    }
+    if type < 0x80 {
+        f = "; %c %i,%i";
+        printf(f, type, ln, ch);
+    }
+    f = null;
+    if type = T_INT { f = ": %i"; }
+    if type = T_ID { f = ": %s"; }
+    if type = T_CHAR { f = ": '%c'"; }
+    if type = T_STRING {
+        f = ": %c%s%c\n";
+        ln = Token_value(t);
+        ch = '"';
+        printf(f, ch, ln, ch);
+        return;
+    }
+    if type = T_BOOL { f = ": %b"; }
+    if type > 0x200 { f = ": %s"; }
+    if f ! null {
+        ln = Token_value(t);
+        printf(f, ln);
+    }
+    ch = 0xa;
+    putchar(ch);
 }
 
 int PEEKED_AT = null;
@@ -271,8 +291,9 @@ int PEEK_COUNT = 0;
 fn peek_token(void* lex) {
     void* token = Lexer_peek(lex);
     if token = null { return token; }
-#    char* action = "   PEEK";
-#    dump__(action, token);
+#    char* action = "            ";
+#    printf(action);
+#    print_token(token);
     if token = PEEKED_AT {
         PEEK_COUNT = PEEK_COUNT + 1;
         if PEEK_COUNT > 50 {
@@ -290,8 +311,7 @@ fn peek_token(void* lex) {
 
 fn next_token(void* lex) {
     void* token = Lexer_token(lex);
-    char* action = "CONSUME";
-    dump__(action, token);
+    print_token(token);
     return token;
 }
 
@@ -308,12 +328,7 @@ fn consume_token(void* lex, int type) {
     }
     t = Token_type(tkn);
     if t ! type { bad_token(tkn); }
-    drop_token(tkn);
-}
-
-fn drop_token(void* token) {
-    if token = null { return; }
-    Token_drop(token);
+    Token_drop(tkn);
 }
 
 fn bad_token(void* tkn) {
