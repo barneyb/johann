@@ -271,11 +271,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20250530
-build_time: 2025-05-30T04:48:30+00:00
-commit_hash: 42cd04363039a6e3c7f1a01ca6b910f01d1cf87f
+jnc 0.20250606
+build_time: 2025-06-06T04:55:25+00:00
+commit_hash: 1d69aff56c21fe9830160f3ea88b30d92de1fc61
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20250530-42cd043
+; Compiled with jnc 0.20250606-1d69aff
     .text
     .align  3
 ... snip ...
@@ -300,18 +300,18 @@ PARTICULAR PURPOSE.
 This program built for i386-apple-darwin11.3.0
 %
 % gcc --version
-Apple clang version 17.0.0 (clang-1700.0.13.3)
+Apple clang version 17.0.0 (clang-1700.0.13.5)
 Target: arm64-apple-darwin24.5.0
 Thread model: posix
 InstalledDir: /Library/Developer/CommandLineTools/usr/bin
 %
 % ld -v
-@(#)PROGRAM:ld PROJECT:ld-1167.4.1
-BUILD 20:00:10 Mar 12 2025
+@(#)PROGRAM:ld PROJECT:ld-1167.5
+BUILD 01:45:05 Apr 30 2025
 configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
 will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
 LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
-TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.4)
+TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.5)
 ```
 <!--{/systemsoftware}-->
 
