@@ -16,6 +16,7 @@ pub fn main() {
         }
         c = getchar();
     }
-    char* format = "Part A: %i\nPart B: %i\n";
-    printf(format, floor, first_descent);
+    printf("Part A: %i\nPart B: %i\n",
+           floor,
+           first_descent);
 }

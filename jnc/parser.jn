@@ -270,17 +270,13 @@ pub fn print_token(void* t) {
     if type = T_ID { f = ": %s"; }
     if type = T_CHAR { f = ": '%c'"; }
     if type = T_STRING {
-        f = ": %c%s%c\n";
-        ln = Token_value(t);
-        ch = '"';
-        printf(f, ch, ln, ch);
+        printf(": %c%s%c\n", '"', Token_value(t), '"');
         return;
     }
     if type = T_BOOL { f = ": %b"; }
     if type > 0x200 { f = ": %s"; }
     if f ! null {
-        ln = Token_value(t);
-        printf(f, ln);
+        printf(f, Token_value(t));
     }
     ch = 0xa;
     putchar(ch);
@@ -291,8 +287,7 @@ int PEEK_COUNT = 0;
 fn peek_token(void* lex) {
     void* token = Lexer_peek(lex);
     if token = null { return token; }
-#    char* action = "            ";
-#    printf(action);
+#    printf("            ");
 #    print_token(token);
     if token = PEEKED_AT {
         PEEK_COUNT = PEEK_COUNT + 1;
