@@ -8,18 +8,14 @@ int T_STRING;
 #   int line_num                    ; line of the source the token started on
 #   int char_offset                 ; position in the line the token started on
 #   ? value                         ; a 64-bit "something"
-#   ? moar                          ; another 64-bit "something"
 # }
 
 # I create a new token, with the given type.
 pub fn Token__new(int type) {
-    int bytes = 0x28;
-    void* token = malloc(bytes);
+    void* token = malloc(0x20);
     *token = type;
-#    int zero = 0;
-#    Token_set_coords(token, zero, zero);
-#    Token_set_value(token, zero);
-##    Token_set_moar(token, zero);
+#    Token_set_coords(token, 0, 0);
+#    Token_set_value(token, 0);
     return token;
 }
 
@@ -83,14 +79,4 @@ pub fn Token_into_value(void* token) {
 pub fn Token_set_value(void* token, void value) {
     token = token + 0x18;           # -> value
     *token = value;
-}
-
-pub fn Token_moar(void* token) {
-    token = token + 0x28;           # -> moar
-    return *token;
-}
-
-pub fn Token_set_moar(void* token, void moar) {
-    token = token + 0x20;           # -> moar
-    *token = moar;
 }
