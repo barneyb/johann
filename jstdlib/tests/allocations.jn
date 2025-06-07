@@ -12,56 +12,62 @@ fn reuse() {
     int len = 8;
     int** addrs = new_array(len);
     int* end = addrs + 0x40;
-    char* f = "  pointer of interest: %p\n";
     int n;
-    n = addrs % 0x1000; printf(f, n);
+    printf("start of array: %p\n", addrs % 0x1000);
 
     int* a = malloc(len);
-    n = a % 0x1000; printf(f, n);
+    printf("new alloc: %p\n", a % 0x1000);
     if a < end {
-        f = "expected %p to be > %p\n";
-        printf(f, a, end);
+        printf("expected %p to be >= %p\n", a, end);
         exit(a);
     }
     free(a); a = null;
 
     int* a_i = addrs + 0x20; # addrs[4]
-    n = a_i % 0x1000; printf(f, n);
+    printf("addrs[4]: %p\n", a_i % 0x1000);
     a = *a_i;
-    n = a % 0x1000; printf(f, n);
+    printf("ptr @ addrs[4]: %p\n", a % 0x1000);
     *a_i = null;
     free(a);
     a_i = a;
-    n = a_i % 0x1000; printf(f, n);
+    printf("free-d addrs[4]: %p\n", a_i % 0x1000);
     a = malloc(len);
-    n = a % 0x1000; printf(f, n);
+    printf("allocate for reuse: %p\n", a % 0x1000);
     if a ! a_i {
-        f = "expected %p to be = %p\n";
-        printf(f, a, a_i);
-        f = "  next alloc is %p\n";
-        a = malloc(len);
-        printf(f, a);
-        a = malloc(len);
-        printf(f, a);
-        a = malloc(len);
-        printf(f, a);
+        printf("expected %p to be = %p\n", a, a_i);
+        char* f = "  next alloc is %p\n";
+        printf(f, malloc(len));
+        printf(f, malloc(len));
+        printf(f, malloc(len));
         exit(a);
     }
     *a_i = null;
     free(a); a = null;
 
+    a_i = *addrs;
+    printf("ptr @ addrs[0]: %p\n", a_i % 0x1000);
+
     # clean up...
     drop_array(addrs, len);
+
+    a = malloc(len);
+    printf("allocate for reuse: %p\n", a % 0x1000);
+    if a = addrs {
+        printf("Reused oversized %p?!\n", addrs);
+    }
+    if a ! a_i {
+        printf("Expected reuse of %p, not %p\n", a_i, a);
+    }
+    free(a);
 }
 
 fn new_array(int len) {
-    char* f = "{NEW: alloc %i slots\n";
-    printf(f, len);
-    f = "    NEW> %p\n";
+    printf("{NEW: alloc %i slots\n", len);
     int n = len * 0x8;
     void* addrs = malloc(n); # addrs = int[len]
-    n=addrs; n=n%0x1000; printf(f, n);
+    printf("  ARRAY> %p\n", addrs % 0x1000);
     int i = 0;
+    char* f = "    NEW> %p\n";
     while i < len {
         n = i * 0x8;
         int a_i = addrs + n;
@@ -71,18 +77,16 @@ fn new_array(int len) {
         printf(f, n);
         i = i + 1;
     }
-    f = "    NEW complete!\n}";
-    puts(f);
+    puts("    NEW complete!\n}");
     return addrs;
 }
 
 fn drop_array(void* addrs, int len) {
-    char* f = "{DROP: free %i slots at %p\n";
     int n = addrs % 0x1000;
-    printf(f, len, n);
-    f = "    DROP> %p\n";
+    printf("{DROP: free %i slots at %p\n", len, n);
     n = len * 0x8;
     int a_i = addrs + n;
+    char* f = "    DROP> %p\n";
     while a_i > addrs {
         a_i = a_i - 0x8;
         n = *a_i;
@@ -97,8 +101,6 @@ fn drop_array(void* addrs, int len) {
         }
     }
     free(addrs);
-    n = addrs % 0x1000;
-    printf(f, n);
-    f = "    DROP complete!\n}";
-    puts(f);
+    printf("   ARRAY> %p\n", addrs % 0x1000);
+    puts("    DROP complete!\n}");
 }

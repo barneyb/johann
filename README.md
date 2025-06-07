@@ -159,16 +159,16 @@ Johann provides no debugging support, but you might be able to use various third
 
 ## Dynamic Memory Allocation
 
-The allocator only uses anonymously `mmap`ed pages, which are acquired on-demand. Currently, they are never `unmmap`ed. Each `malloc` call will return a suitable memory chunk. Chunks passed back to `free` are marked for recycling. Recycling is always preferred to requesting more space from the OS. Recycled chunks are neither coalesced nor re-chunked more finely. `malloc` only looks for "big enough", not "reasonably sized," so an allocation request may recycle a wildly oversize chunk, "wasting" the overage. This also means overflow errors are less predictable than one might hope.
+The allocator only uses anonymously `mmap`ed pages, which are acquired on-demand, and never `unmmap`ed. Allocations passed back to `free` are marked for recycling in a best-fit fashion, and are neither coalesced nor re-chunked more finely. Recycling is always preferred to requesting more space from the OS.
 
-When a program exits (without panicking), the count of `malloc` and `free` calls over the life of the execution is compared, as are the total bytes allocated and freed. If they don't match, a warning is printed to both STDOUT and STDERR with the details. Here's one which leaked pretty dramatically, almost 50% of its allocations:
+When a program exits (without panicking), the count of `malloc` and `free` calls over the life of the execution is compared, as are the total bytes allocated and free-d. If they don't match, a warning is printed to both STDOUT and STDERR with the details. An example which leaked pretty dramatically, almost 50% of its allocations:
 
     ; MEM: 2990 allocs (0x1dd10 bytes)
     ;      1561 frees  (0xf050 bytes)
     ;      1876 chunks (0x12dc0 bytes)
     ;      6 mmaps  (6 pages)
 
-Certain double-free errors cause a `98` panic, but only a minority of them. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
+A small subset of double-free errors cause a `98` panic, but most do not. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
 
 ## Standard Library
 

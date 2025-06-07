@@ -1,7 +1,7 @@
 
 TEST reuse:
 {NEW: alloc 8 slots
-    NEW> 0x000000008
+  ARRAY> 0x000000008
     NEW> 0x000000050
     NEW> 0x000000068
     NEW> 0x000000080
@@ -12,12 +12,13 @@ TEST reuse:
     NEW> 0x0000000f8
     NEW complete!
 }
-  pointer of interest: 0x000000008
-  pointer of interest: 0x000000110
-  pointer of interest: 0x000000028
-  pointer of interest: 0x0000000b0
-  pointer of interest: 0x0000000b0
-  pointer of interest: 0x0000000b0
+start of array: 0x000000008
+new alloc: 0x000000110
+addrs[4]: 0x000000028
+ptr @ addrs[4]: 0x0000000b0
+free-d addrs[4]: 0x0000000b0
+allocate for reuse: 0x0000000b0
+ptr @ addrs[0]: 0x000000050
 {DROP: free 8 slots at 0x000000008
     DROP> 0x0000000f8
     DROP> 0x0000000e0
@@ -27,7 +28,8 @@ TEST reuse:
     DROP> 0x000000080
     DROP> 0x000000068
     DROP> 0x000000050
-    DROP> 0x000000008
+   ARRAY> 0x000000008
     DROP complete!
 }
+allocate for reuse: 0x000000050
 /reuse

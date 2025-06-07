@@ -49,7 +49,6 @@ pub fn mem_stats__() {
 # Free the allocation pointed to by the passed pointer, previously returned from
 # `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
-    char* f;
     if mem = null {
         return null;
     }
@@ -61,15 +60,10 @@ pub fn free(void* mem) {
 #        printf(f, bytes, mem);
 
     if bytes = 0 {
-        f = "Zero-byte free at %p. First quadword of chunk: %x\n";
-        a = *mem;
-        eprintf(f, mem, a);
-        f = "  Last quadword of prev chunk: %x\n";
+        eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
         a = mem - 0x10; # go back to last quadword of prev chunk
-        a = *a;
-        eprintf(f, a);
-        a = 88;
-        exit(a);
+        eprintf("  Last quadword of prev chunk: %x\n", *a);
+        exit(88);
     }
 
     STAT_FREE_COUNT = STAT_FREE_COUNT + 1;
@@ -79,17 +73,19 @@ pub fn free(void* mem) {
     # first quad is "prev" pointer
     # second quad is "next" pointer
 
-    void prev = FREE_LIST; # pointer -> a chunk
-    void next = null; # last chunk always has a null next
-    while prev ! null {
-        if mem = prev {
+    void next = FREE_LIST;
+    void prev = null;
+    while next ! null {
+        if mem = next {
             # already in the free list?!
-            a = 98;
-            exit(a);
+            exit(98);
         }
-        if mem < prev {
-            next = prev;
-            prev = *prev;
+        int bs = next - 0x8;        # -> len
+        bs = *bs;
+        if bs < bytes {
+            prev = next;
+            next = next + 0x8;      # -> next
+            next = *next;
             again;
         }
         done;
@@ -116,22 +112,19 @@ pub fn free(void* mem) {
 }
 
 fn print_free_list() {
-    char* f = "[FREE LIST: %p\n";
     void curr = FREE_LIST;
-    printf(f, curr);
+    printf("[FREE LIST: %p\n", curr);
     while curr ! null {
-        f = "  -> %x bytes at %p < %p : %p >\n";
         curr = curr - 0x8;
         int bytes = *curr;
         curr = curr + 0x10;
         void* next = *curr;
         curr = curr - 0x8;
         void* prev = *curr;
-        printf(f, bytes, curr, prev, next);
+        printf("  -> %x bytes at %p < %p : %p >\n", bytes, curr, prev, next);
         curr = next;
     }
-    f = "]";
-    puts(f);
+    puts("]");
 }
 
 fn find_free_chunk(int bytes) {
