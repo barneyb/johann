@@ -41,6 +41,12 @@ pub fn Token_type(void* token) {
     return *token;
 }
 
+pub fn Token_into_type(void* token) {
+    void v = *token;
+    Token_drop(token);
+    return v;
+}
+
 pub fn Token_set_type(void* token, int type) {
     *token = type;
 }
@@ -65,6 +71,13 @@ pub fn Token_set_coords(void* token, int line_num, int char_offset) {
 pub fn Token_value(void* token) {
     token = token + 0x18;           # -> value
     return *token;
+}
+
+pub fn Token_into_value(void* token) {
+    void v = token + 0x18;           # -> value
+    v = *v;
+    free(token); # not Token_drop, as the value needs to live on
+    return v;
 }
 
 pub fn Token_set_value(void* token, void value) {

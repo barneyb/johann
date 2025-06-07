@@ -6,9 +6,11 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
+	$(OUT)/a_syntactic_menagerie.s \
 	collatz \
 	constants \
 	control_flow \
+	function_pointers \
 	literals \
 	not_quite_lisp \
 	print_one \
@@ -17,7 +19,6 @@ all: \
 	strings \
 	sum \
 	zero \
-	function_pointers \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )

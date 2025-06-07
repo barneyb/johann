@@ -34,15 +34,35 @@ int T_STRING;
 
 char* JNC_SHORT_VERSION;
 
-bool IS_PUB = false; # this is just ridiculous
+int AST_ADDR_OP;
+int AST_AGAIN;
+int AST_ASSIGN;
+int AST_BINARY;
+int AST_BOOL;
+int AST_CALL;
+int AST_CHAR;
+int AST_DONE;
+int AST_EVAL;
+int AST_FN;
+int AST_ID;
+int AST_IF;
+int AST_INT;
+int AST_NAMETYPE;
+int AST_RETURN;
+int AST_STRING;
+int AST_UNARY;
+int AST_VAR;
+int AST_WHILE;
 
-char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
+pub bool IS_PUB = false; # this is just ridiculous
+
+pub char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
 char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
-char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
+pub char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
-char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): too many call params (%x) at line %i, char %i\n";
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
+pub char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, char %i\n";
 char* ERR_UNKNOWN_SYMBOL    = "ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
 char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, char %i\n";
 char* ERR_BAD_STMT          = "ERROR(%i): Bad statement %x at line %i, char %i\n";
@@ -94,8 +114,9 @@ char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr 
 char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
 
-char* TMPL_STASH                = "        str     x0, [sp, -0x10]!\n";
-char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10\n";
+char* TMPL_STASH                = "        str     x0, [sp, -0x10]! ; stash!\n";
+char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10 ; unstash!\n";
+char* TMPL_UNSTASH_Xi           = "        ldr     x%i, [sp], 0x10 ; targeted unstash!\n";
 
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
 char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
@@ -258,52 +279,9 @@ fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool
     jnc_panic(name, t, depth);
 }
 
-pub fn Emitter_emit(void* self, void* buffer) {
-    void* token = *buffer;          # first token
-    int type = Token_type(token);
-    IS_PUB = type = T_KW_PUB;
-    if IS_PUB {
-        buffer = buffer + 0x8;      # skip it
-        token = *buffer;            # new first token
-        type = Token_type(token);
-    }
-
-    if type = T_SEMI { return; }
-    if type = T_KW_FN { return Emitter_do_fn(self, buffer); }
-    if type = T_KW_INT { return Emitter_do_decl(self, buffer); }
-    if type = T_KW_CHAR { return Emitter_do_decl(self, buffer); }
-    if type = T_KW_BOOL { return Emitter_do_decl(self, buffer); }
-    if type = T_KW_VOID { return Emitter_do_decl(self, buffer); }
-    if type = T_KW_WHILE { return Emitter_do_while(self, buffer); }
-    if type = T_KW_AGAIN { return Emitter_do_again(self, buffer); }
-    if type = T_KW_DONE { return Emitter_do_done(self, buffer); }
-    if type = T_KW_IF { return Emitter_do_if(self, buffer); }
-    if type = T_KW_RETURN { return Emitter_do_return(self, buffer); }
-    if type = T_CBRACE { return Emitter_do_close_block(self, buffer); }
-    if type = T_STAR { return Emitter_do_assign_pointer(self, buffer); }
-
-    # now the second token...
-    token = buffer + 0x8;
-    token = *token;
-    type = Token_type(token);
-
-    if type = T_ASSIGN { return Emitter_do_assign(self, buffer); }
-    if type = T_OPAREN { return Emitter_do_call(self, buffer); }
-
-    char* err = ERR_BAD_STMT;
-    token = *buffer;
-    type = 27;
-    jnc_panic(err, token, type);
-}
-
-fn Emitter_vardecl(void* self, void* buffer) {
-    void* token = decl_id_token(buffer);
-    char* name = Token_value(token);
-    void* symbols = decl_symbols(self, token);
-    # now the type info
-    int nptr = decl_num_pointers(buffer);
-    token = *buffer;
-    int type = Token_type(token);
+pub fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
+    char* name = Token_value(nameT);
+    void* symbols = decl_symbols(self, nameT);
     void* symbol = Symbol__new(type, nptr);
     # reuse type for offset, because "8 vars"
     type = Emitter_is_global(self);
@@ -351,73 +329,34 @@ fn decl_symbols(void* self, void* id_token) {
     return symbols;
 }
 
-fn decl_num_pointers(void* buffer) {
-    int nptr = 0;
-    while true {
-        buffer = buffer + 0x8;
-        void token = *buffer;
-        int type = Token_type(token);
-        if type ! T_STAR {
-            return nptr;
-        }
-        nptr = nptr + 1;
-    }
-}
-
-fn decl_id_token(void* buffer) {
-    while true {
-        buffer = buffer + 0x8;
-        void token = *buffer;
-        int type = Token_type(token);
-        if type = T_ID {
-            return token;
-        }
-    }
-}
-
-fn Emitter_do_decl(void* self, void* buffer) {
-    void* symbol = Emitter_vardecl(self, buffer);
-
-    # scan until ASSIGN or SEMI to indicate end of declaration.
-    void* buf_i = buffer + 0x8; # first token is type
-    void* token;
-    int type;
-    while true {
-        buf_i = buf_i + 0x8;
-        token = *buf_i;
-        type = Token_type(token);
-        if type = T_ASSIGN { done; }
-        if type = T_SEMI   { return; }
-    }
-    buf_i = buf_i - 0x8; # go back one (to id)
-
+pub fn Emitter_do_decl(void* self, void* nameT, int type, int nptr, void* expr) {
+    void* symbol = Emitter_vardecl(self, nameT, type, nptr);
+    if expr = null { return; }
     bool global = Emitter_is_global(self);
     if !global {
-        return Emitter_do_assign(self, buf_i);
+        return Emitter_do_assign(self, nameT, expr);
     }
-    token = *buf_i;
-    buf_i = buf_i + 0x10;
-    void* value_token = *buf_i;
-    decl_global(self, token, value_token, symbol);
+    decl_global(self, nameT, expr, symbol);
 }
 
-fn decl_global(void* self, void* id_token, void* value_token, void* symbol) {
-    char* name = Token_value(id_token);
+fn decl_global(void* self, void* nameT, void* expr, void* symbol) {
+    char* name = Token_value(nameT);
     if IS_PUB {
         char* tmpl = TMPL_GLOBAL_PUB;
         printf(tmpl, name);
     }
-    void value = Token_value(value_token);
-    int type = Token_type(value_token);
+    int type = *expr;
     # strings are easy, storage and value must both be strings
-    if type = T_STRING {
-        return decl_global_string(name, value);
+    if type = AST_STRING {
+        expr = expr + 0x8;          # -> value
+        char* value = *expr;
+        return decl_global_string(self, name, value);
     }
     # the rest are messy, as any type of value can initialize any size of storage
-    decl_global_num(symbol, name, type, value);
+    decl_global_num(self, symbol, name, type, expr);
 }
 
-fn decl_global_num(void* symbol, char* name, int val_type, char* value) {
+fn decl_global_num(void* self, void* symbol, char* name, int val_type, void* expr) {
     int var_width = Symbol_width(symbol);
     char* width;
     if var_width = 1 {
@@ -433,51 +372,52 @@ fn decl_global_num(void* symbol, char* name, int val_type, char* value) {
     if val_type ! T_CHAR {
         tmpl = TMPL_GLOBAL_NUM;
     }
-    return printf(tmpl, name, width, value);
+    expr = Emitter_eval_const(self, expr);
+    return printf(tmpl, name, width, expr);
 }
 
-fn decl_global_string(char* name, char* value) {
+fn decl_global_string(void* self, char* name, char* value) {
     char* tmpl = TMPL_GLOBAL_STRING;
     char q = '"';
     return printf(tmpl, name, q, value, q);
 }
 
-fn Emitter_do_fn(void* self, void* buffer) {
-    void* token = buffer + 0x8;     # -> name token
-    token = *token;
-    char* name = Token_value(token);
+pub fn Emitter_do_fn_proto(void* self, void* nameT, void* args) {
+    char* name = Token_value(nameT);
     fn_symbol(self, name);
+}
 
-    if is_fn_prototype(buffer) {
-        return;
-    }
+pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
+    char* name = Token_value(nameT);
+    fn_symbol(self, name);
 
     introduce_fn(self, name);
 
-    void* buf_i = buffer + 0x18;          # -> first arg or close paren
+    if args = null { return; }
     int reg_offset = 0;
     while true {
-        token = *buf_i;
-        int type = Token_type(token);
-        if type = T_CPAREN { return; }
-        # introduce a local variable
-        bool decl = false;
-        if type = T_KW_INT  { decl = true; }
-        if type = T_KW_CHAR { decl = true; }
-        if type = T_KW_BOOL { decl = true; }
-        if type = T_KW_VOID { decl = true; }
-        if decl {
-            Emitter_vardecl(self, buf_i);
-            buf_i = buf_i + 0x8;
-            again;
-        }
-        # read the argument
-        if type = T_ID {
-            read_fn_arg(self, token, reg_offset);
-            reg_offset = reg_offset + 1;
-        }
-        buf_i = buf_i + 0x8;
+        void name_and_type = *args;
+        if name_and_type = null { done; }
+        nameT = name_and_type + 0x8;
+        nameT = *nameT;
+        int type = name_and_type + 0x10;
+        type = *type;
+        int nptr = name_and_type + 0x18;
+        nptr = *nptr;
+        Emitter_vardecl(self, nameT, type, nptr);
+        read_fn_arg(self, nameT, reg_offset);
+        reg_offset = reg_offset + 1;
+        args = args + 0x8;
     }
+}
+
+pub fn Emitter_do_fn_outro(void* self, void* nameT) {
+    void* block = Emitter_leave_block(self);
+    int id = Block_id(block);
+    int type = Block_type(block);
+    Block_drop(block);
+    char* tmpl = TMPL_FN_OUTRO;
+    printf(tmpl, id);
 }
 
 fn fn_symbol(void* self, char* name) {
@@ -491,18 +431,6 @@ fn fn_symbol(void* self, char* name) {
     if old ! null {
         free(name);
         free(old);
-    }
-}
-
-fn is_fn_prototype(void* buffer) {
-    # if there's a SEMI instead of an OBRACE, it's a prototype
-    void* bi = buffer;
-    while true {
-        void* t = *bi;
-        int type = Token_type(t);
-        if type = T_SEMI   { return  true; }
-        if type = T_OBRACE { return false; }
-        bi = bi + 0x8;
     }
 }
 
@@ -540,7 +468,7 @@ fn introduce_main(char* name, bool is_pub) {
     printf(tmpl);
 }
 
-fn Emitter_do_close_block(void* self, void* buffer) {
+pub fn Emitter_do_close_block(void* self) {
     void* block = Emitter_leave_block(self);
     int id = Block_id(block);
     int type = Block_type(block);
@@ -560,70 +488,57 @@ fn Emitter_do_close_block(void* self, void* buffer) {
     }
 }
 
-fn Emitter_do_return(void* self, void** buffer) {
+pub fn Emitter_do_return(void* self, void* token) {
     int kw = T_KW_FN;
-    void* token = *buffer;
     void* block = Emitter_innermost_block_of(self, kw, token);
     int id = Block_id(block);
-    token = buffer + 8;
-    token = *token;
-    kw = T_SEMI;
-    int type = Token_type(token);
-    if type ! kw {
-        buffer = buffer + 8;
-        Emitter_expr(self, buffer);
-    }
     char* tmpl = TMPL_RETURN;
     printf(tmpl, id);
 }
 
-fn Emitter_do_if(void* self, void* buffer) {
+pub fn Emitter_do_if(void* self, void* cond) {
+    int type = T_KW_IF;
     char* prelude = null;
     char* intro = TMPL_IF_INTRO;
-    do_conditional(self, buffer, prelude, intro);
+    do_conditional(self, type, prelude, intro, cond);
 }
 
-fn Emitter_do_while(void* self, void* buffer) {
+pub fn Emitter_do_while(void* self, void* cond) {
+    int type = T_KW_WHILE;
     char* prelude = TMPL_WHILE_PRELUDE;
     char* intro = TMPL_WHILE_INTRO;
-    do_conditional(self, buffer, prelude, intro);
+    do_conditional(self, type, prelude, intro, cond);
 }
 
-fn do_conditional(void* self, void* buffer, char* prelude, char* intro) {
-    void* token = *buffer; # keyword
-    buffer = buffer + 0x8; # conditional expression
-    char* type = Token_type(token);
-    void* block = Emitter_enter_block(self, type, token);
+fn do_conditional(void* self, int type, char* prelude, char* intro, void* cond) {
+    void* block = Emitter_enter_block(self, type);
     int id = Block_id(block);
     if prelude ! null { printf(prelude, id); }
-    Emitter_expr(self, buffer);
+    Emitter_eval_expr(self, cond);
     if intro ! null { printf(intro, id); }
 }
 
-fn Emitter_do_again(void* self, void* buffer) {
+pub fn Emitter_do_again(void* self, void* token) {
     char* tmpl = TMPL_WHILE_AGAIN;
-    loop_control_flow(self, buffer, tmpl);
+    loop_control_flow(self, token, tmpl);
 }
 
-fn Emitter_do_done(void* self, void* buffer) {
+pub fn Emitter_do_done(void* self, void* token) {
     char* tmpl = TMPL_WHILE_DONE;
-    loop_control_flow(self, buffer, tmpl);
+    loop_control_flow(self, token, tmpl);
 }
 
-fn loop_control_flow(void* self, void* buffer, char* tmpl) {
-    void* token = *buffer;
+fn loop_control_flow(void* self, void* token, char* tmpl) {
     char* kw = T_KW_WHILE;
     void* block = Emitter_innermost_block_of(self, kw, token);
     int id = Block_id(block);
     printf(tmpl, id);
 }
 
-fn Emitter_do_assign(void* self, void* buffer) {
-    void* token = *buffer; # LHS
-    buffer = buffer + 0x10; # RHS
-    Emitter_expr(self, buffer);
+pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
+    Emitter_eval_expr(self, expr);
 
-    void* symbol = Emitter_lookup_symbol_for(self, token);
+    void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
     char* tmpl;
     if offset > 0 {
@@ -633,7 +548,7 @@ fn Emitter_do_assign(void* self, void* buffer) {
         return printf(tmpl, offset);
     }
     # global
-    char* name = Token_value(token);
+    char* name = Token_value(nameT);
     int width = Symbol_width(symbol);
     if width = 1 {
         tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
@@ -644,14 +559,11 @@ fn Emitter_do_assign(void* self, void* buffer) {
     printf(tmpl, name, name);
 }
 
-fn Emitter_do_assign_pointer(void* self, void* buffer) {
-    buffer = buffer + 0x8; # name
-    void* token = *buffer;
-    buffer = buffer + 0x10; # RHS
-    Emitter_expr(self, buffer);
+pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
+    Emitter_eval_expr(self, expr);
 
     # compute address
-    void* symbol = Emitter_lookup_symbol_for(self, token);
+    void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
     char* tmpl;
     if offset > 0 {
@@ -663,7 +575,7 @@ fn Emitter_do_assign_pointer(void* self, void* buffer) {
     if offset < 1 {
         # global
         tmpl = TMPL_GET_ADDR_GLOBAL;
-        char* name = Token_value(token);
+        char* name = Token_value(nameT);
         printf(tmpl, name, name);
     }
 
@@ -680,191 +592,203 @@ fn Emitter_do_assign_pointer(void* self, void* buffer) {
     printf(tmpl);
 }
 
-fn Emitter_expr(void* self, void* buffer) {
-    # start with the second token
-    void* token = buffer + 0x8;
-    token = *token;
-    int type = Token_type(token);
+pub fn Emitter_eval_const(void* self, void* expr) {
+    int t = *expr;
+    int v = expr + 0x8;             # -> val
+    v = *v;
+    if t = AST_BOOL { return v; }
+    if t = AST_CHAR { return v; }
+    if t = AST_INT { return v; }
 
-    if type = T_SEMI {
-        # copy/assignment
-        token = *buffer;
-        return Emitter_do_token(self, token);
-    }
-    if type = T_OBRACE {
-        # simple conditional (if/while)
-        token = *buffer;
-        return Emitter_do_token(self, token);
-    }
-    if type = T_OPAREN {
-        # function call
-        return Emitter_do_call(self, buffer);
-    }
-    if type = T_BANG    { return Emitter_do_binary_op(self, buffer); }
-    if type = T_EQ      { return Emitter_do_binary_op(self, buffer); }
-    if type = T_GT      { return Emitter_do_binary_op(self, buffer); }
-    if type = T_LT      { return Emitter_do_binary_op(self, buffer); }
-    if type = T_MINUS   { return Emitter_do_binary_op(self, buffer); }
-    if type = T_PERCENT { return Emitter_do_binary_op(self, buffer); }
-    if type = T_PLUS    { return Emitter_do_binary_op(self, buffer); }
-    if type = T_SLASH   { return Emitter_do_binary_op(self, buffer); }
-    if type = T_STAR    { return Emitter_do_binary_op(self, buffer); }
-
-    # now the first token...
-    token = *buffer;
-    type = Token_type(token);
-    if type = T_AMP   { return Emitter_do_unary_op(self, buffer); }
-    if type = T_BANG  { return Emitter_do_unary_op(self, buffer); }
-    if type = T_MINUS { return Emitter_do_unary_op(self, buffer); }
-    if type = T_STAR  { return Emitter_do_unary_op(self, buffer); }
-
-    char* tmpl = ERR_BAD_EXPRESSION;
-    type = 28;
-    jnc_panic(tmpl, token, type);
+    char* f = "Expr type %i isn't constant.\n";
+    printf(f, t);
+    eprintf(f, t);
+    t = 14;
+    panic(t);
 }
 
-fn Emitter_do_call(void* self, void* buffer) {
-    void* token = *buffer; # first token is the name of the function
-    void* symbol = Emitter_try_lookup_symbol_for(self, token);
+pub fn Emitter_eval_expr(void* self, void* expr) {
+    int t = *expr;
+    if t = AST_BOOL { # [AST_BOOL, val, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_integer(self, expr);
+    }
+    if t = AST_CHAR { # [AST_CHAR, val, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_integer(self, expr);
+    }
+    if t = AST_INT { # [AST_INT, val, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_integer(self, expr);
+    }
+    if t = AST_STRING { # [AST_STRING, value, null, null]
+        expr = expr + 0x8;          # -> val
+        expr = *expr;
+        return Emitter_do_value_string(self, expr);
+    }
+    if t = AST_BINARY { # [AST_BINARY, op, left, right]
+        return Emitter_eval_expr_binary(self, expr);
+    }
+    if t = AST_UNARY { # [AST_UNARY, op, operand, null]
+        return Emitter_eval_expr_unary(self, expr);
+    }
+    if t = AST_ADDR_OP { # [AST_ADDR_OP, op, nameT, null]
+        return Emitter_eval_expr_addr(self, expr);
+    }
+    if t = AST_ID { # [AST_ID, nameT, null, null]
+        expr = expr + 0x8;          # -> nameT
+        expr = *expr;
+        return Emitter_do_value_id(self, expr);
+    }
+    if t = AST_CALL { # [AST_CALL, rcvr, args[], null]
+        void* rcvr = expr + 0x8;    # -> rcvr
+        rcvr = *rcvr;
+        void* args = expr + 0x10;   # -> args
+        args = *args;
+        return Emitter_do_call_but_sillier(self, rcvr, args);
+    }
+
+    char* f = "Can't eval expr of type %i\n";
+    printf(f, t);
+    eprintf(f, t);
+    t = 13;
+    panic(t);
+}
+
+# [AST_CALL, rcvr, args[], null]
+fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
+    void* nameT = rcvr + 0x8;       # -> nameT
+    nameT = *nameT;
+    void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
     char* tmpl;
     if symbol ! null {
         # function pointer - do setup first, as it corrupts x0
-        do_address_of(self, token, symbol);
+        do_address_of(self, nameT, symbol);
         int nptr = Symbol_nptr(symbol);
         if nptr > 0 {
-            do_load_addr(self, token, symbol);
+            do_load_addr(self, nameT, symbol);
         }
         tmpl = TMPL_CALL_PTR_INTRO;
         printf(tmpl);
     }
 
-    call_params(self, buffer);
+    call_params_but_sillier(self, args);
 
     if symbol ! null {
         # call the function pointer
         tmpl = TMPL_CALL_PTR;
-        return
-        printf(tmpl);
+        return printf(tmpl);
     }
     # anonymous - hope it's there!
     tmpl = TMPL_CALL;
-    char* name = Token_value(token);
+    char* name = Token_value(nameT);
     printf(tmpl, name);
 }
 
-fn call_params(void* self, void* buffer) {
-    void* buf_i = buffer + 0x10; # buffer[2] is either first arg or close paren
-    void* token;
-    int reg_offset = 0;
-    char* tmpl = TMPL_CALL_PARAM; # not guaranteed to need this, but likely
-    while true {
-        token = *buf_i;
-        buf_i = buf_i + 0x8;
-        int type = Token_type(token);
-        if type = T_CPAREN { done; }
-        if type = T_COMMA { again; }
-        if reg_offset = 8 {
-            too_many_params(token);
-        }
-        if type ! T_ID {
-            # only variable derefs
-            return non_local_param(token);
-        }
-        void* symbol = Emitter_lookup_symbol_for(self, token);
-        type = Symbol_offset(symbol);
-        if type < 1 {
-            # and not globals, only locals
-            return non_local_param(token);
-        }
-        type = type * 0x8;
-        printf(tmpl, reg_offset, type);
-        reg_offset = reg_offset + 1;
+fn call_params_but_sillier(void* self, void* args) {
+    # todo: this is a ridiculous way to do params
+    void* it;
+    char* tmpl = TMPL_STASH;
+    int n = 0;
+    while args ! null {
+        it = *args;
+        if it = null { done; }
+        Emitter_eval_expr(self, it);
+        printf(tmpl);
+        args = args + 0x8;
+        n = n + 1;
+    }
+    tmpl = TMPL_UNSTASH_Xi;
+    while n > 0 {
+        n = n - 1;
+        printf(tmpl, n);
     }
 }
 
-fn non_local_param(void* token) {
-    char* err = ERR_NONLOCAL_PARAM;
-    int status = 25;
-    jnc_panic(err, token, status);
-}
-
-fn too_many_params(void* token) {
-    char* err = ERR_TOO_MANY_PARAMS;
-    int status = 21;
-    jnc_panic(err, token, status);
-}
-
-fn Emitter_do_unary_op(void* self, void* buffer) {
-    # first token is the operator
-    void* token = *buffer;
-    int type = Token_type(token);
-    # second token is the operand
-    token = buffer + 0x8;
-    token = *token;
-
-    char* tmpl;
-    void* symbol = null;
-    if type = T_AMP {
-        symbol = Emitter_lookup_symbol_for(self, token);
-        return do_address_of(self, token, symbol);
-    }
-
-    Emitter_do_token(self, token);
-    if type = T_STAR {
-        symbol = Emitter_lookup_symbol_for(self, token);
-        return do_load_addr(self, token, symbol);
-    }
-    if type = T_BANG {
-        type = Emitter_seqnum(self);
-        tmpl = TMPL_UN_NOT;
-        return printf(tmpl, type, type, type, type);
-    }
-    if type = T_MINUS {
-        tmpl = TMPL_UN_NEGATE;
-        return printf(tmpl);
-    }
-
-    tmpl = ERR_BAD_OPERATOR;
-    token = *buffer; # want to point at the operator, not the operand
-    type = 29;
-    jnc_panic(tmpl, token, type);
-}
-
-fn Emitter_do_binary_op(void* self, void* buffer) {
-    # third token is right operand
-    void* token = buffer + 0x10;
-    token = *token;
-    Emitter_do_token(self, token);
+# [AST_BINARY, op, left, right]
+fn Emitter_eval_expr_binary(void* self, void* expr) {
+    void* e = expr + 0x18;          # -> right
+    e = *e;
+    Emitter_eval_expr(self, e);
     char* tmpl = TMPL_STASH;
     printf(tmpl);
 
-    # first token is the left operand
-    token = *buffer;
-    Emitter_do_token(self, token);
+    e = expr + 0x10;                # -> left
+    e = *e;
+    Emitter_eval_expr(self, e);
 
     # restore the right operand
     tmpl = TMPL_UNSTASH_X1;
     printf(tmpl);
 
-    # second token is operator
-    token = buffer + 0x8;
-    token = *token;
-    int type = Token_type(token);
+    # and the operator
+    int op = expr + 0x8;            # -> op
+    op = *op;
+    if op = T_MINUS   { tmpl = TMPL_BIN_SUB; return printf(tmpl); }
+    if op = T_PLUS    { tmpl = TMPL_BIN_ADD; return printf(tmpl); }
+    if op = T_STAR    { tmpl = TMPL_BIN_MUL; return printf(tmpl); }
+    if op = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
+    if op = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
 
-    if type = T_PLUS    { tmpl = TMPL_BIN_ADD; return printf(tmpl); }
-    if type = T_MINUS   { tmpl = TMPL_BIN_SUB; return printf(tmpl); }
-    if type = T_STAR    { tmpl = TMPL_BIN_MUL; return printf(tmpl); }
-    if type = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
-    if type = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
+    if op = T_EQ   { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
+    if op = T_BANG { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
+    if op = T_LT   { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
+    if op = T_GT   { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
 
-    if type = T_EQ   { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
-    if type = T_BANG { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
-    if type = T_LT   { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
-    if type = T_GT   { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
+    char* f = "Can't eval binary operator %x (%c)\n";
+    printf(f, op, op);
+    eprintf(f, op, op);
+    op = 13;
+    panic(op);
+}
 
-    char* err = ERR_BAD_OPERATOR;
-    int status = 29;
-    jnc_panic(err, token, status);
+# [AST_ADDR_OP, op, nameT, null]
+fn Emitter_eval_expr_addr(void* self, void* expr) {
+    void* nameT = expr + 0x10;      # -> nameT
+    nameT = *nameT;
+    void * symbol = Emitter_lookup_symbol_for(self, nameT);
+
+    int op = expr + 0x8;            # -> op
+    op = *op;
+    if op = T_AMP  { return do_address_of(self, nameT, symbol); }
+    if op = T_STAR {
+        Emitter_do_value_id(self, nameT);
+        return do_load_addr(self, nameT, symbol);
+    }
+
+    char* f = "Can't eval address operator %x (%c)\n";
+    printf(f, op, op);
+    eprintf(f, op, op);
+    op = 13;
+    panic(op);
+}
+
+# [AST_UNARY, op, operand, null]
+fn Emitter_eval_expr_unary(void* self, void* expr) {
+    void* operand = expr + 0x10;    # -> operand
+    operand = *operand;
+
+    Emitter_eval_expr(self, operand);
+
+    int op = expr + 0x8;            # -> op
+    op = *op;
+    char* tmpl;
+    if op = T_BANG {
+        op = Emitter_seqnum(self);
+        tmpl = TMPL_UN_NOT;
+        return printf(tmpl, op, op, op, op);
+    }
+    if op = T_MINUS { tmpl = TMPL_UN_NEGATE; return printf(tmpl); }
+    if op = T_PLUS  { return; } # no code
+
+    char* f = "Can't eval unary operator %x (%c)\n";
+    printf(f, op, op);
+    eprintf(f, op, op);
+    op = 13;
+    panic(op);
 }
 
 fn do_binary_op_logical(void* self, char* comp) {
@@ -873,31 +797,11 @@ fn do_binary_op_logical(void* self, char* comp) {
     printf(tmpl, comp, seq, seq, seq, seq);
 }
 
-fn Emitter_do_token(void* self, void* token) {
-    int type = Token_type(token);
-    if type = T_BOOL { return do_token_num(self, token); }
-    if type = T_CHAR { return do_token_num(self, token); }
-    if type = T_INT  { return do_token_num(self, token); }
-    if type = T_ID   { return Emitter_do_value_id(self, token); }
-    if type = T_STRING {
-        char* value = Token_value(token);
-        return Emitter_do_value_string(self, value);;
-    }
-    char* err = ERR_BAD_TOKEN;
-    int status = 26;
-    jnc_panic(err, token, status);
-}
-
-fn do_token_num(void* self, void* token) {
-    int value = Token_value(token);
-    Emitter_do_value_integer(self, value);
-}
-
-fn Emitter_do_value_string(void* self, char* name) {
+fn Emitter_do_value_string(void* self, char* value) {
     int seq = Emitter_seqnum(self);
     char q = '"';
     char* tmpl = TMPL_VALUE_STRING;
-    printf(tmpl, seq, q, name, q, seq, seq);
+    printf(tmpl, seq, q, value, q, seq, seq);
 }
 
 fn Emitter_do_value_integer(void* self, int i) {

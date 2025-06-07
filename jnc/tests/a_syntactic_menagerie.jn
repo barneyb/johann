@@ -1,0 +1,131 @@
+bool A_BOOL;
+bool ANOTHER_BOOL = true;
+char A_CHAR;
+char ANOTHER_CHAR = 'j';
+int AN_INT;
+int ANOTHER_INT = 42;
+char* A_STRING;
+char* ANOTHER_STRING = "Hello, world!";
+void* A_PTR;
+
+pub bool PUB_A_BOOL;
+pub bool PUB_ANOTHER_BOOL = true;
+pub char PUB_A_CHAR;
+pub char PUB_ANOTHER_CHAR = 'j';
+pub int PUB_AN_INT;
+pub int PUB_ANOTHER_INT = 42;
+pub char* PUB_A_STRING;
+pub char* PUB_ANOTHER_STRING = "Hello, world!";
+pub void* PUB_A_PTR;
+
+fn a_function() {}
+pub fn a_public_function() {}
+fn a_function_prototype();
+
+fn function_params_base(bool b, char c, int i, void v);
+fn function_params_ptr(bool* b, char* c, int* i, void* v);
+fn function_params_anon(bool, char, int);
+fn function_params_anon_ptr(bool*, char*, int*, void*);
+
+fn expr_primary() {
+    AN_INT;
+    '5';
+    5;
+    0x5;
+    0;
+    "spiffy";
+    true;
+    false;
+    (1 + 1) * 5;
+}
+
+fn expr_call() {
+    expr_id();
+    function_params_base(false, 'T', 42);
+}
+
+fn expr_unary(int i, bool b) {
+    i = -i;
+    i = +i;
+    int* ptr = &i;
+    int j = *ptr;
+    b = !b;
+}
+
+fn expr_unary_constant() {
+    bool b = !false;
+    int i = -5;
+    i = +5;
+}
+
+fn expr_binary(int i, bool b) {
+    i + i;
+    i - i;
+    i * i;
+    i / i;
+    i % i;
+    i < i;
+    i > i;
+    i = i;
+    i ! i;
+}
+
+fn expr_binary_constant() {
+    6 + 7;
+    6 - 7;
+    6 * 7;
+    6 / 7;
+    6 % 7;
+    6 < 7;
+    6 > 7;
+    6 = 7;
+    6 ! 7;
+}
+
+fn stmt_vardecl() {
+    bool a_bool;
+    #bool another_bool = true;
+    char a_char;
+    char another_char = 'j';
+    int an_int;
+    int another_int = 42;
+    char* a_string;
+    char* another_string = "Hello, world!";
+}
+
+fn stmt_if() {
+    if 1 { 0; }
+}
+
+fn stmt_while() {
+    int i = 0;
+    while i < 10 { i = i + 1; }
+}
+
+fn stmt_done() {
+    while true { done; }
+}
+
+fn stmt_again() {
+    int i = 3;
+    while i < 7 {
+        i = i + 1;
+        again;
+    }
+}
+
+fn stmt_return() {
+    return 42;
+}
+
+fn stmt_empty() {
+    ;
+}
+
+fn stmt_assign(int i) {
+    i = 42;
+}
+
+fn stmt_eval() {
+    42;
+}

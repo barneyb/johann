@@ -23,7 +23,9 @@ pub fn Symbol__new(int type, int nptr) {
     *s = bytes;
     s = s + 0x8;                    # -> nptr
     *s = nptr;
-    s = s + 0x10;                   # -> type
+    s = s + 0x8;                    # -> offset
+    *s = 0;
+    s = s + 0x8;                    # -> type
     *s = type;
     return s - 0x18;                # -> width
 }

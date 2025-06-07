@@ -30,11 +30,16 @@ pub fn main(int argc, char** argv) {
 
 fn jnc_compile() {
     void* lex = Lexer__new();
-    void* parser = Parser__new(lex);
+    void* emitter = Emitter__new();
 
-    Parser_parse(parser);
+    parse_program(lex, emitter);
+#    void* parser = Parser__new(lex);
+#
+#    Parser_parse(parser);
+#
+#    Parser_drop(parser);
 
-    Parser_drop(parser);
+    Emitter_drop(emitter);
     Lexer_drop(lex);
 }
 
@@ -42,9 +47,9 @@ fn jnc_compile() {
 pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
     int val = *token;
-    token = token + 8;              # -> line
+    token = token + 0x8;            # -> line
     int ln = *token;
-    token = token + 8;              # -> char
+    token = token + 0x8;            # -> char
     int ch = *token;
     # to StdErr
     eprintf(format, status, val, ln, ch);

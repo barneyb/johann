@@ -1,4 +1,4 @@
-pub fn main() -> int {
+pub fn main() {
     int f = zero();
     int e = 0;
     int g = 0;

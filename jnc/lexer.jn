@@ -18,32 +18,35 @@ int T_KW_RETURN;
 int T_KW_VOID;
 int T_KW_WHILE;
 
+int T_LOG_AND;
+int T_LOG_OR;
+
+int T_AMP;
 int T_ASSIGN;
 int T_BANG;
-int T_EQ;
-int T_GT;
-int T_LT;
-int T_MINUS;
-int T_PLUS;
-int T_AMP;
 int T_CBRACE;
 int T_CBRACKET;
 int T_COLON;
 int T_COMMA;
 int T_CPAREN;
 int T_DOT;
+int T_DQUOTE;
+int T_EQ;
+int T_GT;
 int T_HASH;
+int T_LT;
+int T_MINUS;
 int T_OBRACE;
 int T_OBRACKET;
 int T_OPAREN;
 int T_PERCENT;
 int T_PIPE;
+int T_PLUS;
 int T_QUESTION;
 int T_SEMI;
 int T_SLASH;
-int T_STAR;
 int T_SQUOTE;
-int T_DQUOTE;
+int T_STAR;
 
 char* KW_AGAIN  = "again";
 char* KW_BOOL   = "bool";
@@ -62,13 +65,21 @@ char* KW_TRUE   = "true";
 char* KW_VOID   = "void";
 char* KW_WHILE  = "while";
 
+# struct Lexer {
+#   int line;
+#   int col;
+#   Token* next;
+# }
+
 pub fn Lexer__new() {
-    int bytes = 0x10;
+    int bytes = 0x18;
     void* lex = malloc(bytes);
     *lex = 1;
     lex = lex + 0x8;
     *lex = 0;
-    lex = lex - 0x8;
+    lex = lex + 0x8;
+    *lex = null;
+    lex = lex - 0x10;
     return lex;
 }
 
@@ -77,6 +88,23 @@ pub fn Lexer_drop(void* self) {
 }
 
 pub fn Lexer_token(void* self) {
+    void* token = Lexer_peek(self);
+    self = self + 0x10;
+    *self = null;
+    return token;
+}
+
+pub fn Lexer_peek(void* self) {
+    void* next = self + 0x10;
+    void* token = *next;
+    if token = null {
+        token = get_next_token(self);
+        *next = token;
+    }
+    return token;
+}
+
+pub fn get_next_token(void* self) {
     while true {
         if iseof() {
             return null;
@@ -92,30 +120,30 @@ pub fn Lexer_token(void* self) {
             Lexer_lex_comment(self);
             again;
         }
-        if c = T_AMP { return token_punct(self, c); }
-        if c = T_CBRACE { return token_punct(self, c); }
-        if c = T_CBRACKET { return token_punct(self, c); }
-        if c = T_COLON { return token_punct(self, c); }
-        if c = T_COMMA { return token_punct(self, c); }
-        if c = T_CPAREN { return token_punct(self, c); }
-        if c = T_DOT { return token_punct(self, c); }
-        if c = T_OBRACE { return token_punct(self, c); }
-        if c = T_OBRACKET { return token_punct(self, c); }
-        if c = T_OPAREN { return token_punct(self, c); }
-        if c = T_PERCENT { return token_punct(self, c); }
-        if c = T_PIPE { return token_punct(self, c); }
-        if c = T_QUESTION { return token_punct(self, c); }
-        if c = T_SEMI { return token_punct(self, c); }
-        if c = T_SLASH { return token_punct(self, c); }
-        if c = T_STAR { return token_punct(self, c); }
+        if c = T_CBRACE { return new_token(self, c); }
+        if c = T_CBRACKET { return new_token(self, c); }
+        if c = T_COLON { return new_token(self, c); }
+        if c = T_COMMA { return new_token(self, c); }
+        if c = T_CPAREN { return new_token(self, c); }
+        if c = T_DOT { return new_token(self, c); }
+        if c = T_OBRACE { return new_token(self, c); }
+        if c = T_OBRACKET { return new_token(self, c); }
+        if c = T_OPAREN { return new_token(self, c); }
+        if c = T_PERCENT { return new_token(self, c); }
+        if c = T_QUESTION { return new_token(self, c); }
+        if c = T_SEMI { return new_token(self, c); }
+        if c = T_SLASH { return new_token(self, c); }
+        if c = T_STAR { return new_token(self, c); }
         # to-become-ambiguous character tokens are easy as well (for now)
-        if c = T_ASSIGN { return token_punct(self, c); }
-        if c = T_BANG { return token_punct(self, c); }
-        if c = T_GT { return token_punct(self, c); }
-        if c = T_LT { return token_punct(self, c); }
-        if c = T_PLUS { return token_punct(self, c); }
+        if c = T_ASSIGN { return new_token(self, c); }
+        if c = T_BANG { return new_token(self, c); }
+        if c = T_GT { return new_token(self, c); }
+        if c = T_LT { return new_token(self, c); }
+        if c = T_MINUS { return new_token(self, c); }
+        if c = T_PLUS { return new_token(self, c); }
         # ambiguous character tokens...
-        if c = T_MINUS { return token_minus(self, c); }
+        if c = T_AMP { return token_ampersand(self, c); }
+        if c = T_PIPE { return token_pipe(self, c); }
         # multi-character tokens...
         if c > '`' { return token_id_ish(self, c); } # char before 'a'
         if c > '@' { return token_ID_ish(self, c); } # char before 'A'
@@ -137,12 +165,26 @@ fn Lexer_lex_comment(void* self) {
     next_line(self);
 }
 
-fn token_minus(void* self, char c) {
+fn token_ampersand(void* self, char c) {
     char next = peekchar();
-    if isdigit(next) {
-        return token_int(self, c);
+    if next = T_AMP {
+        int t = T_LOG_AND;
+        void * tkn = new_token(self, t);
+        next_char(self); # consume
+        return tkn;
     }
-    return token_punct(self, c);
+    return new_token(self, c);
+}
+
+fn token_pipe(void* self, char c) {
+    char next = peekchar();
+    if next = T_PIPE {
+        int t = T_LOG_OR;
+        void * tkn = new_token(self, t);
+        next_char(self); # consume
+        return tkn;
+    }
+    bad_char(self, c); # solo | is illegal
 }
 
 fn token_id_ish(void* self, char c) {
@@ -193,10 +235,6 @@ fn new_token(void* self, int type) {
     return token;
 }
 
-fn token_punct(void* self, int type) {
-    return new_token(self, type);
-}
-
 fn token_int(void* self, int first_char) {
     int type = T_INT;
     void* token = new_token(self, type);
@@ -233,14 +271,8 @@ fn token_string(void* self, int first_char) {
 }
 
 fn lex_digits(void* self, char first_char) {
-    bool is_negative = false;
     int n;
-    # deal with negatives first
-    if first_char = '-' {
-        is_negative = true;
-        first_char = next_char(self);
-    }
-    int val = 12345;
+    int val;
     if first_char ! '0' {
         # decimal
         val = lex_digits_dec(self, first_char);
@@ -268,15 +300,12 @@ fn lex_digits(void* self, char first_char) {
             val = 0;
         }
     }
-    if is_negative {
-        val = 0 - val;
-    }
     return val;
 }
 
 fn lex_digits_dec(void* self, char first_char) {
     int val = first_char - '0';
-    char c = peekchar();
+    char c = next_potential_digit(self);
     bool d = isdigit(c);
     int n;
     while d {
@@ -284,15 +313,25 @@ fn lex_digits_dec(void* self, char first_char) {
         n = c - '0';
         val = val * 10;
         val = val + n;
-        c = peekchar();
+        c = next_potential_digit(self);
         d = isdigit(c);
     }
     return val;
 }
 
+fn next_potential_digit(void* self) {
+    char c = peekchar();
+    while c = '_' {
+        # allow arbitrary underscores in literals
+        next_char(self);
+        c = peekchar();
+    }
+    return c;
+}
+
 fn lex_digits_hex(void* self, char first_char) {
     int val = parse_hex_digit(first_char);
-    char c = peekchar();
+    char c = next_potential_digit(self);
     bool d = isxdigit(c);
     int n;
     while d {
@@ -300,7 +339,7 @@ fn lex_digits_hex(void* self, char first_char) {
         n = parse_hex_digit(c);
         val = val * 16;
         val = val + n;
-        c = peekchar();
+        c = next_potential_digit(self);
         d = isxdigit(c);
     }
     return val;
