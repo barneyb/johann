@@ -78,7 +78,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
-Operator precedence is as in C-family languages, with the exception that equality operators currently associate right-to-left. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
+Operator precedence is as in C-family languages, with the exception that equality operators currently associate right-to-left. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory. Note that currently `*` can only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width.
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
