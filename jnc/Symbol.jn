@@ -18,8 +18,8 @@ pub fn Symbol__new(int type, int nptr) {
     int bytes = 0x20;
     int s = malloc(bytes);
     bytes = 0x8;
-    if type = T_KW_BOOL { bytes = 0x1; }
-    if type = T_KW_CHAR { bytes = 0x1; }
+    if type == T_KW_BOOL { bytes = 0x1; }
+    if type == T_KW_CHAR { bytes = 0x1; }
     *s = bytes;
     s = s + 0x8;                    # -> nptr
     *s = nptr;

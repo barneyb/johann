@@ -13,13 +13,13 @@ pub fn main(int argc, char** argv) {
         char* arg = *argv;
         i = i + 1;
         bool cmp = strcmp(arg, v);
-        if cmp = 0 {
+        if cmp == 0 {
             v = JNC_SHORT_VERSION;
             puts(v);
             return 0;
         }
         cmp = strcmp(arg, version);
-        if cmp = 0 {
+        if cmp == 0 {
             v = JNC_LONG_VERSION;
             puts(v);
             return 0;

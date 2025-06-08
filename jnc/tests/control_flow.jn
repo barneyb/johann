@@ -3,7 +3,7 @@ pub fn main() {
     int a = 16;
     # todo: use let to make a new var (with the same name)
     a = malloc(a); # space for a pair of ints and/or pointers
-    if a = null {
+    if a == null {
         putchar(g);
         putchar(g);
         return 1;
@@ -15,7 +15,7 @@ pub fn main() {
             again; # run the loop again
             putchar(g);
         }
-        if b > 6 {
+        if b >= 7 {
             done; # loop is done
             putchar(g);
         }

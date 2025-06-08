@@ -6,15 +6,15 @@ pub fn main() {
     int b = 0 - 1;
     while c > b {
         g = g + 1;
-        if c = '(' {
+        if c == '(' {
             f = f + 1;
         }
-        if c = ')' {
+        if c == ')' {
             f = f - 1;
         }
         int d = f + 1;
-        if d = 0 {
-            d = e = 0;
+        if d == 0 {
+            d = e == 0;
             if d {
                 e = g;
             }

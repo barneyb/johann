@@ -10,7 +10,7 @@ pub fn isdigit(char c) {
 
 # is the passed character whitespace?
 pub fn isspace(char c) {
-    if c = ' ' { return  true; }
+    if c == ' ' { return  true; }
     if c < 9   { return false; } # < \t
     if c > 13  { return false; } # > \r
     return true;
@@ -19,11 +19,11 @@ pub fn isspace(char c) {
 # is the passed character a hexidecimal digit?
 pub fn isxdigit(char c) {
     if c < '0' { return false; }
-    if c < ':' { return  true; } # <= 9
+    if c <= '9' { return  true; }
     if c < 'A' { return false; }
-    if c < 'G' { return  true; } # <= F
+    if c <= 'F' { return  true; }
     if c < 'a' { return false; }
-    if c < 'g' { return  true; } # <= f
+    if c <= 'f' { return  true; }
     return false;
 }
 
@@ -76,8 +76,8 @@ pub fn strclone(char* src) {
 pub fn strcmp(char* lhs, char* rhs) {
     char l = *lhs;
     char r = *rhs;
-    while l = r {
-        if l = null { done; }
+    while l == r {
+        if l == null { done; }
         lhs = lhs + 1;
         rhs = rhs + 1;
         l = *lhs;
@@ -91,7 +91,7 @@ pub fn strcmp(char* lhs, char* rhs) {
 pub fn strlen(char* str) {
     char* end = str;
     char c = *end;
-    while c ! null {
+    while c != null {
         end = end + 1;
         c = *end;
     }

@@ -105,26 +105,26 @@ fn node_a_b_c(int type, void value, void left, void right) {
 }
 
 fn drop_node(void* node) {
-    if node = null { return; }
+    if node == null { return; }
     int type = *node;
     void* it;
 
-    if type = AST_BOOL {
+    if type == AST_BOOL {
         return free(node);
     }
-    if type = AST_CHAR {
+    if type == AST_CHAR {
         return free(node);
     }
-    if type = AST_INT {
+    if type == AST_INT {
         return free(node);
     }
-    if type = AST_STRING {
+    if type == AST_STRING {
         it = node + 0x8;            # -> value
         it = *it;
         free(it);
         return free(node);
     }
-    if type = AST_BINARY {
+    if type == AST_BINARY {
         it = node + 0x10;           # -> left
         it = *it;
         drop_node(it);
@@ -133,13 +133,13 @@ fn drop_node(void* node) {
         drop_node(it);
         return free(node);
     }
-    if type = AST_UNARY {
+    if type == AST_UNARY {
         it = node + 0x10;           # -> operand
         it = *it;
         drop_node(it);
         return free(node);
     }
-    if type = AST_FN {
+    if type == AST_FN {
         it = node + 0x8;            # -> name_token
         it = *it;
         Token_drop(it);
@@ -151,25 +151,25 @@ fn drop_node(void* node) {
         drop_node_array(it);
         return free(node);
     }
-    if type = AST_NAMETYPE {
+    if type == AST_NAMETYPE {
         it = node + 0x8;            # -> name_token
         it = *it;
-        if it ! null { Token_drop(it); }
+        if it != null { Token_drop(it); }
         return free(node);
     }
-    if type = AST_RETURN {
+    if type == AST_RETURN {
         it = node + 0x8;            # -> expr
         it = *it;
         drop_node(it);
         return free(node);
     }
-    if type = AST_EVAL {
+    if type == AST_EVAL {
         it = node + 0x8;            # -> expr
         it = *it;
         drop_node(it);
         return free(node);
     }
-    if type = AST_VAR {
+    if type == AST_VAR {
         it = node + 0x8;            # -> name_and_type
         it = *it;
         drop_node(it);
@@ -178,13 +178,13 @@ fn drop_node(void* node) {
         drop_node(it);
         return free(node);
     }
-    if type = AST_ID {
+    if type == AST_ID {
         it = node + 0x8;            # -> nameT
         it = *it;
         Token_drop(it);
         return free(node);
     }
-    if type = AST_CALL {
+    if type == AST_CALL {
         it = node + 0x8;            # -> rcvr
         it = *it;
         drop_node(it);
@@ -193,7 +193,7 @@ fn drop_node(void* node) {
         drop_node_array(it);
         return free(node);
     }
-    if type = AST_ASSIGN {
+    if type == AST_ASSIGN {
         it = node + 0x8;            # -> lhs
         it = *it;
         drop_node(it);
@@ -202,7 +202,7 @@ fn drop_node(void* node) {
         drop_node(it);
         return free(node);
     }
-    if type = AST_IF {
+    if type == AST_IF {
         it = node + 0x8;           # -> condition
         it = *it;
         drop_node(it);
@@ -211,7 +211,7 @@ fn drop_node(void* node) {
         drop_node_array(it);
         return free(node);
     }
-    if type = AST_WHILE {
+    if type == AST_WHILE {
         it = node + 0x8;           # -> condition
         it = *it;
         drop_node(it);
@@ -220,13 +220,13 @@ fn drop_node(void* node) {
         drop_node_array(it);
         return free(node);
     }
-    if type = AST_DONE {
+    if type == AST_DONE {
         return free(node);
     }
-    if type = AST_AGAIN {
+    if type == AST_AGAIN {
         return free(node);
     }
-    if type = AST_ADDR_OP {
+    if type == AST_ADDR_OP {
         it = node + 0x10;           # -> nameT
         it = *it;
         Token_drop(it);
@@ -240,11 +240,11 @@ fn drop_node(void* node) {
 }
 
 fn drop_node_array(void* nodes) {
-    if nodes = null { return; }
+    if nodes == null { return; }
     void* n = nodes;
     while true {
         void it = *n;
-        if it = null { done; }
+        if it == null { done; }
         drop_node(it);
         n = n + 0x8;
     }
@@ -252,10 +252,10 @@ fn drop_node_array(void* nodes) {
 }
 
 fn is_type_kw(int t) {
-    if t = T_KW_BOOL { return true; }
-    if t = T_KW_CHAR { return true; }
-    if t = T_KW_INT  { return true; }
-    if t = T_KW_VOID { return true; }
+    if t == T_KW_BOOL { return true; }
+    if t == T_KW_CHAR { return true; }
+    if t == T_KW_INT  { return true; }
+    if t == T_KW_VOID { return true; }
     return false;
 }
 
@@ -264,7 +264,7 @@ pub fn print_token(void* t) {
     int ln = Token_line(t);
     int ch = Token_char(t);
     char* f;
-    if type > 0x7f {
+    if type >= 0x80 {
         f = "; %i/%c %i,%i";
         int i = type / 256;
         printf(f, i, type, ln, ch);
@@ -274,16 +274,16 @@ pub fn print_token(void* t) {
         printf(f, type, ln, ch);
     }
     f = null;
-    if type = T_INT { f = ": %i"; }
-    if type = T_ID { f = ": %s"; }
-    if type = T_CHAR { f = ": '%c'"; }
-    if type = T_STRING {
+    if type == T_INT { f = ": %i"; }
+    if type == T_ID { f = ": %s"; }
+    if type == T_CHAR { f = ": '%c'"; }
+    if type == T_STRING {
         printf(": %c%s%c\n", '"', Token_value(t), '"');
         return;
     }
-    if type = T_BOOL { f = ": %b"; }
-    if type > 0x300 { f = ": %s"; }
-    if f ! null {
+    if type == T_BOOL { f = ": %b"; }
+    if type >= 0x300 { f = ": %s"; }
+    if f != null {
         printf(f, Token_value(t));
     }
     putchar(0xa);
@@ -293,10 +293,10 @@ int PEEKED_AT = null;
 int PEEK_COUNT = 0;
 fn peek_token(void* lex) {
     void* token = Lexer_peek(lex);
-    if token = null { return token; }
+    if token == null { return token; }
 #    printf("            ");
 #    print_token(token);
-    if token = PEEKED_AT {
+    if token == PEEKED_AT {
         PEEK_COUNT = PEEK_COUNT + 1;
         if PEEK_COUNT > 50 {
             char* err = "... and not advancing\n";
@@ -304,7 +304,7 @@ fn peek_token(void* lex) {
             jnc_panic(err, token, status);
         }
     }
-    if token ! PEEKED_AT {
+    if token != PEEKED_AT {
         PEEKED_AT = token;
         PEEK_COUNT = 0;
     }
@@ -321,7 +321,7 @@ fn consume_token(void* lex, int type) {
     void* tkn = next_token(lex);
     int t;
     char* err;
-    if tkn = null {
+    if tkn == null {
         err = ERR_MISSING_TOKEN;
         t = 20;
         eprintf(err, t, type);
@@ -333,7 +333,7 @@ fn consume_token(void* lex, int type) {
 }
 
 fn expected_token(void* tkn, int type) {
-    if Token_type(tkn) ! type {
+    if Token_type(tkn) != type {
         Token_set_type(tkn, type);
         jnc_panic(ERR_EXPECTED_TOKEN, tkn, 26);
     }
@@ -347,10 +347,10 @@ pub fn parse_program(void* lex, void* emitter) {
     void* tkn;
     while true {
         tkn = peek_token(lex);
-        if tkn = null { done; }
+        if tkn == null { done; }
         int t = Token_type(tkn);
         IS_PUB = false;
-        if t = T_KW_PUB {
+        if t == T_KW_PUB {
             IS_PUB = true;
             consume_token(lex, t);  # skip it
             tkn = peek_token(lex);  # new "first" token
@@ -358,11 +358,11 @@ pub fn parse_program(void* lex, void* emitter) {
         }
         void* ast = null;
         if is_type_kw(t) { ast = parse_vardecl(lex, emitter); }
-        if t = T_KW_FN { ast = parse_function_declaration(lex, emitter); }
-        if ast = null { done; }
+        if t == T_KW_FN { ast = parse_function_declaration(lex, emitter); }
+        if ast == null { done; }
         drop_node(ast);
     }
-    if tkn ! null {
+    if tkn != null {
         unexpected_token(tkn);
     }
 }
@@ -377,20 +377,20 @@ fn parse_function_declaration(void* lex, void* emitter) {
     void* tkn = peek_token(lex);
     t = Token_type(tkn);
     void args = null;
-    if t ! T_CPAREN {
+    if t != T_CPAREN {
         args = parse_param_list(lex);
     }
     t = T_CPAREN;
     consume_token(lex, t);
     tkn = peek_token(lex);
     t = Token_type(tkn);
-    if t = T_SEMI {
+    if t == T_SEMI {
         consume_token(lex, t);
         Emitter_do_fn_proto(emitter, nameT, args);
         t = AST_FN;
         return node_a_b(t, nameT, args);
     }
-    if t = T_OBRACE {
+    if t == T_OBRACE {
         verify_parameters_are_named(nameT, args);
         Emitter_do_fn_intro(emitter, nameT, args);
         void* block = parse_block(lex, emitter);
@@ -402,14 +402,14 @@ fn parse_function_declaration(void* lex, void* emitter) {
 }
 
 fn verify_parameters_are_named(void* nameT, void* args) {
-    if args = null { return; }
+    if args == null { return; }
     int i = 1;
     while true {
         void name_and_type = *args;
-        if name_and_type = null { done; }
+        if name_and_type == null { done; }
         void* nt = name_and_type + 0x8;
         nt = *nt;
-        if nt = null {
+        if nt == null {
             char* err = "Function %s's parameter %i must be named.\n";
             char* name = Token_value(nameT);
             printf(err, name, i);
@@ -432,7 +432,7 @@ fn parse_param_list(void* lex) {
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
-        if t ! T_COMMA { done; }
+        if t != T_COMMA { done; }
         consume_token(lex, t);
         *curr = parse_name_and_type(lex);
         curr = curr + 0x8;
@@ -450,15 +450,15 @@ fn parse_name_and_type(void* lex) {
     while true {
         tkn = peek_token(lex);
         type = Token_type(tkn);
-        if type ! T_STAR { done; }
+        if type != T_STAR { done; }
         consume_token(lex, type);
         nptr = nptr + 1;
     }
     void* nameT = null;
     tkn = peek_token(lex);
-    if tkn ! null {
+    if tkn != null {
         type = Token_type(tkn);
-        if type = T_ID {
+        if type == T_ID {
             nameT = id_token(lex);
         }
     }
@@ -487,7 +487,7 @@ fn parse_opt_assign(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     void* expr = null;
-    if t = T_ASSIGN {
+    if t == T_ASSIGN {
         consume_token(lex, t);
         expr = parse_expr(lex);
     }
@@ -507,14 +507,14 @@ fn parse_block(void* lex, void* emitter) {
     while true {
         tkn = peek_token(lex);
         t = Token_type(tkn);
-        if t = T_CBRACE {
+        if t == T_CBRACE {
             consume_token(lex, t);
             done;
         }
         void* stmt = parse_statement(lex, emitter);
-        if stmt ! null {
+        if stmt != null {
             i = i + 1;
-            if i = 150 {
+            if i == 150 {
                 panic(63, "too many statements", 19);
             }
             *curr = stmt;
@@ -535,12 +535,12 @@ fn parse_statement(void* lex, void* emitter) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     if is_type_kw(t) { return parse_vardecl(lex, emitter); }
-    if t = T_KW_IF { return parse_if(lex, emitter); }
-    if t = T_KW_WHILE { return parse_while(lex, emitter); }
-    if t = T_KW_DONE { return parse_done(lex, emitter); }
-    if t = T_KW_AGAIN { return parse_again(lex, emitter); }
-    if t = T_KW_RETURN { return parse_return(lex, emitter); }
-    if t = T_SEMI {
+    if t == T_KW_IF { return parse_if(lex, emitter); }
+    if t == T_KW_WHILE { return parse_while(lex, emitter); }
+    if t == T_KW_DONE { return parse_done(lex, emitter); }
+    if t == T_KW_AGAIN { return parse_again(lex, emitter); }
+    if t == T_KW_RETURN { return parse_return(lex, emitter); }
+    if t == T_SEMI {
         # silly, but legal
         consume_token(lex, t);
         return null;
@@ -604,7 +604,7 @@ fn parse_return(void* lex, void* emitter) {
     void* expr = null;
     void* tkn = peek_token(lex);
     t = Token_type(tkn);
-    if t ! T_SEMI {
+    if t != T_SEMI {
         expr = parse_expr(lex, emitter);
         Emitter_eval_expr(emitter, expr);
     }
@@ -621,19 +621,19 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
     int line = Token_line(peek_token(lex));
     void* expr = parse_expr(lex);
     void* rhs = null;
-    if Token_type(peek_token(lex)) = T_ASSIGN {
+    if Token_type(peek_token(lex)) == T_ASSIGN {
         next_token(lex); # consume, type-unsafe, because "eight vars"
         rhs = parse_expr(lex);
     }
 
     # if expr is an AST_BINARY w/ op=T_EQ, reparse as AST_ASSIGN
     int t;
-    if rhs = null {
+    if rhs == null {
         t = *expr;
-        if t = AST_BINARY {
+        if t == AST_BINARY {
             t = expr + 0x8;         # -> op
             t = *t;
-            if t = T_EQ {
+            if t == T_EQ {
                 t = expr + 0x18;    # -> right
                 rhs = *t;
                 *t = null;
@@ -647,7 +647,7 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
     }
 
     # bare evaluation?
-    if rhs = null {
+    if rhs == null {
         Emitter_eval_expr(emitter, expr);
         return node_a_b(AST_EVAL, expr);
     }
@@ -655,17 +655,17 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
     # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
     t = *expr;
     void* nameT;
-    if t = AST_ID {
+    if t == AST_ID {
         t = expr + 0x8;             # -> name
         nameT = *t;
         Emitter_do_assign(emitter, nameT, rhs);
         t = AST_ASSIGN;
         return node_a_b(t, expr, rhs);
     }
-    if t = AST_ADDR_OP {
+    if t == AST_ADDR_OP {
         t = expr + 0x8;             # -> op
         t = *t;
-        if t = T_STAR {
+        if t == T_STAR {
             t = expr + 0x10;        # -> name
             nameT = *t;
             Emitter_do_assign_pointer(emitter, nameT, rhs);
@@ -701,9 +701,9 @@ fn parse_expr_logic_or(void* lex) {
     void* expr = parse_expr_logic_and(lex);
 #    while true {
 #        void* tkn = peek_token(lex);
-#        if tkn = null { done; }
+#        if tkn == null { done; }
 #        int t = Token_type(tkn);
-#        if t = T_LOG_OR {
+#        if t == T_LOG_OR {
 #            consume_token(lex, t);
 #            void* right = parse_expr_logic_and(lex);
 #            expr = join_bin_op(lex, t, expr, right);
@@ -735,21 +735,21 @@ fn parse_expr_eq(void* lex) {
     void* right;
     while true {
         void* tkn = peek_token(lex);
-        if tkn = null { done; }
+        if tkn == null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_NEQ  { doit = true; }
-        if t = T_EQ   { doit = true; }
+        if t == T_NEQ  { doit = true; }
+        if t == T_EQ   { doit = true; }
         # TODO: these are deprecated
-        if t = T_BANG   { doit = true; }
-        if t = T_ASSIGN { doit = true; }
+        if t == T_BANG   { doit = true; }
+        if t == T_ASSIGN { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         # TODO: this associates left (to deal with rewriting ASSIGN -> EQ)
         right = parse_expr_eq(lex);
         # TODO: morph to non-deprecated equivalent
-        if t = T_BANG   { t = T_NEQ; }
-        if t = T_ASSIGN { t = T_EQ; }
+        if t == T_BANG   { t = T_NEQ; }
+        if t == T_ASSIGN { t = T_EQ; }
         expr = join_bin_op(lex, t, expr, right);
     }
     return expr;
@@ -760,13 +760,13 @@ fn parse_expr_rel(void* lex) {
     void* right;
     while true {
         void* tkn = peek_token(lex);
-        if tkn = null { done; }
+        if tkn == null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_GT  { doit = true; }
-        if t = T_LT  { doit = true; }
-        if t = T_GTE { doit = true; }
-        if t = T_LTE { doit = true; }
+        if t == T_GT  { doit = true; }
+        if t == T_LT  { doit = true; }
+        if t == T_GTE { doit = true; }
+        if t == T_LTE { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         right = parse_expr_shift(lex);
@@ -784,11 +784,11 @@ fn parse_expr_add(void* lex) {
     void* right;
     while true {
         void* tkn = peek_token(lex);
-        if tkn = null { done; }
+        if tkn == null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_MINUS { doit = true; }
-        if t = T_PLUS  { doit = true; }
+        if t == T_MINUS { doit = true; }
+        if t == T_PLUS  { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         right = parse_expr_mult(lex);
@@ -802,12 +802,12 @@ fn parse_expr_mult(void* lex) {
     void* right;
     while true {
         void* tkn = peek_token(lex);
-        if tkn = null { done; }
+        if tkn == null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_PERCENT { doit = true; }
-        if t = T_SLASH   { doit = true; }
-        if t = T_STAR    { doit = true; }
+        if t == T_PERCENT { doit = true; }
+        if t == T_SLASH   { doit = true; }
+        if t == T_STAR    { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         right = parse_expr_cast(lex);
@@ -835,17 +835,17 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         drop_node(right);
         right = ttr;
         bool did_it = false;
-        if op = T_EQ      { ttr = left = right; did_it = true; }
-        if op = T_NEQ     { ttr = left ! right; did_it = true; }
-        if op = T_GT      { ttr = left > right; did_it = true; }
-        if op = T_LT      { ttr = left < right; did_it = true; }
-        if op = T_GTE     { ttr = left > right; if left = right { ttr = true; } did_it = true; }
-        if op = T_LTE     { ttr = left < right; if left = right { ttr = true; } did_it = true; }
-        if op = T_PLUS    { ttr = left + right; did_it = true; }
-        if op = T_MINUS   { ttr = left - right; did_it = true; }
-        if op = T_STAR    { ttr = left * right; did_it = true; }
-        if op = T_SLASH   { ttr = left / right; did_it = true; }
-        if op = T_PERCENT { ttr = left % right; did_it = true; }
+        if op == T_EQ      { ttr = left = right; did_it = true; }
+        if op == T_NEQ     { ttr = left ! right; did_it = true; }
+        if op == T_GT      { ttr = left > right; did_it = true; }
+        if op == T_LT      { ttr = left < right; did_it = true; }
+        if op == T_GTE     { ttr = left > right; if left == right { ttr = true; } did_it = true; }
+        if op == T_LTE     { ttr = left < right; if left == right { ttr = true; } did_it = true; }
+        if op == T_PLUS    { ttr = left + right; did_it = true; }
+        if op == T_MINUS   { ttr = left - right; did_it = true; }
+        if op == T_STAR    { ttr = left * right; did_it = true; }
+        if op == T_SLASH   { ttr = left / right; did_it = true; }
+        if op == T_PERCENT { ttr = left % right; did_it = true; }
         if did_it {
             return node_a(ttl, ttr);
         }
@@ -867,13 +867,13 @@ fn parse_expr_cast(void* lex) {
 # [AST_ADDR_OP, op, nameT, null]
 fn parse_expr_unary(void* lex) {
     void* tkn = peek_token(lex);
-    if tkn ! null {
+    if tkn != null {
         int op = Token_type(tkn);
-        if op = T_AMP   { return un_addr_op(lex, op); }
-        if op = T_STAR  { return un_addr_op(lex, op); }
-        if op = T_BANG  { return join_un_op_rtl(lex, op); }
-        if op = T_MINUS { return join_un_op_rtl(lex, op); }
-        if op = T_PLUS  { return join_un_op_rtl(lex, op); }
+        if op == T_AMP   { return un_addr_op(lex, op); }
+        if op == T_STAR  { return un_addr_op(lex, op); }
+        if op == T_BANG  { return join_un_op_rtl(lex, op); }
+        if op == T_MINUS { return join_un_op_rtl(lex, op); }
+        if op == T_PLUS  { return join_un_op_rtl(lex, op); }
     }
     return parse_expr_postfix(lex);
 }
@@ -882,7 +882,7 @@ fn un_addr_op(void* lex, int op) {
     consume_token(lex, op);
     void* nameT = next_token(lex);
     int tto = *nameT;
-    if tto ! T_ID {
+    if tto != T_ID {
         jnc_panic(ERR_BAD_EXPRESSION, nameT, 28);
     }
     return node_a_b(AST_ADDR_OP, op, nameT);
@@ -901,9 +901,9 @@ fn join_un_op_rtl(void* lex, int op) {
         v = *v;
         drop_node(operand);
         bool did_it = false;
-        if op = T_BANG  { v = !v; did_it = true; }
-        if op = T_MINUS { v = -v; did_it = true; }
-        if op = T_PLUS  {         did_it = true; } # for completeness
+        if op == T_BANG  { v = !v; did_it = true; }
+        if op == T_MINUS { v = -v; did_it = true; }
+        if op == T_PLUS  {         did_it = true; } # for completeness
         if did_it {
             return node_a(tto, v);
         }
@@ -922,15 +922,15 @@ fn join_un_op_rtl(void* lex, int op) {
 fn parse_expr_postfix(void* lex) {
     void* expr = parse_expr_primary(lex);
     void* tkn = peek_token(lex);
-    if tkn ! null {
+    if tkn != null {
         int t = Token_type(tkn);
-        if t = T_OPAREN {
+        if t == T_OPAREN {
             # function call
             consume_token(lex, t);
             void* args = null;
             tkn = peek_token(lex);
             t = Token_type(tkn);
-            if t ! T_CPAREN {
+            if t != T_CPAREN {
                 args = parse_arg_list(lex);
             }
             t = T_CPAREN;
@@ -953,10 +953,10 @@ fn parse_arg_list(void* lex) {
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
-        if t ! T_COMMA { done; }
+        if t != T_COMMA { done; }
         consume_token(lex, t);
         i = i + 1;
-        if i = 8 {
+        if i == 8 {
             too_many_params(lex);
         }
         *curr = parse_expr(lex);
@@ -979,12 +979,12 @@ fn parse_expr_primary(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
 
-    if t = T_BOOL   { t = AST_BOOL;   return parse_val(lex, t); }
-    if t = T_CHAR   { t = AST_CHAR;   return parse_val(lex, t); }
-    if t = T_INT    { t = AST_INT;    return parse_val(lex, t); }
-    if t = T_STRING { t = AST_STRING; return parse_val(lex, t); }
-    if t = T_ID     { return parse_id(lex); }
-    if t = T_OPAREN {
+    if t == T_BOOL   { t = AST_BOOL;   return parse_val(lex, t); }
+    if t == T_CHAR   { t = AST_CHAR;   return parse_val(lex, t); }
+    if t == T_INT    { t = AST_INT;    return parse_val(lex, t); }
+    if t == T_STRING { t = AST_STRING; return parse_val(lex, t); }
+    if t == T_ID     { return parse_id(lex); }
+    if t == T_OPAREN {
         consume_token(lex, t);
         void* expr = parse_expr(lex);
         t = T_CPAREN;
@@ -1014,7 +1014,7 @@ fn parse_id(void* lex) {
 fn id_token(void* lex) {
     void* tkn = next_token(lex);
     int t = Token_type(tkn);
-    if t = T_ID {
+    if t == T_ID {
         return tkn;
     }
     expected_token(tkn, T_ID);

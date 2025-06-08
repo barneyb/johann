@@ -25,7 +25,7 @@ pub fn StringBuilder_push(void* buf, char c) {
     char* chars = *buf;
     buf = buf - 0x8;                    # -> size
     int size = *buf;
-    if size = capacity {
+    if size == capacity {
         # need more!
         capacity = capacity * 2;
         char* next = malloc(capacity);

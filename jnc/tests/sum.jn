@@ -9,7 +9,7 @@ pub fn main() {
     bool b = false;     # negative
     char c = read();
     while c > e {
-        if c = '-' {
+        if c == '-' {
             b = true;
             c = read();
             again;

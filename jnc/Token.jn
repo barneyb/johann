@@ -22,11 +22,11 @@ pub fn Token__new(int type) {
 pub fn Token_drop(void* token) {
     int type = *token;
     void* val;
-    if type = T_ID {
+    if type == T_ID {
         val = Token_value(token);
         free(val);
     }
-    if type = T_STRING {
+    if type == T_STRING {
         val = Token_value(token);
         free(val);
     }

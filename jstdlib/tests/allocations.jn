@@ -33,7 +33,7 @@ fn reuse() {
     printf("free-d addrs[4]: %p\n", a_i % 0x1000);
     a = malloc(len);
     printf("allocate for reuse: %p\n", a % 0x1000);
-    if a ! a_i {
+    if a != a_i {
         printf("expected %p to be = %p\n", a, a_i);
         char* f = "  next alloc is %p\n";
         printf(f, malloc(len));
@@ -52,10 +52,10 @@ fn reuse() {
 
     a = malloc(len);
     printf("allocate for reuse: %p\n", a % 0x1000);
-    if a = addrs {
+    if a == addrs {
         printf("Reused oversized %p?!\n", addrs);
     }
-    if a ! a_i {
+    if a != a_i {
         printf("Expected reuse of %p, not %p\n", a_i, a);
     }
     free(a);
@@ -90,12 +90,12 @@ fn drop_array(void* addrs, int len) {
     while a_i > addrs {
         a_i = a_i - 0x8;
         n = *a_i;
-        if n ! null {
+        if n != null {
             free(n);
             n = n % 0x1000;
             printf(f, n);
         }
-        if n = null {
+        if n == null {
             char* g = "    <ALREADY DROPPED>";
             puts(g);
         }
