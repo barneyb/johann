@@ -225,10 +225,10 @@ fn drop_node(void* node) {
         return free(node);
     }
 
-    char* f = "Can't drop node of type %i\n";
-    eprintf(f, type);
-    printf(f, type);
-    panic(type);
+    char* f = "Can't drop node of type %i / %x\n";
+    eprintf(f, type, type);
+    printf(f, type, type);
+    panic(62, "unknown AST node", 16);
 }
 
 fn drop_node_array(void* nodes) {
@@ -494,10 +494,10 @@ fn parse_opt_assign(void* lex) {
 fn parse_block(void* lex, void* emitter) {
     int t = T_OBRACE;
     consume_token(lex, t);
-    void bytes = 0x8 * 150; # todo: need an auto-grow type
-    void* stmts = malloc(bytes);
+    void* stmts = malloc(0x8 * 150); # todo: need an auto-grow type
     void* curr = stmts;
     void* tkn;
+    int i = 0;
     while true {
         tkn = peek_token(lex);
         t = Token_type(tkn);
@@ -507,10 +507,16 @@ fn parse_block(void* lex, void* emitter) {
         }
         void* stmt = parse_statement(lex, emitter);
         if stmt ! null {
+            i = i + 1;
+            if i = 150 {
+                panic(63, "too many statements", 19);
+            }
             *curr = stmt;
             curr = curr + 0x8;
         }
     }
+    *curr = null;
+    curr = curr + 0x8;
     return stmts;
 }
 

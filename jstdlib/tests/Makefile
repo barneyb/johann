@@ -5,7 +5,6 @@ OUT = $(TGT)/out
 JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: \
-	strcmp_test \
 	StringBuilderTest \
 	allocations \
 	getchar \
@@ -14,6 +13,7 @@ all: \
 	isspace \
 	printf \
 	putchar \
+	strcmp_test \
 	symbols \
 
 	# verify there aren't any memory complaints
