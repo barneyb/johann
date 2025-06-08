@@ -1,6 +1,6 @@
 # They're All Named Johann
 
-Johann is a comical attempt at building a programming platform from scratch for `arm64-apple-darwin` (aka Apple Silicon running macOS). You don't want to use it. You don't even want to look at the source. When a bored coder has a martini (or several...) and decides to single-handedly reinvent much of the past ~60 years of computer science from scratch, nothing good results.
+Johann is a comical attempt at building a programming platform from scratch for `arm64-apple-darwin` (aka Apple Silicon, with macOS). You don't want to use it. You don't even want to look at the source. When a bored coder has a martini (or several...) and decides to single-handedly reinvent much of the past ~60 years of computer science from scratch, nothing good results.
 
 The only pre-existing software tools assumed are GCC's assembler and linker. No recognizer generator (e.g., `lex` and `yacc`), no v1 compiler in an existing language (e.g., C or Rust), no compiler backend (e.g., LLVM or GCC) for codegen, and no system libraries. Plus, I suppose, macOS itself along with its command shell and text editor.
 
@@ -54,7 +54,7 @@ Conditionals use the `if` keyword and loops use `while`. Parentheses are not per
     char c = getchar();
     while c > b {
         i = i + 1;
-        if c = '(' {
+        if c == '(' {
             f = f + 1;
         }
         c = getchar();
@@ -78,7 +78,11 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
-Operator precedence is as in C-family languages, with the exception that equality operators currently associate right-to-left. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Four comparisons operators are supported: `<`, `>`, `=`, and '!' (not `==` and `!=` - yet!). Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). A `*` can also be used on the left side of an assignment to write to pointed-at memory.
+Operator precedence is as in C-family languages, with one temporary exception noted below. The five normal arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Six comparisons operators are supported: `==`, `!=`, `<`, `<=`, `>` and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address).
+
+The exception is that equality operators associate right-to-left, instead of left to right. This supports the `=` and `!` operators as deprecated aliases of their two-character counterparts. This will go away.
+
+A `*` can also be used on the left side of an assignment to write to pointed-at memory:
 
     int e = 16;
     int* a = malloc(e); # a = new int[2];
@@ -141,7 +145,7 @@ Both functions and global variables can be declared without being defined. This 
 
 ## Building Johann Programs
 
-First, you'll need `arm64-apple-darwin` machine (aka Apple Silicon, running macOS) to run on, with the command-line developer/Xcode tools installed.
+First, you'll need an `arm64-apple-darwin` machine (aka Apple Silicon, with macOS) to run on, with the command-line developer/Xcode tools installed.
 
 If your source is in `program.jn`, first compile it with `./bin/jnc < program.jn > program.s`. Next, assemble and link with `gcc program.s ./lib/jstdlib.o -o program`. Now you can execute it: `./program`. If you have multiple source files, compile and assemble them separately (with `-c`), and then link the object files into the final binary. The standard library (`./lib/jstdlib.o`) is pre-assembled and only needs to be linked.
 

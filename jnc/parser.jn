@@ -27,8 +27,11 @@ int T_COMMA;
 int T_CPAREN;
 int T_EQ;
 int T_GT;
+int T_GTE;
 int T_LT;
+int T_LTE;
 int T_MINUS;
+int T_NEQ;
 int T_OBRACE;
 int T_OPAREN;
 int T_PERCENT;
@@ -39,24 +42,29 @@ int T_STAR;
 
 bool IS_PUB;
 
-char* ERR_BAD_EXPRESSION;
-char* ERR_BAD_TOKEN;
-char* ERR_TOO_MANY_PARAMS;
-char* ERR_MISSING_TOKEN = "ERROR(%i): Expected token %x at EOF\n";
+char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, char %i\n";
+char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, char %i\n";
+char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, char %i\n";
+char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, char %i\n";
+char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
 char* ERR_MISSING_PARAM_NAME = "ERROR(%i): missing parameter name on %x at line %i\n";
 
+# literals are 00x, in promotion order
 pub int AST_BOOL = 1;
 pub int AST_CHAR = 2;
 pub int AST_INT = 3;
-# static eval is possible <10, largest type is (promoted) result type
+# simple expressions are 0xx
 pub int AST_STRING = 50;
 pub int AST_ID = 75;
+# compound expressions are 1xx
 pub int AST_UNARY = 101;
 pub int AST_BINARY = 102;
 pub int AST_ADDR_OP = 103;
 pub int AST_CALL = 104;
+# declarations are 3xx
 pub int AST_VAR = 300;
 pub int AST_FN = 301;
+# statements are 4xx
 pub int AST_NAMETYPE = 402;
 pub int AST_EVAL = 403;
 pub int AST_ASSIGN = 404;
@@ -274,12 +282,11 @@ pub fn print_token(void* t) {
         return;
     }
     if type = T_BOOL { f = ": %b"; }
-    if type > 0x200 { f = ": %s"; }
+    if type > 0x300 { f = ": %s"; }
     if f ! null {
         printf(f, Token_value(t));
     }
-    ch = 0xa;
-    putchar(ch);
+    putchar(0xa);
 }
 
 int PEEKED_AT = null;
@@ -321,15 +328,19 @@ fn consume_token(void* lex, int type) {
         printf(err, t, type);
         panic(t);
     }
-    t = Token_type(tkn);
-    if t ! type { bad_token(tkn); }
+    expected_token(tkn, type);
     Token_drop(tkn);
 }
 
-fn bad_token(void* tkn) {
-    char* err = ERR_BAD_TOKEN;
-    int status = 26;
-    jnc_panic(err, tkn, status);
+fn expected_token(void* tkn, int type) {
+    if Token_type(tkn) ! type {
+        Token_set_type(tkn, type);
+        jnc_panic(ERR_EXPECTED_TOKEN, tkn, 26);
+    }
+}
+
+fn unexpected_token(void* tkn) {
+    jnc_panic(ERR_UNEXPECTED_TOKEN, tkn, 26);
 }
 
 pub fn parse_program(void* lex, void* emitter) {
@@ -352,7 +363,7 @@ pub fn parse_program(void* lex, void* emitter) {
         drop_node(ast);
     }
     if tkn ! null {
-        bad_token(tkn);
+        unexpected_token(tkn);
     }
 }
 
@@ -387,7 +398,7 @@ fn parse_function_declaration(void* lex, void* emitter) {
         t = AST_FN;
         return node_a_b_c(t, nameT, args, block);
     }
-    bad_token(tkn);
+    unexpected_token(tkn);
 }
 
 fn verify_parameters_are_named(void* nameT, void* args) {
@@ -601,18 +612,22 @@ fn parse_return(void* lex, void* emitter) {
 # [AST_EVAL, expr, null, null]
 # [AST_ASSIGN, rhs, expr, null]
 fn parse_eval_or_assign(void* lex, void* emitter) {
-    int line = peek_token(lex);
-    line = Token_line(line);
-    int t = AST_ASSIGN;
+    int line = Token_line(peek_token(lex));
     void* expr = parse_expr(lex);
-    void* rhs = parse_opt_assign(lex);
+    void* rhs = null;
+    if Token_type(peek_token(lex)) = T_ASSIGN {
+        next_token(lex); # consume, type-unsafe, because "eight vars"
+        rhs = parse_expr(lex);
+    }
+
+    # if expr is an AST_BINARY w/ op=T_EQ, reparse as AST_ASSIGN
+    int t;
     if rhs = null {
-        # see if "a EQ b" should be reparsed as "a ASSIGN b"
         t = *expr;
         if t = AST_BINARY {
             t = expr + 0x8;         # -> op
             t = *t;
-            if t = T_ASSIGN { # previously interpreted as T_EQ
+            if t = T_EQ {
                 t = expr + 0x18;    # -> right
                 rhs = *t;
                 *t = null;
@@ -624,13 +639,14 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
             }
         }
     }
+
+    # bare evaluation?
     if rhs = null {
-        # just bare evaluation
-        t = AST_EVAL;
         Emitter_eval_expr(emitter, expr);
-        return node_a_b(t, expr);
+        return node_a_b(AST_EVAL, expr);
     }
-    # right now, the lhs MUST be AST_ID, so unwrap
+
+    # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
     t = *expr;
     void* nameT;
     if t = AST_ID {
@@ -651,6 +667,7 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
             return node_a_b(t, expr, rhs);
         }
     }
+
     t = *expr;
     rhs = "Can't assign to a %i node at line %i\n";
     eprintf(rhs, t, line);
@@ -683,8 +700,7 @@ fn parse_expr_logic_or(void* lex) {
 #        if t = T_LOG_OR {
 #            consume_token(lex, t);
 #            void* right = parse_expr_logic_and(lex);
-#            int tt = AST_BINARY;
-#            expr = node_a_b_c(tt, t, expr, right);
+#            expr = join_bin_op(lex, t, expr, right);
 #            again;
 #        }
 #        done;
@@ -693,21 +709,7 @@ fn parse_expr_logic_or(void* lex) {
 }
 
 fn parse_expr_logic_and(void* lex) {
-    void* expr = parse_expr_bit_or(lex);
-#    while true {
-#        void* tkn = peek_token(lex);
-#        if tkn = null { done; }
-#        int t = Token_type(tkn);
-#        if t = T_LOG_AND {
-#            consume_token(lex, t);
-#            void* right = parse_expr_bit_or(lex);
-#            int tt = AST_BINARY;
-#            expr = node_a_b_c(tt, t, expr, right);
-#            again;
-#        }
-#        done;
-#    }
-    return expr;
+    return parse_expr_bit_or(lex);
 }
 
 fn parse_expr_bit_or(void* lex) {
@@ -730,12 +732,18 @@ fn parse_expr_eq(void* lex) {
         if tkn = null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_BANG { doit = true; }
-        if t = T_EQ { doit = true; }
+        if t = T_NEQ  { doit = true; }
+        if t = T_EQ   { doit = true; }
+        # TODO: these are deprecated
+        if t = T_BANG   { doit = true; }
+        if t = T_ASSIGN { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
-        # TODO: this associates left (to deal with rewriting EQ to ASSIGN)
+        # TODO: this associates left (to deal with rewriting ASSIGN -> EQ)
         right = parse_expr_eq(lex);
+        # TODO: morph to non-deprecated equivalent
+        if t = T_BANG   { t = T_NEQ; }
+        if t = T_ASSIGN { t = T_EQ; }
         expr = join_bin_op(lex, t, expr, right);
     }
     return expr;
@@ -749,8 +757,10 @@ fn parse_expr_rel(void* lex) {
         if tkn = null { done; }
         int t = Token_type(tkn);
         bool doit = false;
-        if t = T_GT { doit = true; }
-        if t = T_LT { doit = true; }
+        if t = T_GT  { doit = true; }
+        if t = T_LT  { doit = true; }
+        if t = T_GTE { doit = true; }
+        if t = T_LTE { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
         right = parse_expr_shift(lex);
@@ -820,9 +830,11 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         right = ttr;
         bool did_it = false;
         if op = T_EQ      { ttr = left = right; did_it = true; }
-        if op = T_BANG    { ttr = left ! right; did_it = true; }
-        if op = T_LT      { ttr = left < right; did_it = true; }
+        if op = T_NEQ     { ttr = left ! right; did_it = true; }
         if op = T_GT      { ttr = left > right; did_it = true; }
+        if op = T_LT      { ttr = left < right; did_it = true; }
+        if op = T_GTE     { ttr = left > right; if left = right { ttr = true; } did_it = true; }
+        if op = T_LTE     { ttr = left < right; if left = right { ttr = true; } did_it = true; }
         if op = T_PLUS    { ttr = left + right; did_it = true; }
         if op = T_MINUS   { ttr = left - right; did_it = true; }
         if op = T_STAR    { ttr = left * right; did_it = true; }
@@ -838,8 +850,7 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         panic(ttl);
     } }
 
-    ttl = AST_BINARY;
-    return node_a_b_c(ttl, op, left, right);
+    return node_a_b_c(AST_BINARY, op, left, right);
 }
 
 fn parse_expr_cast(void* lex) {
@@ -866,12 +877,9 @@ fn un_addr_op(void* lex, int op) {
     void* nameT = next_token(lex);
     int tto = *nameT;
     if tto ! T_ID {
-        char* err = ERR_BAD_EXPRESSION;
-        op = 28;
-        jnc_panic(err, nameT, op);
+        jnc_panic(ERR_BAD_EXPRESSION, nameT, 28);
     }
-    int type = AST_ADDR_OP;
-    return node_a_b(type, op, nameT);
+    return node_a_b(AST_ADDR_OP, op, nameT);
 }
 
 fn join_un_op_rtl(void* lex, int op) {
@@ -1003,5 +1011,5 @@ fn id_token(void* lex) {
     if t = T_ID {
         return tkn;
     }
-    bad_token(tkn);
+    expected_token(tkn, T_ID);
 }

@@ -8,6 +8,7 @@ int T_COMMA;
 int T_CPAREN;
 int T_EQ;
 int T_GT;
+int T_GTE;
 int T_ID;
 int T_INT;
 int T_KW_AGAIN;
@@ -22,7 +23,9 @@ int T_KW_RETURN;
 int T_KW_VOID;
 int T_KW_WHILE;
 int T_LT;
+int T_LTE;
 int T_MINUS;
+int T_NEQ;
 int T_OBRACE;
 int T_OPAREN;
 int T_PERCENT;
@@ -56,13 +59,10 @@ int AST_WHILE;
 
 pub bool IS_PUB = false; # this is just ridiculous
 
-pub char* ERR_BAD_TOKEN         = "ERROR(%i): Bad token %x at line %i, char %i\n";
 char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
-pub char* ERR_BAD_EXPRESSION    = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
-pub char* ERR_TOO_MANY_PARAMS   = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, char %i\n";
 char* ERR_UNKNOWN_SYMBOL    = "ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
 char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, char %i\n";
 char* ERR_BAD_STMT          = "ERROR(%i): Bad statement %x at line %i, char %i\n";
@@ -124,9 +124,11 @@ char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
 char* TMPL_BIN_DIV              = "        sdiv    x0, x0, x1\n";
 char* TMPL_BIN_MOD              = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
 
-char* COMP_GT = "gt";
-char* COMP_LT = "lt";
 char* COMP_EQ = "eq";
+char* COMP_GE = "ge";
+char* COMP_GT = "gt";
+char* COMP_LE = "le";
+char* COMP_LT = "lt";
 char* COMP_NE = "ne";
 char* TMPL_BIN_LOGICAL          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
 
@@ -733,10 +735,12 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     if op = T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
     if op = T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
 
-    if op = T_EQ   { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
-    if op = T_BANG { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
-    if op = T_LT   { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
-    if op = T_GT   { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
+    if op = T_EQ  { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
+    if op = T_GT  { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
+    if op = T_GTE { tmpl = COMP_GE; return do_binary_op_logical(self, tmpl); }
+    if op = T_LT  { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
+    if op = T_LTE { tmpl = COMP_LE; return do_binary_op_logical(self, tmpl); }
+    if op = T_NEQ { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
 
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);

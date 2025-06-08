@@ -33,9 +33,12 @@ int T_DOT;
 int T_DQUOTE;
 int T_EQ;
 int T_GT;
+int T_GTE;
 int T_HASH;
 int T_LT;
+int T_LTE;
 int T_MINUS;
+int T_NEQ;
 int T_OBRACE;
 int T_OBRACKET;
 int T_OPAREN;
@@ -120,30 +123,30 @@ pub fn get_next_token(void* self) {
             Lexer_lex_comment(self);
             again;
         }
-        if c = T_CBRACE { return new_token(self, c); }
+        if c = T_CBRACE   { return new_token(self, c); }
         if c = T_CBRACKET { return new_token(self, c); }
-        if c = T_COLON { return new_token(self, c); }
-        if c = T_COMMA { return new_token(self, c); }
-        if c = T_CPAREN { return new_token(self, c); }
-        if c = T_DOT { return new_token(self, c); }
-        if c = T_OBRACE { return new_token(self, c); }
+        if c = T_COLON    { return new_token(self, c); }
+        if c = T_COMMA    { return new_token(self, c); }
+        if c = T_CPAREN   { return new_token(self, c); }
+        if c = T_DOT      { return new_token(self, c); }
+        if c = T_OBRACE   { return new_token(self, c); }
         if c = T_OBRACKET { return new_token(self, c); }
-        if c = T_OPAREN { return new_token(self, c); }
-        if c = T_PERCENT { return new_token(self, c); }
+        if c = T_OPAREN   { return new_token(self, c); }
         if c = T_QUESTION { return new_token(self, c); }
-        if c = T_SEMI { return new_token(self, c); }
-        if c = T_SLASH { return new_token(self, c); }
-        if c = T_STAR { return new_token(self, c); }
-        # to-become-ambiguous character tokens are easy as well (for now)
-        if c = T_ASSIGN { return new_token(self, c); }
-        if c = T_BANG { return new_token(self, c); }
-        if c = T_GT { return new_token(self, c); }
-        if c = T_LT { return new_token(self, c); }
-        if c = T_MINUS { return new_token(self, c); }
-        if c = T_PLUS { return new_token(self, c); }
+        if c = T_SEMI     { return new_token(self, c); }
         # ambiguous character tokens...
-        if c = T_AMP { return token_ampersand(self, c); }
-        if c = T_PIPE { return token_pipe(self, c); }
+        if c = T_AMP      { return token_ampersand(self, c); }
+        if c = T_ASSIGN   { return token_eq(self, c); }
+        if c = T_BANG     { return token_bang(self, c); }
+        if c = T_GT       { return token_gt(self, c); }
+        if c = T_LT       { return token_lt(self, c); }
+        if c = T_PIPE     { return token_pipe(self, c); }
+        # non-ambiguous character tokens...
+        if c = T_MINUS    { return new_token(self, c); }
+        if c = T_PERCENT  { return new_token(self, c); }
+        if c = T_PLUS     { return new_token(self, c); }
+        if c = T_SLASH    { return new_token(self, c); }
+        if c = T_STAR     { return new_token(self, c); }
         # multi-character tokens...
         if c > '`' { return token_id_ish(self, c); } # char before 'a'
         if c > '@' { return token_ID_ish(self, c); } # char before 'A'
@@ -165,11 +168,48 @@ fn Lexer_lex_comment(void* self) {
     next_line(self);
 }
 
+fn token_gt(void* self, char c) {
+    if peekchar() = T_ASSIGN {
+        void* tkn = new_token(self, T_GTE);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
+fn token_lt(void* self, char c) {
+    if peekchar() = T_ASSIGN {
+        void* tkn = new_token(self, T_LTE);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
+fn token_eq(void* self, char c) {
+    char next = peekchar();
+    if next = T_ASSIGN {
+        void* tkn = new_token(self, T_EQ);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
+fn token_bang(void* self, char c) {
+    char next = peekchar();
+    if next = T_ASSIGN {
+        void* tkn = new_token(self, T_NEQ);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
 fn token_ampersand(void* self, char c) {
     char next = peekchar();
     if next = T_AMP {
-        int t = T_LOG_AND;
-        void * tkn = new_token(self, t);
+        void* tkn = new_token(self, T_LOG_AND);
         next_char(self); # consume
         return tkn;
     }
@@ -179,8 +219,7 @@ fn token_ampersand(void* self, char c) {
 fn token_pipe(void* self, char c) {
     char next = peekchar();
     if next = T_PIPE {
-        int t = T_LOG_OR;
-        void * tkn = new_token(self, t);
+        void* tkn = new_token(self, T_LOG_OR);
         next_char(self); # consume
         return tkn;
     }
