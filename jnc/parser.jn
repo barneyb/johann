@@ -500,10 +500,8 @@ fn parse_opt_assign(void* lex) {
 fn parse_block(void* lex, void* emitter) {
     int t = T_OBRACE;
     consume_token(lex, t);
-    void* stmts = malloc(0x8 * 150); # todo: need an auto-grow type
-    void* curr = stmts;
+    void* stmts = ArrayList__new(4); # many blocks are four or fewer statements
     void* tkn;
-    int i = 0;
     while true {
         tkn = peek_token(lex);
         t = Token_type(tkn);
@@ -513,17 +511,10 @@ fn parse_block(void* lex, void* emitter) {
         }
         void* stmt = parse_statement(lex, emitter);
         if stmt != null {
-            i = i + 1;
-            if i == 150 {
-                panic(63, "too many statements\n", 20);
-            }
-            *curr = stmt;
-            curr = curr + 0x8;
+            ArrayList_push(stmts, stmt)
         }
     }
-    *curr = null;
-    curr = curr + 0x8;
-    return stmts;
+    return ArrayList_into_array(stmts);
 }
 
 # [AST_VAR, name_and_type, init?, null]
