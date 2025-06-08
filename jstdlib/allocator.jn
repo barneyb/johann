@@ -56,8 +56,7 @@ pub fn free(void* mem) {
     int a = mem - 0x8;
     int bytes = *a;
 
-#        f = " ; free  %x bytes at %p\n";
-#        printf(f, bytes, mem);
+#        printf(" ; free  %x bytes at %p\n", bytes, mem);
 
     if bytes = 0 {
         eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
@@ -180,7 +179,6 @@ fn find_free_chunk(int bytes) {
 # Allocate (at least) the specified number of bytes of memory and return a
 # pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
-    char* f;
     int aln = MALLOC_ALIGN;
     bytes = align(bytes, aln);
 
@@ -211,13 +209,11 @@ pub fn malloc(int bytes) {
     chunk_size = *chunk_size;
 
 #        if chunk_size = bytes {
-#            f = " ; alloc %x bytes at %p\n";
-#            printf(f, chunk_size, mem);
+#            printf(" ; alloc %x bytes at %p\n", chunk_size, mem);
 #        }
 #        if chunk_size ! bytes {
-#            f = " ; alloc %x bytes at %p (waste %x)\n";
 #            int waste = chunk_size - bytes;
-#            printf(f, chunk_size, mem, waste);
+#            printf(" ; alloc %x bytes at %p (waste %x)\n", chunk_size, mem, waste);
 #        }
 #        if FREE_LIST ! null {
 #            print_free_list();

@@ -43,8 +43,6 @@ clean:
 
 # configuration targets
 
-# if there's an error making a target, delete the target as it's in an unknown state
-.DELETE_ON_ERROR:
 # don't delete intermediate files created by pattern rules
 .SECONDARY:
 # never clean up partially-compiled assembly files (with errors)
