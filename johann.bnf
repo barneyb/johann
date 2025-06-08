@@ -36,10 +36,11 @@ statement ::= vardecl_
             | "done" ";"
             | "again" ";"
             | "return" expr ";"
-            | unary_expr "=" expr ";"
+            | unary_expr assign_op expr ";"
             | expr ";"
 //            | block
             | ";"
+assign_op ::= "=" //| "+=" | "-=" | "*=" | "/=" | "%="
 
 /* Recursive descent is not ideal here, but it's straightforward to hand-code.
  * At the moment, matching the implementation is more useful than an efficient
@@ -53,15 +54,17 @@ private lor_expr ::= land_expr // ( "||" land_expr )*
 
 private land_expr ::= bor_expr // ( "&&" bor_expr )*
 
-private bor_expr ::= bxor_expr // ( "^" bxor_expr )*
+private bor_expr ::= bxor_expr // ( "|" bxor_expr )*
 
 private bxor_expr ::= band_expr // ( "^" band_expr )*
 
 private band_expr ::= eq_expr // ( "&" eq_expr )*
 
-private eq_expr ::= rel_expr ( ( "=" | "!" /*| "==" | "!="*/ ) rel_expr )*
+private eq_expr ::= rel_expr ( ( "==" | "!="
+| "=" | "!" // deprecated
+) rel_expr )*
 
-private rel_expr ::= shift_expr ( ( "<" | ">" /*| "<=" | ">="*/ ) shift_expr )*
+private rel_expr ::= shift_expr ( ( "<" | ">" | "<=" | ">=" ) shift_expr )*
 
 private shift_expr ::= add_expr // ( ( "<<" | ">>" ) add_expr )*
 
