@@ -5,6 +5,7 @@ OUT = $(TGT)/out
 JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: \
+	ArrayList_test \
 	StringBuilderTest \
 	allocations \
 	getchar \

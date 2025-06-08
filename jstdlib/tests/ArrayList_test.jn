@@ -1,0 +1,145 @@
+fn free(void*);
+
+pub fn main() {
+    drop_empty();
+    into_array_empty();
+    init_and_add();
+    into_array();
+    expand();
+    owned_elements();
+    get();
+    as_stack();
+}
+
+fn drop_empty() {
+    puts("\ndrop_empty:");
+    void* list = ArrayList__new(3);
+    ArrayList_drop(list);
+}
+
+fn into_array_empty() {
+    puts("\ninto_array_empty:");
+    void* list = ArrayList__new(3);
+    size_and_cap(list);
+    void* arr = ArrayList_into_array(list);
+    printf("first element: %p\n", *arr);
+    free(arr);
+}
+
+fn init_and_add() {
+    puts("\ninit_and_add:");
+    void* list = ArrayList__new(3);
+    size_and_cap(list);
+    ArrayList_push(list, 1);
+    ArrayList_push(list, 2);
+    size_and_cap(list);
+    ArrayList_drop(list);
+}
+
+fn into_array() {
+    puts("\ninto_array:");
+    void* list = ArrayList__new(3);
+    ArrayList_push(list, 1);
+    ArrayList_push(list, 2);
+    void* arr = ArrayList_into_array(list);
+    print_array(arr);
+    free(arr);
+}
+
+fn expand() {
+    puts("\nexpand:");
+    void* list = ArrayList__new(3);
+    ArrayList_push(list, 1);
+    ArrayList_push(list, 2);
+    ArrayList_push(list, 3);
+    size_and_cap(list);
+    ArrayList_push(list, 4);
+    size_and_cap(list);
+    ArrayList_push(list, 5);
+    size_and_cap(list);
+    ArrayList_push(list, 6);
+    ArrayList_push(list, 7);
+    ArrayList_push(list, 8);
+    ArrayList_push(list, 9);
+    ArrayList_push(list, 10);
+    size_and_cap(list);
+    # garbage allocation to ensure no overrun
+    void* scratch = malloc(0x10);
+    void* arr = ArrayList_into_array(list);
+    print_array(arr);
+    free(arr);
+    free(scratch);
+}
+
+fn owned_elements() {
+    puts("\nowned_elements:");
+    void* list = ArrayList__new(17);
+    ArrayList_push(list, malloc(1));
+    ArrayList_push(list, malloc(1));
+    size_and_cap(list);
+    ArrayList_drop_owned(list, &free);
+}
+
+fn get() {
+    puts("\nget:");
+    void* list = ArrayList__new(3);
+    int i = 10;
+    while i < 22 {
+        ArrayList_push(list, i);
+        i = i + 1;
+    }
+    printf("Found %d at 1\n", ArrayList_get(list, 1));
+    printf("Found %d at 4\n", ArrayList_get(list, 4));
+    printf("Found %d at 11\n", ArrayList_get(list, 11));
+    ArrayList_drop(list);
+}
+
+fn as_stack() {
+    puts("\nas_stack:");
+    void* stack = ArrayList__new(4);
+    ArrayList_push(stack, 1);
+    ArrayList_push(stack, 2);
+    ArrayList_push(stack, 3);
+    ArrayList_push(stack, 99999);
+    size_and_cap(stack);
+    printf("Peek: %d\n", ArrayList_peek(stack));
+    printf("Peek: %d\n", ArrayList_peek(stack));
+    printf("Peek: %d\n", ArrayList_peek(stack));
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    size_and_cap(stack);
+    ArrayList_push(stack, 4);
+    size_and_cap(stack);
+    ArrayList_push(stack, 5);
+    size_and_cap(stack);
+    ArrayList_push(stack, 6);
+    ArrayList_push(stack, 7);
+    ArrayList_push(stack, 8);
+    ArrayList_push(stack, 9);
+    size_and_cap(stack);
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    size_and_cap(stack);
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    size_and_cap(stack);
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    size_and_cap(stack);
+    printf("Pop : %d\n", ArrayList_pop(stack));
+    size_and_cap(stack);
+    ArrayList_drop(stack);
+}
+
+fn size_and_cap(void* list) {
+    printf("size: %i, cap: %i\n", ArrayList_size(list), *list);
+}
+
+fn print_array(void* arr) {
+    int i = 0;
+    while true {
+        void* it = arr + i * 0x8;
+        it = *it;
+        printf("  element: %p\n", it);
+        if it == null { done; }
+        i = i + 1;
+    }
+}

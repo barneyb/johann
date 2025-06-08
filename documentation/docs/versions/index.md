@@ -9,7 +9,7 @@ At the moment, Johann is building up from "nothing" towards "complete". There's 
 
 ### Bleeding Edge
 
-Fix all use of `=` and `!`.
+Add an `ArrayList` ADT, and fix all use of `=` and `!`.
 
 ### `v0.20250610`
 

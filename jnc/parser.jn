@@ -236,7 +236,7 @@ fn drop_node(void* node) {
     char* f = "Can't drop node of type %i / %x\n";
     eprintf(f, type, type);
     printf(f, type, type);
-    panic(62, "unknown AST node", 16);
+    panic(62, "unknown AST node\n", 17);
 }
 
 fn drop_node_array(void* nodes) {
@@ -515,7 +515,7 @@ fn parse_block(void* lex, void* emitter) {
         if stmt != null {
             i = i + 1;
             if i == 150 {
-                panic(63, "too many statements", 19);
+                panic(63, "too many statements\n", 20);
             }
             *curr = stmt;
             curr = curr + 0x8;
