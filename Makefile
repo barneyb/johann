@@ -19,6 +19,12 @@ not_quite_lisp: not_quite_lisp.jn bin/jnc lib/jstdlib.o
 
 # utility targets
 
+mkdocs:
+	docker run --rm -it -p 8000:8000 -v ${PWD}/documentation:/docs squidfunk/mkdocs-material
+
+docs:
+	./docs.sh
+
 test:
 	$(MAKE) -C jstdlib test
 	$(MAKE) -C jnc test

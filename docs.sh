@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+DOC_FILE=documentation/docs/index.md
+
 function nope() {
     set +x
     echo
@@ -12,30 +14,30 @@ function nope() {
 cd "$(dirname "$0")"
 
 # version numbers
-LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' README.md | cut -d : -f 1)
+LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' $DOC_FILE | cut -d : -f 1)
 {
-    head -n $LINE README.md
+    head -n $LINE $DOC_FILE
     ./bin/jnc --version
     LINE=$(( LINE + 4))
-    tail -n +$LINE README.md | head -n 1
+    tail -n +$LINE $DOC_FILE | head -n 1
     LINE=$(( LINE + 4))
     echo "pub fn main(){}" | ./bin/jnc | head -n 3
-    tail -n +$LINE README.md
+    tail -n +$LINE $DOC_FILE
 } > tmp.md
-mv tmp.md README.md
+mv tmp.md $DOC_FILE
 
 # johanndoc
 THRU=0
 while true; do
     THRU=$((THRU + 1))
-    LINE=$(tail -n +$THRU README.md | grep -En '<!--[{]johanndoc:.+[}]-->' | head -n 1 | cut -d : -f 1)
+    LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]johanndoc:.+[}]-->' | head -n 1 | cut -d : -f 1)
     if [[ -z "$LINE" ]]; then
         break;
     fi
     THRU=$((THRU + LINE - 1))
     {
-        head -n $THRU README.md
-        FILE=$(head -n $THRU README.md | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
+        head -n $THRU $DOC_FILE
+        FILE=$(head -n $THRU $DOC_FILE | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
         STEM=$(echo "$FILE" | rev | cut -d / -f 1 | rev | cut -d . -f 1)
         echo
         echo '### `'"$STEM"'`'
@@ -61,19 +63,19 @@ while true; do
         done < "$FILE"
         echo
         echo "<!--{/johanndoc:$FILE}-->"
-        END_LINE=$(tail -n +$THRU README.md | grep -En '<!--[{]/johanndoc(:.+)?[}]-->' | head -n 1 | cut -d : -f 1)
+        END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.+)?[}]-->' | head -n 1 | cut -d : -f 1)
         if [[ -z "$END_LINE" ]]; then
             nope 10 "Failed to find /johanndoc for '$FILE'"
         fi
-        tail -n +$((THRU + END_LINE)) README.md
+        tail -n +$((THRU + END_LINE)) $DOC_FILE
     } > tmp.md
-    mv tmp.md README.md
+    mv tmp.md $DOC_FILE
 done
 
 # system software
-LINE=$(grep -Fn '<!--{systemsoftware}-->' README.md | cut -d : -f 1)
+LINE=$(grep -Fn '<!--{systemsoftware}-->' $DOC_FILE | cut -d : -f 1)
 {
-    head -n $LINE README.md
+    head -n $LINE $DOC_FILE
     echo '```'
     echo '% uname -a'
     uname -a
@@ -87,7 +89,7 @@ LINE=$(grep -Fn '<!--{systemsoftware}-->' README.md | cut -d : -f 1)
     echo '% ld -v'
     ld -v 2>&1
     echo '```'
-    LINE=$(grep -Fn '<!--{/systemsoftware}-->' README.md | cut -d : -f 1)
-    tail -n +$LINE README.md
+    LINE=$(grep -Fn '<!--{/systemsoftware}-->' $DOC_FILE | cut -d : -f 1)
+    tail -n +$LINE $DOC_FILE
 } > tmp.md
-mv tmp.md README.md
+mv tmp.md $DOC_FILE

@@ -1,0 +1,35 @@
+site_name: Johann
+copyright: Copyright &copy; 2025 Barney Boisvert
+# It's reasonable to expect these three lines to be implicit, but no.
+site_url: https://barneyb.github.io/johann
+repo_url: https://github.com/barneyb/johann
+repo_name: barneyb/johann
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+theme:
+  name: material
+  custom_dir: overrides
+  features:
+    - content.code.copy
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.indexes
+    - navigation.footer
+    - toc.follow
+    - toc.integrate
+  palette:
+    # Why 'custom' needs to be declared thrice is completely unclear. It does.
+    - media: "(prefers-color-scheme)"
+      primary: custom
+    - media: "(prefers-color-scheme: light)"
+      primary: custom
+      scheme: default
+    - media: "(prefers-color-scheme: dark)"
+      primary: custom
+      scheme: slate
+extra_css:
+  - stylesheets/extra.css
