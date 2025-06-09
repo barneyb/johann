@@ -935,11 +935,8 @@ fn parse_expr_postfix(void* lex) {
 
 # expr[]
 fn parse_arg_list(void* lex) {
-    void bytes = 0x8 * 9; # todo: can't have more than eight at the moment...
-    void* args = malloc(bytes);
-    void* curr = args;
-    *curr = parse_expr(lex);
-    curr = curr + 0x8;
+    void* args = ArrayList__new(4);
+    ArrayList_push(args, parse_expr(lex));
     int i = 0;
     while true {
         void* tkn = peek_token(lex);
@@ -947,23 +944,17 @@ fn parse_arg_list(void* lex) {
         if t != T_COMMA { done; }
         consume_token(lex, t);
         i = i + 1;
-        if i == 8 {
-            too_many_params(lex);
+        if i == 8 { # todo: can't have more than eight at the moment...
+            tkn = peek_token(lex);
+            if Token_type(tkn) == T_ID {
+                char* name = Token_value(tkn);
+                Token_set_type(tkn, name);
+            }
+            jnc_panic(ERR_TOO_MANY_PARAMS, tkn, 21);
         }
-        *curr = parse_expr(lex);
-        curr = curr + 0x8;
+        ArrayList_push(args, parse_expr(lex));
     }
-    *curr = null;
-    return args;
-}
-
-fn too_many_params(void* lex) {
-    void* tkn = peek_token(lex);
-    char* name = Token_value(tkn);
-    Token_set_type(tkn, name);
-    char* err = ERR_TOO_MANY_PARAMS;
-    int status = 21;
-    jnc_panic(err, tkn, status);
+    return ArrayList_into_array(args);
 }
 
 fn parse_expr_primary(void* lex) {
