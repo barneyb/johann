@@ -2,6 +2,10 @@
 
 Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
 
+??? note "Johann vs Assembly"
+
+    While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the assembly bits (e.g., [`io`](#io)) are hand-documented as if C, while the Johann bits (e.g., [`allocator`](#allocator)) have their docs generated from the source itself.
+
 <!--{johanndoc:jstdlib/allocator.jn}-->
 
 ### `allocator`
@@ -40,6 +44,7 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 * `pub fn strlen(char* str) ` - I return the length of the passed string, not including the terminating null byte. 
 
 <!--{/johanndoc:jstdlib/string.jn}-->
+
 <!--{johanndoc:jstdlib/StringBuilder.jn}-->
 
 ### `StringBuilder`

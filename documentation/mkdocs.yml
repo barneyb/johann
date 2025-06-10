@@ -15,6 +15,7 @@ theme:
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking
+    - navigation.sections
     - navigation.tabs
     - navigation.top
 #    - navigation.indexes
