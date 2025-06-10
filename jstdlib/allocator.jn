@@ -29,12 +29,12 @@ pub fn mem_stats__() {
     int as = STAT_ALLOC_SIZE;
     int fc = STAT_FREE_COUNT;
     int fs = STAT_FREE_SIZE;
-    bool c = ac ! fc;
-    bool s = as ! fs;
+    bool c = fc - ac;
+    bool s = fs - as;
     if c + s {
-        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes)\n";
-        printf(format, ac, as, fc, fs);
-        eprintf(format, ac, as, fc, fs);
+        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
+        printf(format, ac, as, fc, fs, c, s);
+        eprintf(format, ac, as, fc, fs, c, s);
         format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
         ac = STAT_CHUNK_COUNT;
         as = STAT_CHUNK_SIZE;
@@ -77,7 +77,7 @@ pub fn free(void* mem) {
     while next != null {
         if mem == next {
             # already in the free list?!
-            exit(98);
+            panic(98, "Double-free error\n", 18);
         }
         int bs = next - 0x8;        # -> len
         bs = *bs;

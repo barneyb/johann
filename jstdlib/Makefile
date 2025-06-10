@@ -4,6 +4,7 @@ LIB = $(TGT)/lib
 OUT = $(TGT)/out
 JNC = ../bin/jnc
 OBJECTS = \
+	$(LIB)/ArrayList.jn.o \
 	$(LIB)/StringBuilder.jn.o \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \

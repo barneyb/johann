@@ -17,6 +17,24 @@ Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop
 
 <!--{/johanndoc:jstdlib/allocator.jn}-->
 
+<!--{johanndoc:jstdlib/ArrayList.jn}-->
+
+### `ArrayList`
+
+I am auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList_drop_owned` can help with cleanup if the values are pointers to owned objects.  The `push`, `peek`, and `pop` "methods" offer graceful use as a stack. 
+
+* `pub fn ArrayList__new(int capacity) ` - I create a new list with the specified capacity. 
+* `pub fn ArrayList_size(void* self) ` - I return the number of elements current in the list. 
+* `pub fn ArrayList_push(void* self, void el) ` - I add the passed element to the end of the list, extending it if needed. 
+* `pub fn ArrayList_get(void* self, int i) ` - I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic. 
+* `pub fn ArrayList_into_array(void* self) ` - I consume the list and return a null-terminated array of its elements. The array may have unfreed capacity beyond the terminating null. 
+* `pub fn ArrayList_drop(void* self) ` - I drop the list. 
+* `pub fn ArrayList_drop_owned(void* self, void* drop_el) ` - I drop the list, after passing each element to `drop_el` (if the function pointer is non-`null`). 
+* `pub fn ArrayList_pop(void* self) ` - I remove and return the last element on the stack (in the list), panicking if the stack is empty. 
+* `pub fn ArrayList_peek(void* self) ` - I return the last element on the stack (in the list), without removing it, panicking if the stack is empty. 
+
+<!--{/johanndoc:jstdlib/ArrayList.jn}-->
+
 ### `io`
 
 No files, just STDIN and STDOUT. `EOF` is any negative number.
