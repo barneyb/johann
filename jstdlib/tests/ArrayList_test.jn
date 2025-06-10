@@ -73,11 +73,11 @@ fn expand() {
 
 fn owned_elements() {
     puts("\nowned_elements:");
-    void* list = ArrayList__new(17);
+    void* list = ArrayList__new_owned(17, &free);
     ArrayList_push(list, malloc(1));
     ArrayList_push(list, malloc(1));
     size_and_cap(list);
-    ArrayList_drop_owned(list, &free);
+    ArrayList_drop(list);
 }
 
 fn get() {
