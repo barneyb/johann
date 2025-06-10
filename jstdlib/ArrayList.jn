@@ -1,6 +1,6 @@
 # I am auto-resizing array-backed list structure. Elements are always 64-bit
-# values with pass by value semantics. `ArrayList_drop_owned` can help with
-# cleanup if the values are pointers to owned objects.
+# values with pass by value semantics. `ArrayList__new_owned` can if the
+# elements are pointers to owned objects.
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
@@ -8,18 +8,27 @@
 #   int capacity
 #   int size
 #   void** data
+#   void* drop_el
 #}
 
 # I create a new list with the specified capacity.
 pub fn ArrayList__new(int capacity) {
+    return ArrayList__new_owned(capacity, null);
+}
+
+# I create a new list with the specified capacity, and function pointer for
+# dropping elements.
+pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     if capacity < 4 { capacity = 4; }
-    void* list = malloc(3 * 0x8);
-    *list = capacity;
+    void* list = malloc(0x20);
     list = list + 0x8;              # -> size
     *list = 0;
     list = list + 0x8;              # -> data
     *list = null;
-    list = list - 0x10;             # -> capacity
+    list = list + 0x8;              # -> drop_el
+    *list = drop_el;
+    list = list - 0x18;             # -> capacity
+    *list = capacity;
     return list;
 }
 
@@ -79,33 +88,25 @@ pub fn ArrayList_into_array(void* self) {
     return data;
 }
 
-# I drop the list.
+# I drop the list, along with its elements (if they are owned).
 pub fn ArrayList_drop(void* self) {
     void* data = self + 0x10;       # -> data
-    if *data != null {
-        free(*data);
-    }
-    free(self);
-}
-
-# I drop the list, after passing each element to `drop_el` (if the function
-# pointer is non-`null`).
-pub fn ArrayList_drop_owned(void* self, void* drop_el) {
-    void** data = self + 0x10;      # -> data
     void* arr = *data;
-    if arr != null {
-        if drop_el != null {
-            int i = 0;
-            int size = ArrayList_size(self);
-            while i < size {
-                void* el = arr + i * 0x8;
-                el = *el;
-                drop_el(el);
-                i = i + 1;
-            }
-        }
-        free(arr);
+    if arr == null {
+        return free(self);
     }
+    data = self + 0x18;             # -> drop_el
+    void* drop_el = *data;
+    if drop_el != null {
+        data = self + 0x8;          # -> size
+        int end = arr + *data * 0x8;
+        int el = arr;
+        while el < end {
+            drop_el(*el);
+            el = el + 0x8;
+        }
+    }
+    free(arr);
     free(self);
 }
 

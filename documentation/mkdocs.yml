@@ -15,22 +15,25 @@ theme:
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking
-    - navigation.sections
-    - navigation.tabs
+#    - navigation.sections
+#    - navigation.tabs
     - navigation.top
-#    - navigation.indexes
+    - navigation.indexes
     - navigation.footer
     - toc.follow
-    - toc.integrate
+#    - toc.integrate
   palette:
-    # Why 'custom' needs to be declared thrice is completely unclear. It does.
+    # Why primary/accept need to be declared thrice is completely unclear.
     - media: "(prefers-color-scheme)"
-      primary: custom
+      primary: light green
+      accent: light green
     - media: "(prefers-color-scheme: light)"
-      primary: custom
+      primary: light green
+      accent: light green
       scheme: default
     - media: "(prefers-color-scheme: dark)"
-      primary: custom
+      primary: light green
+      accent: light green
       scheme: slate
 extra_css:
   - stylesheets/extra.css

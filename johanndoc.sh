@@ -16,7 +16,16 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         FILE=$(head -n $THRU $DOC_FILE | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
         STEM=$(echo "$FILE" | rev | cut -d / -f 1 | rev | cut -d . -f 1)
         echo "  documenting '$STEM' (from $FILE)"
-        END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.+)?[}]-->' | head -n 1 | cut -d : -f 1)
+        END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.*)?[}]-->' | head -n 1 | cut -d : -f 1)
+        if [ -z "$END_LINE" ]; then
+            echo "File '$FILE' opened line $THRU is never closed"
+            exit 4
+        fi
+        END_FILE=$(tail -n +$(( THRU + END_LINE - 1 )) $DOC_FILE | head -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
+        if [ "$END_FILE" != "$FILE" ] && [ "$END_FILE" != "/johanndoc" ]; then
+            echo "File '$FILE' opened line $THRU mis-closed by '$END_FILE' on line $((THRU + END_LINE - 1))"
+            exit 4
+        fi
         {
             head -n $THRU $DOC_FILE
             echo
@@ -25,10 +34,16 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
             DOC=""
             do_file=yes
             while IFS= read -r line; do
-                if [[ "$line" =~ ^#.* ]]; then
-                    DOC="$DOC${line:2} "
+                if [ "$line" = "#" ]; then
+                    DOC="$DOC\n\n"
                     continue
-                elif [[ "$line" =~ ^pub.fn ]]; then
+                elif [[ "$line" =~ ^#.* ]]; then
+                    if [ -n "$DOC" ]; then
+                        DOC="$DOC "
+                    fi
+                    DOC="$DOC${line:2}"
+                    continue
+                elif [[ "$line" =~ ^pub ]]; then
                     line=$(echo "$line" | cut -d '{' -f 1 | cut -d ';' -f 1)
                     if ! echo "$line" | grep -F '_(' > /dev/null; then
                         echo '* `'"$line"'`'" - $DOC"

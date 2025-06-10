@@ -7,6 +7,7 @@ JSTDLIB = ../$(LIB)/jstdlib.o
 all: \
 	ArrayList_test \
 	StringBuilderTest \
+	TreeMap_test \
 	allocations \
 	getchar \
 	hello_world \
