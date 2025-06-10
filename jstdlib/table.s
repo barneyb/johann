@@ -81,6 +81,17 @@ __j_Table_drop_owned:
     ldp     x1, x2, [sp, 0x10]      ; load drop callbacks
     cmp     x1, NULL
     b.eq    drop_value
+;            .data
+;            kasd:.asciz ";DROP KEY %s @ %x\n"
+;            vasd:.asciz ";   AND VALUE %x\n"
+;            .text
+;            ldr     x1, [x0, 0x8]       ; load curr.key
+;            mov x2, x1
+;            adrp x0, kasd@PAGE
+;            add x0, x0, kasd@PAGEOFF
+;            bl __j_printf
+;            ldr     x0, [sp]                ; load curr
+;            ldp     x1, x2, [sp, 0x10]  ; load drop callbacks
         ldr     x0, [x0, 0x8]       ; load curr.key
         blr     x1                  ; drop_key(curr.key)
         ldr     x0, [sp]            ; load curr
@@ -88,6 +99,12 @@ __j_Table_drop_owned:
     drop_value:
     cmp     x2, NULL
     b.eq    drop_node
+;            ldr     x1, [x0, 0x10]      ; load curr.value
+;            adrp x0, vasd@PAGE
+;            add x0, x0, vasd@PAGEOFF
+;            bl __j_printf
+;            ldr     x0, [sp]                ; load curr
+;            ldp     x1, x2, [sp, 0x10]  ; load drop callbacks
         ldr     x0, [x0, 0x10]      ; load curr.value
         blr     x2                  ; drop_value(curr.value)
         ldr     x0, [sp]            ; load curr

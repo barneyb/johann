@@ -29,8 +29,7 @@ pub fn Block_init(void* self, int type, int id) {
 
 pub fn Block_drop(void* self) {
     void* symbols = Block_symbols(self);
-    void* drop = &free;
-    Table_drop_owned(symbols, drop, drop);
+    Table_drop_owned(symbols, &free, &free);
 }
 
 pub fn Block_type(void* self) {

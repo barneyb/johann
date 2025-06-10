@@ -46,6 +46,50 @@ pub fn mem_stats__() {
     }
 }
 
+pub fn print_mem_chain(void* mem) {
+    int i = 0;
+    printf("chain:\n");
+    while mem > 0x100000000 {
+        if mem > 0x110000000 {
+            done;
+        }
+        printf("  Value at %p: %x / %i\n", mem, *mem, *mem);
+        mem = *mem;
+        i = i + 1;
+        if i > 25 { done; }
+    }
+}
+
+pub fn dump_around(void* mem) {
+    void* curr = mem - 0x100;
+    void* end = mem + 0x100;
+    eprintf("DUMP AROUND %x\n", mem);
+    while curr < end {
+        if curr == mem {
+            eprintf("> %p: ", curr);
+        }
+        if curr != mem {
+            eprintf("  %p: ", curr);
+        }
+        char* cc = curr;
+        int line = curr + 0x20;
+        while curr < line {
+            int i = *curr;
+            eprintf("%16x ", i);
+            curr = curr + 0x8;
+        }
+        while cc < line {
+            char c = *cc;
+            if c <  0x20 { c = '.'; }
+            if c >= 0x7f { c = '.'; }
+            eprintf("%c", c);
+            cc = cc + 0x1;
+            if cc % 0x8 == 0 { eprintf(" "); }
+        }
+        eprintf("\n");
+    }
+}
+
 # Free the allocation pointed to by the passed pointer, previously returned from
 # `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
@@ -77,7 +121,9 @@ pub fn free(void* mem) {
     while next != null {
         if mem == next {
             # already in the free list?!
-            panic(98, "Double-free error\n", 18);
+            eprintf("Memory at %x has already been freed\n", mem);
+            dump_around(mem);
+            exit(98);
         }
         int bs = next - 0x8;        # -> len
         bs = *bs;
@@ -178,8 +224,7 @@ fn find_free_chunk(int bytes) {
 # Allocate (at least) the specified number of bytes of memory and return a
 # pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
-    int aln = MALLOC_ALIGN;
-    bytes = align(bytes, aln);
+    bytes = align(bytes, MALLOC_ALIGN);
 
     # first, see if there's a free chunk to recycle
     void mem = find_free_chunk(bytes);
@@ -238,8 +283,7 @@ fn align(int bytes, int alignment) {
 fn get_more_memory(int bytes) {
 #        char* f = "get_more_memory(%x)\n";
 #        eprintf(f, bytes);
-    int aln = PAGE_SIZE;
-    bytes = align(bytes, aln);
+    bytes = align(bytes, PAGE_SIZE);
 #        f = "  -> get_more_memory(%x)\n";
 #        eprintf(f, bytes);
     void at = HEAP_END;
@@ -249,7 +293,7 @@ fn get_more_memory(int bytes) {
     }
 
 #        f = "  -> got %x bytes @ %p (%x total)\n";
-#        aln = HEAP_END - HEAP_START;
+#        int aln = HEAP_END - HEAP_START;
 #        aln = aln + bytes;
 #        eprintf(f, bytes, mem, aln);
 

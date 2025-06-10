@@ -20,16 +20,16 @@ pub fn ArrayList__new(int capacity) {
 # dropping elements.
 pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     if capacity < 4 { capacity = 4; }
-    void* list = malloc(0x20);
-    list = list + 0x8;              # -> size
-    *list = 0;
-    list = list + 0x8;              # -> data
-    *list = null;
-    list = list + 0x8;              # -> drop_el
-    *list = drop_el;
-    list = list - 0x18;             # -> capacity
-    *list = capacity;
-    return list;
+    void* self = malloc(0x20);
+    self = self + 0x8;              # -> size
+    *self = 0;
+    self = self + 0x8;              # -> data
+    *self = null;
+    self = self + 0x8;              # -> drop_el
+    *self = drop_el;
+    self = self - 0x18;             # -> capacity
+    *self = capacity;
+    return self;
 }
 
 # I return the number of elements current in the list.
