@@ -38,19 +38,76 @@ fi
 cp jnc/target/bin/jnc bin
 strip bin/jnc
 cp jstdlib/target/lib/jstdlib.o lib
-if ! make not_quite_lisp; then
+if ! make clean test all not_quite_lisp; then
     nope 7 "Not Quite Lisp doesn't work anymore"
 fi
 git add --force bin/jnc lib/jstdlib.o
 
+# regen docs
 ./docs.sh
-git add README.md
+
+# version numbers
+DOC_FILE=documentation/docs/system/index.md
+LINE=$(grep -Fn '% ./jnc/target/bin/jnc --version' $DOC_FILE | cut -d : -f 1)
+{
+    head -n $LINE $DOC_FILE
+    ./bin/jnc --version
+    LINE=$(( LINE + 4 ))
+    tail -n +$LINE $DOC_FILE | head -n 1
+    LINE=$(( LINE + 4 ))
+    echo "pub fn main(){}" | ./bin/jnc | head -n 3
+    tail -n +$LINE $DOC_FILE
+} > tmp.md
+mv tmp.md $DOC_FILE
+
+# system software
+DOC_FILE=documentation/docs/system/index.md
+LINE=$(grep -Fn '<!--{systemsoftware}-->' $DOC_FILE | cut -d : -f 1)
+{
+    head -n $LINE $DOC_FILE
+    echo '```'
+    echo '% uname -a'
+    uname -a
+    echo "%"
+    echo '% make --version'
+    make --version
+    echo "%"
+    echo '% gcc --version'
+    gcc --version
+    echo "%"
+    echo '% ld -v'
+    ld -v 2>&1
+    echo '```'
+    LINE=$(grep -Fn '<!--{/systemsoftware}-->' $DOC_FILE | cut -d : -f 1)
+    tail -n +$LINE $DOC_FILE
+} > tmp.md
+mv tmp.md $DOC_FILE
+
+# update release history
+VERSION="v$(./bin/jnc -v | cut -d ' ' -f 2 | cut -d - -f 1)"
+DOC_FILE=documentation/docs/versions/index.md
+LINE=$(grep -Fn '### Bleeding Edge' $DOC_FILE | cut -d : -f 1)
+if [ -z "$LINE" ]; then
+    nope 8 "Didn't find 'Bleeding Edge' heading in release history to promote."
+fi
+{
+    LINE=$(( LINE - 1 ))
+    head -n $LINE $DOC_FILE
+    echo '[//]: # (### Bleeding Edge)'
+    echo
+    echo '### `'"$VERSION"'`'
+    echo
+    LINE=$(( LINE + 3 ))
+    tail -n +$LINE $DOC_FILE
+} > tmp.md
+mv tmp.md $DOC_FILE
+
+git add documentation
 
 # commit and tag
-VERSION=$(./bin/jnc -v | cut -d ' ' -f 2 | cut -d - -f 1)
-git commit -a -m "Add v${VERSION} release binaries"
+git commit -a -m "Add ${VERSION} release binaries"
 make clean test all
 if ! git diff --quiet; then
     nope 5 "Release created dirtiness"
 fi
-git tag -a -m "Release v${VERSION}" "v${VERSION}"
+git tag -a -m "Release ${VERSION}" "${VERSION}"
