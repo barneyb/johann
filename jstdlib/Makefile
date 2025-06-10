@@ -6,6 +6,7 @@ JNC = ../bin/jnc
 OBJECTS = \
 	$(LIB)/ArrayList.jn.o \
 	$(LIB)/StringBuilder.jn.o \
+	$(LIB)/TreeMap.jn.o \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
 	$(LIB)/string.jn.o \

@@ -1,0 +1,81 @@
+
+drop_empty
+
+put_delete
+Full tree:
+size: 10, empty: false
+0x0 -> 0x0
+        0x1 -> 0x1
+            0x2 -> 0x2
+    0x3 -> 0x0
+            0x4 -> 0x1
+                0x5 -> 0x2
+        0x6 -> 0x0
+                0x7 -> 0x1
+                    0x8 -> 0x2
+            0x9 -> 0x0
+With two+fives removed:
+size: 8, empty: false
+0x0 -> 0x0
+        0x1 -> 0x1
+    0x3 -> 0x0
+            0x4 -> 0x1
+                0x5 -> 0x2
+        0x6 -> 0x0
+                0x8 -> 0x2
+            0x9 -> 0x0
+
+owned_keys
+size: 0, empty: true
+size: 3, empty: false
+
+owned_values
+size: 0, empty: true
+size: 3, empty: false
+
+the_old_symbols_test
+size: 0, empty: true
+contains 'one': false
+contains 'two': false
+[[ add 'one' -> 'spiffy' ]]
+size: 1, empty: false
+contains 'one': true
+value of 'one': 'spiffy'
+contains 'two': false
+value of 'two': null
+[[ add 'two' -> 'goober' ]]
+size: 2, empty: false
+contains 'one': true
+value of 'one': 'spiffy'
+contains 'two': true
+value of 'two': 'goober'
+[[ replace 'one' -> 'thinger' ]]
+size: 2, empty: false
+contains 'one': true
+value of 'one': 'thinger'
+contains 'two': true
+value of 'two': 'goober'
+[[ delete 'garbage' ]]
+size: 2, empty: false
+contains 'one': true
+value of 'one': 'thinger'
+contains 'two': true
+value of 'two': 'goober'
+[[ delete 'one' ]]
+size: 1, empty: false
+contains 'one': false
+value of 'one': null
+contains 'two': true
+value of 'two': 'goober'
+[[ delete 'two' ]]
+size: 0, empty: true
+contains 'one': false
+value of 'one': null
+contains 'two': false
+value of 'two': null
+[[ delete 'two' (again) ]]
+size: 0, empty: true
+contains 'one': false
+value of 'one': null
+contains 'two': false
+value of 'two': null

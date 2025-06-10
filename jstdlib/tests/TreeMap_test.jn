@@ -1,0 +1,159 @@
+fn strcmp(char* lhs, char* rhs);
+fn free(void*);
+
+fn intcmp(int a, int b) {
+    return a - b;
+}
+
+pub fn main() {
+    drop_empty();
+    put_delete();
+    owned_keys();
+    owned_values();
+    the_old_symbols_test();
+}
+
+fn drop_empty() {
+    puts("\ndrop_empty");
+    void* map = TreeMap__new(&intcmp);
+    TreeMap_drop(map);
+    mem_stats__();
+}
+
+fn put_delete() {
+    puts("\nput_delete");
+    void* map = TreeMap__new(&intcmp);
+
+    int i = 0;
+    int j;
+    while i < 3 {
+        j = i;
+        while j < 10 {
+            TreeMap_put(map, j, i);
+            j = j + 3;
+        }
+        i = i + 1;
+    }
+    puts("Full tree:");
+    print_size(map);
+    TreeMap_debug_(map);
+
+    j = 2;
+    while j < 10 {
+        TreeMap_delete(map, j);
+        j = j + 5;
+    }
+    puts("With two+fives removed:")
+    print_size(map);
+    TreeMap_debug_(map);
+
+    TreeMap_drop(map);
+    mem_stats__();
+}
+
+fn owned_keys() {
+    puts("\nowned_keys");
+    void* map = TreeMap__new_owned(&strcmp, &free, null);
+    print_size(map);
+    TreeMap_put(map, strclone("a"), 0);
+    TreeMap_put(map, strclone("b"), 2);
+    TreeMap_put(map, strclone("c"), 1);
+    TreeMap_put(map, strclone("b"), 3); # new value for existing key
+    print_size(map);
+    TreeMap_drop(map);
+    mem_stats__();
+}
+
+fn owned_values() {
+    puts("\nowned_values");
+    void* map = TreeMap__new_owned(&intcmp, null, &free);
+    print_size(map);
+    TreeMap_put(map, 0, malloc(8));
+    TreeMap_put(map, 2, malloc(8));
+    TreeMap_put(map, 1, malloc(8));
+    TreeMap_put(map, 2, malloc(8)); # replace a value
+    print_size(map);
+    TreeMap_drop(map);
+    mem_stats__();
+}
+
+fn the_old_symbols_test() {
+    puts("\nthe_old_symbols_test");
+    void* map = TreeMap__new(&strcmp);
+
+    print_size(map);
+    print_contains(map, "one");
+    print_contains(map, "two");
+
+    # add key
+    puts("[[ add 'one' -> 'spiffy' ]]");
+    TreeMap_put(map, "one", "spiffy");
+    one_and_two(map);
+
+    # another key
+    puts("[[ add 'two' -> 'goober' ]]");
+    TreeMap_put(map, "two", "goober");
+    one_and_two(map);
+
+    # replace key
+    puts("[[ replace 'one' -> 'thinger' ]]");
+    TreeMap_put(map, "one", "thinger");
+    one_and_two(map);
+
+    # delete non-existent key
+    puts("[[ delete 'garbage' ]]");
+    TreeMap_delete(map, "garbage");
+    one_and_two(map);
+
+    # delete a key
+    puts("[[ delete 'one' ]]");
+    TreeMap_delete(map, "one");
+    one_and_two(map);
+
+    # delete final key
+    puts("[[ delete 'two' ]]");
+    TreeMap_delete(map, "two");
+    one_and_two(map);
+
+    # delete when empty
+    puts("[[ delete 'two' (again) ]]");
+    TreeMap_delete(map, "whatever");
+    one_and_two(map);
+
+    # add a couple keys
+    TreeMap_put(map, "sebastian", "crab");
+    TreeMap_put(map, "sassafras", "tree");
+
+    # drop it
+    TreeMap_drop(map);
+    mem_stats__();
+}
+
+fn one_and_two(void* map) {
+    print_size(map);
+    print_contains(map, "one");
+    print_get(map, "one");
+    print_contains(map, "two");
+    print_get(map, "two");
+}
+
+fn print_size(void* map) {
+    printf("size: %d, empty: %b\n",
+           TreeMap_size(map),
+           TreeMap_is_empty(map));
+}
+
+fn print_contains(void* map, char* key) {
+    printf("contains '%s': %b\n",
+           key,
+           TreeMap_contains(map, key));
+}
+
+fn print_get(void* map, char* key) {
+    char* val = TreeMap_get(map, key);
+    if val = null {
+        printf("value of '%s': null\n", key);
+        return;
+    }
+    printf("value of '%s': '%s'\n", key, val);
+}

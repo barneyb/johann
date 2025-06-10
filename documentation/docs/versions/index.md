@@ -9,7 +9,7 @@ At the moment, Johann is building up from "nothing" towards "complete". There's 
 
 ### Bleeding Edge
 
-Add an `ArrayList` ADT, and fix all use of `=` and `!`.
+Add `ArrayList` and `TreeMap` ADTs to the library, and fix all use of `=` and `!`.
 
 ### `v0.20250610`
 

@@ -43,7 +43,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     fi
                     DOC="$DOC${line:2}"
                     continue
-                elif [[ "$line" =~ ^pub.fn ]]; then
+                elif [[ "$line" =~ ^pub ]]; then
                     line=$(echo "$line" | cut -d '{' -f 1 | cut -d ';' -f 1)
                     if ! echo "$line" | grep -F '_(' > /dev/null; then
                         echo '* `'"$line"'`'" - $DOC"
