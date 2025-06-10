@@ -100,7 +100,7 @@ pub fn Lexer_token(void* self) {
 pub fn Lexer_peek(void* self) {
     void* next = self + 0x10;
     void* token = *next;
-    if token = null {
+    if token == null {
         token = get_next_token(self);
         *next = token;
     }
@@ -113,46 +113,46 @@ pub fn get_next_token(void* self) {
             return null;
         }
         char c = next_char(self);
-        if c = 0xa { # newline
+        if c == 0xa { # newline
             next_line(self);
             again;
         }
-        if c = ' ' { again; }
-        if c = '	' { again; } # a literal tab # todo: char escapes
-        if c = '#' {
+        if c == ' ' { again; }
+        if c == '	' { again; } # a literal tab # todo: char escapes
+        if c == '#' {
             Lexer_lex_comment(self);
             again;
         }
-        if c = T_CBRACE   { return new_token(self, c); }
-        if c = T_CBRACKET { return new_token(self, c); }
-        if c = T_COLON    { return new_token(self, c); }
-        if c = T_COMMA    { return new_token(self, c); }
-        if c = T_CPAREN   { return new_token(self, c); }
-        if c = T_DOT      { return new_token(self, c); }
-        if c = T_OBRACE   { return new_token(self, c); }
-        if c = T_OBRACKET { return new_token(self, c); }
-        if c = T_OPAREN   { return new_token(self, c); }
-        if c = T_QUESTION { return new_token(self, c); }
-        if c = T_SEMI     { return new_token(self, c); }
+        if c == T_CBRACE   { return new_token(self, c); }
+        if c == T_CBRACKET { return new_token(self, c); }
+        if c == T_COLON    { return new_token(self, c); }
+        if c == T_COMMA    { return new_token(self, c); }
+        if c == T_CPAREN   { return new_token(self, c); }
+        if c == T_DOT      { return new_token(self, c); }
+        if c == T_OBRACE   { return new_token(self, c); }
+        if c == T_OBRACKET { return new_token(self, c); }
+        if c == T_OPAREN   { return new_token(self, c); }
+        if c == T_QUESTION { return new_token(self, c); }
+        if c == T_SEMI     { return new_token(self, c); }
         # ambiguous character tokens...
-        if c = T_AMP      { return token_ampersand(self, c); }
-        if c = T_ASSIGN   { return token_eq(self, c); }
-        if c = T_BANG     { return token_bang(self, c); }
-        if c = T_GT       { return token_gt(self, c); }
-        if c = T_LT       { return token_lt(self, c); }
-        if c = T_PIPE     { return token_pipe(self, c); }
+        if c == T_AMP      { return token_ampersand(self, c); }
+        if c == T_ASSIGN   { return token_eq(self, c); }
+        if c == T_BANG     { return token_bang(self, c); }
+        if c == T_GT       { return token_gt(self, c); }
+        if c == T_LT       { return token_lt(self, c); }
+        if c == T_PIPE     { return token_pipe(self, c); }
         # non-ambiguous character tokens...
-        if c = T_MINUS    { return new_token(self, c); }
-        if c = T_PERCENT  { return new_token(self, c); }
-        if c = T_PLUS     { return new_token(self, c); }
-        if c = T_SLASH    { return new_token(self, c); }
-        if c = T_STAR     { return new_token(self, c); }
+        if c == T_MINUS    { return new_token(self, c); }
+        if c == T_PERCENT  { return new_token(self, c); }
+        if c == T_PLUS     { return new_token(self, c); }
+        if c == T_SLASH    { return new_token(self, c); }
+        if c == T_STAR     { return new_token(self, c); }
         # multi-character tokens...
-        if c > '`' { return token_id_ish(self, c); } # char before 'a'
-        if c > '@' { return token_ID_ish(self, c); } # char before 'A'
-        if c > '/' { return token_int_ish(self, c); } # char before '0'
-        if c = T_SQUOTE { return token_char(self); }
-        if c = T_DQUOTE { return token_string(self); }
+        if c >= 'a' { return token_id_ish(self, c); }
+        if c >= 'A' { return token_ID_ish(self, c); }
+        if c >= '0' { return token_int_ish(self, c); }
+        if c == T_SQUOTE { return token_char(self); }
+        if c == T_DQUOTE { return token_string(self); }
     }
 }
 
@@ -161,7 +161,7 @@ fn Lexer_lex_comment(void* self) {
     while true {
         if iseof() { return; }
         char c = getchar();
-        if c = 0xa { # newline
+        if c == 0xa { # newline
             done;
         }
     }
@@ -169,7 +169,7 @@ fn Lexer_lex_comment(void* self) {
 }
 
 fn token_gt(void* self, char c) {
-    if peekchar() = T_ASSIGN {
+    if peekchar() == T_ASSIGN {
         void* tkn = new_token(self, T_GTE);
         next_char(self); # consume
         return tkn;
@@ -178,7 +178,7 @@ fn token_gt(void* self, char c) {
 }
 
 fn token_lt(void* self, char c) {
-    if peekchar() = T_ASSIGN {
+    if peekchar() == T_ASSIGN {
         void* tkn = new_token(self, T_LTE);
         next_char(self); # consume
         return tkn;
@@ -188,7 +188,7 @@ fn token_lt(void* self, char c) {
 
 fn token_eq(void* self, char c) {
     char next = peekchar();
-    if next = T_ASSIGN {
+    if next == T_ASSIGN {
         void* tkn = new_token(self, T_EQ);
         next_char(self); # consume
         return tkn;
@@ -198,7 +198,7 @@ fn token_eq(void* self, char c) {
 
 fn token_bang(void* self, char c) {
     char next = peekchar();
-    if next = T_ASSIGN {
+    if next == T_ASSIGN {
         void* tkn = new_token(self, T_NEQ);
         next_char(self); # consume
         return tkn;
@@ -208,7 +208,7 @@ fn token_bang(void* self, char c) {
 
 fn token_ampersand(void* self, char c) {
     char next = peekchar();
-    if next = T_AMP {
+    if next == T_AMP {
         void* tkn = new_token(self, T_LOG_AND);
         next_char(self); # consume
         return tkn;
@@ -218,7 +218,7 @@ fn token_ampersand(void* self, char c) {
 
 fn token_pipe(void* self, char c) {
     char next = peekchar();
-    if next = T_PIPE {
+    if next == T_PIPE {
         void* tkn = new_token(self, T_LOG_OR);
         next_char(self); # consume
         return tkn;
@@ -312,15 +312,15 @@ fn token_string(void* self, int first_char) {
 fn lex_digits(void* self, char first_char) {
     int n;
     int val;
-    if first_char ! '0' {
+    if first_char != '0' {
         # decimal
         val = lex_digits_dec(self, first_char);
     }
-    if first_char = '0' {
+    if first_char == '0' {
         # might be zero, might be hex
         char c = peekchar();
         bool d;
-        if c = 'x' {
+        if c == 'x' {
             # hex
             next_char(self); # soak up the 'x'
             first_char = next_char(self);
@@ -330,7 +330,7 @@ fn lex_digits(void* self, char first_char) {
             }
             val = lex_digits_hex(self, first_char);
         } # todo: else would be nice...
-        if c ! 'x' {
+        if c != 'x' {
             d = isdigit(c);
             if d {
                 bad_char(self, c);
@@ -360,7 +360,7 @@ fn lex_digits_dec(void* self, char first_char) {
 
 fn next_potential_digit(void* self) {
     char c = peekchar();
-    while c = '_' {
+    while c == '_' {
         # allow arbitrary underscores in literals
         next_char(self);
         c = peekchar();
@@ -386,10 +386,10 @@ fn lex_digits_hex(void* self, char first_char) {
 
 fn parse_hex_digit(char c) {
     if c > 'Z' {
-        return c - 'W'; # 10 before 'a'
+        return c - ('a' - 10);
     }
     if c > '9' {
-        return c - '7'; # 10 before 'A'
+        return c - ('A' - 10);
     }
     return c - '0';
 }
@@ -401,7 +401,7 @@ fn lex_string(void* self) {
     char c;
     while true {
         c = next_char(self);
-        if c = '"' { done; }
+        if c == '"' { done; }
         StringBuilder_push(buf, c);
     }
 
@@ -418,12 +418,12 @@ fn lex_id(void* self, char first_char) {
         c = peekchar();
         # below zero is bad
         if c < '0' { done; }
-        # digits are fin
+        # digits are fine
         if c > '9' { if c < 'A' { done; } }
         # uppercase are fine
         if c > 'Z' { if c < '_' { done; } }
         # _ is fine
-        if c = '`' { done; } # single char between '_' and 'a'
+        if c == '`' { done; } # single char between '_' and 'a'
         # lowercase are fine
         if c > 'z' { done; }
         # above z is bad
@@ -450,19 +450,19 @@ fn convert_keyword(void* token) {
     int type;
     char c = *name;
     void v;
-    if c = 'a' {
+    if c == 'a' {
         kw = KW_AGAIN;
         type = T_KW_AGAIN;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'b' {
+    if c == 'b' {
         kw = KW_BOOL;
         type = T_KW_BOOL;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'c' {
+    if c == 'c' {
         kw = KW_CHAR;
         type = T_KW_CHAR;
         if to_keyword(token, name, kw, type) { return; }
@@ -471,13 +471,13 @@ fn convert_keyword(void* token) {
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'd' {
+    if c == 'd' {
         kw = KW_DONE;
         type = T_KW_DONE;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'f' {
+    if c == 'f' {
         kw = KW_FALSE;
         type = T_BOOL;
         if to_keyword(token, name, kw, type) {
@@ -490,7 +490,7 @@ fn convert_keyword(void* token) {
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'i' {
+    if c == 'i' {
         kw = KW_IF;
         type = T_KW_IF;
         if to_keyword(token, name, kw, type) { return; }
@@ -499,13 +499,13 @@ fn convert_keyword(void* token) {
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'l' {
+    if c == 'l' {
         kw = KW_LET;
         type = T_KW_LET;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'n' {
+    if c == 'n' {
         kw = KW_NULL;
         type = T_INT;
         if to_keyword(token, name, kw, type) {
@@ -515,19 +515,19 @@ fn convert_keyword(void* token) {
         }
         return;
     }
-    if c = 'p' {
+    if c == 'p' {
         kw = KW_PUB;
         type = T_KW_PUB;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'r' {
+    if c == 'r' {
         kw = KW_RETURN;
         type = T_KW_RETURN;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 't' {
+    if c == 't' {
         kw = KW_TRUE;
         type = T_BOOL;
         if to_keyword(token, name, kw, type) {
@@ -537,13 +537,13 @@ fn convert_keyword(void* token) {
         }
         return;
     }
-    if c = 'v' {
+    if c == 'v' {
         kw = KW_VOID;
         type = T_KW_VOID;
         if to_keyword(token, name, kw, type) { return; }
         return;
     }
-    if c = 'w' {
+    if c == 'w' {
         kw = KW_WHILE;
         type = T_KW_WHILE;
         if to_keyword(token, name, kw, type) { return; }

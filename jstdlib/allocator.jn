@@ -49,7 +49,7 @@ pub fn mem_stats__() {
 # Free the allocation pointed to by the passed pointer, previously returned from
 # `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
-    if mem = null {
+    if mem == null {
         return null;
     }
     # load the size/bytes from the header
@@ -58,7 +58,7 @@ pub fn free(void* mem) {
 
 #        printf(" ; free  %x bytes at %p\n", bytes, mem);
 
-    if bytes = 0 {
+    if bytes == 0 {
         eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
         a = mem - 0x10; # go back to last quadword of prev chunk
         eprintf("  Last quadword of prev chunk: %x\n", *a);
@@ -74,31 +74,31 @@ pub fn free(void* mem) {
 
     void next = FREE_LIST;
     void prev = null;
-    while next ! null {
-        if mem = next {
+    while next != null {
+        if mem == next {
             # already in the free list?!
             exit(98);
         }
         int bs = next - 0x8;        # -> len
         bs = *bs;
-        if bs < bytes {
-            prev = next;
-            next = next + 0x8;      # -> next
-            next = *next;
-            again;
+        if bs >= bytes {
+            # big enough!
+            done;
         }
-        done;
+        prev = next;
+        next = next + 0x8;          # -> next
+        next = *next;
     }
 
     *mem = prev;
-    if prev = null {
+    if prev == null {
         FREE_LIST = mem;
     }
-    if prev ! null {
+    if prev != null {
         prev = prev + 8;
         *prev = mem;
     }
-    if next ! null {
+    if next != null {
         *next = mem;
     }
     mem = mem + 8;
@@ -113,7 +113,7 @@ pub fn free(void* mem) {
 fn print_free_list() {
     void curr = FREE_LIST;
     printf("[FREE LIST: %p\n", curr);
-    while curr ! null {
+    while curr != null {
         curr = curr - 0x8;
         int bytes = *curr;
         curr = curr + 0x10;
@@ -128,7 +128,7 @@ fn print_free_list() {
 
 fn find_free_chunk(int bytes) {
 #    char* f;
-    if FREE_LIST = null {
+    if FREE_LIST == null {
 #            f = "   No free chunks!";
 #            puts(f);
         return null;
@@ -137,19 +137,18 @@ fn find_free_chunk(int bytes) {
 #        f = "   CURR %p\n";
 #        printf(f, curr);
     int a;
-    while curr ! null {
+    while curr != null {
         a = curr - 0x8;
         int size = *a; # size of chunk
 #            f = "   FREE: %x bytes at %p\n";
 #            printf(f, size, curr);
-        # todo: <= sure would be nice...
-        if bytes > size {
-            curr = *curr; # pointer -> previous chunk
-            again;
+        if bytes <= size {
+            # big enough
+            done;
         }
-        done;
+        curr = *curr; # pointer -> previous chunk
     }
-    if curr = null {
+    if curr == null {
         # didn't find one
 #            f = "   No free chunk >= %x bytes\n";
 #            printf(f, bytes);
@@ -161,15 +160,15 @@ fn find_free_chunk(int bytes) {
     void prev = *curr;
     a = curr + 0x8;
     void next = *a;
-    if curr = FREE_LIST {
+    if curr == FREE_LIST {
         FREE_LIST = next; # null or not
     }
 #        f = "   CURR %p is preceded by %p and succeeded by %p\n";
 #        printf(f, curr, prev, next);
-    if next ! null {
+    if next != null {
         *next = prev;
     }
-    if prev ! null {
+    if prev != null {
         prev = prev + 0x8;
         *prev = next;
     }
@@ -185,7 +184,7 @@ pub fn malloc(int bytes) {
     # first, see if there's a free chunk to recycle
     void mem = find_free_chunk(bytes);
 
-    if mem = null {
+    if mem == null {
         # need to allocate a new chunk
         # first, see if we need to get more from the OS
         mem = HEAP_TOP;
@@ -208,14 +207,14 @@ pub fn malloc(int bytes) {
     int chunk_size = mem - 0x8;
     chunk_size = *chunk_size;
 
-#        if chunk_size = bytes {
+#        if chunk_size == bytes {
 #            printf(" ; alloc %x bytes at %p\n", chunk_size, mem);
 #        }
-#        if chunk_size ! bytes {
+#        if chunk_size != bytes {
 #            int waste = chunk_size - bytes;
 #            printf(" ; alloc %x bytes at %p (waste %x)\n", chunk_size, mem, waste);
 #        }
-#        if FREE_LIST ! null {
+#        if FREE_LIST != null {
 #            print_free_list();
 #        }
 
@@ -229,7 +228,7 @@ pub fn malloc(int bytes) {
 fn align(int bytes, int alignment) {
     # todo: bitwise ops would be nice...
     int remainder = bytes % alignment;
-    if remainder ! 0 {
+    if remainder != 0 {
         bytes = bytes - remainder;
         bytes = bytes + alignment;
     }
@@ -245,7 +244,7 @@ fn get_more_memory(int bytes) {
 #        eprintf(f, bytes);
     void at = HEAP_END;
     void mem = mmap_internal(at, bytes);
-    if mem = null {
+    if mem == null {
         failed_to_mmap();
     }
 
@@ -254,7 +253,7 @@ fn get_more_memory(int bytes) {
 #        aln = aln + bytes;
 #        eprintf(f, bytes, mem, aln);
 
-    if HEAP_START = HEAP_END {
+    if HEAP_START == HEAP_END {
         HEAP_START = mem; # this was the first page
     }
     HEAP_TOP = mem;

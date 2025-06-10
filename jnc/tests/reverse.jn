@@ -47,8 +47,8 @@ fn do_string(char* a) {
 fn strpos(char* a, char b) {
     char* d = a;
     char c = scan(d);
-    while c ! b {
-        if c = 0 {
+    while c != b {
+        if c == 0 {
             return -1;
         }
         d = d + 1;

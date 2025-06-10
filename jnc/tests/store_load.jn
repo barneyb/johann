@@ -44,7 +44,7 @@ fn test_globals() {
     printf(format, n);
     n = A;
     free(n);
-    n = n = A;
+    n = n == A;
     char* f2 = "global: %b\n";
     printf(f2, n);
     A = null;
