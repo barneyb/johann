@@ -1,0 +1,8 @@
+.md-copyright {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.md-search__form {
+    border-radius: .25rem;
+}
