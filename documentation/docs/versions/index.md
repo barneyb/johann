@@ -7,7 +7,9 @@ At the moment, Johann is building up from "nothing" towards "complete". There's 
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20250610`
 
 Support `==` and `!=` in favor of their kludge counterparts `=` and `!`. Support `>=` and `<=` as well. Use "best fit" memory recycling, instead of "lowest address". Add actual docs, not a 20-page README.md.
 
