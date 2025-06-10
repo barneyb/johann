@@ -1,6 +1,5 @@
 site_name: Johann
 copyright: Copyright &copy; 2025 Barney Boisvert
-# It's reasonable to expect these three lines to be implicit, but no.
 site_url: https://barneyb.github.io/johann
 repo_url: https://github.com/barneyb/johann
 repo_name: barneyb/johann
@@ -16,8 +15,10 @@ theme:
     - navigation.instant
     - navigation.instant.progress
     - navigation.tracking
+    - navigation.sections
     - navigation.tabs
-    - navigation.indexes
+    - navigation.top
+#    - navigation.indexes
     - navigation.footer
     - toc.follow
     - toc.integrate
