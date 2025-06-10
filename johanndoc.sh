@@ -1,17 +1,8 @@
 #!/usr/bin/env zsh
 set -e
 
-function nope() {
-    set +x
-    echo
-    echo "${2} Refusing to proceed."
-    echo
-    exit $1
-}
-
 cd "$(dirname "$0")"
 
-# johanndoc
 for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
     echo "processing $DOC_FILE"
     THRU=0
@@ -22,10 +13,12 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
             break;
         fi
         THRU=$(( THRU + LINE - 1 ))
+        FILE=$(head -n $THRU $DOC_FILE | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
+        STEM=$(echo "$FILE" | rev | cut -d / -f 1 | rev | cut -d . -f 1)
+        echo "  documenting '$STEM' (from $FILE)"
+        END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.+)?[}]-->' | head -n 1 | cut -d : -f 1)
         {
             head -n $THRU $DOC_FILE
-            FILE=$(head -n $THRU $DOC_FILE | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
-            STEM=$(echo "$FILE" | rev | cut -d / -f 1 | rev | cut -d . -f 1)
             echo
             echo '### `'"$STEM"'`'
             echo
@@ -50,10 +43,6 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
             done < "$FILE"
             echo
             echo "<!--{/johanndoc:$FILE}-->"
-            END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.+)?[}]-->' | head -n 1 | cut -d : -f 1)
-            if [[ -z "$END_LINE" ]]; then
-                nope 10 "Failed to find /johanndoc for '$FILE'"
-            fi
             tail -n +$(( THRU + END_LINE )) $DOC_FILE
         } > tmp.md
         mv tmp.md $DOC_FILE

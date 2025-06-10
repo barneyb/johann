@@ -17,7 +17,11 @@ if [ "${BRANCH}" != "master" ]; then
 fi
 
 if ! git diff --quiet; then
-    nope 2 "Working copy is dirty!"
+    nope 2 "Working copy is dirty."
+fi
+
+if git log --oneline | grep -E 'fixup|WIP|DEV'; then
+    nope 9 "Found temp commits in log."
 fi
 
 git fetch
@@ -43,8 +47,7 @@ if ! make clean test all not_quite_lisp; then
 fi
 git add --force bin/jnc lib/jstdlib.o
 
-# regen docs
-./docs.sh
+./johanndoc.sh
 
 # version numbers
 DOC_FILE=documentation/docs/system/index.md
