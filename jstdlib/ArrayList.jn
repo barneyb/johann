@@ -52,7 +52,7 @@ pub fn ArrayList_push(void* self, void el) {
         # need more!
         cap = cap * 2;
         void* next = malloc(cap * 0x8);
-        memcpy(next, arr, cap * 0x8)
+        memcpy(next, arr, cap * 0x8);
         free(arr);
         *self = cap;
         *data = next;
@@ -123,7 +123,7 @@ pub fn ArrayList_pop(void* self) {
         void* next = malloc(cap * 0x8);
         void** data = self + 0x10;  # -> data
         void arr = *data;
-        memcpy(next, arr, cap * 0x8)
+        memcpy(next, arr, cap * 0x8);
         free(arr);
         *self = cap;
         *data = next;

@@ -43,7 +43,7 @@ fn put_delete() {
         TreeMap_delete(map, j);
         j = j + 5;
     }
-    puts("With two+fives removed:")
+    puts("With two+fives removed:");
     print_size(map);
     TreeMap_debug_(map);
 

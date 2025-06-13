@@ -620,7 +620,7 @@ fn parse_block(void* lex, void* emitter) {
         }
         void* stmt = parse_statement(lex, emitter);
         if stmt != null {
-            ArrayList_push(stmts, stmt)
+            ArrayList_push(stmts, stmt);
         }
     }
     return ArrayList_into_array(stmts);
@@ -705,6 +705,7 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
         consume_token(lex, T_ASSIGN);
         rhs = parse_expr(lex);
     }
+    consume_token(lex, T_SEMI);
 
     # bare evaluation
     if rhs == null {
