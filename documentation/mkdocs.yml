@@ -22,6 +22,9 @@ theme:
     - navigation.footer
     - toc.follow
 #    - toc.integrate
+  icon:
+    logo: material/music-rest-quarter
+  favicon: images/rest.png
   palette:
     # Why primary/accept need to be declared thrice is completely unclear.
     - media: "(prefers-color-scheme)"
