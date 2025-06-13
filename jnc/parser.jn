@@ -62,17 +62,18 @@ pub int AST_BINARY = 102;
 pub int AST_ADDR_OP = 103;
 pub int AST_CALL = 104;
 # declarations are 3xx
-pub int AST_VAR = 300;
-pub int AST_FN = 301;
+pub int AST_PROGRAM = 301;
+pub int AST_FN = 302;
+pub int AST_VAR = 303;
+pub int AST_NAMETYPE = 304;
 # statements are 4xx
-pub int AST_NAMETYPE = 402;
-pub int AST_EVAL = 403;
-pub int AST_ASSIGN = 404;
-pub int AST_IF = 405;
-pub int AST_WHILE = 406;
-pub int AST_DONE = 407;
-pub int AST_AGAIN = 408;
-pub int AST_RETURN = 409;
+pub int AST_EVAL = 401;
+pub int AST_ASSIGN = 402;
+pub int AST_IF = 403;
+pub int AST_WHILE = 404;
+pub int AST_DONE = 405;
+pub int AST_AGAIN = 406;
+pub int AST_RETURN = 407;
 
 # [type, a, b, c] 4-tuple
 fn node(int type) {
@@ -120,116 +121,100 @@ fn drop_node(void* node) {
     }
     if type == AST_STRING {
         it = node + 0x8;            # -> value
-        it = *it;
-        free(it);
+        free(*it);
         return free(node);
     }
     if type == AST_BINARY {
         it = node + 0x10;           # -> left
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x18;           # -> right
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         return free(node);
     }
     if type == AST_UNARY {
         it = node + 0x10;           # -> operand
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         return free(node);
     }
     if type == AST_FN {
         it = node + 0x8;            # -> name_token
-        it = *it;
-        Token_drop(it);
+        Token_drop(*it);
         it = node + 0x10;           # -> args
-        it = *it;
-        drop_node_array(it);
+        drop_node_array(*it);
         it = node + 0x18;           # -> stmts
-        it = *it;
-        drop_node_array(it);
+        drop_node_array(*it);
         return free(node);
     }
     if type == AST_NAMETYPE {
         it = node + 0x8;            # -> name_token
-        it = *it;
-        if it != null { Token_drop(it); }
+        if *it != null { Token_drop(*it); }
         return free(node);
     }
     if type == AST_RETURN {
-        it = node + 0x8;            # -> expr
-        it = *it;
-        drop_node(it);
+        it = node + 0x8;            # -> token
+        Token_drop(*it);
+        it = node + 0x10;           # -> expr
+        drop_node(*it);
         return free(node);
     }
     if type == AST_EVAL {
         it = node + 0x8;            # -> expr
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         return free(node);
     }
     if type == AST_VAR {
         it = node + 0x8;            # -> name_and_type
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x10;           # -> expr
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         return free(node);
     }
     if type == AST_ID {
         it = node + 0x8;            # -> nameT
-        it = *it;
-        Token_drop(it);
+        Token_drop(*it);
         return free(node);
     }
     if type == AST_CALL {
         it = node + 0x8;            # -> rcvr
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x10;           # -> args
-        it = *it;
-        drop_node_array(it);
+        drop_node_array(*it);
         return free(node);
     }
     if type == AST_ASSIGN {
         it = node + 0x8;            # -> lhs
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x10;           # -> rhs
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         return free(node);
     }
     if type == AST_IF {
         it = node + 0x8;           # -> condition
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x10;           # -> body
-        it = *it;
-        drop_node_array(it);
+        drop_node_array(*it);
         return free(node);
     }
     if type == AST_WHILE {
         it = node + 0x8;           # -> condition
-        it = *it;
-        drop_node(it);
+        drop_node(*it);
         it = node + 0x10;           # -> body
-        it = *it;
-        drop_node_array(it);
+        drop_node_array(*it);
         return free(node);
     }
     if type == AST_DONE {
+        it = node + 0x8;            # -> token
+        Token_drop(*it);
         return free(node);
     }
     if type == AST_AGAIN {
+        it = node + 0x8;            # -> token
+        Token_drop(*it);
         return free(node);
     }
     if type == AST_ADDR_OP {
         it = node + 0x10;           # -> nameT
-        it = *it;
-        Token_drop(it);
+        Token_drop(*it);
         return free(node);
     }
 
@@ -241,12 +226,12 @@ fn drop_node(void* node) {
 
 fn drop_node_array(void* nodes) {
     if nodes == null { return; }
-    void* n = nodes;
+    void* p = nodes;
     while true {
-        void it = *n;
+        void it = *p;
         if it == null { done; }
         drop_node(it);
-        n = n + 0x8;
+        p = p + 0x8;
     }
     free(nodes);
 }
@@ -260,6 +245,10 @@ fn is_type_kw(int t) {
 }
 
 pub fn print_token(void* t) {
+    if t == null {
+        printf("; null token\n");
+        return;
+    }
     int type = Token_type(t);
     int ln = Token_line(t);
     int ch = Token_char(t);
@@ -313,7 +302,7 @@ fn peek_token(void* lex) {
 
 fn next_token(void* lex) {
     void* token = Lexer_token(lex);
-    print_token(token);
+#    print_token(token);
     return token;
 }
 
@@ -354,12 +343,14 @@ pub fn parse_program(void* lex, void* emitter) {
             IS_PUB = true;
             consume_token(lex, t);  # skip it
             tkn = peek_token(lex);  # new "first" token
+            if tkn == null { done; }
             t = Token_type(tkn);
         }
         void* ast = null;
         if is_type_kw(t) { ast = parse_vardecl(lex, emitter); }
         if t == T_KW_FN { ast = parse_function_declaration(lex, emitter); }
         if ast == null { done; }
+        to_emitter(emitter, ast);
         drop_node(ast);
     }
     if tkn != null {
@@ -367,36 +358,167 @@ pub fn parse_program(void* lex, void* emitter) {
     }
 }
 
+fn to_emitter(void* emitter, void* ast) {
+    int t = *ast;
+    if t == AST_VAR    { to_emitter_var(emitter, ast); }
+    if t == AST_FN     { to_emitter_fn(emitter, ast); }
+    if t == AST_IF     { to_emitter_if(emitter, ast); }
+    if t == AST_WHILE  { to_emitter_while(emitter, ast); }
+    if t == AST_DONE   { to_emitter_done(emitter, ast); }
+    if t == AST_AGAIN  { to_emitter_again(emitter, ast); }
+    if t == AST_RETURN { to_emitter_return(emitter, ast); }
+    if t == AST_EVAL   { to_emitter_eval(emitter, ast); }
+    if t == AST_ASSIGN { to_emitter_assign(emitter, ast); }
+}
+
+fn to_emitter_var(void* emitter, void* ast) {
+    # [AST_VAR, name_and_type, init?, null]
+    ast = ast + 0x8;
+    void* name_and_type = *ast;
+    ast = ast + 0x8;
+    void* init = *ast;
+
+    # [AST_NAMETYPE, nameT?, T_type, nptr]
+    void* nameT = name_and_type + 0x8;
+    nameT = *nameT;
+    int type = name_and_type + 0x10;
+    type = *type;
+    int nptr = name_and_type + 0x18;
+    nptr = *nptr;
+
+    Emitter_do_decl(emitter, nameT, type, nptr, init);
+}
+
+fn to_emitter_fn(void* emitter, void* ast) {
+    # [AST_FN, nameT, args[], block?]
+    ast = ast + 0x8;
+    void* nameT = *ast;
+    ast = ast + 0x8;
+    void* args = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    if block == null {
+        Emitter_do_fn_proto(emitter, nameT, args);
+        return;
+    }
+    Emitter_do_fn_intro(emitter, nameT, args);
+    to_emitter_block(emitter, block);
+    Emitter_do_fn_outro(emitter, nameT);
+}
+
+fn to_emitter_block(void* emitter, void* block) {
+    void* p = block;
+    while true {
+        void it = *p;
+        if it == null { done; }
+        to_emitter(emitter, it);
+        p = p + 0x8;
+    }
+}
+
+fn to_emitter_if(void* emitter, void* ast) {
+    # [AST_IF, cond, block, null]
+    ast = ast + 0x8;
+    void* cond = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    Emitter_do_if(emitter, cond);
+    to_emitter_block(emitter, block);
+    Emitter_do_close_block(emitter);
+}
+
+fn to_emitter_while(void* emitter, void* ast) {
+    # [AST_WHILE, cond, block, null]
+    ast = ast + 0x8;
+    void* cond = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    Emitter_do_while(emitter, cond);
+    to_emitter_block(emitter, block);
+    Emitter_do_close_block(emitter);
+}
+
+fn to_emitter_done(void* emitter, void* ast) {
+    # [AST_DONE, token, null, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    Emitter_do_done(emitter, token);
+}
+
+fn to_emitter_again(void* emitter, void* ast) {
+    # [AST_AGAIN, token, null, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    Emitter_do_again(emitter, token);
+}
+
+fn to_emitter_return(void* emitter, void* ast) {
+    # [AST_RETURN, token, expr?, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    ast = ast + 0x8;
+    void* expr = *ast;
+    if expr != null {
+        Emitter_eval_expr(emitter, expr);
+    }
+    Emitter_do_return(emitter, token);
+}
+
+fn to_emitter_eval(void* emitter, void* ast) {
+    # [AST_EVAL, expr, null, null]
+    ast = ast + 0x8;
+    void* expr = *ast;
+    Emitter_eval_expr(emitter, expr);
+}
+
+fn to_emitter_assign(void* emitter, void* ast) {
+    # [AST_ASSIGN, expr, rhs, null]
+    ast = ast + 0x8;
+    void* expr = *ast;
+    ast = ast + 0x8;
+    void* rhs = *ast;
+
+    # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
+    int t = *expr;
+    void* nameT;
+    if t == AST_ID {
+        t = expr + 0x8;         # -> name
+        nameT = *t;
+        return Emitter_do_assign(emitter, nameT, rhs);
+    }
+    if t == AST_ADDR_OP {
+        t = expr + 0x10;        # -> name
+        nameT = *t;
+        return Emitter_do_assign_pointer(emitter, nameT, rhs);
+    }
+
+    rhs = "Bad assignment to a %i node\n";
+    eprintf(rhs, t);
+    exit(14);
+}
+
 # [AST_FN, nameT, args[], block?]
 fn parse_function_declaration(void* lex, void* emitter) {
-    int t = T_KW_FN;
-    consume_token(lex, t);
+    consume_token(lex, T_KW_FN);
     void* nameT = id_token(lex);
-    t = T_OPAREN;
-    consume_token(lex, t);
+    consume_token(lex, T_OPAREN);
     void* tkn = peek_token(lex);
-    t = Token_type(tkn);
+    int t = Token_type(tkn);
     void args = null;
     if t != T_CPAREN {
         args = parse_param_list(lex);
     }
-    t = T_CPAREN;
-    consume_token(lex, t);
+    consume_token(lex, T_CPAREN);
     tkn = peek_token(lex);
     t = Token_type(tkn);
     if t == T_SEMI {
         consume_token(lex, t);
-        Emitter_do_fn_proto(emitter, nameT, args);
-        t = AST_FN;
-        return node_a_b(t, nameT, args);
+        return node_a_b(AST_FN, nameT, args);
     }
     if t == T_OBRACE {
         verify_parameters_are_named(nameT, args);
-        Emitter_do_fn_intro(emitter, nameT, args);
         void* block = parse_block(lex, emitter);
-        Emitter_do_fn_outro(emitter, nameT);
-        t = AST_FN;
-        return node_a_b_c(t, nameT, args, block);
+        return node_a_b_c(AST_FN, nameT, args, block);
     }
     unexpected_token(tkn);
 }
@@ -414,8 +536,7 @@ fn verify_parameters_are_named(void* nameT, void* args) {
             char* name = Token_value(nameT);
             printf(err, name, i);
             eprintf(err, name, i);
-            err = ERR_MISSING_PARAM_NAME;
-            jnc_panic(err, nameT, i);
+            jnc_panic(ERR_MISSING_PARAM_NAME, nameT, i);
         }
         args = args + 0x8;
         i = i + 1;
@@ -424,21 +545,16 @@ fn verify_parameters_are_named(void* nameT, void* args) {
 
 # [[AST_NAMETYPE, nameT?, T_type, nptr]*]
 fn parse_param_list(void* lex) {
-    void bytes = 0x8 * 9; # todo: can't have more than eight at the moment...
-    void* params = malloc(bytes);
-    void* curr = params;
-    *curr = parse_name_and_type(lex);
-    curr = curr + 0x8;
+    void* params = ArrayList__new(8);
+    ArrayList_push(params, parse_name_and_type(lex));
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
-        *curr = parse_name_and_type(lex);
-        curr = curr + 0x8;
+        ArrayList_push(params, parse_name_and_type(lex));
     }
-    *curr = null;
-    return params;
+    return ArrayList_into_array(params);
 }
 
 # [AST_NAMETYPE, nameT?, T_type, nptr]
@@ -462,24 +578,17 @@ fn parse_name_and_type(void* lex) {
             nameT = id_token(lex);
         }
     }
-    type = AST_NAMETYPE;
-    int base_type = Token_into_type(base_tkn);
-    return node_a_b_c(type, nameT, base_type, nptr);
+    return node_a_b_c(AST_NAMETYPE,
+                      nameT,
+                      Token_into_type(base_tkn),
+                      nptr);
 }
 
 # [AST_VAR, name_and_type, init?, null]
 fn parse_vardecl(void* lex, void* emitter) {
     void* name_and_type = parse_name_and_type(lex);
     void* init = parse_opt_assign(lex);
-    void* nameT = name_and_type + 0x8;
-    nameT = *nameT;
-    int type = name_and_type + 0x10;
-    type = *type;
-    int nptr = name_and_type + 0x18;
-    nptr = *nptr;
-    Emitter_do_decl(emitter, nameT, type, nptr, init);
-    int t = AST_VAR;
-    return node_a_b(t, name_and_type, init);
+    return node_a_b(AST_VAR, name_and_type, init);
 }
 
 # null OR expr
@@ -519,9 +628,12 @@ fn parse_block(void* lex, void* emitter) {
 
 # [AST_VAR, name_and_type, init?, null]
 # [AST_IF, cond, block, null]
-# [AST_RETURN, expr?, null, null]
+# [AST_WHILE, cond, block, null]
+# [AST_DONE, token, null, null]
+# [AST_AGAIN, token, null, null]
+# [AST_RETURN, token, expr?, null]
 # [AST_EVAL, expr, null, null]
-# [AST_ASSIGN, rhs, expr, null]
+# [AST_ASSIGN, expr, rhs, null]
 fn parse_statement(void* lex, void* emitter) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
@@ -542,72 +654,49 @@ fn parse_statement(void* lex, void* emitter) {
 
 # [AST_IF, cond, block, null]
 fn parse_if(void* lex, void* emitter) {
-    int t = T_KW_IF;
-    consume_token(lex, t);
+    consume_token(lex, T_KW_IF);
     void* cond = parse_expr(lex);
-    Emitter_do_if(emitter, cond);
     void* body = parse_block(lex, emitter);
-    Emitter_do_close_block(emitter);
-    t = AST_IF;
-    return node_a_b(t, cond, body);
+    return node_a_b(AST_IF, cond, body);
 }
 
 # [AST_WHILE, cond, block, null]
 fn parse_while(void* lex, void* emitter) {
-    int t = T_KW_WHILE;
-    consume_token(lex, t);
+    consume_token(lex, T_KW_WHILE);
     void* cond = parse_expr(lex);
-    Emitter_do_while(emitter, cond);
     void* body = parse_block(lex, emitter);
-    Emitter_do_close_block(emitter);
-    t = AST_WHILE;
-    return node_a_b(t, cond, body);
+    return node_a_b(AST_WHILE, cond, body);
 }
 
-# [AST_DONE, null, null, null]
+# [AST_DONE, token, null, null]
 fn parse_done(void* lex, void* emitter) {
-    void* token = peek_token(lex);
-    Emitter_do_done(emitter, token);
-    int t = T_KW_DONE;
-    consume_token(lex, t);
-    t = T_SEMI;
-    consume_token(lex, t);
-    t = AST_DONE;
-    return node(t);
+    void* token = next_token(lex);
+    consume_token(lex, T_SEMI);
+    return node_a(AST_DONE, token);
 }
 
-# [AST_AGAIN, null, null, null]
+# [AST_AGAIN, token, null, null]
 fn parse_again(void* lex, void* emitter) {
-    void* token = peek_token(lex);
-    Emitter_do_again(emitter, token);
-    int t = T_KW_AGAIN;
-    consume_token(lex, t);
-    t = T_SEMI;
-    consume_token(lex, t);
-    t = AST_AGAIN;
-    return node(t);
+    void* token = next_token(lex);
+    consume_token(lex, T_SEMI);
+    return node_a(AST_AGAIN, token);
 }
 
-# [AST_RETURN, expr?, null, null]
+# [AST_RETURN, token, expr?, null]
 fn parse_return(void* lex, void* emitter) {
-    int t = T_KW_RETURN;
-    void* ret_tkn = consume_token(lex, t);
+    void* ret_tkn = next_token(lex);
     void* expr = null;
     void* tkn = peek_token(lex);
-    t = Token_type(tkn);
+    int t = Token_type(tkn);
     if t != T_SEMI {
         expr = parse_expr(lex, emitter);
-        Emitter_eval_expr(emitter, expr);
     }
-    t = T_SEMI;
-    consume_token(lex, t);
-    Emitter_do_return(emitter, ret_tkn);
-    t = AST_RETURN;
-    return node_a(t, expr);
+    consume_token(lex, T_SEMI);
+    return node_a_b(AST_RETURN, ret_tkn, expr);
 }
 
 # [AST_EVAL, expr, null, null]
-# [AST_ASSIGN, rhs, expr, null]
+# [AST_ASSIGN, expr, rhs, null]
 fn parse_eval_or_assign(void* lex, void* emitter) {
     int line = Token_line(peek_token(lex));
     void* expr = parse_expr(lex);
@@ -637,31 +726,21 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
         }
     }
 
-    # bare evaluation?
+    # bare evaluation
     if rhs == null {
-        Emitter_eval_expr(emitter, expr);
         return node_a_b(AST_EVAL, expr);
     }
 
     # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
     t = *expr;
-    void* nameT;
     if t == AST_ID {
-        t = expr + 0x8;             # -> name
-        nameT = *t;
-        Emitter_do_assign(emitter, nameT, rhs);
-        t = AST_ASSIGN;
-        return node_a_b(t, expr, rhs);
+        return node_a_b(AST_ASSIGN, expr, rhs);
     }
     if t == AST_ADDR_OP {
         t = expr + 0x8;             # -> op
         t = *t;
         if t == T_STAR {
-            t = expr + 0x10;        # -> name
-            nameT = *t;
-            Emitter_do_assign_pointer(emitter, nameT, rhs);
-            t = AST_ASSIGN;
-            return node_a_b(t, expr, rhs);
+            return node_a_b(AST_ASSIGN, expr, rhs);
         }
     }
 
