@@ -6,48 +6,56 @@ All keywords are case-sensitive. Comments are introduced with `#` and extend to 
 
 Functions are declared with the `fn` keyword. Use `return` to return (with a value or not). The entry point for a program is always a `pub` function named `main`. Functions may have up to eight local variables, which are always scoped to the function. There's not (yet) a way to declare a return type.
 
-    pub fn main() {
-        return 0;
-    }
+```johann
+pub fn main() {
+    return 0;
+}
+```
 
 `main` can be declared with zero, one, or two arguments, which will be passed POSIX `argc` and `argv` values. This program will print its name and exit with the number of command line arguments it received.
 
-    pub fn main(int a, char** b) {
-        b = *b;
-        puts(b);
-        return a - 1;
-    }
+```johann
+pub fn main(int a, char** b) {
+    puts(*b);
+    return a - 1;
+}
+```
 
 By default, declarations are private to the file they're declared in. Use `pub` to make a declaration globally available, whether a function or a global variable. 
 
 Conditionals use the `if` keyword and loops use `while`. The conditional expression is not wrapped with parentheses, but are valid (as part of the expression) if present.. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
-    int i = 0;
-    int f = 0;
-    char c = getchar();
-    while c > b {
-        i = i + 1;
-        if c == '(' {
-            f = f + 1;
-        }
-        c = getchar();
+```johann
+int i = 0;
+int f = 0;
+char c = getchar();
+while c >= 0 {
+    i = i + 1;
+    if c == '(' {
+        f = f + 1;
     }
+    c = getchar();
+}
+```
 
 You can use `done` and `again` within a `while` to ... say you're done looping or want to loop again. These two snippets are equivalent:
 
-    # the reasonable way
-    while c > b {
-        c = getchar();
-    }
+```johann
+# the reasonable way
+char c;
+while c >= 0 {
+    c = getchar();
+}
 
-    # the silly way
-    while true {
-        if c > b {
-            c = getchar();
-            again;
-        }
-        done;
+# the silly way
+while true {
+    if c >= 0 {
+        c = getchar();
+        again;
     }
+    done;
+}
+```
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
@@ -55,15 +63,18 @@ Operator precedence is as in C-family languages, including using parentheses to 
 
 A `*` can also be used on the left side of an assignment to write to pointed-at memory:
 
-    int e = 16;
-    int* a = malloc(e); # a = new int[2];
-    *a = 1;             # a[0] = 1;
-    int p = &a;         # p = a;
-    p = p + 8;
-    *p = 2;             # a[1] = p[1] = 2;
-    int b = *p;         # b = 2;
-    int c = *a;         # c = 1;
-    *a = b + c;         # a[0] = 3;
+```johann
+int e = 16;
+int* a = malloc(e); # a = new int[2];
+*a = 1;             # a[0] = 1;
+int p = &a;         # p = a;
+p = p + 8;
+*p = 2;             # a[1] = p[1] = 2;
+int b = *p;         # b = 2;
+int c = *a;         # c = 1;
+*a = b + c;         # a[0] = 3;
+free(a);
+```
 
 Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change, so don't abuse it.
 
@@ -77,39 +88,45 @@ Boolean literals `true` and `false` are recognized as aliases for `1` and `0` re
 
 Functions can declare formal arguments within their parentheses, to create local variables from passed values. These are normal variables, which means functions can take at most eight arguments.
 
-    fn add(int a, int b) {
-        return a + b;
-    }
+```johann
+fn add(int a, int b) {
+    return a + b;
+}
+```
 
 A function call can have a max of eight parameters (which really only matters for [`printf`](../library/index.md#io)). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
-    # convoluted:
-    char* c = "one: ";
-    printf(c);
-    int a = -1;
-    int b = 2;
-    a = add(a, b);
-    c = itoa(a);
-    puts(c);
-    free(c);           # don't leak memory
+```johann
+# convoluted:
+char* c = "one: ";
+printf(c);
+int a = -1;
+int b = 2;
+a = add(a, b);
+c = itoa(a);
+puts(c);
+free(c);           # don't leak memory
 
-    # easier:
-    char* f = "one: %i\n";
-    a = 1;
-    printf(f, a);
+# easier:
+char* f = "one: %i\n";
+a = 1;
+printf(f, a);
 
-    # easiest:
-    printf("one: %i\n", 1);
+# easiest:
+printf("one: %i\n", 1);
+```
 
 Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
 
-    char* GREETING;             # declare variable defined somewhere else
-    fn puts(char* str);         # declare jstdlib function
+```johann
+char* GREETING;             # declare variable defined somewhere else
+fn puts(char* str);         # declare jstdlib function
 
-    pub fn main() {
-        char* str = GREETING;   # deref global (declaration required)
-        void* puts_ptr = &puts; # take address of function (declaration required)
-        puts(str);              # call declared jstdlib function
-        puts_ptr(str);          # invoke through pointer
-        printf(str);            # call undeclared jstdlib function
-    }
+pub fn main() {
+    char* str = GREETING;   # deref global (declaration required)
+    void* puts_ptr = &puts; # take address of function (declaration required)
+    puts(str);              # call declared jstdlib function
+    puts_ptr(str);          # invoke through pointer
+    printf(str);            # call undeclared jstdlib function
+}
+```

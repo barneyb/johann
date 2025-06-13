@@ -63,3 +63,39 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         mv tmp.md $DOC_FILE
     done
 done
+
+OUT=target/out
+mkdir -p "$OUT"
+echo "pub char* GREETING = \"Hello, world!\";" > $OUT/fixtures.jn
+cat > $OUT/fixtures.jn << EOF
+    pub char* GREETING = "Hello, world!";
+    pub fn add(int a, int b) {
+        return a + b;
+    }
+EOF
+./bin/jnc < $OUT/fixtures.jn > $OUT/fixtures.s
+gcc -o $OUT/fixtures.o -c $OUT/fixtures.s
+for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`; do
+    DOC_FILE=$(echo $BLOCK | cut -d : -f 1)
+    LINE=$(echo $BLOCK | cut -d : -f 2)
+    LINE=$(( LINE + 1 ))
+    NLINES=$(tail -n +$LINE $DOC_FILE | grep -nEm1 '^```$' | cut -d : -f 1)
+    NLINES=$(( NLINES - 1 ))
+    echo "$DOC_FILE from $LINE for $NLINES"
+    ROOT="$OUT/$(echo $DOC_FILE | tr -cs '[:alnum:]' "_")_$LINE"
+    tail -n +$LINE $DOC_FILE | head -n $NLINES > ${ROOT}.jn
+    if ! grep -F 'fn ' ${ROOT}.jn > /dev/null; then
+        # need to wrap with main
+        echo "pub fn main() {" > ${ROOT}.p.jn
+        cat ${ROOT}.jn >> ${ROOT}.p.jn
+        echo "}" >> ${ROOT}.p.jn
+        mv ${ROOT}.p.jn ${ROOT}.jn
+    fi
+    ./bin/jnc < ${ROOT}.jn > ${ROOT}.s
+    if grep -F 'fn main' ${ROOT}.jn > /dev/null; then
+        gcc -o ${ROOT}.out ${ROOT}.s ./lib/jstdlib.o $OUT/fixtures.o
+        echo "goober!" | ./${ROOT}.out
+    else
+        gcc -o ${ROOT}.o -c ${ROOT}.s
+    fi
+done

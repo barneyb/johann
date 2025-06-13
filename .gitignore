@@ -2,4 +2,5 @@
 /.idea/
 target/
 *.o
-/jnc/inc_*.*
+/a.out
+/*.s
