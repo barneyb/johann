@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20250613`
 
 Add `ArrayList` and `TreeMap` ADTs to the library. Remove support for `=` and `!` as comparison operators. Parse full programs, not just expressions.
 

@@ -8,11 +8,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20250610
-build_time: 2025-06-10T03:22:07+00:00
-commit_hash: 995e0f2d23990630e0b19f6ead80c488a31442c6
+jnc 0.20250613
+build_time: 2025-06-13T14:22:01+00:00
+commit_hash: c70e95ae3062e6d9d02ab17280520c3cc7b9613f
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20250610-995e0f2
+; Compiled with jnc 0.20250613-c70e95a
     .text
     .align  3
 ... snip ...

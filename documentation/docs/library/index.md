@@ -72,8 +72,8 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 I am a dynamically resizing builder for null-terminated byte strings.
 
 * `pub fn StringBuilder__new(int capacity) ` - I create new builder, with the given initial capacity.
-* `pub fn StringBuilder_push(void* buf, char c) ` - I push a single character into the buffer, which will be automatically extended if the character won't fit.
-* `pub fn StringBuilder_into_chars(void* buf) ` - I consume the builder and produce a null-terminated byte string from it.
+* `pub fn StringBuilder_push(void* self, char c) ` - I push a single character into the buffer, which will be automatically extended if the character won't fit.
+* `pub fn StringBuilder_into_chars(void* self) ` - I consume the builder and produce a null-terminated byte string from it.
 
 <!--{/johanndoc:jstdlib/StringBuilder.jn}-->
 
