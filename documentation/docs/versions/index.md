@@ -1,15 +1,17 @@
 # Versions
 
-At the moment, Johann is building up from "nothing" towards "complete". There's a _lot_ of kludge in the syntax and a host of random restrictions, all in service of "anything is better than writing assembly." As the compiler gains power, the language will gel, hopefully ending up somewhere graceful. But right now it's constant flux with only two constraints:
+At the moment, Johann is building up from "nothing" towards "complete". There's a _lot_ of kludge in the syntax and a host of random restrictions, all in service of "anything is better than writing assembly." As the compiler gains power, the language will gel, hopefully ending up somewhere graceful. Right now, there only two constraints:
 
-1. The current release can compile development sources.
+1. The current release can compile the development sources.
 2. The development sources can compile themselves.
+
+This provides a backwards compatibility guarantee _for a single release_. Skipping a release may break things. For example, upgrading to `v0.20250610` introduced `==` and deprecated `=`. Support wasn't removed until the following release. 
 
 ## Release History
 
 ### Bleeding Edge
 
-Add `ArrayList` and `TreeMap` ADTs to the library. Parse full programs, not just expressions. Remove support for `=` and `!` as comparison operators.
+Add `ArrayList` and `TreeMap` ADTs to the library. Remove support for `=` and `!` as comparison operators. Parse full programs, not just expressions.
 
 ### `v0.20250610`
 
