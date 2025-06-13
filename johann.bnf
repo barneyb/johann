@@ -60,9 +60,7 @@ private bxor_expr ::= band_expr // ( "^" band_expr )*
 
 private band_expr ::= eq_expr // ( "&" eq_expr )*
 
-private eq_expr ::= rel_expr ( ( "==" | "!="
-| "=" | "!" // deprecated
-) rel_expr )*
+private eq_expr ::= rel_expr ( ( "==" | "!=" ) rel_expr )*
 
 private rel_expr ::= shift_expr ( ( "<" | ">" | "<=" | ">=" ) shift_expr )*
 

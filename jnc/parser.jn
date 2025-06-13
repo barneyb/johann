@@ -702,28 +702,8 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
     void* expr = parse_expr(lex);
     void* rhs = null;
     if Token_type(peek_token(lex)) == T_ASSIGN {
-        next_token(lex); # consume, type-unsafe, because "eight vars"
+        consume_token(lex, T_ASSIGN);
         rhs = parse_expr(lex);
-    }
-
-    # if expr is an AST_BINARY w/ op=T_EQ, reparse as AST_ASSIGN
-    int t;
-    if rhs == null {
-        t = *expr;
-        if t == AST_BINARY {
-            t = expr + 0x8;         # -> op
-            t = *t;
-            if t == T_EQ {
-                t = expr + 0x18;    # -> right
-                rhs = *t;
-                *t = null;
-                t = expr + 0x10;    # -> left
-                void* temp = *t;
-                *t = null;
-                drop_node(expr);
-                expr = temp;
-            }
-        }
     }
 
     # bare evaluation
@@ -732,7 +712,7 @@ fn parse_eval_or_assign(void* lex, void* emitter) {
     }
 
     # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
-    t = *expr;
+    int t = *expr;
     if t == AST_ID {
         return node_a_b(AST_ASSIGN, expr, rhs);
     }
@@ -810,16 +790,9 @@ fn parse_expr_eq(void* lex) {
         bool doit = false;
         if t == T_NEQ  { doit = true; }
         if t == T_EQ   { doit = true; }
-        # TODO: these are deprecated
-        if t == T_BANG   { doit = true; }
-        if t == T_ASSIGN { doit = true; }
         if !doit { done; }
         consume_token(lex, t);
-        # TODO: this associates left (to deal with rewriting ASSIGN -> EQ)
-        right = parse_expr_eq(lex);
-        # TODO: morph to non-deprecated equivalent
-        if t == T_BANG   { t = T_NEQ; }
-        if t == T_ASSIGN { t = T_EQ; }
+        right = parse_expr_rel(lex);
         expr = join_bin_op(lex, t, expr, right);
     }
     return expr;
@@ -905,12 +878,12 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         drop_node(right);
         right = ttr;
         bool did_it = false;
-        if op == T_EQ      { ttr = left = right; did_it = true; }
-        if op == T_NEQ     { ttr = left ! right; did_it = true; }
+        if op == T_EQ      { ttr = left == right; did_it = true; }
+        if op == T_NEQ     { ttr = left != right; did_it = true; }
         if op == T_GT      { ttr = left > right; did_it = true; }
         if op == T_LT      { ttr = left < right; did_it = true; }
-        if op == T_GTE     { ttr = left > right; if left == right { ttr = true; } did_it = true; }
-        if op == T_LTE     { ttr = left < right; if left == right { ttr = true; } did_it = true; }
+        if op == T_GTE     { ttr = left >= right; did_it = true; }
+        if op == T_LTE     { ttr = left <= right; did_it = true; }
         if op == T_PLUS    { ttr = left + right; did_it = true; }
         if op == T_MINUS   { ttr = left - right; did_it = true; }
         if op == T_STAR    { ttr = left * right; did_it = true; }

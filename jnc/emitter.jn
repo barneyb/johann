@@ -209,7 +209,7 @@ fn Emitter_current_block(void* self) {
 fn Emitter_is_global(void* self) {
     self = self + 0x8;             # -> depth
     int depth = *self;
-    return depth = 1;
+    return depth == 1;
 }
 
 fn Emitter_innermost_block_of(void* self, int type, void* token) {

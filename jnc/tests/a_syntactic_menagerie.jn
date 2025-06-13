@@ -68,11 +68,7 @@ fn expr_binary(int i, bool b) {
     i > i;
     i <= i;
     i >= i;
-    i = i; # deprecated (as eq), supported as assign
-    b = i = i; # the problem w/ the above
-    i ! i; # deprecated
-    b = i ! i;
-    i == i; # currently mis-interpreted as assignment!
+    i == i;
     b = i == i;
     i != i;
     b = i != i;
@@ -88,11 +84,7 @@ fn expr_binary_constant() {
     6 > 7;
     6 <= 7;
     6 >= 7;
-    6 = 7; # deprecated
-    6 ! 7; # deprecated
     int b;
-    b = 6 = 7;
-    b = 6 ! 7;
     6 == 7;
     b = 6 == 7;
     6 != 7;
