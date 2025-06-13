@@ -151,7 +151,7 @@ fn print_contains(void* map, char* key) {
 
 fn print_get(void* map, char* key) {
     char* val = TreeMap_get(map, key);
-    if val = null {
+    if val == null {
         printf("value of '%s': null\n", key);
         return;
     }

@@ -50,7 +50,7 @@ pub fn TreeMap_drop(void* self) {
 }
 
 fn drop_subtree(void* curr, void* drop_key, void* drop_value) {
-    if curr = null { return; }
+    if curr == null { return; }
     if drop_key != null {
         drop_key(Node_key(curr));
     }
@@ -191,7 +191,7 @@ pub fn TreeMap_debug_(void* self) {
 }
 
 fn debug(void* curr, int indent) {
-    if curr = null { return; }
+    if curr == null { return; }
 
     void* it = Node_left(curr);
     debug(it, indent + 1);
