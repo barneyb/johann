@@ -20,7 +20,7 @@ Functions are declared with the `fn` keyword. Use `return` to return (with a val
 
 By default, declarations are private to the file they're declared in. Use `pub` to make a declaration globally available, whether a function or a global variable. 
 
-Conditionals use the `if` keyword and loops use `while`. Parentheses are not permitted around the conditional expression. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
+Conditionals use the `if` keyword and loops use `while`. The conditional expression is not wrapped with parentheses, but are valid (as part of the expression) if present.. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
     int i = 0;
     int f = 0;
@@ -51,7 +51,7 @@ You can use `done` and `again` within a `while` to ... say you're done looping o
 
 Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
 
-Operator precedence is as in C-family languages. The five standard arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Six comparisons operators are supported: `==`, `!=`, `<`, `<=`, `>` and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). Note that currently `*` can only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width.
+Operator precedence is as in C-family languages, including using parentheses to force things. The five standard arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Six comparisons operators are supported: `==`, `!=`, `<`, `<=`, `>` and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). Note that currently `*` can only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width.
 
 A `*` can also be used on the left side of an assignment to write to pointed-at memory:
 
@@ -67,11 +67,11 @@ A `*` can also be used on the left side of an assignment to write to pointed-at 
 
 Semicolons are required to terminate statements which don't take a block. Blocks are _not_ statements as is normal in C-family languages; they're parts of the `if` and `while` syntax. As well as not establishing scope, you can't have anonymous blocks (they would be of zero value). This will change, so don't abuse it.
 
-Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa` (`'\n'` doesn't yet lex). Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via `itoa`) must be `free`-d when you're done with them.
+Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa` (`'\n'` doesn't yet lex). Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via [`StringBuilder`](../library/index.md#stringbuilder)) must be `free`-d when you're done with them.
 
-The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change. There is no support for compound values (structs/arrays/tuples), use a heap allocation and do the pointer arithmetic yourself (for now).
+The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. As noted above, `int i` will eventually become `let i: int`. Pointers are declared with `*`. `void` only makes sense as a pointer, of course. No type checking is performed, but the type is used for `sizeof`. This will change. There is no support for compound values (structs/arrays/tuples); use a heap allocation and do the pointer arithmetic yourself (for now).
 
-Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (except zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can any case. Underscores inserted between digits (e.g., `32_767`) are ignored. Use `-` to get a negative value.
+Integers are signed 64-bit values. Decimal literals cannot have leading `0`s (except zero itself, of course). Hexadecimal literals are allowed with a `0x` prefix; the `x` MUST be lowercase, but digits can be any case. Underscores between digits (e.g., `32_767`) are ignored. Use `-` to get a negative value.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`. The `null` keyword is also recognized as an alias for `0`. At some point these will have identity separate from their numeric value.
 
@@ -81,7 +81,7 @@ Functions can declare formal arguments within their parentheses, to create local
         return a + b;
     }
 
-A given function call can have a max of eight parameters (which really only matters for [`printf`](../library/index.md#io)). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
+A function call can have a max of eight parameters (which really only matters for [`printf`](../library/index.md#io)). A couple ways to print "one: 1" to STDOUT, using the `add` function defined above and several of the standard library functions:
 
     # convoluted:
     char* c = "one: ";
