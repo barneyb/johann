@@ -46,7 +46,7 @@ pub fn mem_stats__() {
     }
 }
 
-pub fn print_mem_chain(void* mem) {
+pub fn print_mem_chain__(void* mem) {
     int i = 0;
     printf("chain:\n");
     while mem > 0x100000000 {
@@ -60,7 +60,7 @@ pub fn print_mem_chain(void* mem) {
     }
 }
 
-pub fn dump_around(void* mem) {
+pub fn dump_around__(void* mem) {
     void* curr = mem - 0x100;
     void* end = mem + 0x100;
     eprintf("DUMP AROUND %x\n", mem);
@@ -122,7 +122,7 @@ pub fn free(void* mem) {
         if mem == next {
             # already in the free list?!
             eprintf("Memory at %x has already been freed\n", mem);
-            dump_around(mem);
+            dump_around__(mem);
             exit(98);
         }
         int bs = next - 0x8;        # -> len
