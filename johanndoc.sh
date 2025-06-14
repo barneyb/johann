@@ -3,6 +3,14 @@ set -e
 
 cd "$(dirname "$0")"
 
+{
+    echo "# Compiler Docs\n"
+    # globs are case-sensitive. :/
+    for f in $(ls jnc/*.jn | sort -df); do
+        echo "\n<!--{johanndoc:$f}-->\n## $f\n<!--{/johanndoc}-->\n"
+    done
+} > documentation/docs/system/johandoc.md
+
 for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
     echo "processing $DOC_FILE"
     THRU=0
@@ -29,7 +37,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         {
             head -n $THRU $DOC_FILE
             echo
-            echo '### `'"$STEM"'`'
+            echo '## `'"$STEM"'`'
             echo
             DOC=""
             do_file=yes
@@ -44,9 +52,9 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     DOC="$DOC${line:2}"
                     continue
                 elif [[ "$line" =~ ^pub ]]; then
-                    line=$(echo "$line" | cut -d '{' -f 1 | cut -d ';' -f 1)
+                    line=$(echo "$line" | cut -d '{' -f 1)
                     if ! echo "$line" | grep -F '_(' > /dev/null; then
-                        echo '* `'"$line"'`'" - $DOC"
+                        echo '`'"$line"'`'"\n\n: $DOC\n"
                     fi
                     do_file=nope
                 elif [[ "$do_file" = "yes" ]]; then
