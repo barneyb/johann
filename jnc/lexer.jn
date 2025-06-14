@@ -22,6 +22,7 @@ int T_LOG_AND;
 int T_LOG_OR;
 
 int T_AMP;
+int T_ARROW;
 int T_ASSIGN;
 int T_BANG;
 int T_CBRACE;
@@ -140,9 +141,9 @@ pub fn get_next_token(void* self) {
         if c == T_BANG     { return token_bang(self, c); }
         if c == T_GT       { return token_gt(self, c); }
         if c == T_LT       { return token_lt(self, c); }
+        if c == T_MINUS    { return token_minus(self, c); }
         if c == T_PIPE     { return token_pipe(self, c); }
         # non-ambiguous character tokens...
-        if c == T_MINUS    { return new_token(self, c); }
         if c == T_PERCENT  { return new_token(self, c); }
         if c == T_PLUS     { return new_token(self, c); }
         if c == T_SLASH    { return new_token(self, c); }
@@ -210,6 +211,16 @@ fn token_ampersand(void* self, char c) {
     char next = peekchar();
     if next == T_AMP {
         void* tkn = new_token(self, T_LOG_AND);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
+fn token_minus(void* self, char c) {
+    char next = peekchar();
+    if next == T_GT {
+        void* tkn = new_token(self, T_ARROW);
         next_char(self); # consume
         return tkn;
     }

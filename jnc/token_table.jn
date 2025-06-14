@@ -28,6 +28,7 @@ pub int T_LOG_AND   = 0x226; # 0x200 + '&';
 pub int T_LOG_OR    = 0x27c; # 0x200 + '|';
 pub int T_LTE       = 0x23c; # 0x200 + '<';
 pub int T_NEQ       = 0x221; # 0x200 + '!';
+pub int T_ARROW     = 0x261; # 0x200 + 'a';
 pub int T_MINUS_ASSIGN   = 0x22d; # 0x200 + '-';
 pub int T_PERCENT_ASSIGN = 0x225; # 0x200 + '%';
 pub int T_PLUS_ASSIGN    = 0x22b; # 0x200 + '+';
