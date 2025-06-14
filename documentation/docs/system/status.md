@@ -1,0 +1,91 @@
+# Development Status
+
+## Language Features
+
+- [x] `fn` / `return` constructs
+- [x] `if` / `while` constructs
+- [x] arbitrary variable names
+- [x] read/write global variables
+- [x] compound expressions with precedence
+- [x] address-of and dereference operators
+- [x] function pointers
+- [ ] structs
+- [ ] typechecking
+- [ ] arrays (or at least array _types_)
+- [ ] blocks/scopes
+- [ ] unconstrained local variables
+- [ ] unconstrained parameter passing (and varargs?)
+- [ ] logical operators
+- [ ] bitwise operators
+- [ ] conditional/ternary operator
+- [ ] implicit types
+- [ ] `const` support
+- [ ] import/include
+- [ ] automatic memory management
+- [ ] `for` loops/iterators
+
+## Library Features
+
+- [x] buffered StdOut & `printf`
+- [x] tree-based symbol table
+- [x] string builder type
+- [x] dynamic memory recycling
+- [x] array-backed list type
+- [ ] balanced tree-based symbol table
+- [ ] sorting arrays
+- [ ] buffered StdIn & StdErr
+- [ ] read/write files
+- [ ] regular expressions
+- [ ] hash-based symbol table
+- [ ] a queue data type
+
+## Compilation Stages
+
+Below is a sketch of the compiler's current state (green), along with a sketch of the target structure (gray). Initially, it emitted straight from the parts of the token stream it recognized, ignoring the rest, and relying on the programmer to ensure referenced symbols would resolve.
+
+```mermaid
+flowchart TB
+    in((prog.jn)) 
+    lex(Lexer)
+    parse(Parser)
+    raz(Raz Generation)
+    emit(Emitter)
+    out((prog.s))
+    
+    subgraph sem [Semantic Analysis]
+        idres(ID resolution)
+        tc(Type Checking)
+        lbl(Labeling)
+    end
+    subgraph opt [Code Optimization]
+        const(Constant Folding)
+        noreach(Unreachable Code)
+        dead(Dead Stores)
+    end
+    subgraph gen [Code Generation]
+        ins(Instruction Selection)
+        regalloc(Register Allocation)
+        temps(Replace Temporaries)
+        fixup(Instruction Fixup?)
+    end
+    
+    classDef partial stroke-width:0.5px,stroke-dasharray:5;
+    class idres,lbl,ins partial;
+    classDef future fill:none,stroke:#808080,stroke-width:0.5px,stroke-dasharray:5 5;
+    class sem,gen,tc,raz,const,noreach,dead,regalloc,temps,fixup future;
+    
+    parse ---|AST| sem
+    sem ---|AST| raz ---|RAZ| opt  ---|RAZ| gen
+    gen ---|Assembly| out
+    
+    linkStyle 0,1,2,3,4 stroke:#808080,stroke-dasharray:5;
+    
+    in -->|text| lex
+    lex -->|tokens| parse
+    parse -->|"'stuff'"| emit ---->|Assembly| out
+    
+    %% force unlinked subgraphs to lay out horizontally
+    idres ~~~ tc ~~~ lbl
+    const ~~~ noreach ~~~ dead
+    ins ~~~ regalloc ~~~ temps ~~~ fixup
+```

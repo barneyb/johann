@@ -14,7 +14,13 @@ if [ "$1" = "--undoc" ]; then
 fi
 
 {
-    echo "# Compiler Docs\n"
+    cat << EOF
+# Compiler Docs
+
+Below are the generated docs for the compiler's internals. Not that much is
+documented, but searching just declarations has advantages over searching the
+full code.
+EOF
     # globs are case-sensitive. :/
     for f in $(ls jnc/*.jn | sort -df); do
         echo "\n<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->\n"
