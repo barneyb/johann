@@ -1,0 +1,183 @@
+int AST_ADDR_OP;
+int AST_AGAIN;
+int AST_ASSIGN;
+int AST_DECL;
+int AST_DONE;
+int AST_EVAL;
+int AST_FN;
+int AST_ID;
+int AST_IF;
+int AST_NAMETYPE;
+int AST_PROGRAM;
+int AST_RETURN;
+int AST_VAR;
+int AST_WHILE;
+
+bool IS_PUB = false; # this is still pretty ridiculous
+
+pub fn to_emitter(void* emitter, void* ast) {
+    int t = *ast;
+
+    if t == AST_PROGRAM { return to_emitter_program(emitter, ast); }
+    if t == AST_DECL    { return to_emitter_decl(emitter, ast); }
+    if t == AST_VAR     { return to_emitter_var(emitter, ast); }
+    if t == AST_FN      { return to_emitter_fn(emitter, ast); }
+    if t == AST_IF      { return to_emitter_if(emitter, ast); }
+    if t == AST_WHILE   { return to_emitter_while(emitter, ast); }
+    if t == AST_DONE    { return to_emitter_done(emitter, ast); }
+    if t == AST_AGAIN   { return to_emitter_again(emitter, ast); }
+    if t == AST_RETURN  { return to_emitter_return(emitter, ast); }
+    if t == AST_EVAL    { return to_emitter_eval(emitter, ast); }
+    if t == AST_ASSIGN  { return to_emitter_assign(emitter, ast); }
+
+    eprintf("Can't emit a %i node?!\n", t);
+    exit(t);
+}
+
+fn array_to_emitter(void* emitter, void* arr) {
+    void* p = arr;
+    while true {
+        void it = *p;
+        if it == null { done; }
+        to_emitter(emitter, it);
+        p = p + 0x8;
+    }
+}
+
+fn to_emitter_program(void* emitter, void* ast) {
+    # [AST_PROGRAM, decls[], null, null]
+    ast = ast + 0x8;
+    void* decls = *ast;
+    array_to_emitter(emitter, decls);
+}
+
+fn to_emitter_decl(void* emitter, void* ast) {
+    # [AST_DECL, is_pub, fn_or_var, null]
+    ast = ast + 0x8;
+    IS_PUB = *ast;
+    ast = ast + 0x8;
+    to_emitter(emitter, *ast);
+}
+
+fn to_emitter_var(void* emitter, void* ast) {
+    # [AST_VAR, name_and_type, init?, null]
+    ast = ast + 0x8;
+    void* name_and_type = *ast;
+    ast = ast + 0x8;
+    void* init = *ast;
+
+    # [AST_NAMETYPE, nameT?, T_type, nptr]
+    void* nameT = name_and_type + 0x8;
+    nameT = *nameT;
+    int type = name_and_type + 0x10;
+    type = *type;
+    int nptr = name_and_type + 0x18;
+    nptr = *nptr;
+
+    if IS_PUB {
+        IS_PUB = false;
+        Emitter_mark_global(nameT);
+    }
+    Emitter_do_decl(emitter, nameT, type, nptr, init);
+}
+
+fn to_emitter_fn(void* emitter, void* ast) {
+    # [AST_FN, nameT, args[], block?]
+    ast = ast + 0x8;
+    void* nameT = *ast;
+    ast = ast + 0x8;
+    void* args = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    if block == null {
+        Emitter_do_fn_proto(emitter, nameT, args);
+        return;
+    }
+    if IS_PUB {
+        IS_PUB = false;
+        Emitter_mark_global(nameT);
+    }
+    Emitter_do_fn_intro(emitter, nameT, args);
+    array_to_emitter(emitter, block);
+    Emitter_do_fn_outro(emitter, nameT);
+}
+
+fn to_emitter_if(void* emitter, void* ast) {
+    # [AST_IF, cond, block, null]
+    ast = ast + 0x8;
+    void* cond = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    Emitter_do_if(emitter, cond);
+    array_to_emitter(emitter, block);
+    Emitter_do_close_block(emitter);
+}
+
+fn to_emitter_while(void* emitter, void* ast) {
+    # [AST_WHILE, cond, block, null]
+    ast = ast + 0x8;
+    void* cond = *ast;
+    ast = ast + 0x8;
+    void* block = *ast;
+    Emitter_do_while(emitter, cond);
+    array_to_emitter(emitter, block);
+    Emitter_do_close_block(emitter);
+}
+
+fn to_emitter_done(void* emitter, void* ast) {
+    # [AST_DONE, token, null, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    Emitter_do_done(emitter, token);
+}
+
+fn to_emitter_again(void* emitter, void* ast) {
+    # [AST_AGAIN, token, null, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    Emitter_do_again(emitter, token);
+}
+
+fn to_emitter_return(void* emitter, void* ast) {
+    # [AST_RETURN, token, expr?, null]
+    ast = ast + 0x8;
+    void* token = *ast;
+    ast = ast + 0x8;
+    void* expr = *ast;
+    if expr != null {
+        Emitter_eval_expr(emitter, expr);
+    }
+    Emitter_do_return(emitter, token);
+}
+
+fn to_emitter_eval(void* emitter, void* ast) {
+    # [AST_EVAL, expr, null, null]
+    ast = ast + 0x8;
+    void* expr = *ast;
+    Emitter_eval_expr(emitter, expr);
+}
+
+fn to_emitter_assign(void* emitter, void* ast) {
+    # [AST_ASSIGN, expr, rhs, null]
+    ast = ast + 0x8;
+    void* expr = *ast;
+    ast = ast + 0x8;
+    void* rhs = *ast;
+
+    # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
+    int t = *expr;
+    void* nameT;
+    if t == AST_ID {
+        t = expr + 0x8;         # -> name
+        nameT = *t;
+        return Emitter_do_assign(emitter, nameT, rhs);
+    }
+    if t == AST_ADDR_OP {
+        t = expr + 0x10;        # -> name
+        nameT = *t;
+        return Emitter_do_assign_pointer(emitter, nameT, rhs);
+    }
+
+    eprintf("Bad assignment to a %i node\n", t);
+    exit(14);
+}

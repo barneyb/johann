@@ -30,17 +30,13 @@ pub fn main(int argc, char** argv) {
 
 fn jnc_compile() {
     void* lex = Lexer__new();
-    void* emitter = Emitter__new();
-
-    parse_program(lex, emitter);
-#    void* parser = Parser__new(lex);
-#
-#    Parser_parse(parser);
-#
-#    Parser_drop(parser);
-
-    Emitter_drop(emitter);
+    void* ast = parse_program(lex);
     Lexer_drop(lex);
+
+    void* emitter = Emitter__new();
+    to_emitter(emitter, ast);
+    drop_ast(ast);
+    Emitter_drop(emitter);
 }
 
 # token is a [val, line, char] tuple to dissect for the format

@@ -1,0 +1,193 @@
+# literals are 00x, in promotion order
+pub int AST_BOOL = 1;
+pub int AST_CHAR = 2;
+pub int AST_INT = 3;
+# simple expressions are 0xx
+pub int AST_STRING = 50;
+pub int AST_ID = 75;
+# compound expressions are 1xx
+pub int AST_UNARY = 101;
+pub int AST_BINARY = 102;
+pub int AST_ADDR_OP = 103;
+pub int AST_CALL = 104;
+# declarations are 3xx
+pub int AST_PROGRAM = 301;
+pub int AST_DECL = 302;
+pub int AST_FN = 303;
+pub int AST_VAR = 304;
+pub int AST_NAMETYPE = 305;
+# statements are 4xx
+pub int AST_EVAL = 401;
+pub int AST_ASSIGN = 402;
+pub int AST_IF = 403;
+pub int AST_WHILE = 404;
+pub int AST_DONE = 405;
+pub int AST_AGAIN = 406;
+pub int AST_RETURN = 407;
+
+# [type, a, b, c] 4-tuple
+pub fn ast0(int type) {
+    return ast3(type, null, null, null);
+}
+
+pub fn ast1(int type, void value) {
+    return ast3(type, value, null, null);
+}
+
+pub fn ast2(int type, void value, void left) {
+    return ast3(type, value, left, null);
+}
+
+pub fn ast3(int type, void value, void left, void right) {
+    void* ast = malloc(0x20);
+    *ast = type;
+    ast = ast + 0x8;
+    *ast = value;
+    ast = ast + 0x8;
+    *ast = left;
+    ast = ast + 0x8;
+    *ast = right;
+    ast = ast - 0x18;
+    return ast;
+}
+
+pub fn drop_ast(void* ast) {
+    if ast == null { return; }
+    int type = *ast;
+    void* it;
+
+    if type == AST_BOOL {
+        return free(ast);
+    }
+    if type == AST_CHAR {
+        return free(ast);
+    }
+    if type == AST_INT {
+        return free(ast);
+    }
+    if type == AST_STRING {
+        it = ast + 0x8;             # -> value
+        free(*it);
+        return free(ast);
+    }
+    if type == AST_BINARY {
+        it = ast + 0x10;            # -> left
+        drop_ast(*it);
+        it = ast + 0x18;            # -> right
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_UNARY {
+        it = ast + 0x10;            # -> operand
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_FN {
+        it = ast + 0x8;             # -> name_token
+        Token_drop(*it);
+        it = ast + 0x10;            # -> args
+        drop_ast_array(*it);
+        it = ast + 0x18;            # -> stmts
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_NAMETYPE {
+        it = ast + 0x8;             # -> name_token
+        if *it != null { Token_drop(*it); }
+        return free(ast);
+    }
+    if type == AST_RETURN {
+        it = ast + 0x8;             # -> token
+        Token_drop(*it);
+        it = ast + 0x10;            # -> expr
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_EVAL {
+        it = ast + 0x8;             # -> expr
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_VAR {
+        it = ast + 0x8;             # -> name_and_type
+        drop_ast(*it);
+        it = ast + 0x10;            # -> expr
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_ID {
+        it = ast + 0x8;             # -> nameT
+        Token_drop(*it);
+        return free(ast);
+    }
+    if type == AST_CALL {
+        it = ast + 0x8;             # -> rcvr
+        drop_ast(*it);
+        it = ast + 0x10;            # -> args
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_ASSIGN {
+        it = ast + 0x8;             # -> lhs
+        drop_ast(*it);
+        it = ast + 0x10;            # -> rhs
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_IF {
+        it = ast + 0x8;             # -> condition
+        drop_ast(*it);
+        it = ast + 0x10;            # -> body
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_WHILE {
+        it = ast + 0x8;             # -> condition
+        drop_ast(*it);
+        it = ast + 0x10;            # -> body
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_DONE {
+        it = ast + 0x8;             # -> token
+        Token_drop(*it);
+        return free(ast);
+    }
+    if type == AST_AGAIN {
+        it = ast + 0x8;             # -> token
+        Token_drop(*it);
+        return free(ast);
+    }
+    if type == AST_ADDR_OP {
+        it = ast + 0x10;            # -> nameT
+        Token_drop(*it);
+        return free(ast);
+    }
+    if type == AST_PROGRAM {
+        it = ast + 0x8;             # -> decls
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_DECL {
+        it = ast + 0x10;            # -> fn_or_var
+        drop_ast(*it);
+        return free(ast);
+    }
+
+    char* f = "Can't drop ast of type %i / %x\n";
+    eprintf(f, type, type);
+    printf(f, type, type);
+    exit(62);
+}
+
+fn drop_ast_array(void* nodes) {
+    if nodes == null { return; }
+    void* p = nodes;
+    while true {
+        void it = *p;
+        if it == null { done; }
+        drop_ast(it);
+        p = p + 0x8;
+    }
+    free(nodes);
+}
