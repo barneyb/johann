@@ -25,6 +25,9 @@ mkdocs:
 johanndoc:
 	./johanndoc.sh
 
+johannundoc:
+	./johanndoc.sh --undoc
+
 test:
 	$(MAKE) -C jstdlib test
 	$(MAKE) -C jnc test

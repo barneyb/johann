@@ -21,7 +21,7 @@ pub fn main(int a, char** b) {
 }
 ```
 
-By default, declarations are private to the file they're declared in. Use `pub` to make a declaration globally available, whether a function or a global variable. 
+By default, definitions are private to the file they're declared in. Use `pub` to make a definition available elsewhere, whether a function or a global variable. To use a `pub` variable (or take the address of a `pub` function) in another file, it must redeclared in that file.
 
 Conditionals use the `if` keyword and loops use `while`. The conditional expression is not wrapped with parentheses, but are valid (as part of the expression) if present.. Braces are required around the body. There is no `else`. Functions are called with a pair of parens.
 
@@ -116,11 +116,11 @@ printf(f, a);
 printf("one: %i\n", 1);
 ```
 
-Both functions and global variables can be declared without being defined. This is needed to reference them. Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
+Both functions and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be defined `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, simple use or taking an address. This program prints an externally-defined greeting three times, in three different ways:
 
 ```johann
-char* GREETING;             # declare variable defined somewhere else
-fn puts(char* str);         # declare jstdlib function
+char* GREETING;             # declare variable defined "somewhere else"
+fn puts(char* str);         # declare function defined in jstdlib.o
 
 pub fn main() {
     char* str = GREETING;   # deref global (declaration required)
