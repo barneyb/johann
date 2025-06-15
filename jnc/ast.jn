@@ -1,53 +1,93 @@
 # literals are 00x, in promotion order
-pub int AST_BOOL = 1;
-pub int AST_CHAR = 2;
-pub int AST_INT = 3;
+
+# [AST_BOOL, value]
+pub int AST_BOOL        = 1;
+# [AST_CHAR, value]
+pub int AST_CHAR        = 2;
+# [AST_INT, value]
+pub int AST_INT         = 3;
+
 # simple expressions are 0xx
-pub int AST_STRING = 50;
-pub int AST_ID = 75;
+
+# [AST_STRING, value]
+pub int AST_STRING      = 50;
+# [AST_ID, nameT]
+pub int AST_ID          = 75;
+
 # compound expressions are 1xx
-pub int AST_UNARY = 101;
-pub int AST_BINARY = 102;
-pub int AST_ADDR_OP = 103;
-pub int AST_CALL = 104;
+
+# [AST_UNARY, op, operand]
+pub int AST_UNARY       = 101;
+# [AST_BINARY, op, *left, *right]
+pub int AST_BINARY      = 102;
+# [AST_ADDR_OP, op, nameT]
+pub int AST_ADDR_OP     = 103;
+# [AST_CALL, rcvr, args[]]
+pub int AST_CALL        = 104;
+
 # declarations are 3xx
-pub int AST_PROGRAM = 301;
-pub int AST_DECL = 302;
-pub int AST_FN = 303;
-pub int AST_VAR = 304;
-pub int AST_NAMETYPE = 305;
+
+# [AST_PROGRAM, decls[]]
+pub int AST_PROGRAM     = 301;
+# [AST_DECL, is_pub, fn_or_var]
+pub int AST_DECL        = 302;
+# [AST_FN, nameT, args[], block?]
+pub int AST_FN          = 303;
+# [AST_VAR, name_and_type, init?]
+pub int AST_VAR         = 304;
+# [AST_NAMETYPE, nameT?, T_type, nptr] - todo: deprecated
+pub int AST_NAMETYPE    = 305;
+
 # statements are 4xx
-pub int AST_EVAL = 401;
-pub int AST_ASSIGN = 402;
-pub int AST_IF = 403;
-pub int AST_WHILE = 404;
-pub int AST_DONE = 405;
-pub int AST_AGAIN = 406;
-pub int AST_RETURN = 407;
 
-# [type, a, b, c] 4-tuple
-pub fn ast0(int type) {
-    return ast3(type, null, null, null);
-}
+# [AST_EVAL, expr]
+pub int AST_EVAL        = 401;
+# [AST_ASSIGN, expr, rhs]
+pub int AST_ASSIGN      = 402;
+# [AST_IF, cond, block]
+pub int AST_IF          = 403;
+# [AST_WHILE, cond, block]
+pub int AST_WHILE       = 404;
+# [AST_DONE, token]
+pub int AST_DONE        = 405;
+# [AST_AGAIN, token]
+pub int AST_AGAIN       = 406;
+# [AST_RETURN, token, expr?]
+pub int AST_RETURN      = 407;
 
-pub fn ast1(int type, void value) {
-    return ast3(type, value, null, null);
-}
-
-pub fn ast2(int type, void value, void left) {
-    return ast3(type, value, left, null);
-}
-
-pub fn ast3(int type, void value, void left, void right) {
-    void* ast = malloc(0x20);
-    *ast = type;
-    ast = ast + 0x8;
+# [type, value] 2-tuple
+pub fn ast2(int type, void value) {
+    void* ast = malloc(0x10);
+    ast = ast + 0x8;                # -> value
     *ast = value;
-    ast = ast + 0x8;
+    ast = ast - 0x8;                # -> type
+    *ast = type;
+    return ast;
+}
+
+# [type, value, left] 3-tuple
+pub fn ast3(int type, void value, void left) {
+    void* ast = malloc(0x18);
+    ast = ast + 0x8;                # -> value
+    *ast = value;
+    ast = ast + 0x8;                # -> left
     *ast = left;
-    ast = ast + 0x8;
+    ast = ast - 0x10;               # -> type
+    *ast = type;
+    return ast;
+}
+
+# [type, value, left, right] 4-tuple
+pub fn ast4(int type, void value, void left, void right) {
+    void* ast = malloc(0x20);
+    ast = ast + 0x8;                # -> value
+    *ast = value;
+    ast = ast + 0x8;                # -> left
+    *ast = left;
+    ast = ast + 0x8;                # -> right
     *ast = right;
-    ast = ast - 0x18;
+    ast = ast - 0x18;               # -> type
+    *ast = type;
     return ast;
 }
 

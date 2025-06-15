@@ -163,17 +163,14 @@ fn unexpected_token(void* tkn) {
     jnc_panic(ERR_UNEXPECTED_TOKEN, tkn, 26);
 }
 
-# [AST_PROGRAM, decls[], null, null]
 pub fn parse_program(void* lex) {
     void* decls = ArrayList__new(8);
     while peek_token(lex) != null {
         ArrayList_push(decls, parse_decl(lex));
     }
-    return ast1(AST_PROGRAM, ArrayList_into_array(decls));
+    return ast2(AST_PROGRAM, ArrayList_into_array(decls));
 }
 
-
-# [AST_FN, nameT, args[], block?]
 fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
     void* nameT = id_token(lex);
@@ -189,12 +186,12 @@ fn parse_function_declaration(void* lex) {
     t = Token_type(tkn);
     if t == T_SEMI {
         consume_token(lex, t);
-        return ast2(AST_FN, nameT, args);
+        return ast3(AST_FN, nameT, args);
     }
     if t == T_OBRACE {
         verify_parameters_are_named(nameT, args);
         void* block = parse_block(lex);
-        return ast3(AST_FN, nameT, args, block);
+        return ast4(AST_FN, nameT, args, block);
     }
     unexpected_token(tkn);
 }
@@ -233,7 +230,6 @@ fn parse_param_list(void* lex) {
     return ArrayList_into_array(params);
 }
 
-# [AST_NAMETYPE, nameT?, T_type, nptr]
 fn parse_name_and_type(void* lex) {
     void* base_tkn = next_token(lex);
     int nptr = 0;
@@ -254,13 +250,12 @@ fn parse_name_and_type(void* lex) {
             nameT = id_token(lex);
         }
     }
-    return ast3(AST_NAMETYPE,
+    return ast4(AST_NAMETYPE,
                 nameT,
                 Token_into_type(base_tkn),
                 nptr);
 }
 
-# [AST_DECL, is_pub, fn_or_var, null]
 fn parse_decl(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
@@ -283,14 +278,13 @@ fn parse_decl(void* lex) {
     if ast == null {
         unexpected_token(tkn);
     }
-    return ast2(AST_DECL, is_pub, ast);
+    return ast3(AST_DECL, is_pub, ast);
 }
 
-# [AST_VAR, name_and_type, init?, null]
 fn parse_vardecl(void* lex) {
     void* name_and_type = parse_name_and_type(lex);
     void* init = parse_opt_assign(lex);
-    return ast2(AST_VAR, name_and_type, init);
+    return ast3(AST_VAR, name_and_type, init);
 }
 
 # null OR expr
@@ -327,14 +321,6 @@ fn parse_block(void* lex) {
     return ArrayList_into_array(stmts);
 }
 
-# [AST_VAR, name_and_type, init?, null]
-# [AST_IF, cond, block, null]
-# [AST_WHILE, cond, block, null]
-# [AST_DONE, token, null, null]
-# [AST_AGAIN, token, null, null]
-# [AST_RETURN, token, expr?, null]
-# [AST_EVAL, expr, null, null]
-# [AST_ASSIGN, expr, rhs, null]
 fn parse_statement(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
@@ -353,37 +339,32 @@ fn parse_statement(void* lex) {
     return parse_eval_or_assign(lex);
 }
 
-# [AST_IF, cond, block, null]
 fn parse_if(void* lex) {
     consume_token(lex, T_KW_IF);
     void* cond = parse_expr(lex);
     void* body = parse_block(lex);
-    return ast2(AST_IF, cond, body);
+    return ast3(AST_IF, cond, body);
 }
 
-# [AST_WHILE, cond, block, null]
 fn parse_while(void* lex) {
     consume_token(lex, T_KW_WHILE);
     void* cond = parse_expr(lex);
     void* body = parse_block(lex);
-    return ast2(AST_WHILE, cond, body);
+    return ast3(AST_WHILE, cond, body);
 }
 
-# [AST_DONE, token, null, null]
 fn parse_done(void* lex) {
     void* token = next_token(lex);
     consume_token(lex, T_SEMI);
-    return ast1(AST_DONE, token);
+    return ast2(AST_DONE, token);
 }
 
-# [AST_AGAIN, token, null, null]
 fn parse_again(void* lex) {
     void* token = next_token(lex);
     consume_token(lex, T_SEMI);
-    return ast1(AST_AGAIN, token);
+    return ast2(AST_AGAIN, token);
 }
 
-# [AST_RETURN, token, expr?, null]
 fn parse_return(void* lex) {
     void* ret_tkn = next_token(lex);
     void* expr = null;
@@ -393,11 +374,9 @@ fn parse_return(void* lex) {
         expr = parse_expr(lex);
     }
     consume_token(lex, T_SEMI);
-    return ast2(AST_RETURN, ret_tkn, expr);
+    return ast3(AST_RETURN, ret_tkn, expr);
 }
 
-# [AST_EVAL, expr, null, null]
-# [AST_ASSIGN, expr, rhs, null]
 fn parse_eval_or_assign(void* lex) {
     int line = Token_line(peek_token(lex));
     void* expr = parse_expr(lex);
@@ -410,18 +389,18 @@ fn parse_eval_or_assign(void* lex) {
 
     # bare evaluation
     if rhs == null {
-        return ast2(AST_EVAL, expr);
+        return ast3(AST_EVAL, expr);
     }
 
     # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
     int t = *expr;
     if t == AST_ID {
-        return ast2(AST_ASSIGN, expr, rhs);
+        return ast3(AST_ASSIGN, expr, rhs);
     }
     if t == AST_ADDR_OP {
         t = expr + 0x8;             # -> op
         if *t == T_STAR {
-            return ast2(AST_ASSIGN, expr, rhs);
+            return ast3(AST_ASSIGN, expr, rhs);
         }
     }
 
@@ -429,14 +408,6 @@ fn parse_eval_or_assign(void* lex) {
     exit(14);
 }
 
-# [AST_ADDR_OP, op, nameT, null]
-# [AST_BINARY, op, *left, *right]
-# [AST_CALL, rcvr, args[], null]
-# [AST_CHAR, value, null, null]
-# [AST_ID, nameT, null, null]
-# [AST_INT, value, null, null]
-# [AST_STRING, value, null, null]
-# [AST_UNARY, op, operand, null]
 fn parse_expr(void* lex) {
     return parse_expr_cond(lex);
 }
@@ -588,7 +559,7 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         if op == T_SLASH   { ttr = left / right; did_it = true; }
         if op == T_PERCENT { ttr = left % right; did_it = true; }
         if did_it {
-            return ast1(ttl, ttr);
+            return ast2(ttl, ttr);
         }
         char* tmpl = "Can't statically eval %x (%c) with %i and %i\n";
         printf(tmpl, op, op, left, right);
@@ -596,15 +567,13 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         panic(16);
     } }
 
-    return ast3(AST_BINARY, op, left, right);
+    return ast4(AST_BINARY, op, left, right);
 }
 
 fn parse_expr_cast(void* lex) {
     return parse_expr_unary(lex);
 }
 
-# [AST_UNARY, op, operand, null]
-# [AST_ADDR_OP, op, nameT, null]
 fn parse_expr_unary(void* lex) {
     void* tkn = peek_token(lex);
     if tkn != null {
@@ -625,7 +594,7 @@ fn un_addr_op(void* lex, int op) {
     if tto != T_ID {
         jnc_panic(ERR_BAD_EXPRESSION, nameT, 28);
     }
-    return ast2(AST_ADDR_OP, op, nameT);
+    return ast3(AST_ADDR_OP, op, nameT);
 }
 
 fn join_un_op_rtl(void* lex, int op) {
@@ -645,7 +614,7 @@ fn join_un_op_rtl(void* lex, int op) {
         if op == T_MINUS { v = -v; did_it = true; }
         if op == T_PLUS  {         did_it = true; } # for completeness
         if did_it {
-            return ast1(tto, v);
+            return ast2(tto, v);
         }
         char* tmpl = "Can't statically eval %x (%c) with %i of %i\n";
         printf(tmpl, op, op, operand, tto);
@@ -653,10 +622,9 @@ fn join_un_op_rtl(void* lex, int op) {
         panic(16);
     }
 
-    return ast2(AST_UNARY, op, operand);
+    return ast3(AST_UNARY, op, operand);
 }
 
-# [AST_CALL, rcvr, args[], null]
 fn parse_expr_postfix(void* lex) {
     void* expr = parse_expr_primary(lex);
     void* tkn = peek_token(lex);
@@ -672,7 +640,7 @@ fn parse_expr_postfix(void* lex) {
                 args = parse_arg_list(lex);
             }
             consume_token(lex, T_CPAREN);
-            expr = ast2(AST_CALL, expr, args);
+            expr = ast3(AST_CALL, expr, args);
         }
     }
     return expr;
@@ -722,18 +690,16 @@ fn parse_expr_primary(void* lex) {
     jnc_panic(ERR_BAD_EXPRESSION, tkn, 28);
 }
 
-# [AST_type, val, null, null]
 fn parse_val(void* lex, int type) {
     void* tkn = next_token(lex);
     void v = Token_into_value(tkn);
-    return ast1(type, v);
+    return ast2(type, v);
 }
 
-# [AST_ID, nameT, null, null]
 fn parse_id(void* lex) {
     void* tkn = id_token(lex);
     int type = AST_ID;
-    return ast1(type, tkn);
+    return ast2(type, tkn);
 }
 
 fn id_token(void* lex) {
