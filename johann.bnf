@@ -12,15 +12,23 @@
   ]
 }
 
-program_ ::= ( ( "pub" )? ( global_declaration | function_declaration ) )*
-global_declaration ::= vardecl_
+program_ ::= ( declaration_ )*
+private declaration_ ::= ( "pub" )? ( global_declaration
+                                    | function_declaration
+                                    | struct_declaration
+                                    )
+global_declaration ::= variable_declaration
 function_declaration ::= "fn" ID "(" parameter_list? ")" /*( "->" type )?*/ ( ";" | block_ )
-private vardecl_ ::= type_and_name opt_assign
-//                   | "let" name_and_type variable_initializer
-//                   | "const" name_and_type variable_initializer
+struct_declaration ::= "struct" ID ( "{" ( member_declaration )+ "}" )? ";"? // semi is permitted, but not required
+member_declaration ::= type_spec ID ";"
+private type_spec ::= ( "bool"
+                      | "char"
+                      | "int"
+                      | "void"
+                      | ID "*"
+                      ) ( "*" )*
+private variable_declaration ::= type_and_name ( "=" expr_ )? ";"
 private type_and_name ::= type_ ( "*" )* ID
-private opt_assign ::= ( "=" expr_ )? ";"
-//name_and_type ::= ID ":" type
 private parameter_list ::= type_opt_name ( "," type_opt_name )*
 private type_opt_name ::= type_ ( "*" )* ( ID )?
 private type_ ::= "bool"
@@ -29,8 +37,9 @@ private type_ ::= "bool"
                 | "void"
 //                | "(" type_list ")" "->" type
 //type_list ::= type ( "," type )*
-private block_ ::= "{" statement_* "}"
-statement_ ::= vardecl_
+private block_ ::= "{" block_item* "}"
+block_item ::= variable_declaration
+             | struct_declaration
              | "if" expr_ block_ /*( "else" block )?*/
              | "while" expr_ block_
              | "done" ";"
@@ -74,23 +83,25 @@ private cast_expr ::= unary_expr
 //                    | "(" type ")" cast_expr
 
 private unary_expr ::= postfix_expr
-//                     | inc_op unary_expr
                      | un_op cast_expr
 //                     | "sizeof" "(" type ")"
+//                     | "sizeof" expr_
 private un_op ::= "-" | "+" | "!" | "*" | "&"
-//private inc_op ::= "++" | "--"
 
 private postfix_expr ::= primary_expr (
                              "(" argument_list? ")"
 //                             | "[" expr "]"
 //                             | "." ID // todo: obj.method().another().field?
-//                             | inc_op
                          )*
 private argument_list ::= expr_ ( "," expr_ )*
 
 private primary_expr ::= ID
                        | CHAR
-                       | INT_DEC | INT_HEX | "0"
+                       | const_
                        | STRING
                        | "true" | "false"
                        | "(" expr_ ")"
+
+private const_ ::= INT_DEC
+                 | INT_HEX
+                 | "0"

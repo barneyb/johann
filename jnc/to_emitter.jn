@@ -10,6 +10,7 @@ int AST_IF;
 int AST_NAMETYPE;
 int AST_PROGRAM;
 int AST_RETURN;
+int AST_STRUCT;
 int AST_VAR;
 int AST_WHILE;
 
@@ -22,6 +23,7 @@ pub fn to_emitter(void* emitter, void* ast) {
     if t == AST_DECL    { return to_emitter_decl(emitter, ast); }
     if t == AST_VAR     { return to_emitter_var(emitter, ast); }
     if t == AST_FN      { return to_emitter_fn(emitter, ast); }
+    if t == AST_STRUCT  { return; }
     if t == AST_IF      { return to_emitter_if(emitter, ast); }
     if t == AST_WHILE   { return to_emitter_while(emitter, ast); }
     if t == AST_DONE    { return to_emitter_done(emitter, ast); }
@@ -29,6 +31,11 @@ pub fn to_emitter(void* emitter, void* ast) {
     if t == AST_RETURN  { return to_emitter_return(emitter, ast); }
     if t == AST_EVAL    { return to_emitter_eval(emitter, ast); }
     if t == AST_ASSIGN  { return to_emitter_assign(emitter, ast); }
+
+    # types never emit code
+    if t >= 500 { if t < 600 {
+        return;
+    } }
 
     eprintf("Can't emit a %i node?!\n", t);
     exit(t);
@@ -74,10 +81,10 @@ fn to_emitter_var(void* emitter, void* ast) {
     int nptr = name_and_type + 0x18;
     nptr = *nptr;
 
-    if IS_PUB {
+    if IS_PUB { if init != null {
         IS_PUB = false;
         Emitter_mark_global(nameT);
-    }
+    } }
     Emitter_do_decl(emitter, nameT, type, nptr, init);
 }
 

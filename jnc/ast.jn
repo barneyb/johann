@@ -1,19 +1,28 @@
-# literals are 00x, in promotion order
+# I hold the compiler's AST implementation.
 
-# [AST_BOOL, value]
-pub int AST_BOOL        = 1;
-# [AST_CHAR, value]
-pub int AST_CHAR        = 2;
-# [AST_INT, value]
-pub int AST_INT         = 3;
+##################################################
+# simple literals are __x, in promotion order
 
-# simple expressions are 0xx
+# [AST_LIT_BOOL, value]
+pub int AST_LIT_BOOL    = 1;
+# [AST_LIT_CHAR, value]
+pub int AST_LIT_CHAR    = 2;
+# [AST_LIT_INT, value]
+pub int AST_LIT_INT     = 3;
 
-# [AST_STRING, value]
-pub int AST_STRING      = 50;
+##################################################
+# compound literals are _2x
+
+# [AST_LIT_STRING, value]
+pub int AST_LIT_STRING  = 20;
+
+##################################################
+# simple expressions are _5x
+
 # [AST_ID, nameT]
-pub int AST_ID          = 75;
+pub int AST_ID          = 50;
 
+##################################################
 # compound expressions are 1xx
 
 # [AST_UNARY, op, operand]
@@ -25,6 +34,7 @@ pub int AST_ADDR_OP     = 103;
 # [AST_CALL, rcvr, args[]]
 pub int AST_CALL        = 104;
 
+##################################################
 # declarations are 3xx
 
 # [AST_PROGRAM, decls[]]
@@ -37,7 +47,12 @@ pub int AST_FN          = 303;
 pub int AST_VAR         = 304;
 # [AST_NAMETYPE, nameT?, T_type, nptr] - todo: deprecated
 pub int AST_NAMETYPE    = 305;
+# [AST_STRUCT, nameT, members]
+pub int AST_STRUCT      = 306;
+# [AST_MEMBER, nameT, type]
+pub int AST_MEMBER      = 307;
 
+##################################################
 # statements are 4xx
 
 # [AST_EVAL, expr]
@@ -54,6 +69,32 @@ pub int AST_DONE        = 405;
 pub int AST_AGAIN       = 406;
 # [AST_RETURN, token, expr?]
 pub int AST_RETURN      = 407;
+
+##################################################
+# types are 5xx
+
+# [AST_TYPE_BOOL]
+pub int AST_TYPE_BOOL   = 501;
+# [AST_TYPE_CHAR]
+pub int AST_TYPE_CHAR   = 502;
+# [AST_TYPE_INT]
+pub int AST_TYPE_INT    = 503;
+# [AST_TYPE_VOID]
+pub int AST_TYPE_VOID   = 520;
+# [AST_TYPE_PTR, type]
+pub int AST_TYPE_PTR    = 521;
+# [AST_TYPE_NAMED, nameT]
+pub int AST_TYPE_NAMED = 550;
+## todo: functions and arrays...
+
+##################################################
+
+# [type] 1-tuple (silly, but uniform)
+pub fn ast1(int type) {
+    void* ast = malloc(0x8);
+    *ast = type;
+    return ast;
+}
 
 # [type, value] 2-tuple
 pub fn ast2(int type, void value) {
@@ -96,16 +137,16 @@ pub fn drop_ast(void* ast) {
     int type = *ast;
     void* it;
 
-    if type == AST_BOOL {
+    if type == AST_LIT_BOOL {
         return free(ast);
     }
-    if type == AST_CHAR {
+    if type == AST_LIT_CHAR {
         return free(ast);
     }
-    if type == AST_INT {
+    if type == AST_LIT_INT {
         return free(ast);
     }
-    if type == AST_STRING {
+    if type == AST_LIT_STRING {
         it = ast + 0x8;             # -> value
         free(*it);
         return free(ast);
@@ -134,6 +175,20 @@ pub fn drop_ast(void* ast) {
     if type == AST_NAMETYPE {
         it = ast + 0x8;             # -> name_token
         if *it != null { Token_drop(*it); }
+        return free(ast);
+    }
+    if type == AST_STRUCT {
+        it = ast + 0x8;             # -> nameT
+        Token_drop(*it);
+        it = ast + 0x10;            # -> members
+        drop_ast_array(*it);
+        return free(ast);
+    }
+    if type == AST_MEMBER {
+        it = ast + 0x8;             # -> nameT
+        Token_drop(*it);
+        it = ast + 0x10;            # -> type
+        drop_ast(*it);
         return free(ast);
     }
     if type == AST_RETURN {
@@ -211,6 +266,28 @@ pub fn drop_ast(void* ast) {
     if type == AST_DECL {
         it = ast + 0x10;            # -> fn_or_var
         drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_TYPE_BOOL {
+        return free(ast);
+    }
+    if type == AST_TYPE_CHAR {
+        return free(ast);
+    }
+    if type == AST_TYPE_INT {
+        return free(ast);
+    }
+    if type == AST_TYPE_VOID {
+        return free(ast);
+    }
+    if type == AST_TYPE_PTR {
+        it = ast + 0x8;             # -> type
+        drop_ast(*it);
+        return free(ast);
+    }
+    if type == AST_TYPE_NAMED {
+        it = ast + 0x8;             # -> nameT
+        Token_drop(*it);
         return free(ast);
     }
 

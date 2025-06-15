@@ -22,18 +22,18 @@ int AST_ADDR_OP;
 int AST_AGAIN;
 int AST_ASSIGN;
 int AST_BINARY;
-int AST_BOOL;
+int AST_LIT_BOOL;
 int AST_CALL;
-int AST_CHAR;
+int AST_LIT_CHAR;
 int AST_DONE;
 int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
-int AST_INT;
+int AST_LIT_INT;
 int AST_NAMETYPE;
 int AST_RETURN;
-int AST_STRING;
+int AST_LIT_STRING;
 int AST_UNARY;
 int AST_VAR;
 int AST_WHILE;
@@ -326,7 +326,7 @@ fn decl_global(void* self, void* nameT, void* expr, void* symbol) {
     char* name = Token_value(nameT);
     int type = *expr;
     # strings are easy, storage and value must both be strings
-    if type == AST_STRING {
+    if type == AST_LIT_STRING {
         expr = expr + 0x8;          # -> value
         return decl_global_string(self, name, *expr);
     }
@@ -553,9 +553,9 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     int t = *expr;
     int v = expr + 0x8;             # -> val
     v = *v;
-    if t == AST_BOOL { return v; }
-    if t == AST_CHAR { return v; }
-    if t == AST_INT { return v; }
+    if t == AST_LIT_BOOL { return v; }
+    if t == AST_LIT_CHAR { return v; }
+    if t == AST_LIT_INT { return v; }
 
     char* f = "Expr type %i isn't constant.\n";
     printf(f, t);
@@ -566,22 +566,22 @@ pub fn Emitter_eval_const(void* self, void* expr) {
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
     int t = *expr;
-    if t == AST_BOOL { # [AST_BOOL, val, null, null]
+    if t == AST_LIT_BOOL { # [AST_LIT_BOOL, val, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_CHAR { # [AST_CHAR, val, null, null]
+    if t == AST_LIT_CHAR { # [AST_LIT_CHAR, val, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_INT { # [AST_INT, val, null, null]
+    if t == AST_LIT_INT { # [AST_LIT_INT, val, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_STRING { # [AST_STRING, value, null, null]
+    if t == AST_LIT_STRING { # [AST_LIT_STRING, value, null, null]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_string(self, expr);

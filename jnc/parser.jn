@@ -13,6 +13,7 @@ int T_KW_IF;
 int T_KW_INT;
 int T_KW_PUB;
 int T_KW_RETURN;
+int T_KW_STRUCT;
 int T_KW_VOID;
 int T_KW_WHILE;
 
@@ -41,24 +42,34 @@ int AST_ADDR_OP;
 int AST_AGAIN;
 int AST_ASSIGN;
 int AST_BINARY;
-int AST_BOOL;
 int AST_CALL;
-int AST_CHAR;
 int AST_DECL;
 int AST_DONE;
 int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
-int AST_INT;
+int AST_LIT_BOOL;
+int AST_LIT_CHAR;
+int AST_LIT_INT;
+int AST_LIT_STRING;
+int AST_MEMBER;
 int AST_NAMETYPE;
 int AST_PROGRAM;
 int AST_RETURN;
-int AST_STRING;
+int AST_STRUCT;
+int AST_TYPE_BOOL;
+int AST_TYPE_CHAR;
+int AST_TYPE_INT;
+int AST_TYPE_MEMBER;
+int AST_TYPE_PTR;
+int AST_TYPE_NAMED;
+int AST_TYPE_VOID;
 int AST_UNARY;
 int AST_VAR;
 int AST_WHILE;
 
+char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, char %i\n";
 char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, char %i\n";
 char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, char %i\n";
@@ -137,6 +148,13 @@ fn next_token(void* lex) {
     return token;
 }
 
+fn consume_opt_token(void* lex, int type) {
+    void* tkn = peek_token(lex);
+    if tkn == null { return; }
+    if Token_type(tkn) != type { return; }
+    Token_drop(next_token(lex));
+}
+
 fn consume_token(void* lex, int type) {
     void* tkn = next_token(lex);
     int t;
@@ -166,7 +184,7 @@ fn unexpected_token(void* tkn) {
 pub fn parse_program(void* lex) {
     void* decls = ArrayList__new(8);
     while peek_token(lex) != null {
-        ArrayList_push(decls, parse_decl(lex));
+        ArrayList_push(decls, parse_declaration(lex));
     }
     return ast2(AST_PROGRAM, ArrayList_into_array(decls));
 }
@@ -256,7 +274,7 @@ fn parse_name_and_type(void* lex) {
                 nptr);
 }
 
-fn parse_decl(void* lex) {
+fn parse_declaration(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     bool is_pub = false;
@@ -273,58 +291,88 @@ fn parse_decl(void* lex) {
         t = Token_type(tkn);
     }
     void* ast = null;
-    if is_type_kw(t) { ast = parse_vardecl(lex); }
-    if t == T_KW_FN { ast = parse_function_declaration(lex); }
+    if is_type_kw(t)    { ast = parse_variable_declaration(lex); }
+    if t == T_KW_FN     { ast = parse_function_declaration(lex); }
+    if t == T_KW_STRUCT { ast = parse_struct_declaration(lex); }
     if ast == null {
         unexpected_token(tkn);
     }
     return ast3(AST_DECL, is_pub, ast);
 }
 
-fn parse_vardecl(void* lex) {
+fn parse_variable_declaration(void* lex) {
     void* name_and_type = parse_name_and_type(lex);
-    void* init = parse_opt_assign(lex);
+    void* init = null;
+    if Token_type(peek_token(lex)) == T_ASSIGN {
+        consume_token(lex, T_ASSIGN);
+        init = parse_expr(lex);
+    }
+    consume_token(lex, T_SEMI);
     return ast3(AST_VAR, name_and_type, init);
 }
 
-# null OR expr
-fn parse_opt_assign(void* lex) {
-    void* tkn = peek_token(lex);
-    int t = Token_type(tkn);
-    void* expr = null;
-    if t == T_ASSIGN {
-        consume_token(lex, t);
-        expr = parse_expr(lex);
+fn parse_struct_declaration(void* lex) {
+    consume_token(lex, T_KW_STRUCT);
+    void* nameT = id_token(lex);
+    consume_token(lex, T_OBRACE);
+    void* members = ArrayList__new(8);
+    while Token_type(peek_token(lex)) != T_CBRACE {
+        void* type = parse_type_spec(lex);
+        ArrayList_push(members, ast3(AST_MEMBER,
+                                     id_token(lex),
+                                     type));
+        consume_token(lex, T_SEMI);
     }
-    consume_token(lex, T_SEMI);
-    return expr;
+    consume_token(lex, T_CBRACE);
+    consume_opt_token(lex, T_SEMI);
+    return ast3(AST_STRUCT,
+                nameT,
+                ArrayList_into_array(members));
 }
 
-# [[AST_stmt, ?, ?, ?]*]
+fn parse_type_spec(void* lex) {
+    void* tkn = next_token(lex);
+    int t = Token_type(tkn);
+    void* ast = null;
+    if t == T_KW_BOOL { Token_drop(tkn); ast = ast1(AST_TYPE_BOOL); }
+    if t == T_KW_CHAR { Token_drop(tkn); ast = ast1(AST_TYPE_CHAR); }
+    if t == T_KW_INT  { Token_drop(tkn); ast = ast1(AST_TYPE_INT); }
+    if t == T_KW_VOID { Token_drop(tkn); ast = ast1(AST_TYPE_VOID); }
+    if t == T_ID {
+        ast = ast2(AST_TYPE_NAMED, tkn);
+        # this MUST have at least one indirection
+        consume_token(lex, T_STAR);
+        ast = ast2(AST_TYPE_PTR, ast);
+    }
+    if ast == null {
+        jnc_panic(ERR_BAD_TYPE, tkn, 25);
+    }
+    while Token_type(peek_token(lex)) == T_STAR {
+        consume_token(lex, T_STAR);
+        ast = ast2(AST_TYPE_PTR, ast);
+    }
+    return ast;
+}
+
 fn parse_block(void* lex) {
     int t = T_OBRACE;
     consume_token(lex, t);
-    void* stmts = ArrayList__new(4); # many blocks are four or fewer statements
-    void* tkn;
-    while true {
-        tkn = peek_token(lex);
-        t = Token_type(tkn);
-        if t == T_CBRACE {
-            consume_token(lex, t);
-            done;
-        }
-        void* stmt = parse_statement(lex);
+    void* stmts = ArrayList__new(4); # many blocks will be four or fewer statements
+    while Token_type(peek_token(lex)) != T_CBRACE {
+        void* stmt = parse_block_item(lex);
         if stmt != null {
             ArrayList_push(stmts, stmt);
         }
     }
+    consume_token(lex, T_CBRACE);
     return ArrayList_into_array(stmts);
 }
 
-fn parse_statement(void* lex) {
+fn parse_block_item(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
-    if is_type_kw(t) { return parse_vardecl(lex); }
+    if is_type_kw(t) { return parse_variable_declaration(lex); }
+    if t == T_KW_STRUCT { return parse_struct_declaration(lex); }
     if t == T_KW_IF { return parse_if(lex); }
     if t == T_KW_WHILE { return parse_while(lex); }
     if t == T_KW_DONE { return parse_done(lex); }
@@ -674,10 +722,10 @@ fn parse_expr_primary(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
 
-    if t == T_BOOL   { t = AST_BOOL;   return parse_val(lex, t); }
-    if t == T_CHAR   { t = AST_CHAR;   return parse_val(lex, t); }
-    if t == T_INT    { t = AST_INT;    return parse_val(lex, t); }
-    if t == T_STRING { t = AST_STRING; return parse_val(lex, t); }
+    if t == T_BOOL   { t = AST_LIT_BOOL;   return parse_val(lex, t); }
+    if t == T_CHAR   { t = AST_LIT_CHAR;   return parse_val(lex, t); }
+    if t == T_INT    { t = AST_LIT_INT;    return parse_val(lex, t); }
+    if t == T_STRING { t = AST_LIT_STRING; return parse_val(lex, t); }
     if t == T_ID     { return parse_id(lex); }
     if t == T_OPAREN {
         consume_token(lex, t);
