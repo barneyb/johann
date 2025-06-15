@@ -12,41 +12,41 @@
   ]
 }
 
-program ::= ( ( "pub" )? ( global_declaration | function_declaration ) )*
+program_ ::= ( ( "pub" )? ( global_declaration | function_declaration ) )*
 global_declaration ::= vardecl_
-function_declaration ::= "fn" ID "(" parameter_list? ")" /*( "->" type )?*/ ( ";" | block )
+function_declaration ::= "fn" ID "(" parameter_list? ")" /*( "->" type )?*/ ( ";" | block_ )
 private vardecl_ ::= type_and_name opt_assign
 //                   | "let" name_and_type variable_initializer
 //                   | "const" name_and_type variable_initializer
-private type_and_name ::= type ( "*" )* ID
-private opt_assign ::= ( "=" expr )? ";"
+private type_and_name ::= type_ ( "*" )* ID
+private opt_assign ::= ( "=" expr_ )? ";"
 //name_and_type ::= ID ":" type
 private parameter_list ::= type_opt_name ( "," type_opt_name )*
-private type_opt_name ::= type ( "*" )* ( ID )?
-private type ::= "bool"
-               | "char"
-               | "int"
-               | "void"
-//       | "(" type_list ")" "->" type
+private type_opt_name ::= type_ ( "*" )* ( ID )?
+private type_ ::= "bool"
+                | "char"
+                | "int"
+                | "void"
+//                | "(" type_list ")" "->" type
 //type_list ::= type ( "," type )*
-private block ::= "{" statement* "}"
-statement ::= vardecl_
-            | "if" expr block /*( "else" block )?*/
-            | "while" expr block
-            | "done" ";"
-            | "again" ";"
-            | "return" expr ";"
-            | unary_expr assign_op expr ";"
-            | expr ";"
-//            | block
-            | ";"
+private block_ ::= "{" statement_* "}"
+statement_ ::= vardecl_
+             | "if" expr_ block_ /*( "else" block )?*/
+             | "while" expr_ block_
+             | "done" ";"
+             | "again" ";"
+             | "return" expr_ ";"
+             | unary_expr assign_op expr_ ";"
+             | expr_ ";"
+//             | block_
+             | ";"
 assign_op ::= "=" //| "+=" | "-=" | "*=" | "/=" | "%="
 
 /* Recursive descent is not ideal here, but it's straightforward to hand-code.
  * At the moment, matching the implementation is more useful than an efficient
  * (hypothetical) IDE.
  */
-expr ::= cond_expr
+expr_ ::= cond_expr
 
 private cond_expr ::= lor_expr // ( "?" expr ":" cond_expr )?
 
@@ -86,11 +86,11 @@ private postfix_expr ::= primary_expr (
 //                             | "." ID // todo: obj.method().another().field?
 //                             | inc_op
                          )*
-private argument_list ::= expr ( "," expr )*
+private argument_list ::= expr_ ( "," expr_ )*
 
 private primary_expr ::= ID
                        | CHAR
                        | INT_DEC | INT_HEX | "0"
                        | STRING
                        | "true" | "false"
-                       | "(" expr ")"
+                       | "(" expr_ ")"
