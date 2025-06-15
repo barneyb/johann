@@ -13,19 +13,24 @@ if [ "$1" = "--undoc" ]; then
     shift
 fi
 
-{
-    cat << EOF
+DOC_FILE=documentation/docs/system/johandoc.md
+if [ "$ACTION" = "doc" ]; then
+    {
+        cat << EOF
 # Compiler Docs
 
 Below are the generated docs for the compiler's internals. Not that much is
 documented, but searching just declarations has advantages over searching the
 full code.
 EOF
-    # globs are case-sensitive. :/
-    for f in $(ls jnc/*.jn | sort -df); do
-        echo "\n<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->\n"
-    done
-} > documentation/docs/system/johandoc.md
+        # globs are case-sensitive. :/
+        for f in $(ls jnc/*.jn | sort -df); do
+            echo "\n<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->\n"
+        done
+    } > $DOC_FILE
+else
+    rm -f $DOC_FILE
+fi
 
 for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
     echo "processing $DOC_FILE"
@@ -52,10 +57,10 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         fi
         {
             head -n $THRU $DOC_FILE
-            echo
-            echo '## `'"$STEM"'`'
-            echo
             if [ "$ACTION" = "doc" ]; then
+                echo
+                echo '## `'"$STEM"'`'
+                echo
                 DOC=""
                 do_file=yes
                 while IFS= read -r line; do
