@@ -15,6 +15,7 @@ int T_KW_INT;
 int T_KW_LET;
 int T_KW_PUB;
 int T_KW_RETURN;
+int T_KW_SIZEOF;
 int T_KW_STRUCT;
 int T_KW_VOID;
 int T_KW_WHILE;
@@ -53,19 +54,20 @@ int T_SLASH;
 int T_SQUOTE;
 int T_STAR;
 
+pub char* KW_BOOL   = "bool";
+pub char* KW_CHAR   = "char";
+pub char* KW_INT    = "int";
 char* KW_AGAIN  = "again";
-char* KW_BOOL   = "bool";
-char* KW_CHAR   = "char";
 char* KW_CONST  = "const";
 char* KW_DONE   = "done";
 char* KW_FALSE  = "false";
 char* KW_FN     = "fn";
 char* KW_IF     = "if";
-char* KW_INT    = "int";
 char* KW_LET    = "let";
 char* KW_NULL   = "null";
 char* KW_PUB    = "pub";
 char* KW_RETURN = "return";
+char* KW_SIZEOF = "sizeof";
 char* KW_STRUCT = "struct";
 char* KW_TRUE   = "true";
 char* KW_VOID   = "void";
@@ -542,6 +544,7 @@ fn convert_keyword(void* token) {
     }
     if c == 's' {
         if to_keyword(token, name, KW_STRUCT, T_KW_STRUCT) { return; }
+        if to_keyword(token, name, KW_SIZEOF, T_KW_SIZEOF) { return; }
         return;
     }
     if c == 't' {

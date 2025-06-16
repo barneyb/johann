@@ -13,6 +13,7 @@ int T_KW_IF;
 int T_KW_INT;
 int T_KW_PUB;
 int T_KW_RETURN;
+int T_KW_SIZEOF;
 int T_KW_STRUCT;
 int T_KW_VOID;
 int T_KW_WHILE;
@@ -69,6 +70,9 @@ int AST_UNARY;
 int AST_VAR;
 int AST_WHILE;
 
+void ENV;
+
+char* ERR_ZERO_MEMBER_STRUCT = "ERROR(%i): Struct '%s' must declare at least one member at line %i, char %i\n";
 char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, char %i\n";
 char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, char %i\n";
@@ -314,6 +318,11 @@ fn parse_variable_declaration(void* lex) {
 fn parse_struct_declaration(void* lex) {
     consume_token(lex, T_KW_STRUCT);
     void* nameT = id_token(lex);
+    if Token_type(peek_token(lex)) == T_SEMI {
+        # bring name into scope, but incomplete.
+        consume_token(lex, T_SEMI);
+        return ast3(AST_STRUCT, nameT, null);
+    }
     consume_token(lex, T_OBRACE);
     void* members = ArrayList__new(8);
     while Token_type(peek_token(lex)) != T_CBRACE {
@@ -323,11 +332,18 @@ fn parse_struct_declaration(void* lex) {
                                      type));
         consume_token(lex, T_SEMI);
     }
+    if ArrayList_size(members) == 0 {
+        # munge token for panic
+        Token_set_type(nameT, Token_value(nameT));
+        jnc_panic(ERR_ZERO_MEMBER_STRUCT, nameT, 35);
+    }
     consume_token(lex, T_CBRACE);
     consume_opt_token(lex, T_SEMI);
-    return ast3(AST_STRUCT,
-                nameT,
-                ArrayList_into_array(members));
+    void* ast = ast3(AST_STRUCT,
+                     nameT,
+                     ArrayList_into_array(members));
+    Env_register_type(ENV, nameT, ast);
+    return ast;
 }
 
 fn parse_type_spec(void* lex) {
@@ -338,12 +354,7 @@ fn parse_type_spec(void* lex) {
     if t == T_KW_CHAR { Token_drop(tkn); ast = ast1(AST_TYPE_CHAR); }
     if t == T_KW_INT  { Token_drop(tkn); ast = ast1(AST_TYPE_INT); }
     if t == T_KW_VOID { Token_drop(tkn); ast = ast1(AST_TYPE_VOID); }
-    if t == T_ID {
-        ast = ast2(AST_TYPE_NAMED, tkn);
-        # this MUST have at least one indirection
-        consume_token(lex, T_STAR);
-        ast = ast2(AST_TYPE_PTR, ast);
-    }
+    if t == T_ID      { ast = ast2(AST_TYPE_NAMED, tkn); }
     if ast == null {
         jnc_panic(ERR_BAD_TYPE, tkn, 25);
     }
@@ -631,6 +642,15 @@ fn parse_expr_unary(void* lex) {
         if op == T_BANG  { return join_un_op_rtl(lex, op); }
         if op == T_MINUS { return join_un_op_rtl(lex, op); }
         if op == T_PLUS  { return join_un_op_rtl(lex, op); }
+        if op == T_KW_SIZEOF {
+            consume_token(lex, op);
+            consume_token(lex, T_OPAREN);
+            void* type_ast = parse_type_spec(lex);
+            consume_token(lex, T_CPAREN);
+            int size = ast_sizeof(type_ast);
+            drop_ast(type_ast);
+            return ast2(AST_LIT_INT, size);
+        }
     }
     return parse_expr_postfix(lex);
 }

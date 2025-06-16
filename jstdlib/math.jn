@@ -1,0 +1,9 @@
+pub fn imax(int a, int b) {
+    if a > b { return a; }
+    return b;
+}
+
+pub fn imin(int a, int b) {
+    if a < b { return a; }
+    return b;
+}

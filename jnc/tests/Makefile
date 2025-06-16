@@ -8,6 +8,7 @@ JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 all: \
 	$(OUT)/a_syntactic_menagerie.s \
 	collatz \
+	cons \
 	constants \
 	control_flow \
 	function_pointers \

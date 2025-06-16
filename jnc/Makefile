@@ -6,6 +6,7 @@ JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/Block.o \
+	$(LIB)/Env.o \
 	$(LIB)/Symbol.o \
 	$(LIB)/Token.o \
 	$(LIB)/ast.o \

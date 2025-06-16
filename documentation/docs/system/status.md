@@ -18,6 +18,7 @@
 - [ ] logical operators
 - [ ] bitwise operators
 - [ ] conditional/ternary operator
+- [ ] `+=` and friends
 - [ ] implicit types
 - [ ] `const` support
 - [ ] import/include

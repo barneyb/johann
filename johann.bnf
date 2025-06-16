@@ -25,7 +25,7 @@ private type_spec ::= ( "bool"
                       | "char"
                       | "int"
                       | "void"
-                      | ID "*"
+                      | ID
                       ) ( "*" )*
 private variable_declaration ::= type_and_name ( "=" expr_ )? ";"
 private type_and_name ::= type_ ( "*" )* ID
@@ -80,13 +80,13 @@ private add_expr ::= mult_expr ( ( "+" | "-" ) mult_expr )*
 private mult_expr ::= cast_expr ( ( "*" | "/" | "%" ) cast_expr )*
 
 private cast_expr ::= unary_expr
-//                    | "(" type ")" cast_expr
+//                    | "(" type_spec ")" cast_expr
 
 private unary_expr ::= postfix_expr
                      | un_op cast_expr
-//                     | "sizeof" "(" type ")"
+                     | "sizeof" "(" type_spec ")"
 //                     | "sizeof" expr_
-private un_op ::= "-" | "+" | "!" | "*" | "&"
+private un_op ::= "-" | "+" | "!" | "*" | "&" // | "~"
 
 private postfix_expr ::= primary_expr (
                              "(" argument_list? ")"

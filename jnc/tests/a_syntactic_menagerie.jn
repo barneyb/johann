@@ -30,11 +30,12 @@ fn function_params_anon_ptr(bool*, char*, int*, void*);
 struct Animal {
     char* name;
     int num_legs;
+    bool mammal;
     Animal* fav_prey;
     bool is_extinct;
 }
 
-fn expr_primary() {
+fn expr_primary(Animal* animal) {
     AN_INT;
     '5';
     5;
@@ -57,6 +58,10 @@ fn expr_unary(int i, bool b) {
     int* ptr = &i;
     int j = *ptr;
     b = !b;
+    sizeof(bool);
+    sizeof(char);
+    sizeof(int);
+    sizeof(Animal);
 }
 
 fn expr_unary_constant() {

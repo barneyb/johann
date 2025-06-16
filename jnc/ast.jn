@@ -1,5 +1,7 @@
 # I hold the compiler's AST implementation.
 
+void ENV;
+
 ##################################################
 # simple literals are __x, in promotion order
 
@@ -47,7 +49,7 @@ pub int AST_FN          = 303;
 pub int AST_VAR         = 304;
 # [AST_NAMETYPE, nameT?, T_type, nptr] - todo: deprecated
 pub int AST_NAMETYPE    = 305;
-# [AST_STRUCT, nameT, members]
+# [AST_STRUCT, nameT, members?]
 pub int AST_STRUCT      = 306;
 # [AST_MEMBER, nameT, type]
 pub int AST_MEMBER      = 307;
@@ -63,11 +65,11 @@ pub int AST_ASSIGN      = 402;
 pub int AST_IF          = 403;
 # [AST_WHILE, cond, block]
 pub int AST_WHILE       = 404;
-# [AST_DONE, token]
+# [AST_DONE, kwT]
 pub int AST_DONE        = 405;
-# [AST_AGAIN, token]
+# [AST_AGAIN, kwT]
 pub int AST_AGAIN       = 406;
-# [AST_RETURN, token, expr?]
+# [AST_RETURN, kwT, expr?]
 pub int AST_RETURN      = 407;
 
 ##################################################
@@ -84,8 +86,16 @@ pub int AST_TYPE_VOID   = 520;
 # [AST_TYPE_PTR, type]
 pub int AST_TYPE_PTR    = 521;
 # [AST_TYPE_NAMED, nameT]
-pub int AST_TYPE_NAMED = 550;
+pub int AST_TYPE_NAMED  = 550;
 ## todo: functions and arrays...
+
+##################################################
+# synthetics are 10xx
+
+# [AST_TYPE_STRUCT, alignof, sizeof, memberMap]
+pub int AST_TYPE_STRUCT = 1002;
+# [AST_TYPE_MEMBER, name, offset]
+pub int AST_TYPE_MEMBER = 1003;
 
 ##################################################
 
@@ -130,6 +140,36 @@ pub fn ast4(int type, void value, void left, void right) {
     ast = ast - 0x18;               # -> type
     *ast = type;
     return ast;
+}
+
+pub fn ast_sizeof(void* ast) {
+    int t = *ast;
+    if t == AST_TYPE_BOOL { return 1; }
+    if t == AST_TYPE_CHAR { return 1; }
+    if t == AST_TYPE_INT  { return 8; }
+    if t == AST_TYPE_VOID { return 8; } # void means "opaque 64-bit value"
+    if t == AST_TYPE_PTR  { return 8; }
+    if t == AST_TYPE_NAMED {
+        ast = ast + 0x8;            # -> nameT
+        char* name = Token_value(*ast);
+        return Env_sizeof_type(ENV, name);
+    }
+
+    char* f = "Can't compute sizeof type %i / %x\n";
+    eprintf(f, t, t);
+    printf(f, t, t);
+    exit(63);
+}
+
+pub fn ast_alignment(void* ast) {
+    int t = *ast;
+    if t == AST_TYPE_NAMED {
+        ast = ast + 0x8;            # -> nameT
+        char* name = Token_value(*ast);
+        return Env_alignof_type(ENV, name);
+    }
+    # everything else is aligned at its size
+    return ast_sizeof(ast);
 }
 
 pub fn drop_ast(void* ast) {
@@ -290,6 +330,16 @@ pub fn drop_ast(void* ast) {
         Token_drop(*it);
         return free(ast);
     }
+    if type == AST_TYPE_STRUCT {
+        it = ast + 0x18;            # -> memberMap
+        TreeMap_drop(*it);
+        return free(ast);
+    }
+    if type == AST_TYPE_MEMBER {
+        it = ast + 0x8;             # -> name
+        free(*it);
+        return free(ast);
+    }
 
     char* f = "Can't drop ast of type %i / %x\n";
     eprintf(f, type, type);
@@ -297,14 +347,14 @@ pub fn drop_ast(void* ast) {
     exit(62);
 }
 
-fn drop_ast_array(void* nodes) {
-    if nodes == null { return; }
-    void* p = nodes;
+fn drop_ast_array(void* array) {
+    if array == null { return; }
+    void* i = array;
     while true {
-        void it = *p;
-        if it == null { done; }
-        drop_ast(it);
-        p = p + 0x8;
+        void* ast = *i;
+        if ast == null { done; }
+        drop_ast(ast);
+        i = i + 0x8;
     }
-    free(nodes);
+    free(array);
 }

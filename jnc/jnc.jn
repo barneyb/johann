@@ -28,7 +28,10 @@ pub fn main(int argc, char** argv) {
     return jnc_compile();
 }
 
+pub void ENV = null;
+
 fn jnc_compile() {
+    ENV = Env__new(null);
     void* lex = Lexer__new();
     void* ast = parse_program(lex);
     Lexer_drop(lex);
@@ -37,6 +40,7 @@ fn jnc_compile() {
     to_emitter(emitter, ast);
     drop_ast(ast);
     Emitter_drop(emitter);
+    Env_drop(ENV);
 }
 
 # `token` is a `[val, line, col]` tuple to dissect for the format, which will

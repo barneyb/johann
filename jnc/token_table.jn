@@ -27,6 +27,7 @@ pub int T_KW_WHILE  = 0x357; # 0x300 + 'W';
 pub int T_KW_BOOL   = 0x442; # 0x400 + 'B';
 pub int T_KW_CHAR   = 0x443; # 0x400 + 'C';
 pub int T_KW_INT    = 0x449; # 0x400 + 'I';
+pub int T_KW_SIZEOF = 0x453; # 0x400 + 'S';
 pub int T_KW_VOID   = 0x456; # 0x400 + 'V';
 
 ##################################################
