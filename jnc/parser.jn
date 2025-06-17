@@ -196,16 +196,9 @@ pub fn parse_program(void* lex) {
 fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
     void* nameT = id_token(lex);
-    consume_token(lex, T_OPAREN);
+    void args = parse_param_list(lex);
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
-    void args = null;
-    if t != T_CPAREN {
-        args = parse_param_list(lex);
-    }
-    consume_token(lex, T_CPAREN);
-    tkn = peek_token(lex);
-    t = Token_type(tkn);
     if t == T_SEMI {
         consume_token(lex, t);
         return ast3(AST_FN, nameT, args);
@@ -240,6 +233,11 @@ fn verify_parameters_are_named(void* nameT, void* args) {
 
 # [[AST_NAMETYPE, nameT?, T_type, nptr]*]
 fn parse_param_list(void* lex) {
+    consume_token(lex, T_OPAREN);
+    if Token_type(peek_token(lex)) == T_CPAREN {
+        consume_token(lex, T_CPAREN);
+        return null;
+    }
     void* params = ArrayList__new(8);
     ArrayList_push(params, parse_name_and_type(lex));
     while true {
@@ -249,6 +247,7 @@ fn parse_param_list(void* lex) {
         consume_token(lex, t);
         ArrayList_push(params, parse_name_and_type(lex));
     }
+    consume_token(lex, T_CPAREN);
     return ArrayList_into_array(params);
 }
 
@@ -699,16 +698,7 @@ fn parse_expr_postfix(void* lex) {
     if tkn != null {
         int t = Token_type(tkn);
         if t == T_OPAREN {
-            # function call
-            consume_token(lex, t);
-            void* args = null;
-            tkn = peek_token(lex);
-            t = Token_type(tkn);
-            if t != T_CPAREN {
-                args = parse_arg_list(lex);
-            }
-            consume_token(lex, T_CPAREN);
-            expr = ast3(AST_CALL, expr, args);
+            expr = ast3(AST_CALL, expr, parse_arg_list(lex));
         }
     }
     return expr;
@@ -716,6 +706,11 @@ fn parse_expr_postfix(void* lex) {
 
 # expr[]
 fn parse_arg_list(void* lex) {
+    consume_token(lex, T_OPAREN);
+    if Token_type(peek_token(lex)) == T_CPAREN {
+        consume_token(lex, T_CPAREN);
+        return null;
+    }
     void* args = ArrayList__new(4);
     ArrayList_push(args, parse_expr(lex));
     int i = 0;
@@ -735,6 +730,7 @@ fn parse_arg_list(void* lex) {
         }
         ArrayList_push(args, parse_expr(lex));
     }
+    consume_token(lex, T_CPAREN);
     return ArrayList_into_array(args);
 }
 

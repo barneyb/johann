@@ -18,7 +18,7 @@ private declaration_ ::= ( "pub" )? ( global_declaration
                                     | struct_declaration
                                     )
 global_declaration ::= variable_declaration
-function_declaration ::= "fn" ID "(" parameter_list? ")" /*( "->" type )?*/ ( ";" | block_ )
+function_declaration ::= "fn" ID parameter_list /*( "->" type )?*/ ( ";" | block_ )
 struct_declaration ::= "struct" ID ( "{" ( member_declaration )+ "}" )? ";"? // semi is permitted, but not required
 member_declaration ::= type_spec ID ";"
 private type_spec ::= ( "bool"
@@ -29,7 +29,7 @@ private type_spec ::= ( "bool"
                       ) ( "*" )*
 private variable_declaration ::= type_and_name ( "=" expr_ )? ";"
 private type_and_name ::= type_ ( "*" )* ID
-private parameter_list ::= type_opt_name ( "," type_opt_name )*
+private parameter_list ::= "(" ( type_opt_name ( "," type_opt_name )* )? ")"
 private type_opt_name ::= type_ ( "*" )* ( ID )?
 private type_ ::= "bool"
                 | "char"
@@ -88,12 +88,11 @@ private unary_expr ::= postfix_expr
 //                     | "sizeof" expr_
 private un_op ::= "-" | "+" | "!" | "*" | "&" // | "~"
 
-private postfix_expr ::= primary_expr (
-                             "(" argument_list? ")"
-//                             | "[" expr "]"
-//                             | "." ID // todo: obj.method().another().field?
-                         )*
-private argument_list ::= expr_ ( "," expr_ )*
+private postfix_expr ::= primary_expr ( argument_list
+//                                      | "[" expr_ "]"
+//                                      | "." ID
+                                      )*
+private argument_list ::= "(" ( expr_ ( "," expr_ )* )? ")"
 
 private primary_expr ::= ID
                        | CHAR
