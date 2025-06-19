@@ -7,11 +7,11 @@ int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
-int AST_NAMETYPE;
 int AST_PROGRAM;
 int AST_RETURN;
 int AST_STRUCT;
-int AST_VAR;
+int AST_TYPE_PTR;
+int AST_VARIABLE;
 int AST_WHILE;
 
 bool IS_PUB = false; # this is still pretty ridiculous
@@ -21,7 +21,7 @@ pub fn to_emitter(void* emitter, void* ast) {
 
     if t == AST_PROGRAM { return to_emitter_program(emitter, ast); }
     if t == AST_DECL    { return to_emitter_decl(emitter, ast); }
-    if t == AST_VAR     { return to_emitter_var(emitter, ast); }
+    if t == AST_VARIABLE{ return to_emitter_variable(emitter, ast); }
     if t == AST_FN      { return to_emitter_fn(emitter, ast); }
     if t == AST_STRUCT  { return; }
     if t == AST_IF      { return to_emitter_if(emitter, ast); }
@@ -66,26 +66,28 @@ fn to_emitter_decl(void* emitter, void* ast) {
     to_emitter(emitter, *ast);
 }
 
-fn to_emitter_var(void* emitter, void* ast) {
-    # [AST_VAR, name_and_type, init?, null]
-    ast = ast + 0x8;
-    void* name_and_type = *ast;
-    ast = ast + 0x8;
+fn to_emitter_variable(void* emitter, void* ast) {
+    # [AST_VARIABLE, type, nameT? init?]
+    ast = ast + 0x8;                # -> type
+    void* type = *ast;
+    ast = ast + 0x8;                # -> nameT
+    void* nameT = *ast;
+    ast = ast + 0x8;                # -> init
     void* init = *ast;
 
-    # [AST_NAMETYPE, nameT?, T_type, nptr]
-    void* nameT = name_and_type + 0x8;
-    nameT = *nameT;
-    int type = name_and_type + 0x10;
-    type = *type;
-    int nptr = name_and_type + 0x18;
-    nptr = *nptr;
+    # unwrap any PTR nodes, counting along the way
+    int nptr = 0;
+    while *type == AST_TYPE_PTR {
+        nptr = nptr + 1;
+        type = type + 0x8;          # -> type
+        type = *type;
+    }
 
     if IS_PUB { if init != null {
         IS_PUB = false;
         Emitter_mark_global(nameT);
     } }
-    Emitter_do_decl(emitter, nameT, type, nptr, init);
+    Emitter_do_decl(emitter, nameT, *type, nptr, init);
 }
 
 fn to_emitter_fn(void* emitter, void* ast) {
@@ -105,6 +107,12 @@ fn to_emitter_fn(void* emitter, void* ast) {
         Emitter_mark_global(nameT);
     }
     Emitter_do_fn_intro(emitter, nameT, args);
+    while args != null {
+        void var = *args;
+        if var == null { done; }
+        to_emitter_variable(emitter, var);
+        args = args + 0x8;
+    }
     array_to_emitter(emitter, block);
     Emitter_do_fn_outro(emitter, nameT);
 }

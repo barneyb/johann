@@ -8,8 +8,8 @@ pub fn main() {
 }
 
 struct List {
-    void value;
-    void* next;
+    void value,
+    void* next
 }
 
 fn empty() {

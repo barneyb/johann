@@ -8,103 +8,149 @@ full code.
 
 ## `ast`
 
-`pub int AST_BOOL = 1;`
+I hold the compiler's AST implementation.
 
-: literals are 00x, in promotion order
+`pub int AST_LIT_BOOL    = 1;`
 
-`pub int AST_CHAR = 2;`
+: [AST_LIT_BOOL, value]
+
+`pub int AST_LIT_CHAR    = 2;`
+
+: [AST_LIT_CHAR, value]
+
+`pub int AST_LIT_INT     = 3;`
+
+: [AST_LIT_INT, value]
+
+`pub int AST_LIT_STRING  = 20;`
+
+: [AST_LIT_STRING, value]
+
+`pub int AST_ID          = 50;`
+
+: [AST_ID, nameT]
+
+`pub int AST_UNARY       = 101;`
+
+: [AST_UNARY, op, operand]
+
+`pub int AST_BINARY      = 102;`
+
+: [AST_BINARY, op, left, right]
+
+`pub int AST_ADDR_OP     = 103;`
+
+: [AST_ADDR_OP, op, nameT]
+
+`pub int AST_CALL        = 104;`
+
+: [AST_CALL, callee, args[]]
+
+`pub int AST_PROGRAM     = 301;`
+
+: [AST_PROGRAM, decls[]]
+
+`pub int AST_DECL        = 302;`
+
+: [AST_DECL, is_pub, fn_or_var]
+
+`pub int AST_FN          = 303;`
+
+: [AST_FN, nameT, args[], block?]
+
+`pub int AST_VAR         = 304;`
+
+: [AST_VAR, name_and_type, init?]
+
+`pub int AST_STRUCT      = 306;`
+
+: [AST_STRUCT, nameT, members?]
+
+`pub int AST_VARIABLE    = 307;`
+
+: [AST_VARIABLE, type, nameT? init?]
+
+`pub int AST_EVAL        = 401;`
+
+: [AST_EVAL, expr]
+
+`pub int AST_ASSIGN      = 402;`
+
+: [AST_ASSIGN, expr, rhs]
+
+`pub int AST_IF          = 403;`
+
+: [AST_IF, cond, block]
+
+`pub int AST_WHILE       = 404;`
+
+: [AST_WHILE, cond, block]
+
+`pub int AST_DONE        = 405;`
+
+: [AST_DONE, kwT]
+
+`pub int AST_AGAIN       = 406;`
+
+: [AST_AGAIN, kwT]
+
+`pub int AST_RETURN      = 407;`
+
+: [AST_RETURN, kwT, expr?]
+
+`pub int AST_TYPE_BOOL   = 501;`
+
+: [AST_TYPE_BOOL]
+
+`pub int AST_TYPE_CHAR   = 502;`
+
+: [AST_TYPE_CHAR]
+
+`pub int AST_TYPE_INT    = 503;`
+
+: [AST_TYPE_INT]
+
+`pub int AST_TYPE_VOID   = 520;`
+
+: [AST_TYPE_VOID]
+
+`pub int AST_TYPE_PTR    = 521;`
+
+: [AST_TYPE_PTR, type]
+
+`pub int AST_TYPE_NAMED  = 550;`
+
+: [AST_TYPE_NAMED, nameT]
+
+`pub int AST_TYPE_STRUCT = 1002;`
+
+: [AST_TYPE_STRUCT, alignof, sizeof, memberMap]
+
+`pub int AST_TYPE_MEMBER = 1003;`
+
+: [AST_TYPE_MEMBER, name, offset]
+
+`pub fn ast1(int type) `
+
+: [type] 1-tuple (silly, but uniform)
+
+`pub fn ast2(int type, void value) `
+
+: [type, value] 2-tuple
+
+`pub fn ast3(int type, void value, void left) `
+
+: [type, value, left] 3-tuple
+
+`pub fn ast4(int type, void value, void left, void right) `
+
+: [type, value, left, right] 4-tuple
+
+`pub fn ast_sizeof(void* ast) `
 
 : 
 
-`pub int AST_INT = 3;`
-
-: 
-
-`pub int AST_STRING = 50;`
-
-: simple expressions are 0xx
-
-`pub int AST_ID = 75;`
-
-: 
-
-`pub int AST_UNARY = 101;`
-
-: compound expressions are 1xx
-
-`pub int AST_BINARY = 102;`
-
-: 
-
-`pub int AST_ADDR_OP = 103;`
-
-: 
-
-`pub int AST_CALL = 104;`
-
-: 
-
-`pub int AST_PROGRAM = 301;`
-
-: declarations are 3xx
-
-`pub int AST_DECL = 302;`
-
-: 
-
-`pub int AST_FN = 303;`
-
-: 
-
-`pub int AST_VAR = 304;`
-
-: 
-
-`pub int AST_NAMETYPE = 305;`
-
-: 
-
-`pub int AST_EVAL = 401;`
-
-: statements are 4xx
-
-`pub int AST_ASSIGN = 402;`
-
-: 
-
-`pub int AST_IF = 403;`
-
-: 
-
-`pub int AST_WHILE = 404;`
-
-: 
-
-`pub int AST_DONE = 405;`
-
-: 
-
-`pub int AST_AGAIN = 406;`
-
-: 
-
-`pub int AST_RETURN = 407;`
-
-: 
-
-`pub fn ast0(int type) `
-
-: [type, a, b, c] 4-tuple
-
-`pub fn ast1(int type, void value) `
-
-: 
-
-`pub fn ast2(int type, void value, void left) `
-
-: 
-
-`pub fn ast3(int type, void value, void left, void right) `
+`pub fn ast_alignment(void* ast) `
 
 : 
 
@@ -232,6 +278,56 @@ I store information about a block/scope. I used to be an implementation detail o
 <!--{/johanndoc:jnc/emitter.jn}-->
 
 
+<!--{johanndoc:jnc/Env.jn}-->
+
+## `Env`
+
+I hold the environment during compilation, which is usually nested.
+
+`pub fn Env__new(void* parent) `
+
+: 
+
+`pub fn Env_drop(void* self) `
+
+: 
+
+`pub fn Env_push(void* self) `
+
+: 
+
+`pub fn Env_pop(void* self) `
+
+: 
+
+`pub fn Env_typeof_symbol(void* self, void* nameT) `
+
+: 
+
+`pub fn Env_register_type(void* self, void* nameT, void* type_ast) `
+
+: 
+
+`pub fn Env_seed_type(void* self, char* name, void* type_ast) `
+
+: I'm just for jnc to register built-in types
+
+`pub fn Env_is_type(void* self, char* name) `
+
+: 
+
+`pub fn Env_sizeof_type(void* self, char* name) `
+
+: 
+
+`pub fn Env_alignof_type(void* self, char* name) `
+
+: 
+
+
+<!--{/johanndoc:jnc/Env.jn}-->
+
+
 <!--{johanndoc:jnc/jnc.jn}-->
 
 ## `jnc`
@@ -242,9 +338,13 @@ I store information about a block/scope. I used to be an implementation detail o
 
 : 
 
+`pub void ENV = null;`
+
+: 
+
 `pub fn jnc_panic(char* format, void* token, int status) `
 
-: token is a [val, line, char] tuple to dissect for the format
+: `token` is a `[val, line, col]` tuple to dissect for the format, which will be passed four values: `status`, `val`, `line`, and `col`;
 
 
 <!--{/johanndoc:jnc/jnc.jn}-->
@@ -255,6 +355,22 @@ I store information about a block/scope. I used to be an implementation detail o
 ## `lexer`
 
 
+
+`pub char* KW_BOOL   = "bool";`
+
+: 
+
+`pub char* KW_CHAR   = "char";`
+
+: 
+
+`pub char* KW_INT    = "int";`
+
+: 
+
+`pub char* KW_VOID   = "void";`
+
+: 
 
 `pub fn Lexer__new() `
 
@@ -292,7 +408,7 @@ I store information about a block/scope. I used to be an implementation detail o
 
 `pub fn parse_program(void* lex) `
 
-: [AST_PROGRAM, decls[], null, null]
+: 
 
 
 <!--{/johanndoc:jnc/parser.jn}-->
@@ -404,9 +520,11 @@ I represent a token, lexed from the input stream.
 
 ## `token_table`
 
+I hold the lexer's token table
+
 `pub int T_BOOL      = 0x162; # 0x100 + 'b';`
 
-: value token types (0x100)
+: 
 
 `pub int T_CHAR      = 0x163; # 0x100 + 'c';`
 
@@ -426,7 +544,7 @@ I represent a token, lexed from the input stream.
 
 `pub int T_KW_AGAIN  = 0x341; # 0x300 + 'A';`
 
-: literal keywords never become tokens, they become value tokens. flow control keywords (0x300)
+: 
 
 `pub int T_KW_DONE   = 0x344; # 0x300 + 'D';`
 
@@ -444,25 +562,29 @@ I represent a token, lexed from the input stream.
 
 : 
 
-`pub int T_KW_BOOL   = 0x442; # 0x400 + 'B';`
-
-: type keywords (0x400)
-
-`pub int T_KW_CHAR   = 0x443; # 0x400 + 'C';`
+`pub int T_KW_BOOL   = 0x442; # 0x400 + 'B'; # todo: remove?`
 
 : 
 
-`pub int T_KW_INT    = 0x449; # 0x400 + 'I';`
+`pub int T_KW_CHAR   = 0x443; # 0x400 + 'C'; # todo: remove?`
 
 : 
 
-`pub int T_KW_VOID   = 0x456; # 0x400 + 'V';`
+`pub int T_KW_INT    = 0x449; # 0x400 + 'I'; # todo: remove?`
+
+: 
+
+`pub int T_KW_SIZEOF = 0x453; # 0x400 + 'S';`
+
+: 
+
+`pub int T_KW_VOID   = 0x456; # 0x400 + 'V'; # todo: remove?`
 
 : 
 
 `pub int T_KW_CONST  = 0x543; # 0x500 + 'C';`
 
-: definition keywords (0x4500)
+: 
 
 `pub int T_KW_FN     = 0x546; # 0x500 + 'F';`
 
@@ -476,9 +598,13 @@ I represent a token, lexed from the input stream.
 
 : 
 
+`pub int T_KW_STRUCT = 0x553; # 0x500 + 'S';`
+
+: 
+
 `pub int T_EQ        = 0x23d; # 0x200 + '=';`
 
-: compound tokens (0x200)
+: 
 
 `pub int T_GTE       = 0x23e; # 0x200 + '>';`
 
@@ -497,6 +623,10 @@ I represent a token, lexed from the input stream.
 : 
 
 `pub int T_NEQ       = 0x221; # 0x200 + '!';`
+
+: 
+
+`pub int T_ARROW     = 0x261; # 0x200 + 'a';`
 
 : 
 
@@ -522,7 +652,7 @@ I represent a token, lexed from the input stream.
 
 `pub int T_AMP       = '&';`
 
-: ambiguous character tokens (ASCII, for now)
+: 
 
 `pub int T_ASSIGN    = '=';`
 
@@ -562,7 +692,7 @@ I represent a token, lexed from the input stream.
 
 `pub int T_CBRACE    = '}';`
 
-: simple character tokens (ASCII)
+: 
 
 `pub int T_CBRACKET  = ']';`
 
@@ -580,13 +710,9 @@ I represent a token, lexed from the input stream.
 
 : 
 
-`pub int T_DOT       = '.';`
-
-: 
-
 `pub int T_HASH      = '#';`
 
-: 
+: ub int T_DOT       = '.';
 
 `pub int T_OBRACE    = '`
 
@@ -614,7 +740,7 @@ I represent a token, lexed from the input stream.
 
 `pub int T_SQUOTE    = 0x27;         # no escapes (yet)`
 
-: punctuation
+: 
 
 `pub int T_DQUOTE    = '"';`
 
@@ -622,3 +748,14 @@ I represent a token, lexed from the input stream.
 
 
 <!--{/johanndoc:jnc/token_table.jn}-->
+
+
+<!--{johanndoc:jnc/types.jn}-->
+
+## `types`
+
+
+
+
+<!--{/johanndoc:jnc/types.jn}-->
+

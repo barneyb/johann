@@ -54,8 +54,6 @@ int AST_LIT_BOOL;
 int AST_LIT_CHAR;
 int AST_LIT_INT;
 int AST_LIT_STRING;
-int AST_MEMBER;
-int AST_NAMETYPE;
 int AST_PROGRAM;
 int AST_RETURN;
 int AST_STRUCT;
@@ -63,16 +61,24 @@ int AST_TYPE_BOOL;
 int AST_TYPE_CHAR;
 int AST_TYPE_INT;
 int AST_TYPE_MEMBER;
-int AST_TYPE_PTR;
 int AST_TYPE_NAMED;
+int AST_TYPE_PTR;
+int AST_TYPE_STRUCT;
 int AST_TYPE_VOID;
 int AST_UNARY;
 int AST_VAR;
+int AST_VARIABLE;
 int AST_WHILE;
 
 void ENV;
 
+fn strcmp(char*, char*);
+fn drop_ast(void*);
+fn Env_push(void*);
+fn Env_pop(void*);
+
 char* ERR_ZERO_MEMBER_STRUCT = "ERROR(%i): Struct '%s' must declare at least one member at line %i, char %i\n";
+char* ERR_DUPE_STRUCT_MEMBER = "ERROR(%i): duplicate '%s' member\n";
 char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, char %i\n";
 char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, char %i\n";
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, char %i\n";
@@ -82,12 +88,14 @@ char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
 char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
 char* ERR_MISSING_PARAM_NAME = "ERROR(%i): missing parameter name on %x at line %i\n";
 
-fn is_type_kw(int t) {
+fn is_type_kw(void* token) {
+    int t = Token_type(token);
     if t == T_KW_BOOL { return true; }
     if t == T_KW_CHAR { return true; }
     if t == T_KW_INT  { return true; }
     if t == T_KW_VOID { return true; }
-    return false;
+    if t != T_ID { return false; }
+    return Env_is_type(ENV, Token_value(token));
 }
 
 pub fn print_token(void* t) {
@@ -196,16 +204,19 @@ pub fn parse_program(void* lex) {
 fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
     void* nameT = id_token(lex);
-    void args = parse_param_list(lex);
+    ENV = Env_push(ENV);
+    void args = parse_parameter_list(lex);
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     if t == T_SEMI {
         consume_token(lex, t);
+        ENV = Env_pop(ENV);
         return ast3(AST_FN, nameT, args);
     }
     if t == T_OBRACE {
         verify_parameters_are_named(nameT, args);
         void* block = parse_block(lex);
+        ENV = Env_pop(ENV);
         return ast4(AST_FN, nameT, args, block);
     }
     unexpected_token(tkn);
@@ -231,50 +242,38 @@ fn verify_parameters_are_named(void* nameT, void* args) {
     }
 }
 
-# [[AST_NAMETYPE, nameT?, T_type, nptr]*]
-fn parse_param_list(void* lex) {
+# [[AST_VARIABLE, type, nameT?]*]
+fn parse_parameter_list(void* lex) {
     consume_token(lex, T_OPAREN);
     if Token_type(peek_token(lex)) == T_CPAREN {
         consume_token(lex, T_CPAREN);
         return null;
     }
     void* params = ArrayList__new(8);
-    ArrayList_push(params, parse_name_and_type(lex));
+    ArrayList_push(params, parse_param_variable_member(lex, false));
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
-        ArrayList_push(params, parse_name_and_type(lex));
+        ArrayList_push(params, parse_param_variable_member(lex, false));
     }
     consume_token(lex, T_CPAREN);
     return ArrayList_into_array(params);
 }
 
-fn parse_name_and_type(void* lex) {
-    void* base_tkn = next_token(lex);
-    int nptr = 0;
-    void* tkn;
-    int type;
-    while true {
-        tkn = peek_token(lex);
-        type = Token_type(tkn);
-        if type != T_STAR { done; }
-        consume_token(lex, type);
-        nptr = nptr + 1;
-    }
+fn parse_param_variable_member(void* lex, bool allow_init) {
+    void* type = parse_type_spec(lex);
     void* nameT = null;
-    tkn = peek_token(lex);
-    if tkn != null {
-        type = Token_type(tkn);
-        if type == T_ID {
-            nameT = id_token(lex);
-        }
+    void* init = null;
+    if Token_type(peek_token(lex)) == T_ID {
+        nameT = id_token(lex);
+        if allow_init { if Token_type(peek_token(lex)) == T_ASSIGN {
+            consume_token(lex, T_ASSIGN);
+            init = parse_expr(lex);
+        } }
     }
-    return ast4(AST_NAMETYPE,
-                nameT,
-                Token_into_type(base_tkn),
-                nptr);
+    return ast4(AST_VARIABLE, type, nameT, init);
 }
 
 fn parse_declaration(void* lex) {
@@ -294,7 +293,10 @@ fn parse_declaration(void* lex) {
         t = Token_type(tkn);
     }
     void* ast = null;
-    if is_type_kw(t)    { ast = parse_variable_declaration(lex); }
+    if is_type_kw(tkn)  {
+        ast = parse_param_variable_member(lex, true);
+        consume_token(lex, T_SEMI);
+    }
     if t == T_KW_FN     { ast = parse_function_declaration(lex); }
     if t == T_KW_STRUCT { ast = parse_struct_declaration(lex); }
     if ast == null {
@@ -303,46 +305,77 @@ fn parse_declaration(void* lex) {
     return ast3(AST_DECL, is_pub, ast);
 }
 
-fn parse_variable_declaration(void* lex) {
-    void* name_and_type = parse_name_and_type(lex);
-    void* init = null;
-    if Token_type(peek_token(lex)) == T_ASSIGN {
-        consume_token(lex, T_ASSIGN);
-        init = parse_expr(lex);
-    }
-    consume_token(lex, T_SEMI);
-    return ast3(AST_VAR, name_and_type, init);
-}
-
 fn parse_struct_declaration(void* lex) {
     consume_token(lex, T_KW_STRUCT);
     void* nameT = id_token(lex);
+    void* ast;
     if Token_type(peek_token(lex)) == T_SEMI {
         # bring name into scope, but incomplete.
         consume_token(lex, T_SEMI);
-        return ast3(AST_STRUCT, nameT, null);
+        ast = ast3(AST_STRUCT, nameT, null);
+        Env_register_type(ENV, nameT, build_struct_type(ast));
+        return ast;
     }
     consume_token(lex, T_OBRACE);
     void* members = ArrayList__new(8);
-    while Token_type(peek_token(lex)) != T_CBRACE {
-        void* type = parse_type_spec(lex);
-        ArrayList_push(members, ast3(AST_MEMBER,
-                                     id_token(lex),
-                                     type));
-        consume_token(lex, T_SEMI);
-    }
-    if ArrayList_size(members) == 0 {
-        # munge token for panic
-        Token_set_type(nameT, Token_value(nameT));
-        jnc_panic(ERR_ZERO_MEMBER_STRUCT, nameT, 35);
+    ArrayList_push(members, parse_param_variable_member(lex, false));
+    while Token_type(peek_token(lex)) == T_COMMA {
+        consume_token(lex, T_COMMA);
+        if Token_type(peek_token(lex)) == T_CBRACE { done; }
+        ArrayList_push(members, parse_param_variable_member(lex, false));
     }
     consume_token(lex, T_CBRACE);
     consume_opt_token(lex, T_SEMI);
-    void* ast = ast3(AST_STRUCT,
-                     nameT,
-                     ArrayList_into_array(members));
-    Env_register_type(ENV, nameT, ast);
+    ast = ast3(AST_STRUCT,
+               nameT,
+               ArrayList_into_array(members));
+    Env_register_type(ENV, nameT, build_struct_type(ast));
     return ast;
+}
+
+fn build_struct_type(void* ast) {
+    void* members = TreeMap__new_owned(&strcmp, null, &drop_ast);
+    int size = 0;
+    int align = 0;
+    void* kids = ast + 0x10;
+    kids = *kids;
+    while true {
+        void* kid = *kids;
+        if kid == null { done; }
+        if *kid != AST_VARIABLE {
+            eprintf("Expected an %i building type info, but got an %i\n", AST_VARIABLE, *kid);
+            exit(84);
+        }
+        kids = kids + 0x8;
+        kid = kid + 0x10;           # -> nameT
+        if *kid == null {
+            eprintf("Anonymous struct members are not allowed\n");
+            exit(87);
+        }
+        char* name = Token_value(*kid);
+        if TreeMap_contains(members, name) {
+            eprintf(ERR_DUPE_STRUCT_MEMBER, 36, name);
+            exit(36);
+        }
+        kid = kid - 0x8;            # -> type
+        int i = ast_alignment(*kid);
+        align = imax(align, i);
+        i = ast_sizeof(*kid);
+        size = round_up_to_mod(size, i);
+        name = strclone(name);
+        TreeMap_put(members, name, ast3(AST_TYPE_MEMBER, name, size));
+        size = size + i;
+    }
+    size = round_up_to_mod(size, align);
+    return ast4(AST_TYPE_STRUCT, align, size, members);
+}
+
+fn round_up_to_mod(int value, int modulus) {
+    int overage = value % modulus;
+    if overage != 0 {
+        value = value + (modulus - overage);
+    }
+    return value;
 }
 
 fn parse_type_spec(void* lex) {
@@ -381,12 +414,16 @@ fn parse_block(void* lex) {
 fn parse_block_item(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
-    if is_type_kw(t) { return parse_variable_declaration(lex); }
+    if is_type_kw(tkn)  {
+        void* ast = parse_param_variable_member(lex, true);
+        consume_token(lex, T_SEMI);
+        return ast;
+    }
     if t == T_KW_STRUCT { return parse_struct_declaration(lex); }
-    if t == T_KW_IF { return parse_if(lex); }
-    if t == T_KW_WHILE { return parse_while(lex); }
-    if t == T_KW_DONE { return parse_done(lex); }
-    if t == T_KW_AGAIN { return parse_again(lex); }
+    if t == T_KW_IF     { return parse_if(lex); }
+    if t == T_KW_WHILE  { return parse_while(lex); }
+    if t == T_KW_DONE   { return parse_done(lex); }
+    if t == T_KW_AGAIN  { return parse_again(lex); }
     if t == T_KW_RETURN { return parse_return(lex); }
     if t == T_SEMI {
         # silly, but legal
@@ -694,12 +731,15 @@ fn join_un_op_rtl(void* lex, int op) {
 
 fn parse_expr_postfix(void* lex) {
     void* expr = parse_expr_primary(lex);
-    void* tkn = peek_token(lex);
-    if tkn != null {
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
         int t = Token_type(tkn);
         if t == T_OPAREN {
             expr = ast3(AST_CALL, expr, parse_arg_list(lex));
+            again;
         }
+        done;
     }
     return expr;
 }

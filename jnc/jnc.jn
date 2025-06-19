@@ -1,6 +1,16 @@
 char* JNC_SHORT_VERSION;
 char* JNC_LONG_VERSION;
 
+char* KW_BOOL;
+char* KW_CHAR;
+char* KW_INT;
+char* KW_VOID;
+
+int AST_TYPE_BOOL;
+int AST_TYPE_CHAR;
+int AST_TYPE_INT;
+int AST_TYPE_VOID;
+
 char* OPT_V = "-v";
 char* OPT_VERSION = "--version";
 
@@ -32,6 +42,10 @@ pub void ENV = null;
 
 fn jnc_compile() {
     ENV = Env__new(null);
+    Env_seed_type(ENV, KW_BOOL, ast1(AST_TYPE_BOOL));
+    Env_seed_type(ENV, KW_CHAR, ast1(AST_TYPE_CHAR));
+    Env_seed_type(ENV, KW_INT , ast1(AST_TYPE_INT));
+    Env_seed_type(ENV, KW_VOID, ast1(AST_TYPE_VOID));
     void* lex = Lexer__new();
     void* ast = parse_program(lex);
     Lexer_drop(lex);

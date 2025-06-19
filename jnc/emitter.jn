@@ -22,20 +22,18 @@ int AST_ADDR_OP;
 int AST_AGAIN;
 int AST_ASSIGN;
 int AST_BINARY;
-int AST_LIT_BOOL;
 int AST_CALL;
-int AST_LIT_CHAR;
 int AST_DONE;
 int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
+int AST_LIT_BOOL;
+int AST_LIT_CHAR;
 int AST_LIT_INT;
-int AST_NAMETYPE;
-int AST_RETURN;
 int AST_LIT_STRING;
+int AST_RETURN;
 int AST_UNARY;
-int AST_VAR;
 int AST_WHILE;
 
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
@@ -374,16 +372,9 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
     if args == null { return; }
     int reg_offset = 0;
     while true {
-        void name_and_type = *args;
-        if name_and_type == null { done; }
-        nameT = name_and_type + 0x8;
-        nameT = *nameT;
-        int type = name_and_type + 0x10;
-        type = *type;
-        int nptr = name_and_type + 0x18;
-        nptr = *nptr;
-        Emitter_vardecl(self, nameT, type, nptr);
-        read_fn_arg(self, nameT, reg_offset);
+        if *args == null { done; }
+        int offset = (reg_offset + 1) * 0x8;
+        printf(TMPL_FN_ARG, reg_offset, offset);
         reg_offset = reg_offset + 1;
         args = args + 0x8;
     }
@@ -408,13 +399,6 @@ fn fn_symbol(void* self, char* name) {
         free(name);
         free(old);
     }
-}
-
-fn read_fn_arg(void* self, void* token, int reg_offset) {
-    void* symbol = Emitter_lookup_symbol_for(self, token);
-    int offset = Symbol_offset(symbol);
-    offset = offset * 0x8;
-    printf(TMPL_FN_ARG, reg_offset, offset);
 }
 
 fn introduce_fn(void* self, char* name) {
@@ -566,22 +550,22 @@ pub fn Emitter_eval_const(void* self, void* expr) {
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
     int t = *expr;
-    if t == AST_LIT_BOOL { # [AST_LIT_BOOL, val, null, null]
+    if t == AST_LIT_BOOL { # [AST_LIT_BOOL, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_LIT_CHAR { # [AST_LIT_CHAR, val, null, null]
+    if t == AST_LIT_CHAR { # [AST_LIT_CHAR, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_LIT_INT { # [AST_LIT_INT, val, null, null]
+    if t == AST_LIT_INT { # [AST_LIT_INT, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_LIT_STRING { # [AST_LIT_STRING, value, null, null]
+    if t == AST_LIT_STRING { # [AST_LIT_STRING, value]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_string(self, expr);
@@ -589,23 +573,23 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     if t == AST_BINARY { # [AST_BINARY, op, left, right]
         return Emitter_eval_expr_binary(self, expr);
     }
-    if t == AST_UNARY { # [AST_UNARY, op, operand, null]
+    if t == AST_UNARY { # [AST_UNARY, op, operand]
         return Emitter_eval_expr_unary(self, expr);
     }
-    if t == AST_ADDR_OP { # [AST_ADDR_OP, op, nameT, null]
+    if t == AST_ADDR_OP { # [AST_ADDR_OP, op, nameT]
         return Emitter_eval_expr_addr(self, expr);
     }
-    if t == AST_ID { # [AST_ID, nameT, null, null]
+    if t == AST_ID { # [AST_ID, nameT]
         expr = expr + 0x8;          # -> nameT
         expr = *expr;
         return Emitter_do_value_id(self, expr);
     }
-    if t == AST_CALL { # [AST_CALL, rcvr, args[], null]
-        void* rcvr = expr + 0x8;    # -> rcvr
-        rcvr = *rcvr;
+    if t == AST_CALL { # [AST_CALL, callee, args[]]
+        void* callee = expr + 0x8;  # -> callee
+        callee = *callee;
         void* args = expr + 0x10;   # -> args
         args = *args;
-        return Emitter_do_call_but_sillier(self, rcvr, args);
+        return Emitter_do_call_but_sillier(self, callee, args);
     }
 
     char* f = "Can't eval expr of type %i\n";
@@ -615,9 +599,9 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     panic(t);
 }
 
-# [AST_CALL, rcvr, args[], null]
-fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
-    void* nameT = rcvr + 0x8;       # -> nameT
+# [AST_CALL, callee, args[]]
+fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
+    void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
     void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
     char* tmpl;
@@ -704,7 +688,7 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     panic(op);
 }
 
-# [AST_ADDR_OP, op, nameT, null]
+# [AST_ADDR_OP, op, nameT]
 fn Emitter_eval_expr_addr(void* self, void* expr) {
     void* nameT = expr + 0x10;      # -> nameT
     nameT = *nameT;
@@ -725,7 +709,7 @@ fn Emitter_eval_expr_addr(void* self, void* expr) {
     panic(op);
 }
 
-# [AST_UNARY, op, operand, null]
+# [AST_UNARY, op, operand]
 fn Emitter_eval_expr_unary(void* self, void* expr) {
     void* operand = expr + 0x10;    # -> operand
     operand = *operand;

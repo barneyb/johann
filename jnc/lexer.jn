@@ -57,6 +57,7 @@ int T_STAR;
 pub char* KW_BOOL   = "bool";
 pub char* KW_CHAR   = "char";
 pub char* KW_INT    = "int";
+pub char* KW_VOID   = "void";
 char* KW_AGAIN  = "again";
 char* KW_CONST  = "const";
 char* KW_DONE   = "done";
@@ -70,7 +71,6 @@ char* KW_RETURN = "return";
 char* KW_SIZEOF = "sizeof";
 char* KW_STRUCT = "struct";
 char* KW_TRUE   = "true";
-char* KW_VOID   = "void";
 char* KW_WHILE  = "while";
 
 # struct Lexer {

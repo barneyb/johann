@@ -29,11 +29,11 @@ pub int AST_ID          = 50;
 
 # [AST_UNARY, op, operand]
 pub int AST_UNARY       = 101;
-# [AST_BINARY, op, *left, *right]
+# [AST_BINARY, op, left, right]
 pub int AST_BINARY      = 102;
 # [AST_ADDR_OP, op, nameT]
 pub int AST_ADDR_OP     = 103;
-# [AST_CALL, rcvr, args[]]
+# [AST_CALL, callee, args[]]
 pub int AST_CALL        = 104;
 
 ##################################################
@@ -47,12 +47,10 @@ pub int AST_DECL        = 302;
 pub int AST_FN          = 303;
 # [AST_VAR, name_and_type, init?]
 pub int AST_VAR         = 304;
-# [AST_NAMETYPE, nameT?, T_type, nptr] - todo: deprecated
-pub int AST_NAMETYPE    = 305;
 # [AST_STRUCT, nameT, members?]
 pub int AST_STRUCT      = 306;
-# [AST_MEMBER, nameT, type]
-pub int AST_MEMBER      = 307;
+# [AST_VARIABLE, type, nameT? init?]
+pub int AST_VARIABLE    = 307;
 
 ##################################################
 # statements are 4xx
@@ -212,11 +210,6 @@ pub fn drop_ast(void* ast) {
         drop_ast_array(*it);
         return free(ast);
     }
-    if type == AST_NAMETYPE {
-        it = ast + 0x8;             # -> name_token
-        if *it != null { Token_drop(*it); }
-        return free(ast);
-    }
     if type == AST_STRUCT {
         it = ast + 0x8;             # -> nameT
         Token_drop(*it);
@@ -224,10 +217,12 @@ pub fn drop_ast(void* ast) {
         drop_ast_array(*it);
         return free(ast);
     }
-    if type == AST_MEMBER {
-        it = ast + 0x8;             # -> nameT
-        Token_drop(*it);
-        it = ast + 0x10;            # -> type
+    if type == AST_VARIABLE {
+        it = ast + 0x8;             # -> type
+        drop_ast(*it);
+        it = ast + 0x10;            # -> nameT
+        if *it != null { Token_drop(*it); }
+        it = ast + 0x18;            # -> init
         drop_ast(*it);
         return free(ast);
     }
@@ -256,7 +251,7 @@ pub fn drop_ast(void* ast) {
         return free(ast);
     }
     if type == AST_CALL {
-        it = ast + 0x8;             # -> rcvr
+        it = ast + 0x8;             # -> callee
         drop_ast(*it);
         it = ast + 0x10;            # -> args
         drop_ast_array(*it);

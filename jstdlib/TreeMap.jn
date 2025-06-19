@@ -85,12 +85,18 @@ fn size(void* curr) {
 
 # I indicate whether the map has a mapping for `key`.
 pub fn TreeMap_contains(void* self, void key) {
-    return TreeMap_get(self, key) != null;
+    return find_node(self, key) != null;
 }
 
 # I return the value mapped to the provided `key`, or `null` if one doesn't
 # exit in the map.
 pub fn TreeMap_get(void* self, void key) {
+    void* node = find_node(self, key);
+    if node == null { return null; }
+    return Node_value(node);
+}
+
+fn find_node(void* self, void key) {
     void* comp = *self;
     self = self + 0x8;                # -> root
     void* curr = *self;
@@ -98,9 +104,9 @@ pub fn TreeMap_get(void* self, void key) {
         int c = comp(key, Node_key(curr));
         if c < 0 { curr = Node_left(curr); }
         if c > 0 { curr = Node_right(curr); }
-        if c == 0 { return Node_value(curr); }
+        if c == 0 { return curr; }
     }
-    return null;
+    return curr;
 }
 
 # I ensure the map contains an entry with the provided `key`, mapped to the

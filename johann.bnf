@@ -19,24 +19,12 @@ private declaration_ ::= ( "pub" )? ( global_declaration
                                     )
 global_declaration ::= variable_declaration
 function_declaration ::= "fn" ID parameter_list /*( "->" type )?*/ ( ";" | block_ )
-struct_declaration ::= "struct" ID ( "{" ( member_declaration )+ "}" )? ";"? // semi is permitted, but not required
-member_declaration ::= type_spec ID ";"
-private type_spec ::= ( "bool"
-                      | "char"
-                      | "int"
-                      | "void"
-                      | ID
-                      ) ( "*" )*
-private variable_declaration ::= type_and_name ( "=" expr_ )? ";"
-private type_and_name ::= type_ ( "*" )* ID
+struct_declaration ::= "struct" ID ( "{" member_declaration ( "," member_declaration )* ("," )? "}" )? ";"? // semi is permitted, but not required
+member_declaration ::= type_spec ID
+private type_spec ::= ID ( "*" )*
+private variable_declaration ::= type_spec ID ( "=" expr_ )? ";"
 private parameter_list ::= "(" ( type_opt_name ( "," type_opt_name )* )? ")"
-private type_opt_name ::= type_ ( "*" )* ( ID )?
-private type_ ::= "bool"
-                | "char"
-                | "int"
-                | "void"
-//                | "(" type_list ")" "->" type
-//type_list ::= type ( "," type )*
+private type_opt_name ::= type_spec ( ID )?
 private block_ ::= "{" block_item* "}"
 block_item ::= variable_declaration
              | struct_declaration
