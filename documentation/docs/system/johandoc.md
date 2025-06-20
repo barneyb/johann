@@ -154,9 +154,9 @@ I hold the compiler's AST implementation.
 
 : 
 
-`pub fn drop_ast(void* ast) `
+`pub fn drop_ast(Ast4* ast) `
 
-: 
+: I drop an AST. It might be narrower than `Ast4`, but the type will indicate that.
 
 
 <!--{/johanndoc:jnc/ast.jn}-->

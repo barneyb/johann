@@ -97,46 +97,59 @@ pub int AST_TYPE_MEMBER = 1003;
 
 ##################################################
 
+struct Ast1 {
+    int type
+}
+
 # [type] 1-tuple (silly, but uniform)
 pub fn ast1(int type) {
-    void* ast = malloc(0x8);
-    *ast = type;
+    Ast1* ast = malloc(sizeof(Ast1));
+    ast.type = type;
     return ast;
+}
+
+struct Ast2 {
+    int type,
+    void value
 }
 
 # [type, value] 2-tuple
 pub fn ast2(int type, void value) {
-    void* ast = malloc(0x10);
-    ast = ast + 0x8;                # -> value
-    *ast = value;
-    ast = ast - 0x8;                # -> type
-    *ast = type;
+    Ast2* ast = malloc(sizeof(Ast2));
+    ast.type = type;
+    ast.value = value;
     return ast;
+}
+
+struct Ast3 {
+    int type,
+    void value,
+    void left
 }
 
 # [type, value, left] 3-tuple
 pub fn ast3(int type, void value, void left) {
-    void* ast = malloc(0x18);
-    ast = ast + 0x8;                # -> value
-    *ast = value;
-    ast = ast + 0x8;                # -> left
-    *ast = left;
-    ast = ast - 0x10;               # -> type
-    *ast = type;
+    Ast3* ast = malloc(sizeof(Ast3));
+    ast.type = type;
+    ast.value = value;
+    ast.left = left;
     return ast;
+}
+
+struct Ast4 {
+    int type,
+    void value,
+    void left,
+    void right
 }
 
 # [type, value, left, right] 4-tuple
 pub fn ast4(int type, void value, void left, void right) {
-    void* ast = malloc(0x20);
-    ast = ast + 0x8;                # -> value
-    *ast = value;
-    ast = ast + 0x8;                # -> left
-    *ast = left;
-    ast = ast + 0x8;                # -> right
-    *ast = right;
-    ast = ast - 0x18;               # -> type
-    *ast = type;
+    Ast4* ast = malloc(sizeof(Ast4));
+    ast.type = type;
+    ast.value = value;
+    ast.left = left;
+    ast.right = right;
     return ast;
 }
 
@@ -170,10 +183,11 @@ pub fn ast_alignment(void* ast) {
     return ast_sizeof(ast);
 }
 
-pub fn drop_ast(void* ast) {
+# I drop an AST. It might be narrower than `Ast4`, but the type
+# field will indicate that.
+pub fn drop_ast(Ast4* ast) {
     if ast == null { return; }
-    int type = *ast;
-    void* it;
+    int type = ast.type;
 
 #    eprintf("drop_ast(%i)\n", type);
 
@@ -187,115 +201,88 @@ pub fn drop_ast(void* ast) {
         return free(ast);
     }
     if type == AST_LIT_STRING {
-        it = ast + 0x8;             # -> value
-        free(*it);
+        free(ast.value);
         return free(ast);
     }
     if type == AST_BINARY {
-        it = ast + 0x10;            # -> left
-        drop_ast(*it);
-        it = ast + 0x18;            # -> right
-        drop_ast(*it);
+        drop_ast(ast.left);
+        drop_ast(ast.right);
         return free(ast);
     }
     if type == AST_UNARY {
-        it = ast + 0x10;            # -> operand
-        drop_ast(*it);
+        drop_ast(ast.left); # operand
         return free(ast);
     }
     if type == AST_FN {
-        it = ast + 0x8;             # -> name_token
-        Token_drop(*it);
-        it = ast + 0x10;            # -> args
-        drop_ast_array(*it);
-        it = ast + 0x18;            # -> stmts
-        drop_ast_array(*it);
+        Token_drop(ast.value); # nameT
+        drop_ast_array(ast.left); # args
+        drop_ast_array(ast.right); # stmts
         return free(ast);
     }
     if type == AST_STRUCT {
-        it = ast + 0x8;             # -> nameT
-        Token_drop(*it);
-        it = ast + 0x10;            # -> members
-        drop_ast_array(*it);
+        Token_drop(ast.value); # nameT
+        drop_ast_array(ast.left); # members
         return free(ast);
     }
     if type == AST_VARIABLE {
-        it = ast + 0x8;             # -> type
-        drop_ast(*it);
-        it = ast + 0x10;            # -> nameT
-        if *it != null { Token_drop(*it); }
-        it = ast + 0x18;            # -> init
-        drop_ast(*it);
+        drop_ast(ast.value); # type
+        if ast.left != null { # nameT
+            Token_drop(ast.left);
+        }
+        drop_ast(ast.right); # init
         return free(ast);
     }
     if type == AST_RETURN {
-        it = ast + 0x8;             # -> token
-        Token_drop(*it);
-        it = ast + 0x10;            # -> expr
-        drop_ast(*it);
+        Token_drop(ast.value); # token
+        drop_ast(ast.left); # expr
         return free(ast);
     }
     if type == AST_EVAL {
-        it = ast + 0x8;             # -> expr
-        drop_ast(*it);
+        drop_ast(ast.value); # expr
         return free(ast);
     }
     if type == AST_ID {
-        it = ast + 0x8;             # -> nameT
-        Token_drop(*it);
+        Token_drop(ast.value); # nameT
         return free(ast);
     }
     if type == AST_CALL {
-        it = ast + 0x8;             # -> callee
-        drop_ast(*it);
-        it = ast + 0x10;            # -> args
-        drop_ast_array(*it);
+        drop_ast(ast.value); # callee
+        drop_ast_array(ast.left); # args
         return free(ast);
     }
     if type == AST_ASSIGN {
-        it = ast + 0x8;             # -> lhs
-        drop_ast(*it);
-        it = ast + 0x10;            # -> rhs
-        drop_ast(*it);
+        drop_ast(ast.value); # lehs
+        drop_ast(ast.left); # rhs
         return free(ast);
     }
     if type == AST_IF {
-        it = ast + 0x8;             # -> condition
-        drop_ast(*it);
-        it = ast + 0x10;            # -> body
-        drop_ast_array(*it);
+        drop_ast(ast.value); # condition
+        drop_ast_array(ast.left); # body
         return free(ast);
     }
     if type == AST_WHILE {
-        it = ast + 0x8;             # -> condition
-        drop_ast(*it);
-        it = ast + 0x10;            # -> body
-        drop_ast_array(*it);
+        drop_ast(ast.value); # condition
+        drop_ast_array(ast.left); # body
         return free(ast);
     }
     if type == AST_DONE {
-        it = ast + 0x8;             # -> token
-        Token_drop(*it);
+        Token_drop(ast.value); # token
         return free(ast);
     }
     if type == AST_AGAIN {
-        it = ast + 0x8;             # -> token
-        Token_drop(*it);
+        Token_drop(ast.value); # token
         return free(ast);
     }
     if type == AST_ADDR_OP {
-        it = ast + 0x10;            # -> nameT
-        Token_drop(*it);
+        Token_drop(ast.left); # nameT
         return free(ast);
     }
     if type == AST_PROGRAM {
-        it = ast + 0x8;             # -> decls
-        drop_ast_array(*it);
+        drop_ast_array(ast.value); # decls
         return free(ast);
     }
     if type == AST_DECL {
-        it = ast + 0x10;            # -> fn_or_var
-        drop_ast(*it);
+        drop_ast(ast.left); # fn_or_var
         return free(ast);
     }
     if type == AST_TYPE_BOOL {
@@ -311,28 +298,23 @@ pub fn drop_ast(void* ast) {
         return free(ast);
     }
     if type == AST_TYPE_PTR {
-        it = ast + 0x8;             # -> type
-        drop_ast(*it);
+        drop_ast(ast.value); # type
         return free(ast);
     }
     if type == AST_TYPE_NAMED {
-        it = ast + 0x8;             # -> nameT
-        Token_drop(*it);
+        Token_drop(ast.value); # nameT
         return free(ast);
     }
     if type == AST_TYPE_STRUCT {
-        it = ast + 0x18;            # -> memberMap
-        TreeMap_drop(*it);
+        TreeMap_drop(ast.right); # memberMap
         return free(ast);
     }
     if type == AST_TYPE_MEMBER {
-        it = ast + 0x8;             # -> name
-        free(*it);
+        free(ast.value); # name
         return free(ast);
     }
     if type == AST_MEMBER {
-        it = ast + 0x8;             # -> rcvr
-        drop_ast(*it);
+        drop_ast(ast.value); # rcvr
         return free(ast);
     }
 
