@@ -512,10 +512,10 @@ fn parse_eval_or_assign(void* lex) {
         }
     }
     if t == AST_BINARY {
-        t = expr + 0x8;          # -> op
+        t = expr + 0x8;             # -> op
         if *t == T_STAR {
-            t = t + 0x8;      # -> left
-            t = *t
+            t = t + 0x8;            # -> left
+            t = *t;
             if *t == AST_ID {
                 t = t + 0x8; # -> nameT
                 eprintf("Did you forget to declare '%s'?\n", Token_value(*t));
