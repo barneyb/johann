@@ -77,8 +77,8 @@ private unary_expr ::= postfix_expr
 private un_op ::= "-" | "+" | "!" | "*" | "&" // | "~"
 
 private postfix_expr ::= primary_expr ( argument_list
+                                      | "." ID
 //                                      | "[" expr_ "]"
-//                                      | "." ID
                                       )*
 private argument_list ::= "(" ( expr_ ( "," expr_ )* )? ")"
 

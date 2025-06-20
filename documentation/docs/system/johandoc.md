@@ -2,7 +2,7 @@
 
 Below are the generated docs for the compiler's internals. Not that much is
 documented, but searching just declarations has advantages over searching the
-full code.
+full sources.
 
 <!--{johanndoc:jnc/ast.jn}-->
 
@@ -46,6 +46,10 @@ I hold the compiler's AST implementation.
 
 : [AST_CALL, callee, args[]]
 
+`pub int AST_MEMBER      = 105;`
+
+: [AST_MEMBER, rcvr, offset, width]
+
 `pub int AST_PROGRAM     = 301;`
 
 : [AST_PROGRAM, decls[]]
@@ -56,11 +60,7 @@ I hold the compiler's AST implementation.
 
 `pub int AST_FN          = 303;`
 
-: [AST_FN, nameT, args[], block?]
-
-`pub int AST_VAR         = 304;`
-
-: [AST_VAR, name_and_type, init?]
+: [AST_FN, nameT, params[], block?]
 
 `pub int AST_STRUCT      = 306;`
 
@@ -128,7 +128,7 @@ I hold the compiler's AST implementation.
 
 `pub int AST_TYPE_MEMBER = 1003;`
 
-: [AST_TYPE_MEMBER, name, offset]
+: [AST_TYPE_MEMBER, name, offset, width]
 
 `pub fn ast1(int type) `
 
@@ -262,6 +262,10 @@ I store information about a block/scope. I used to be an implementation detail o
 
 : 
 
+`pub fn Emitter_do_assign_member(void* self, void* member, void* expr) `
+
+: [AST_MEMBER, rcvr, offset, width]
+
 `pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) `
 
 : 
@@ -300,7 +304,11 @@ I hold the environment during compilation, which is usually nested.
 
 : 
 
-`pub fn Env_typeof_symbol(void* self, void* nameT) `
+`pub fn Env_register_symbol(void* self, void* nameT, void* type_ast) `
+
+: 
+
+`pub fn Env_typeof_symbol(void* self, char* name) `
 
 : 
 
@@ -310,7 +318,11 @@ I hold the environment during compilation, which is usually nested.
 
 `pub fn Env_seed_type(void* self, char* name, void* type_ast) `
 
-: I'm just for jnc to register built-in types
+: I'm just for `jnc` to register the built-in types.
+
+`pub fn Env_get_type(void* self, char* name) `
+
+: 
 
 `pub fn Env_is_type(void* self, char* name) `
 
@@ -562,15 +574,15 @@ I hold the lexer's token table
 
 : 
 
-`pub int T_KW_BOOL   = 0x442; # 0x400 + 'B'; # todo: remove?`
+`pub int T_KW_BOOL   = 0x442; # 0x400 + 'B';`
 
 : 
 
-`pub int T_KW_CHAR   = 0x443; # 0x400 + 'C'; # todo: remove?`
+`pub int T_KW_CHAR   = 0x443; # 0x400 + 'C';`
 
 : 
 
-`pub int T_KW_INT    = 0x449; # 0x400 + 'I'; # todo: remove?`
+`pub int T_KW_INT    = 0x449; # 0x400 + 'I';`
 
 : 
 
@@ -578,7 +590,7 @@ I hold the lexer's token table
 
 : 
 
-`pub int T_KW_VOID   = 0x456; # 0x400 + 'V'; # todo: remove?`
+`pub int T_KW_VOID   = 0x456; # 0x400 + 'V';`
 
 : 
 
@@ -710,9 +722,13 @@ I hold the lexer's token table
 
 : 
 
+`pub int T_DOT       = '.';`
+
+: 
+
 `pub int T_HASH      = '#';`
 
-: ub int T_DOT       = '.';
+: 
 
 `pub int T_OBRACE    = '`
 

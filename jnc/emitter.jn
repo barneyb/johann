@@ -32,6 +32,7 @@ int AST_LIT_BOOL;
 int AST_LIT_CHAR;
 int AST_LIT_INT;
 int AST_LIT_STRING;
+int AST_MEMBER;
 int AST_RETURN;
 int AST_UNARY;
 int AST_WHILE;
@@ -75,6 +76,7 @@ char* TMPL_ASSIGN_GLOBAL_QUAD   = "        adrp    x7, __j_%s@PAGE\n        add 
 
 char* TMPL_GET_ADDR_LOCAL       = "        ldr     x7, [fp, -%x]\n";
 char* TMPL_GET_ADDR_GLOBAL      = "        adrp    x7, __j_%s@PAGE\n        add     x7, x7, __j_%s@PAGEOFF\n";
+char* TMPL_GET_ADDR_MEMBER      = "        add     x7, x7, %i\n";
 char* TMPL_ASSIGN_PTR_BYTE      = "        strb    w0, [x7]\n";
 char* TMPL_ASSIGN_PTR_QUAD      = "        str     x0, [x7]\n";
 
@@ -82,6 +84,8 @@ char* TMPL_CALL_PARAM           = "        ldr     x%i, [fp, -%x]\n";
 char* TMPL_CALL                 = "        bl      __j_%s\n";
 char* TMPL_CALL_PTR_INTRO       = "        str     x0, [sp, -0x10]!\n";
 char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr     x16\n";
+char* TMPL_READ_MEMBER_QUAD     = "        ldr     x0, [x0, %x]\n";
+char* TMPL_READ_MEMBER_BYTE     = "        ldrb    w0, [x0, %x]\n";
 
 char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
@@ -484,9 +488,7 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     char* tmpl;
     if offset > 0 {
         # local
-        tmpl = TMPL_ASSIGN_LOCAL;
-        offset = offset * 0x8;
-        return printf(tmpl, offset);
+        return printf(TMPL_ASSIGN_LOCAL, offset * 0x8);
     }
     # global
     char* name = Token_value(nameT);
@@ -500,28 +502,48 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     printf(tmpl, name, name);
 }
 
-pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
-    Emitter_eval_expr(self, expr);
+# [AST_MEMBER, rcvr, offset, width]
+pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
+    member = member + 0x8;          # -> rcvr
+    void* rcvr = *member;
+    rcvr = rcvr + 0x8;              # -> nameT - guaranteed to be AST_ID
+    get_symbol_with_addr_in_x7(self, *rcvr);
 
-    # compute address
+    member = member + 0x8;          # -> offset
+    printf(TMPL_GET_ADDR_MEMBER, *member);
+
+    member = member + 0x8;          # -> width
+    char* tmpl = TMPL_ASSIGN_PTR_QUAD;
+    if *member == 1 {
+        tmpl = TMPL_ASSIGN_PTR_BYTE;
+    }
+
+    Emitter_eval_expr(self, expr);
+    printf(tmpl);
+}
+
+fn get_symbol_with_addr_in_x7(void* self, void* nameT) {
     void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
-    char* tmpl;
     if offset > 0 {
         # local
-        tmpl = TMPL_GET_ADDR_LOCAL;
-        offset = offset * 0x8;
-        printf(tmpl, offset);
+        printf(TMPL_GET_ADDR_LOCAL, offset * 0x8);
     }
     if offset <= 0 {
         # global
-        tmpl = TMPL_GET_ADDR_GLOBAL;
         char* name = Token_value(nameT);
-        printf(tmpl, name, name);
+        printf(TMPL_GET_ADDR_GLOBAL, name, name);
     }
+    return symbol;
+}
+
+pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
+    Emitter_eval_expr(self, expr);
+
+    void* symbol = get_symbol_with_addr_in_x7(self, nameT);
 
     # now write to address
-    tmpl = TMPL_ASSIGN_PTR_BYTE;
+    char* tmpl = TMPL_ASSIGN_PTR_BYTE;
     int n = Symbol_width(symbol);
     if n != 1 {
         tmpl = TMPL_ASSIGN_PTR_QUAD;
@@ -591,6 +613,14 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
         args = *args;
         return Emitter_do_call_but_sillier(self, callee, args);
     }
+    if t == AST_MEMBER { # [AST_MEMBER, rcvr, offset, width]
+        expr = expr + 0x8;          # -> rcvr
+        void* rcvr = *expr;
+        expr = expr + 0x8;          # -> offset
+        int offset = *expr;
+        expr = expr + 0x8;          # -> width
+        return Emitter_do_read_member(self, rcvr, offset, *expr);
+    }
 
     char* f = "Can't eval expr of type %i\n";
     printf(f, t);
@@ -599,12 +629,18 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     panic(t);
 }
 
-# [AST_CALL, callee, args[]]
+fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {
+    Emitter_eval_expr(self, rcvr);
+    if width == 1 {
+        return printf(TMPL_READ_MEMBER_BYTE, offset);
+    }
+    printf(TMPL_READ_MEMBER_QUAD, offset);
+}
+
 fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
     void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
     void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
-    char* tmpl;
     if symbol != null {
         # function pointer - do setup first, as it corrupts x0
         do_address_of(self, nameT, symbol);
@@ -612,21 +648,17 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
         if nptr > 0 {
             do_load_addr(self, nameT, symbol);
         }
-        tmpl = TMPL_CALL_PTR_INTRO;
-        printf(tmpl);
+        printf(TMPL_CALL_PTR_INTRO);
     }
 
     call_params_but_sillier(self, args);
 
     if symbol != null {
         # call the function pointer
-        tmpl = TMPL_CALL_PTR;
-        return printf(tmpl);
+        return printf(TMPL_CALL_PTR);
     }
     # anonymous - hope it's there!
-    tmpl = TMPL_CALL;
-    char* name = Token_value(nameT);
-    printf(tmpl, name);
+    printf(TMPL_CALL, Token_value(nameT));
 }
 
 fn call_params_but_sillier(void* self, void* args) {

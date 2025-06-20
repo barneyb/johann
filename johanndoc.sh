@@ -21,7 +21,7 @@ if [ "$ACTION" = "doc" ]; then
 
 Below are the generated docs for the compiler's internals. Not that much is
 documented, but searching just declarations has advantages over searching the
-full code.
+full sources.
 EOF
         # globs are case-sensitive. :/
         for f in $(ls jnc/*.jn | sort -df); do

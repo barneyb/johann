@@ -7,6 +7,7 @@ int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
+int AST_MEMBER;
 int AST_PROGRAM;
 int AST_RETURN;
 int AST_STRUCT;
@@ -18,12 +19,11 @@ bool IS_PUB = false; # this is still pretty ridiculous
 
 pub fn to_emitter(void* emitter, void* ast) {
     int t = *ast;
-
+#    printf("; to_emitter %i\n", *ast);
     if t == AST_PROGRAM { return to_emitter_program(emitter, ast); }
     if t == AST_DECL    { return to_emitter_decl(emitter, ast); }
     if t == AST_VARIABLE{ return to_emitter_variable(emitter, ast); }
     if t == AST_FN      { return to_emitter_fn(emitter, ast); }
-    if t == AST_STRUCT  { return; }
     if t == AST_IF      { return to_emitter_if(emitter, ast); }
     if t == AST_WHILE   { return to_emitter_while(emitter, ast); }
     if t == AST_DONE    { return to_emitter_done(emitter, ast); }
@@ -33,6 +33,7 @@ pub fn to_emitter(void* emitter, void* ast) {
     if t == AST_ASSIGN  { return to_emitter_assign(emitter, ast); }
 
     # types never emit code
+    if t == AST_STRUCT  { return; }
     if t >= 500 { if t < 600 {
         return;
     } }
@@ -91,7 +92,7 @@ fn to_emitter_variable(void* emitter, void* ast) {
 }
 
 fn to_emitter_fn(void* emitter, void* ast) {
-    # [AST_FN, nameT, args[], block?]
+    # [AST_FN, nameT, params[], block?]
     ast = ast + 0x8;
     void* nameT = *ast;
     ast = ast + 0x8;
@@ -99,7 +100,7 @@ fn to_emitter_fn(void* emitter, void* ast) {
     ast = ast + 0x8;
     void* block = *ast;
     if block == null {
-        Emitter_do_fn_proto(emitter, nameT, args);
+        Emitter_do_fn_proto(emitter, nameT);
         return;
     }
     if IS_PUB {
@@ -107,11 +108,13 @@ fn to_emitter_fn(void* emitter, void* ast) {
         Emitter_mark_global(nameT);
     }
     Emitter_do_fn_intro(emitter, nameT, args);
-    while args != null {
-        void var = *args;
-        if var == null { done; }
-        to_emitter_variable(emitter, var);
-        args = args + 0x8;
+    if args != null {
+        while true {
+            void var = *args;
+            if var == null { done; }
+            to_emitter_variable(emitter, var);
+            args = args + 0x8;
+        }
     }
     array_to_emitter(emitter, block);
     Emitter_do_fn_outro(emitter, nameT);
@@ -179,13 +182,16 @@ fn to_emitter_assign(void* emitter, void* ast) {
     ast = ast + 0x8;
     void* rhs = *ast;
 
-    # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
+    # figure out which kind of lvalue we're assigning to
     int t = *expr;
     void* nameT;
     if t == AST_ID {
         t = expr + 0x8;         # -> name
         nameT = *t;
         return Emitter_do_assign(emitter, nameT, rhs);
+    }
+    if t == AST_MEMBER {
+        return Emitter_do_assign_member(emitter, expr, rhs);
     }
     if t == AST_ADDR_OP {
         t = expr + 0x10;        # -> name

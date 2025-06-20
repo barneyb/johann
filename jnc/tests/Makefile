@@ -8,10 +8,10 @@ JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 all: \
 	$(LIB)/a_syntactic_menagerie.o \
 	collatz \
-	cons \
 	constants \
 	control_flow \
 	function_pointers \
+	lisp \
 	literals \
 	not_quite_lisp \
 	print_one \

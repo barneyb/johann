@@ -24,6 +24,7 @@ int T_BANG;
 int T_CBRACE;
 int T_COMMA;
 int T_CPAREN;
+int T_DOT;
 int T_EQ;
 int T_GT;
 int T_GTE;
@@ -54,6 +55,7 @@ int AST_LIT_BOOL;
 int AST_LIT_CHAR;
 int AST_LIT_INT;
 int AST_LIT_STRING;
+int AST_MEMBER;
 int AST_PROGRAM;
 int AST_RETURN;
 int AST_STRUCT;
@@ -66,7 +68,6 @@ int AST_TYPE_PTR;
 int AST_TYPE_STRUCT;
 int AST_TYPE_VOID;
 int AST_UNARY;
-int AST_VAR;
 int AST_VARIABLE;
 int AST_WHILE;
 
@@ -205,38 +206,41 @@ fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
     void* nameT = id_token(lex);
     ENV = Env_push(ENV);
-    void args = parse_parameter_list(lex);
+    void params = parse_parameter_list(lex);
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     if t == T_SEMI {
         consume_token(lex, t);
         ENV = Env_pop(ENV);
-        return ast3(AST_FN, nameT, args);
+        return ast3(AST_FN, nameT, params);
     }
     if t == T_OBRACE {
-        verify_parameters_are_named(nameT, args);
+        set_up_params_as_args(nameT, params);
         void* block = parse_block(lex);
         ENV = Env_pop(ENV);
-        return ast4(AST_FN, nameT, args, block);
+        return ast4(AST_FN, nameT, params, block);
     }
     unexpected_token(tkn);
 }
 
-fn verify_parameters_are_named(void* nameT, void* args) {
+fn set_up_params_as_args(void* nameT, void* args) {
     if args == null { return; }
+    # as well as human-y, one-indexing ensures non-zero exit if
+    # the first param is anonymous
     int i = 1;
     while true {
-        void name_and_type = *args;
-        if name_and_type == null { done; }
-        void* nt = name_and_type + 0x8;
-        nt = *nt;
-        if nt == null {
+        void arg = *args;
+        if arg == null { done; }
+        void* nt = arg + 0x10;      # -> nameT
+        if *nt == null {
             char* err = "Function %s's parameter %i must be named.\n";
             char* name = Token_value(nameT);
             printf(err, name, i);
             eprintf(err, name, i);
             jnc_panic(ERR_MISSING_PARAM_NAME, nameT, i);
         }
+        arg = arg + 0x8;            # -> type
+        Env_register_symbol(ENV, *nt, *arg);
         args = args + 0x8;
         i = i + 1;
     }
@@ -335,15 +339,15 @@ fn parse_struct_declaration(void* lex) {
 
 fn build_struct_type(void* ast) {
     void* members = TreeMap__new_owned(&strcmp, null, &drop_ast);
-    int size = 0;
-    int align = 0;
+    int total_size = 0;
+    int total_align = 0;
     void* kids = ast + 0x10;
     kids = *kids;
     while true {
         void* kid = *kids;
         if kid == null { done; }
         if *kid != AST_VARIABLE {
-            eprintf("Expected an %i building type info, but got an %i\n", AST_VARIABLE, *kid);
+            eprintf("Expected a variable node (%i) building type info, but got a %i\n", AST_VARIABLE, *kid);
             exit(84);
         }
         kids = kids + 0x8;
@@ -359,15 +363,16 @@ fn build_struct_type(void* ast) {
         }
         kid = kid - 0x8;            # -> type
         int i = ast_alignment(*kid);
-        align = imax(align, i);
+        total_align = imax(total_align, i);
+        # add padding to align the member
+        total_size = round_up_to_mod(total_size, i);
         i = ast_sizeof(*kid);
-        size = round_up_to_mod(size, i);
         name = strclone(name);
-        TreeMap_put(members, name, ast3(AST_TYPE_MEMBER, name, size));
-        size = size + i;
+        TreeMap_put(members, name, ast4(AST_TYPE_MEMBER, name, total_size, i));
+        total_size = total_size + i;
     }
-    size = round_up_to_mod(size, align);
-    return ast4(AST_TYPE_STRUCT, align, size, members);
+    total_size = round_up_to_mod(total_size, total_align);
+    return ast4(AST_TYPE_STRUCT, total_align, total_size, members);
 }
 
 fn round_up_to_mod(int value, int modulus) {
@@ -416,6 +421,12 @@ fn parse_block_item(void* lex) {
     int t = Token_type(tkn);
     if is_type_kw(tkn)  {
         void* ast = parse_param_variable_member(lex, true);
+        void* nt = ast + 0x10;      # -> nameT
+        if *nt == null {
+            jnc_panic("ERR(%i) Anonymous declaration (%x) at line %i, char %i?!\n", tkn, 89);
+        }
+        void* type = ast + 0x8;            # -> type
+        Env_register_symbol(ENV, *nt, *type);
         consume_token(lex, T_SEMI);
         return ast;
     }
@@ -487,15 +498,28 @@ fn parse_eval_or_assign(void* lex) {
         return ast3(AST_EVAL, expr);
     }
 
-    # right now, the lhs MUST be AST_ID or *AST_ID, so unwrap
     int t = *expr;
     if t == AST_ID {
+        return ast3(AST_ASSIGN, expr, rhs);
+    }
+    if t == AST_MEMBER {
         return ast3(AST_ASSIGN, expr, rhs);
     }
     if t == AST_ADDR_OP {
         t = expr + 0x8;             # -> op
         if *t == T_STAR {
             return ast3(AST_ASSIGN, expr, rhs);
+        }
+    }
+    if t == AST_BINARY {
+        t = expr + 0x8;          # -> op
+        if *t == T_STAR {
+            t = t + 0x8;      # -> left
+            t = *t
+            if *t == AST_ID {
+                t = t + 0x8; # -> nameT
+                eprintf("Did you forget to declare '%s'?\n", Token_value(*t));
+            }
         }
     }
 
@@ -739,9 +763,75 @@ fn parse_expr_postfix(void* lex) {
             expr = ast3(AST_CALL, expr, parse_arg_list(lex));
             again;
         }
+        if t == T_DOT {
+            consume_token(lex, t);
+            expr = process_dot(expr, id_token(lex));
+            again;
+        }
         done;
     }
     return expr;
+}
+
+fn process_dot(void* rcvr, void* nameT) {
+    if *rcvr != AST_ID {
+        eprintf("ERR: can't deref '%s' off a %i at %i:%i\n",
+                Token_value(nameT),
+                *rcvr,
+                Token_line(nameT),
+                Token_char(nameT));
+        exit(12);
+    }
+    rcvr = rcvr + 0x8;              # -> nameT
+    char* rname = Token_value(*rcvr);
+    rcvr = rcvr - 0x8;              # -> whole AST node
+    void* rat = Env_typeof_symbol(ENV, rname);
+    if *rat != AST_TYPE_PTR {
+        eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct\n",
+                Token_value(nameT),
+                *rat);
+        exit(77);
+    }
+    rat = rat + 0x8;                # -> type
+    rat = *rat;
+    if *rat != AST_TYPE_NAMED {
+        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct\n",
+                Token_value(nameT),
+                *rat);
+        exit(76);
+    }
+    rat = rat + 0x8;                # -> nameT
+    void* structT = Env_get_type(ENV, Token_value(*rat));
+    if *structT != AST_TYPE_STRUCT {
+        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct\n",
+                Token_value(nameT),
+                *structT);
+        exit(76);
+    }
+    void* member = structT + 0x18;
+    member = TreeMap_get(*member, Token_value(nameT));
+    if member == null {
+        eprintf("Object '%s' (of type '%s') has no member '%s' at line %i, char %i.\n",
+                rname,
+                Token_value(*rat),
+                Token_value(nameT),
+                Token_line(nameT),
+                Token_char(nameT));
+        exit(75);
+    }
+    Token_drop(nameT); # no longer needed
+    member = member + 0x8;          # -> name
+    char* name = *member;
+    member = member + 0x8;          # -> offset
+    int offset = *member;
+    member = member + 0x8;          # -> width
+#    eprintf("DOT: %s (%i) . %s (%x / %x)\n",
+#            rname,
+#            *structT,
+#            name,
+#            offset,
+#            *member);
+    return ast4(AST_MEMBER, rcvr, offset, *member);
 }
 
 # expr[]

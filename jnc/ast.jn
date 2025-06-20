@@ -35,6 +35,8 @@ pub int AST_BINARY      = 102;
 pub int AST_ADDR_OP     = 103;
 # [AST_CALL, callee, args[]]
 pub int AST_CALL        = 104;
+# [AST_MEMBER, rcvr, offset, width]
+pub int AST_MEMBER      = 105;
 
 ##################################################
 # declarations are 3xx
@@ -43,10 +45,8 @@ pub int AST_CALL        = 104;
 pub int AST_PROGRAM     = 301;
 # [AST_DECL, is_pub, fn_or_var]
 pub int AST_DECL        = 302;
-# [AST_FN, nameT, args[], block?]
+# [AST_FN, nameT, params[], block?]
 pub int AST_FN          = 303;
-# [AST_VAR, name_and_type, init?]
-pub int AST_VAR         = 304;
 # [AST_STRUCT, nameT, members?]
 pub int AST_STRUCT      = 306;
 # [AST_VARIABLE, type, nameT? init?]
@@ -92,7 +92,7 @@ pub int AST_TYPE_NAMED  = 550;
 
 # [AST_TYPE_STRUCT, alignof, sizeof, memberMap]
 pub int AST_TYPE_STRUCT = 1002;
-# [AST_TYPE_MEMBER, name, offset]
+# [AST_TYPE_MEMBER, name, offset, width]
 pub int AST_TYPE_MEMBER = 1003;
 
 ##################################################
@@ -175,6 +175,8 @@ pub fn drop_ast(void* ast) {
     int type = *ast;
     void* it;
 
+#    eprintf("drop_ast(%i)\n", type);
+
     if type == AST_LIT_BOOL {
         return free(ast);
     }
@@ -235,13 +237,6 @@ pub fn drop_ast(void* ast) {
     }
     if type == AST_EVAL {
         it = ast + 0x8;             # -> expr
-        drop_ast(*it);
-        return free(ast);
-    }
-    if type == AST_VAR {
-        it = ast + 0x8;             # -> name_and_type
-        drop_ast(*it);
-        it = ast + 0x10;            # -> expr
         drop_ast(*it);
         return free(ast);
     }
@@ -335,7 +330,13 @@ pub fn drop_ast(void* ast) {
         free(*it);
         return free(ast);
     }
+    if type == AST_MEMBER {
+        it = ast + 0x8;             # -> rcvr
+        drop_ast(*it);
+        return free(ast);
+    }
 
+    dump_around__(ast);
     char* f = "Can't drop ast of type %i / %x\n";
     eprintf(f, type, type);
     printf(f, type, type);

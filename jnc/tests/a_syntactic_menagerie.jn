@@ -27,14 +27,6 @@ fn function_params_ptr(bool* b, char* c, int* i, void* v);
 fn function_params_anon(bool, char, int, void);
 fn function_params_anon_ptr(bool*, char*, int*, void*);
 
-struct Animal {
-    char* name,
-    int num_legs,
-    bool mammal,
-    Animal* fav_prey,
-    bool is_extinct,
-}
-
 fn expr_primary() {
     AN_INT;
     '5';
@@ -50,6 +42,23 @@ fn expr_primary() {
 fn expr_postfix_call() {
     expr_id();
     function_params_base(false, 'T', 42);
+}
+
+struct Animal {
+    char* name,
+    int num_legs,
+    bool mammal,
+    Animal* fav_prey,
+    bool is_extinct,
+}
+
+fn expr_postfix_dot(Animal* dog) {
+    int i = dog.num_legs;
+    Animal* food = dog.fav_prey;
+    food.num_legs = 17; # ??
+    if dog.mammal {
+        food.is_extinct = true;
+    }
 }
 
 fn expr_unary(int i, bool b) {
