@@ -6,26 +6,30 @@ JNC = ../bin/jnc
 JSTDLIB = ../jstdlib/$(LIB)/jstdlib.o
 OBJECTS = $(JSTDLIB) \
 	$(LIB)/Block.o \
+	$(LIB)/Env.o \
 	$(LIB)/Symbol.o \
 	$(LIB)/Token.o \
+	$(LIB)/ast.o \
 	$(LIB)/emitter.o \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
+	$(LIB)/to_emitter.o \
 	$(LIB)/token_table.o \
 	$(LIB)/version.o \
 
 all: $(BIN)/jnc
-	@echo --------------------------------------------------
+	@echo -----------------------------------------------------
 	$(BIN)/jnc --version
-	@echo --------------------------------------------------
+	@echo -----------------------------------------------------
 	$(BIN)/jnc -v
-	@echo --------------------------------------------------
+	@echo -----------------------------------------------------
 
 $(LIB)/version.o:
-	@mkdir -p $(LIB)
-	echo "pub char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\
+	@mkdir -p $(OUT) $(LIB)
+	echo "pub char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\n\
  	pub char* JNC_LONG_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'";' \
-	| $(JNC) | gcc -o $(LIB)/version.o -x assembler -c -
+	> $(OUT)/version.jn
+	$(JNC) < $(OUT)/version.jn | gcc -o $(LIB)/version.o -x assembler -c -
 
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib

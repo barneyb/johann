@@ -15,6 +15,8 @@ int T_KW_INT;
 int T_KW_LET;
 int T_KW_PUB;
 int T_KW_RETURN;
+int T_KW_SIZEOF;
+int T_KW_STRUCT;
 int T_KW_VOID;
 int T_KW_WHILE;
 
@@ -22,6 +24,7 @@ int T_LOG_AND;
 int T_LOG_OR;
 
 int T_AMP;
+int T_ARROW;
 int T_ASSIGN;
 int T_BANG;
 int T_CBRACE;
@@ -51,21 +54,23 @@ int T_SLASH;
 int T_SQUOTE;
 int T_STAR;
 
+pub char* KW_BOOL   = "bool";
+pub char* KW_CHAR   = "char";
+pub char* KW_INT    = "int";
+pub char* KW_VOID   = "void";
 char* KW_AGAIN  = "again";
-char* KW_BOOL   = "bool";
-char* KW_CHAR   = "char";
 char* KW_CONST  = "const";
 char* KW_DONE   = "done";
 char* KW_FALSE  = "false";
 char* KW_FN     = "fn";
 char* KW_IF     = "if";
-char* KW_INT    = "int";
 char* KW_LET    = "let";
 char* KW_NULL   = "null";
 char* KW_PUB    = "pub";
 char* KW_RETURN = "return";
+char* KW_SIZEOF = "sizeof";
+char* KW_STRUCT = "struct";
 char* KW_TRUE   = "true";
-char* KW_VOID   = "void";
 char* KW_WHILE  = "while";
 
 # struct Lexer {
@@ -140,9 +145,9 @@ pub fn get_next_token(void* self) {
         if c == T_BANG     { return token_bang(self, c); }
         if c == T_GT       { return token_gt(self, c); }
         if c == T_LT       { return token_lt(self, c); }
+        if c == T_MINUS    { return token_minus(self, c); }
         if c == T_PIPE     { return token_pipe(self, c); }
         # non-ambiguous character tokens...
-        if c == T_MINUS    { return new_token(self, c); }
         if c == T_PERCENT  { return new_token(self, c); }
         if c == T_PLUS     { return new_token(self, c); }
         if c == T_SLASH    { return new_token(self, c); }
@@ -210,6 +215,16 @@ fn token_ampersand(void* self, char c) {
     char next = peekchar();
     if next == T_AMP {
         void* tkn = new_token(self, T_LOG_AND);
+        next_char(self); # consume
+        return tkn;
+    }
+    return new_token(self, c);
+}
+
+fn token_minus(void* self, char c) {
+    char next = peekchar();
+    if next == T_GT {
+        void* tkn = new_token(self, T_ARROW);
         next_char(self); # consume
         return tkn;
     }
@@ -525,6 +540,11 @@ fn convert_keyword(void* token) {
         kw = KW_RETURN;
         type = T_KW_RETURN;
         if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c == 's' {
+        if to_keyword(token, name, KW_STRUCT, T_KW_STRUCT) { return; }
+        if to_keyword(token, name, KW_SIZEOF, T_KW_SIZEOF) { return; }
         return;
     }
     if c == 't' {

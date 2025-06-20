@@ -5,6 +5,9 @@
 int T_KW_BOOL;
 int T_KW_CHAR;
 
+int AST_TYPE_BOOL;
+int AST_TYPE_CHAR;
+
 # struct Symbol {
 #   int width       ; byte width of a value - ick!
 #   int nptr        ; number of pointer indirections
@@ -17,8 +20,10 @@ int T_KW_CHAR;
 pub fn Symbol__new(int type, int nptr) {
     int s = malloc(0x20);
     int width = 0x8;
-    if type == T_KW_BOOL { width = 0x1; }
-    if type == T_KW_CHAR { width = 0x1; }
+    if type == T_KW_BOOL     { width = 0x1; }
+    if type == T_KW_CHAR     { width = 0x1; }
+    if type == AST_TYPE_BOOL { width = 0x1; }
+    if type == AST_TYPE_CHAR { width = 0x1; }
     *s = width;
     s = s + 0x8;                    # -> nptr
     *s = nptr;

@@ -3,6 +3,35 @@ set -e
 
 cd "$(dirname "$0")"
 
+ACTION="doc"
+if [ "$1" = "-u" ]; then
+    ACTION="undoc"
+    shift
+fi
+if [ "$1" = "--undoc" ]; then
+    ACTION="undoc"
+    shift
+fi
+
+DOC_FILE=documentation/docs/system/johandoc.md
+if [ "$ACTION" = "doc" ]; then
+    {
+        cat << EOF
+# Compiler Docs
+
+Below are the generated docs for the compiler's internals. Not that much is
+documented, but searching just declarations has advantages over searching the
+full sources.
+EOF
+        # globs are case-sensitive. :/
+        for f in $(ls jnc/*.jn | sort -df); do
+            echo "\n<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->\n"
+        done
+    } > $DOC_FILE
+else
+    rm -f $DOC_FILE
+fi
+
 for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
     echo "processing $DOC_FILE"
     THRU=0
@@ -15,7 +44,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         THRU=$(( THRU + LINE - 1 ))
         FILE=$(head -n $THRU $DOC_FILE | tail -n1 | cut -d '{' -f 2 | cut -d : -f 2 | cut -d '}' -f 1)
         STEM=$(echo "$FILE" | rev | cut -d / -f 1 | rev | cut -d . -f 1)
-        echo "  documenting '$STEM' (from $FILE)"
+        echo "  ${ACTION}umenting '$STEM' (from $FILE)"
         END_LINE=$(tail -n +$THRU $DOC_FILE | grep -En '<!--[{]/johanndoc(:.*)?[}]-->' | head -n 1 | cut -d : -f 1)
         if [ -z "$END_LINE" ]; then
             echo "File '$FILE' opened line $THRU is never closed"
@@ -28,35 +57,37 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         fi
         {
             head -n $THRU $DOC_FILE
-            echo
-            echo '### `'"$STEM"'`'
-            echo
-            DOC=""
-            do_file=yes
-            while IFS= read -r line; do
-                if [ "$line" = "#" ]; then
-                    DOC="$DOC\n\n"
-                    continue
-                elif [[ "$line" =~ ^#.* ]]; then
-                    if [ -n "$DOC" ]; then
-                        DOC="$DOC "
-                    fi
-                    DOC="$DOC${line:2}"
-                    continue
-                elif [[ "$line" =~ ^pub ]]; then
-                    line=$(echo "$line" | cut -d '{' -f 1 | cut -d ';' -f 1)
-                    if ! echo "$line" | grep -F '_(' > /dev/null; then
-                        echo '* `'"$line"'`'" - $DOC"
-                    fi
-                    do_file=nope
-                elif [[ "$do_file" = "yes" ]]; then
-                    echo "$DOC"
-                    echo
-                    do_file=nope
-                fi
+            if [ "$ACTION" = "doc" ]; then
+                echo
+                echo '## `'"$STEM"'`'
+                echo
                 DOC=""
-            done < "$FILE"
-            echo
+                do_file=yes
+                while IFS= read -r line; do
+                    if [ "$line" = "#" ]; then
+                        DOC="$DOC\n\n"
+                        continue
+                    elif [[ "$line" =~ ^#.* ]]; then
+                        if [ -n "$DOC" ]; then
+                            DOC="$DOC "
+                        fi
+                        DOC="$DOC${line:2}"
+                        continue
+                    elif [[ "$line" =~ ^pub ]]; then
+                        line=$(echo "$line" | cut -d '{' -f 1)
+                        if ! echo "$line" | grep -F '_(' > /dev/null; then
+                            echo '`'"$line"'`'"\n\n: $DOC\n"
+                        fi
+                        do_file=nope
+                    elif [[ "$do_file" = "yes" ]]; then
+                        echo "$DOC"
+                        echo
+                        do_file=nope
+                    fi
+                    DOC=""
+                done < "$FILE"
+                echo
+            fi
             echo "<!--{/johanndoc:$FILE}-->"
             tail -n +$(( THRU + END_LINE )) $DOC_FILE
         } > tmp.md
@@ -64,6 +95,14 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
     done
 done
 
+if [ "$ACTION" = "undoc" ]; then
+    exit
+fi
+
+JNC=./jnc/target/bin/jnc
+if [ ! -f "$JNC" ]; then
+    make -C jnc all
+fi
 OUT=target/out
 mkdir -p "$OUT"
 echo "pub char* GREETING = \"Hello, world!\";" > $OUT/fixtures.jn
@@ -73,7 +112,7 @@ cat > $OUT/fixtures.jn << EOF
         return a + b;
     }
 EOF
-./bin/jnc < $OUT/fixtures.jn > $OUT/fixtures.s
+$JNC < $OUT/fixtures.jn > $OUT/fixtures.s
 gcc -o $OUT/fixtures.o -c $OUT/fixtures.s
 for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`; do
     DOC_FILE=$(echo $BLOCK | cut -d : -f 1)
@@ -91,7 +130,7 @@ for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`
         echo "}" >> ${ROOT}.p.jn
         mv ${ROOT}.p.jn ${ROOT}.jn
     fi
-    ./bin/jnc < ${ROOT}.jn > ${ROOT}.s
+    $JNC < ${ROOT}.jn > ${ROOT}.s
     if grep -F 'fn main' ${ROOT}.jn > /dev/null; then
         gcc -o ${ROOT}.out ${ROOT}.s ./lib/jstdlib.o $OUT/fixtures.o
         echo "goober!" | ./${ROOT}.out

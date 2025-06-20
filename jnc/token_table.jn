@@ -1,39 +1,63 @@
+# I hold the lexer's token table
+
+##################################################
 # value token types (0x100)
+
 pub int T_BOOL      = 0x162; # 0x100 + 'b';
 pub int T_CHAR      = 0x163; # 0x100 + 'c';
 pub int T_ID        = 0x169; # 0x100 + 'i';
 pub int T_INT       = 0x16e; # 0x100 + 'n';  # not 'i'
 pub int T_STRING    = 0x173; # 0x100 + 's';
+
+##################################################
 # literal keywords never become tokens, they become value tokens.
+
+##################################################
 # flow control keywords (0x300)
+
 pub int T_KW_AGAIN  = 0x341; # 0x300 + 'A';
 pub int T_KW_DONE   = 0x344; # 0x300 + 'D';
 pub int T_KW_IF     = 0x349; # 0x300 + 'I';
 pub int T_KW_RETURN = 0x352; # 0x300 + 'R';
 pub int T_KW_WHILE  = 0x357; # 0x300 + 'W';
+
+##################################################
 # type keywords (0x400)
+
 pub int T_KW_BOOL   = 0x442; # 0x400 + 'B';
 pub int T_KW_CHAR   = 0x443; # 0x400 + 'C';
 pub int T_KW_INT    = 0x449; # 0x400 + 'I';
+pub int T_KW_SIZEOF = 0x453; # 0x400 + 'S';
 pub int T_KW_VOID   = 0x456; # 0x400 + 'V';
+
+##################################################
 # definition keywords (0x4500)
+
 pub int T_KW_CONST  = 0x543; # 0x500 + 'C';
 pub int T_KW_FN     = 0x546; # 0x500 + 'F';
 pub int T_KW_LET    = 0x54c; # 0x500 + 'L';
 pub int T_KW_PUB    = 0x550; # 0x500 + 'P';
+pub int T_KW_STRUCT = 0x553; # 0x500 + 'S';
+
+##################################################
 # compound tokens (0x200)
+
 pub int T_EQ        = 0x23d; # 0x200 + '=';
 pub int T_GTE       = 0x23e; # 0x200 + '>';
 pub int T_LOG_AND   = 0x226; # 0x200 + '&';
 pub int T_LOG_OR    = 0x27c; # 0x200 + '|';
 pub int T_LTE       = 0x23c; # 0x200 + '<';
 pub int T_NEQ       = 0x221; # 0x200 + '!';
+pub int T_ARROW     = 0x261; # 0x200 + 'a';
 pub int T_MINUS_ASSIGN   = 0x22d; # 0x200 + '-';
 pub int T_PERCENT_ASSIGN = 0x225; # 0x200 + '%';
 pub int T_PLUS_ASSIGN    = 0x22b; # 0x200 + '+';
 pub int T_SLASH_ASSIGN   = 0x22f; # 0x200 + '/';
 pub int T_STAR_ASSIGN    = 0x22a; # 0x200 + '*';
+
+##################################################
 # ambiguous character tokens (ASCII, for now)
+
 pub int T_AMP       = '&';
 pub int T_ASSIGN    = '=';
 pub int T_BANG      = '!';
@@ -44,7 +68,10 @@ pub int T_PERCENT   = '%';
 pub int T_PLUS      = '+';
 pub int T_SLASH     = '/';
 pub int T_STAR      = '*';
+
+##################################################
 # simple character tokens (ASCII)
+
 pub int T_CBRACE    = '}';
 pub int T_CBRACKET  = ']';
 pub int T_COLON     = ':';
@@ -58,6 +85,9 @@ pub int T_OPAREN    = '(';
 pub int T_PIPE      = '|';
 pub int T_QUESTION  = '?';
 pub int T_SEMI      = ';';
+
+##################################################
 # punctuation
+
 pub int T_SQUOTE    = 0x27;         # no escapes (yet)
 pub int T_DQUOTE    = '"';

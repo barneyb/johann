@@ -1,0 +1,39 @@
+void nil = null;
+
+struct Cell {
+    void car,
+    void cdr
+}
+
+pub fn main() {
+    Cell* l = cons(3, cons(2, cons(1, nil)));
+    dump(l);
+    drop(l);
+}
+
+fn cons(void car, Cell* tail) {
+#    return new Cell {
+#        car,
+#        cdr: tail
+#    };
+    Cell* l = malloc(sizeof(Cell));
+    l.car = car;
+    l.cdr = tail;
+    return l;
+}
+
+fn dump(Cell* list) {
+    int i = 0;
+    while list != nil {
+        printf("[%i]: %i\n", i, list.car);
+        list = list.cdr;
+        i = i + 1;
+    }
+    printf("%i element(s)\n", i);
+}
+
+fn drop(Cell* list) {
+    if list == nil { return; }
+    drop(list.cdr);
+    free(list);
+}

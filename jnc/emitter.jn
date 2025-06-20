@@ -1,39 +1,20 @@
 int T_AMP;
-int T_ASSIGN;
 int T_BANG;
-int T_BOOL;
-int T_CBRACE;
 int T_CHAR;
-int T_COMMA;
-int T_CPAREN;
 int T_EQ;
 int T_GT;
 int T_GTE;
-int T_ID;
-int T_INT;
-int T_KW_AGAIN;
-int T_KW_BOOL;
-int T_KW_CHAR;
-int T_KW_DONE;
 int T_KW_FN;
 int T_KW_IF;
-int T_KW_INT;
-int T_KW_PUB;
-int T_KW_RETURN;
-int T_KW_VOID;
 int T_KW_WHILE;
 int T_LT;
 int T_LTE;
 int T_MINUS;
 int T_NEQ;
-int T_OBRACE;
-int T_OPAREN;
 int T_PERCENT;
 int T_PLUS;
-int T_SEMI;
 int T_SLASH;
 int T_STAR;
-int T_STRING;
 
 char* JNC_SHORT_VERSION;
 
@@ -41,67 +22,61 @@ int AST_ADDR_OP;
 int AST_AGAIN;
 int AST_ASSIGN;
 int AST_BINARY;
-int AST_BOOL;
 int AST_CALL;
-int AST_CHAR;
 int AST_DONE;
 int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
-int AST_INT;
-int AST_NAMETYPE;
+int AST_LIT_BOOL;
+int AST_LIT_CHAR;
+int AST_LIT_INT;
+int AST_LIT_STRING;
+int AST_MEMBER;
 int AST_RETURN;
-int AST_STRING;
 int AST_UNARY;
-int AST_VAR;
 int AST_WHILE;
 
-pub bool IS_PUB = false; # this is just ridiculous
-
-char* ERR_BAD_OPERATOR      = "ERROR(%i): Bad operator %x at line %i, char %i\n";
-char* ERR_NONLOCAL_PARAM    = "ERROR(%i): non-local param (%x) at line %i, char %i\n";
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
 char* ERR_UNKNOWN_SYMBOL    = "ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
 char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, char %i\n";
-char* ERR_BAD_STMT          = "ERROR(%i): Bad statement %x at line %i, char %i\n";
+
+char* NAME_MAIN = "main";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
+char* TMPL_GLOBAL               = ".global __j_%s\n";
+char* TMPL_GLOBAL_MAIN          = ".global _main\n";
+char* TMPL_MAIN                 = "    _main:\n        bl      __j_main\n        b       __j_exit\n\n";
 
-char* TMPL_GLOBAL_PUB           = "    .global _j_gbl_%s\n";
 char* WIDTH_BYTE   = ".byte";
 char* WIDTH_QUAD   = ".quad";
-char* TMPL_GLOBAL_NUM           = "    .data\n        _j_gbl_%s: %s %i\n    .text\n";
-char* TMPL_GLOBAL_CHAR          = "    .data\n        _j_gbl_%s: %s '%c'\n    .text\n";
-char* TMPL_GLOBAL_STRING        = "    .data\n        _j_gbl_%s: .asciz %c%s%c\n    .text\n";
+char* TMPL_GLOBAL_NUM           = "    .data\n        __j_%s: %s %i\n    .text\n";
+char* TMPL_GLOBAL_CHAR          = "    .data\n        __j_%s: %s '%c'\n    .text\n";
+char* TMPL_GLOBAL_STRING        = "    .data\n        __j_%s: .asciz %c%s%c\n    .text\n";
 
 char* TMPL_FN_ARG               = "        str     x%i, [fp, -%x]\n";
-
-char* TMPL_FN_PUB               = "    .global __j_%s\n";
 char* TMPL_FN_INTRO             = "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n            ; todo: this is enough space for the same 8 locals as before\n            sub sp, sp, 0x40\n";
-
-char* TMPL_MAIN                 = "    .global _main\n    _main:\n        bl      __j_main\n        b       __j_exit\n\n";
-
 char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\n            ; todo: this was enough space for the same 8 locals as before\n            add sp, sp, 0x40\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
-char* TMPL_IF_OUTRO             = "        if_%i_done:\n";
-char* TMPL_WHILE_OUTRO          = "        b     while_%i_again\n        while_%i_done:\n";
 
 char* TMPL_RETURN               = "        b       _return_%i\n";
 
 char* TMPL_IF_INTRO             = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+char* TMPL_IF_OUTRO             = "        if_%i_done:\n";
 
 char* TMPL_WHILE_PRELUDE        = "        while_%i_again:\n";
 char* TMPL_WHILE_INTRO          = "        cmp     x0, FALSE\n        b.eq    while_%i_done\n";
 char* TMPL_WHILE_AGAIN          = "        b       while_%i_again\n";
 char* TMPL_WHILE_DONE           = "        b       while_%i_done\n";
+char* TMPL_WHILE_OUTRO          = "        b     while_%i_again\n        while_%i_done:\n";
 
 char* TMPL_ASSIGN_LOCAL         = "        str     x0, [fp, -%x]\n";
-char* TMPL_ASSIGN_GLOBAL_BYTE   = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n        strb    w0, [x7]\n";
-char* TMPL_ASSIGN_GLOBAL_QUAD   = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n        str     x0, [x7]\n";
+char* TMPL_ASSIGN_GLOBAL_BYTE   = "        adrp    x7, __j_%s@PAGE\n        add     x7, x7, __j_%s@PAGEOFF\n        strb    w0, [x7]\n";
+char* TMPL_ASSIGN_GLOBAL_QUAD   = "        adrp    x7, __j_%s@PAGE\n        add     x7, x7, __j_%s@PAGEOFF\n        str     x0, [x7]\n";
 
 char* TMPL_GET_ADDR_LOCAL       = "        ldr     x7, [fp, -%x]\n";
-char* TMPL_GET_ADDR_GLOBAL      = "        adrp    x7, _j_gbl_%s@PAGE\n        add     x7, x7, _j_gbl_%s@PAGEOFF\n";
+char* TMPL_GET_ADDR_GLOBAL      = "        adrp    x7, __j_%s@PAGE\n        add     x7, x7, __j_%s@PAGEOFF\n";
+char* TMPL_GET_ADDR_MEMBER      = "        add     x7, x7, %i\n";
 char* TMPL_ASSIGN_PTR_BYTE      = "        strb    w0, [x7]\n";
 char* TMPL_ASSIGN_PTR_QUAD      = "        str     x0, [x7]\n";
 
@@ -109,6 +84,8 @@ char* TMPL_CALL_PARAM           = "        ldr     x%i, [fp, -%x]\n";
 char* TMPL_CALL                 = "        bl      __j_%s\n";
 char* TMPL_CALL_PTR_INTRO       = "        str     x0, [sp, -0x10]!\n";
 char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr     x16\n";
+char* TMPL_READ_MEMBER_QUAD     = "        ldr     x0, [x0, %x]\n";
+char* TMPL_READ_MEMBER_BYTE     = "        ldrb    w0, [x0, %x]\n";
 
 char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
@@ -138,7 +115,7 @@ char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 
 # "add-a-negative" so it matches the addressing offsets
 char* TMPL_ADDR_LOCAL           = "        add     x0, fp, -%x\n";
-char* TMPL_ADDR_GLOBAL          = "        adrp    x0, _j_gbl_%s@PAGE\n        add     x0, x0, _j_gbl_%s@PAGEOFF\n";
+char* TMPL_ADDR_GLOBAL          = "        adrp    x0, __j_%s@PAGE\n        add     x0, x0, __j_%s@PAGEOFF\n";
 char* TMPL_ADDR_FN              = "        adrp    x0, __j_%s@PAGE\n        add     x0, x0, __j_%s@PAGEOFF\n";
 
 char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
@@ -280,6 +257,14 @@ fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool
     jnc_panic(name, t, depth);
 }
 
+pub fn Emitter_mark_global(void* nameT) {
+    char* name = Token_value(nameT);
+    printf(TMPL_GLOBAL, name);
+    if strcmp(NAME_MAIN, name) == 0 {
+        printf(TMPL_GLOBAL_MAIN);
+    }
+}
+
 pub fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
     char* name = Token_value(nameT);
     void* symbols = decl_symbols(self, nameT);
@@ -341,12 +326,9 @@ pub fn Emitter_do_decl(void* self, void* nameT, int type, int nptr, void* expr) 
 
 fn decl_global(void* self, void* nameT, void* expr, void* symbol) {
     char* name = Token_value(nameT);
-    if IS_PUB {
-        printf(TMPL_GLOBAL_PUB, name);
-    }
     int type = *expr;
     # strings are easy, storage and value must both be strings
-    if type == AST_STRING {
+    if type == AST_LIT_STRING {
         expr = expr + 0x8;          # -> value
         return decl_global_string(self, name, *expr);
     }
@@ -394,16 +376,9 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
     if args == null { return; }
     int reg_offset = 0;
     while true {
-        void name_and_type = *args;
-        if name_and_type == null { done; }
-        nameT = name_and_type + 0x8;
-        nameT = *nameT;
-        int type = name_and_type + 0x10;
-        type = *type;
-        int nptr = name_and_type + 0x18;
-        nptr = *nptr;
-        Emitter_vardecl(self, nameT, type, nptr);
-        read_fn_arg(self, nameT, reg_offset);
+        if *args == null { done; }
+        int offset = (reg_offset + 1) * 0x8;
+        printf(TMPL_FN_ARG, reg_offset, offset);
         reg_offset = reg_offset + 1;
         args = args + 0x8;
     }
@@ -430,21 +405,11 @@ fn fn_symbol(void* self, char* name) {
     }
 }
 
-fn read_fn_arg(void* self, void* token, int reg_offset) {
-    void* symbol = Emitter_lookup_symbol_for(self, token);
-    int offset = Symbol_offset(symbol);
-    offset = offset * 0x8;
-    printf(TMPL_FN_ARG, reg_offset, offset);
-}
-
 fn introduce_fn(void* self, char* name) {
     int kw = T_KW_FN;
     Emitter_enter_block(self, kw);
-    if IS_PUB {
-        if strcmp("main", name) == 0 {
-            printf(TMPL_MAIN);
-        }
-        printf(TMPL_FN_PUB, name);
+    if strcmp(NAME_MAIN, name) == 0 {
+        printf(TMPL_MAIN);
     }
     printf(TMPL_FN_INTRO, name);
 }
@@ -523,9 +488,7 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     char* tmpl;
     if offset > 0 {
         # local
-        tmpl = TMPL_ASSIGN_LOCAL;
-        offset = offset * 0x8;
-        return printf(tmpl, offset);
+        return printf(TMPL_ASSIGN_LOCAL, offset * 0x8);
     }
     # global
     char* name = Token_value(nameT);
@@ -539,28 +502,48 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     printf(tmpl, name, name);
 }
 
-pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
-    Emitter_eval_expr(self, expr);
+# [AST_MEMBER, rcvr, offset, width]
+pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
+    member = member + 0x8;          # -> rcvr
+    void* rcvr = *member;
+    rcvr = rcvr + 0x8;              # -> nameT - guaranteed to be AST_ID
+    get_symbol_with_addr_in_x7(self, *rcvr);
 
-    # compute address
+    member = member + 0x8;          # -> offset
+    printf(TMPL_GET_ADDR_MEMBER, *member);
+
+    member = member + 0x8;          # -> width
+    char* tmpl = TMPL_ASSIGN_PTR_QUAD;
+    if *member == 1 {
+        tmpl = TMPL_ASSIGN_PTR_BYTE;
+    }
+
+    Emitter_eval_expr(self, expr);
+    printf(tmpl);
+}
+
+fn get_symbol_with_addr_in_x7(void* self, void* nameT) {
     void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
-    char* tmpl;
     if offset > 0 {
         # local
-        tmpl = TMPL_GET_ADDR_LOCAL;
-        offset = offset * 0x8;
-        printf(tmpl, offset);
+        printf(TMPL_GET_ADDR_LOCAL, offset * 0x8);
     }
     if offset <= 0 {
         # global
-        tmpl = TMPL_GET_ADDR_GLOBAL;
         char* name = Token_value(nameT);
-        printf(tmpl, name, name);
+        printf(TMPL_GET_ADDR_GLOBAL, name, name);
     }
+    return symbol;
+}
+
+pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) {
+    Emitter_eval_expr(self, expr);
+
+    void* symbol = get_symbol_with_addr_in_x7(self, nameT);
 
     # now write to address
-    tmpl = TMPL_ASSIGN_PTR_BYTE;
+    char* tmpl = TMPL_ASSIGN_PTR_BYTE;
     int n = Symbol_width(symbol);
     if n != 1 {
         tmpl = TMPL_ASSIGN_PTR_QUAD;
@@ -576,9 +559,9 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     int t = *expr;
     int v = expr + 0x8;             # -> val
     v = *v;
-    if t == AST_BOOL { return v; }
-    if t == AST_CHAR { return v; }
-    if t == AST_INT { return v; }
+    if t == AST_LIT_BOOL { return v; }
+    if t == AST_LIT_CHAR { return v; }
+    if t == AST_LIT_INT { return v; }
 
     char* f = "Expr type %i isn't constant.\n";
     printf(f, t);
@@ -589,22 +572,22 @@ pub fn Emitter_eval_const(void* self, void* expr) {
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
     int t = *expr;
-    if t == AST_BOOL { # [AST_BOOL, val, null, null]
+    if t == AST_LIT_BOOL { # [AST_LIT_BOOL, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_CHAR { # [AST_CHAR, val, null, null]
+    if t == AST_LIT_CHAR { # [AST_LIT_CHAR, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_INT { # [AST_INT, val, null, null]
+    if t == AST_LIT_INT { # [AST_LIT_INT, val]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_integer(self, expr);
     }
-    if t == AST_STRING { # [AST_STRING, value, null, null]
+    if t == AST_LIT_STRING { # [AST_LIT_STRING, value]
         expr = expr + 0x8;          # -> val
         expr = *expr;
         return Emitter_do_value_string(self, expr);
@@ -612,23 +595,31 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     if t == AST_BINARY { # [AST_BINARY, op, left, right]
         return Emitter_eval_expr_binary(self, expr);
     }
-    if t == AST_UNARY { # [AST_UNARY, op, operand, null]
+    if t == AST_UNARY { # [AST_UNARY, op, operand]
         return Emitter_eval_expr_unary(self, expr);
     }
-    if t == AST_ADDR_OP { # [AST_ADDR_OP, op, nameT, null]
+    if t == AST_ADDR_OP { # [AST_ADDR_OP, op, nameT]
         return Emitter_eval_expr_addr(self, expr);
     }
-    if t == AST_ID { # [AST_ID, nameT, null, null]
+    if t == AST_ID { # [AST_ID, nameT]
         expr = expr + 0x8;          # -> nameT
         expr = *expr;
         return Emitter_do_value_id(self, expr);
     }
-    if t == AST_CALL { # [AST_CALL, rcvr, args[], null]
-        void* rcvr = expr + 0x8;    # -> rcvr
-        rcvr = *rcvr;
+    if t == AST_CALL { # [AST_CALL, callee, args[]]
+        void* callee = expr + 0x8;  # -> callee
+        callee = *callee;
         void* args = expr + 0x10;   # -> args
         args = *args;
-        return Emitter_do_call_but_sillier(self, rcvr, args);
+        return Emitter_do_call_but_sillier(self, callee, args);
+    }
+    if t == AST_MEMBER { # [AST_MEMBER, rcvr, offset, width]
+        expr = expr + 0x8;          # -> rcvr
+        void* rcvr = *expr;
+        expr = expr + 0x8;          # -> offset
+        int offset = *expr;
+        expr = expr + 0x8;          # -> width
+        return Emitter_do_read_member(self, rcvr, offset, *expr);
     }
 
     char* f = "Can't eval expr of type %i\n";
@@ -638,12 +629,18 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     panic(t);
 }
 
-# [AST_CALL, rcvr, args[], null]
-fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
-    void* nameT = rcvr + 0x8;       # -> nameT
+fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {
+    Emitter_eval_expr(self, rcvr);
+    if width == 1 {
+        return printf(TMPL_READ_MEMBER_BYTE, offset);
+    }
+    printf(TMPL_READ_MEMBER_QUAD, offset);
+}
+
+fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
+    void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
     void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
-    char* tmpl;
     if symbol != null {
         # function pointer - do setup first, as it corrupts x0
         do_address_of(self, nameT, symbol);
@@ -651,21 +648,17 @@ fn Emitter_do_call_but_sillier(void* self, void* rcvr, void* args) {
         if nptr > 0 {
             do_load_addr(self, nameT, symbol);
         }
-        tmpl = TMPL_CALL_PTR_INTRO;
-        printf(tmpl);
+        printf(TMPL_CALL_PTR_INTRO);
     }
 
     call_params_but_sillier(self, args);
 
     if symbol != null {
         # call the function pointer
-        tmpl = TMPL_CALL_PTR;
-        return printf(tmpl);
+        return printf(TMPL_CALL_PTR);
     }
     # anonymous - hope it's there!
-    tmpl = TMPL_CALL;
-    char* name = Token_value(nameT);
-    printf(tmpl, name);
+    printf(TMPL_CALL, Token_value(nameT));
 }
 
 fn call_params_but_sillier(void* self, void* args) {
@@ -727,7 +720,7 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     panic(op);
 }
 
-# [AST_ADDR_OP, op, nameT, null]
+# [AST_ADDR_OP, op, nameT]
 fn Emitter_eval_expr_addr(void* self, void* expr) {
     void* nameT = expr + 0x10;      # -> nameT
     nameT = *nameT;
@@ -748,7 +741,7 @@ fn Emitter_eval_expr_addr(void* self, void* expr) {
     panic(op);
 }
 
-# [AST_UNARY, op, operand, null]
+# [AST_UNARY, op, operand]
 fn Emitter_eval_expr_unary(void* self, void* expr) {
     void* operand = expr + 0x10;    # -> operand
     operand = *operand;
@@ -827,37 +820,24 @@ fn Emitter_do_value_id(void* self, void* t) {
 
 fn do_address_of(void* self, void* token, void* symbol) {
     int offset = Symbol_offset(symbol);
-    char* tmpl;
     if offset > 0 {
         # local
-        tmpl = TMPL_ADDR_LOCAL;
         offset = offset * 0x8;
-        return printf(tmpl, offset);
+        return printf(TMPL_ADDR_LOCAL, offset);
     }
     # global
-    int type = Symbol_type(symbol);
-    if type == T_KW_FN {
-        tmpl = TMPL_ADDR_FN;
-    }
-    if type != T_KW_FN {
-        tmpl = TMPL_ADDR_GLOBAL;
-    }
     char* name = Token_value(token);
-    printf(tmpl, name, name);
+    printf(TMPL_ADDR_GLOBAL, name, name);
 }
 
 fn do_load_addr(void* self, void* token, void* symbol) {
-    char* tmpl;
     int width = Symbol_width(symbol);
     if width != 1 {
-        tmpl = TMPL_QUAD_AT_ADDR;
-        return printf(tmpl);
+        return printf(TMPL_QUAD_AT_ADDR);
     }
     int nptr = Symbol_nptr(symbol);
     if nptr > 1 {
-        tmpl = TMPL_QUAD_AT_ADDR;
-        return printf(tmpl);
+        return printf(TMPL_QUAD_AT_ADDR);
     }
-    tmpl = TMPL_BYTE_AT_ADDR;
-    printf(tmpl);
+    printf(TMPL_BYTE_AT_ADDR);
 }

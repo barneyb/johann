@@ -12,41 +12,38 @@
   ]
 }
 
-program ::= ( ( "pub" )? ( global_declaration | function_declaration ) )*
-global_declaration ::= vardecl_
-function_declaration ::= "fn" ID "(" parameter_list? ")" /*( "->" type )?*/ ( ";" | block )
-private vardecl_ ::= type_and_name opt_assign
-//                   | "let" name_and_type variable_initializer
-//                   | "const" name_and_type variable_initializer
-private type_and_name ::= type ( "*" )* ID
-private opt_assign ::= ( "=" expr )? ";"
-//name_and_type ::= ID ":" type
-private parameter_list ::= type_opt_name ( "," type_opt_name )*
-private type_opt_name ::= type ( "*" )* ( ID )?
-private type ::= "bool"
-               | "char"
-               | "int"
-               | "void"
-//       | "(" type_list ")" "->" type
-//type_list ::= type ( "," type )*
-private block ::= "{" statement* "}"
-statement ::= vardecl_
-            | "if" expr block /*( "else" block )?*/
-            | "while" expr block
-            | "done" ";"
-            | "again" ";"
-            | "return" expr ";"
-            | unary_expr assign_op expr ";"
-            | expr ";"
-//            | block
-            | ";"
+program_ ::= ( declaration_ )*
+private declaration_ ::= ( "pub" )? ( global_declaration
+                                    | function_declaration
+                                    | struct_declaration
+                                    )
+global_declaration ::= variable_declaration
+function_declaration ::= "fn" ID parameter_list /*( "->" type )?*/ ( ";" | block_ )
+struct_declaration ::= "struct" ID ( "{" member_declaration ( "," member_declaration )* ("," )? "}" )? ";"? // semi is permitted, but not required
+member_declaration ::= type_spec ID
+private type_spec ::= ID ( "*" )*
+private variable_declaration ::= type_spec ID ( "=" expr_ )? ";"
+private parameter_list ::= "(" ( type_opt_name ( "," type_opt_name )* )? ")"
+private type_opt_name ::= type_spec ( ID )?
+private block_ ::= "{" block_item* "}"
+block_item ::= variable_declaration
+             | struct_declaration
+             | "if" expr_ block_ /*( "else" block )?*/
+             | "while" expr_ block_
+             | "done" ";"
+             | "again" ";"
+             | "return" expr_ ";"
+             | unary_expr assign_op expr_ ";"
+             | expr_ ";"
+//             | block_
+             | ";"
 assign_op ::= "=" //| "+=" | "-=" | "*=" | "/=" | "%="
 
 /* Recursive descent is not ideal here, but it's straightforward to hand-code.
  * At the moment, matching the implementation is more useful than an efficient
  * (hypothetical) IDE.
  */
-expr ::= cond_expr
+expr_ ::= cond_expr
 
 private cond_expr ::= lor_expr // ( "?" expr ":" cond_expr )?
 
@@ -71,26 +68,27 @@ private add_expr ::= mult_expr ( ( "+" | "-" ) mult_expr )*
 private mult_expr ::= cast_expr ( ( "*" | "/" | "%" ) cast_expr )*
 
 private cast_expr ::= unary_expr
-//                    | "(" type ")" cast_expr
+//                    | "(" type_spec ")" cast_expr
 
 private unary_expr ::= postfix_expr
-//                     | inc_op unary_expr
                      | un_op cast_expr
-//                     | "sizeof" "(" type ")"
-private un_op ::= "-" | "+" | "!" | "*" | "&"
-//private inc_op ::= "++" | "--"
+                     | "sizeof" "(" type_spec ")"
+//                     | "sizeof" expr_
+private un_op ::= "-" | "+" | "!" | "*" | "&" // | "~"
 
-private postfix_expr ::= primary_expr (
-                             "(" argument_list? ")"
-//                             | "[" expr "]"
-//                             | "." ID // todo: obj.method().another().field?
-//                             | inc_op
-                         )*
-private argument_list ::= expr ( "," expr )*
+private postfix_expr ::= primary_expr ( argument_list
+                                      | "." ID
+//                                      | "[" expr_ "]"
+                                      )*
+private argument_list ::= "(" ( expr_ ( "," expr_ )* )? ")"
 
 private primary_expr ::= ID
                        | CHAR
-                       | INT_DEC | INT_HEX | "0"
+                       | const_
                        | STRING
                        | "true" | "false"
-                       | "(" expr ")"
+                       | "(" expr_ ")"
+
+private const_ ::= INT_DEC
+                 | INT_HEX
+                 | "0"

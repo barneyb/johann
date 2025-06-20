@@ -37,7 +37,7 @@ Fix globals to use their declared width. Improve reporting of memory errors.
 
 ### `v0.20250525`
 
-Recycle freed memory, and get more from the OS as needed. Introduce `pub` to make symbols available globally.
+Recycle freed memory, and get more from the OS as needed. Introduce `pub` to make symbols available to other compilation units.
 
 ### `v0.20250524`
 

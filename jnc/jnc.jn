@@ -1,6 +1,16 @@
 char* JNC_SHORT_VERSION;
 char* JNC_LONG_VERSION;
 
+char* KW_BOOL;
+char* KW_CHAR;
+char* KW_INT;
+char* KW_VOID;
+
+int AST_TYPE_BOOL;
+int AST_TYPE_CHAR;
+int AST_TYPE_INT;
+int AST_TYPE_VOID;
+
 char* OPT_V = "-v";
 char* OPT_VERSION = "--version";
 
@@ -28,22 +38,27 @@ pub fn main(int argc, char** argv) {
     return jnc_compile();
 }
 
+pub void ENV = null;
+
 fn jnc_compile() {
+    ENV = Env__new(null);
+    Env_seed_type(ENV, KW_BOOL, ast1(AST_TYPE_BOOL));
+    Env_seed_type(ENV, KW_CHAR, ast1(AST_TYPE_CHAR));
+    Env_seed_type(ENV, KW_INT , ast1(AST_TYPE_INT));
+    Env_seed_type(ENV, KW_VOID, ast1(AST_TYPE_VOID));
     void* lex = Lexer__new();
-    void* emitter = Emitter__new();
-
-    parse_program(lex, emitter);
-#    void* parser = Parser__new(lex);
-#
-#    Parser_parse(parser);
-#
-#    Parser_drop(parser);
-
-    Emitter_drop(emitter);
+    void* ast = parse_program(lex);
     Lexer_drop(lex);
+
+    void* emitter = Emitter__new();
+    to_emitter(emitter, ast);
+    drop_ast(ast);
+    Emitter_drop(emitter);
+    Env_drop(ENV);
 }
 
-# token is a [val, line, char] tuple to dissect for the format
+# `token` is a `[val, line, col]` tuple to dissect for the format, which will
+# be passed four values: `status`, `val`, `line`, and `col`;
 pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
     int val = *token;

@@ -6,11 +6,12 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
-	$(OUT)/a_syntactic_menagerie.s \
+	$(LIB)/a_syntactic_menagerie.o \
 	collatz \
 	constants \
 	control_flow \
 	function_pointers \
+	lisp \
 	literals \
 	not_quite_lisp \
 	print_one \

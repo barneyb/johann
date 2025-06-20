@@ -32,6 +32,8 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `27` - Bad statement
 * `28` - Bad expression
 * `29` - Bad operator
+* `35` - Empty struct 
+* `36` - Duplicate struct member 
 * `37` - Certain types of invalid block nesting
 * `47` - Unrecognized format conversion spec for `printf`
 * `77` - Multibyte character
