@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Add `struct` declarations, and support variable declarations of struct types. A new `.` operator provides access to members of a pointed-to struct for both reading and writing. 
 
 ### `v0.20250613`
 

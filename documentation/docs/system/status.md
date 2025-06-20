@@ -72,9 +72,9 @@ flowchart TB
     end
     
     classDef partial stroke-width:0.5px,stroke-dasharray:5;
-    class idres,lbl,ins partial;
+    class idres,lbl,tc,ins partial;
     classDef future fill:none,stroke:#808080,stroke-width:0.5px,stroke-dasharray:5 5;
-    class sem,gen,tc,raz,const,noreach,dead,regalloc,temps,fixup future;
+    class sem,gen,raz,const,noreach,dead,regalloc,temps,fixup future;
     
     parse ---|AST| sem
     sem ---|AST| raz ---|RAZ| opt  ---|RAZ| gen
@@ -84,7 +84,7 @@ flowchart TB
     
     in -->|text| lex
     lex -->|tokens| parse
-    parse -->|"'stuff'"| emit ---->|Assembly| out
+    parse -->|AST| emit ---->|Assembly| out
     
     %% force unlinked subgraphs to lay out horizontally
     idres ~~~ tc ~~~ lbl
