@@ -18,7 +18,7 @@ This will print _exactly_ what you'd expect<sup>1</sup>:
 
     Hello, world!
 
-If you're intrigued (or mortified), https://barneyb.github.io/johann/ has additional info for human consumption. The sources are the definitive resource, of course.
+If you're intrigued (or mortified), [barneyb.github.io/johann/](https://barneyb.github.io/johann/) has additional info for human consumption. The sources are the definitive resource, of course.
 
 ---
 <sup>1</sup> If you start any computer programming project with something more complicated than printing 'Hello, world!', you've already introduced your first defect, even if you can't see it yet.

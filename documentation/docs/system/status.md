@@ -9,7 +9,7 @@
 - [x] compound expressions with precedence
 - [x] address-of and dereference operators
 - [x] function pointers
-- [ ] structs
+- [x] structs
 - [ ] typechecking
 - [ ] arrays (or at least array _types_)
 - [ ] blocks/scopes
@@ -19,8 +19,9 @@
 - [ ] bitwise operators
 - [ ] conditional/ternary operator
 - [ ] `+=` and friends
-- [ ] implicit types
+- [ ] implicit type declarations
 - [ ] `const` support
+- [ ] forward declarations
 - [ ] import/include
 - [ ] automatic memory management
 - [ ] `for` loops/iterators

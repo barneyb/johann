@@ -212,7 +212,7 @@ I am a binary tree-based map/dict ADT. Keys and values are arbitrary 64-bit valu
 
 These are still present, but should not be used. They'll be removed, eventually.
 
-## `io`
+### `io`
 
 * `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
 

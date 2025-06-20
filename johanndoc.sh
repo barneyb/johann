@@ -99,6 +99,10 @@ if [ "$ACTION" = "undoc" ]; then
     exit
 fi
 
+JNC=./jnc/target/bin/jnc
+if [ ! -f "$JNC" ]; then
+    make -C jnc all
+fi
 OUT=target/out
 mkdir -p "$OUT"
 echo "pub char* GREETING = \"Hello, world!\";" > $OUT/fixtures.jn
@@ -108,7 +112,7 @@ cat > $OUT/fixtures.jn << EOF
         return a + b;
     }
 EOF
-./bin/jnc < $OUT/fixtures.jn > $OUT/fixtures.s
+$JNC < $OUT/fixtures.jn > $OUT/fixtures.s
 gcc -o $OUT/fixtures.o -c $OUT/fixtures.s
 for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`; do
     DOC_FILE=$(echo $BLOCK | cut -d : -f 1)
@@ -126,7 +130,7 @@ for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`
         echo "}" >> ${ROOT}.p.jn
         mv ${ROOT}.p.jn ${ROOT}.jn
     fi
-    ./bin/jnc < ${ROOT}.jn > ${ROOT}.s
+    $JNC < ${ROOT}.jn > ${ROOT}.s
     if grep -F 'fn main' ${ROOT}.jn > /dev/null; then
         gcc -o ${ROOT}.out ${ROOT}.s ./lib/jstdlib.o $OUT/fixtures.o
         echo "goober!" | ./${ROOT}.out
