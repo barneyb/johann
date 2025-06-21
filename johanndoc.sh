@@ -105,9 +105,8 @@ if [ ! -f "$JNC" ]; then
 fi
 OUT=target/out
 mkdir -p "$OUT"
-echo "pub char* GREETING = \"Hello, world!\";" > $OUT/fixtures.jn
 cat > $OUT/fixtures.jn << EOF
-    pub char* GREETING = "Hello, world!";
+    pub char* GREETING = "Hello, world!\n";
     pub fn add(int a, int b) {
         return a + b;
     }

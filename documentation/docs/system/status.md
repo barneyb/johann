@@ -19,8 +19,11 @@
 - [ ] bitwise operators
 - [ ] conditional/ternary operator
 - [ ] `+=` and friends
-- [ ] implicit type declarations
+- [ ] implicit types in declarations
+- [ ] methods
 - [ ] `const` support
+- [ ] compound literals
+- [ ] traits
 - [ ] forward declarations
 - [ ] import/include
 - [ ] automatic memory management
