@@ -47,6 +47,11 @@ fn put_delete() {
     print_size(map);
     TreeMap_debug_(map);
 
+    TreeMap_delete(map, 4);
+    puts("With four removed:");
+    print_size(map);
+    TreeMap_debug_(map);
+
     TreeMap_drop(map);
     mem_stats__();
 }
