@@ -155,9 +155,9 @@ fn delete(void* self, void* curr, void key) {
         drop_node_only(self, curr);
         if left == null { return right; }
         if right == null { return left; }
-        # pull up the next-larger key
+        # interior node - replace with the next-larger key
         curr = min(right);
-        Node_set_right(curr, delete_min(self, right));
+        Node_set_right(curr, unlink_min(self, right));
         Node_set_left(curr, left);
     }
     return curr;
@@ -174,6 +174,13 @@ fn drop_node_only(void* self, void* n) {
     free(n);
 }
 
+pub fn TreeMap_min_key(void* self) {
+    self = self + 0x8;                # -> root
+    void* root = *self;
+    if root == null { return null; }
+    return Node_key(min(root));
+}
+
 # I return the minimum-keyed node in the subtree rooted at `curr`.
 fn min(void* curr) {
     void* left = Node_left(curr);
@@ -181,10 +188,24 @@ fn min(void* curr) {
     return min(left);
 }
 
-fn delete_min(void* self, void* curr) {
+pub fn TreeMap_max_key(void* self) {
+    self = self + 0x8;                # -> root
+    void* root = *self;
+    if root == null { return null; }
+    return Node_key(max(root));
+}
+
+# I return the maximum-keyed node in the subtree rooted at `curr`.
+fn max(void* curr) {
+    void* right = Node_right(curr);
+    if right == null { return curr; }
+    return max(right);
+}
+
+fn unlink_min(void* self, void* curr) {
     void* left = Node_left(curr);
     if left == null { return Node_right(curr); }
-    Node_set_left(curr, delete_min(self, left));
+    Node_set_left(curr, unlink_min(self, left));
     return curr;
 }
 

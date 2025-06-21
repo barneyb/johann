@@ -57,6 +57,26 @@ fn put_delete() {
     print_size(map);
     TreeMap_debug_(map);
 
+    int cutoff = TreeMap_size(map) / 2;
+    int key;
+    while TreeMap_size(map) > cutoff {
+        key = TreeMap_max_key(map);
+        printf("\nremove max key: %x\n", key);
+        TreeMap_delete(map, key);
+        print_size(map);
+        TreeMap_debug_(map);
+    }
+    while true {
+        key = TreeMap_min_key(map);
+        printf("\nremove min key: %x\n", key);
+        TreeMap_delete(map, key);
+        print_size(map);
+        if TreeMap_is_empty(map) {
+            done;
+        }
+        TreeMap_debug_(map);
+    }
+
     TreeMap_drop(map);
     mem_stats__();
 }
