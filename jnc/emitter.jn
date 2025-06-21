@@ -504,6 +504,8 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
 
 # [AST_MEMBER, rcvr, offset, width]
 pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
+    Emitter_eval_expr(self, expr);
+
     member = member + 0x8;          # -> rcvr
     void* rcvr = *member;
     rcvr = rcvr + 0x8;              # -> nameT - guaranteed to be AST_ID
@@ -517,8 +519,6 @@ pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
     if *member == 1 {
         tmpl = TMPL_ASSIGN_PTR_BYTE;
     }
-
-    Emitter_eval_expr(self, expr);
     printf(tmpl);
 }
 
