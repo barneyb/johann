@@ -7,6 +7,7 @@ struct Cell {
 
 pub fn main() {
     Cell* l = cons(3, cons(2, cons(1, nil)));
+    printf("sum: %i\n", sum(l));
     dump(l);
     drop(l);
 }
@@ -20,6 +21,11 @@ fn cons(void car, Cell* tail) {
     l.car = car;
     l.cdr = tail;
     return l;
+}
+
+fn sum(Cell* c) {
+    if c == nil { return 0; }
+    return c.car + sum(c.cdr);
 }
 
 fn dump(Cell* list) {
