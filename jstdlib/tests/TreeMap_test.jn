@@ -24,11 +24,11 @@ fn put_delete() {
     puts("\nput_delete");
     void* map = TreeMap__new(&intcmp);
 
-    int i = 0;
+    int i = 1;
     int j;
-    while i < 3 {
+    while i <= 3 {
         j = i;
-        while j < 10 {
+        while j <= 10 {
             TreeMap_put(map, j, i);
             j = j + 3;
         }
@@ -39,7 +39,7 @@ fn put_delete() {
     TreeMap_debug_(map);
 
     j = 2;
-    while j < 10 {
+    while j <= 10 {
         TreeMap_delete(map, j);
         j = j + 5;
     }
