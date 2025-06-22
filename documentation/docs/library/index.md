@@ -167,7 +167,7 @@ Functions for interacting with the underlying operating system. `syscall` is the
 
 I am a binary tree-based map/dict ADT. Keys and values are arbitrary 64-bit values with pass-by-value semantics. `TreeMap__new_owned` can help with cleanup if the keys and/or values are pointers to owned objects. Using `null` as a key works _if `comparator` and `drop_key` are `null`-safe_. Using `null` as a value works _if `drop_value` is `null`-safe_.
 
- Currently, the tree structure is not balanced, so time complexity is nominally `O(n)`, _including `size`/`is_empty`_! This will change.
+ Currently, the tree structure is not balanced, so time complexity is nominally `O(n)`, _including `size`_! This will change.
 
 `pub fn TreeMap__new(void* comparator) `
 
@@ -203,7 +203,7 @@ I am a binary tree-based map/dict ADT. Keys and values are arbitrary 64-bit valu
 
 `pub fn TreeMap_delete(TreeMap* self, void key) `
 
-: I ensure `map` does not contain an entry with the provided `key`, whether one previously existed or not.
+: I ensure the map does not contain an entry with the provided `key`, whether one previously existed or not.
 
 `pub fn TreeMap_min_key(TreeMap* self) `
 
