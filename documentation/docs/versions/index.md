@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20250622`
 
 Use structs a couple places, fix an assignment ordering bug.
 
