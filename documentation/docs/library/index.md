@@ -177,33 +177,41 @@ I am a binary tree-based map/dict ADT. Keys and values are arbitrary 64-bit valu
 
 : 
 
-`pub fn TreeMap_drop(void* self) `
+`pub fn TreeMap_drop(TreeMap* self) `
 
 : I drop the map, `free`-ing all internal structure, along with its keys and values (if they are owned).
 
-`pub fn TreeMap_is_empty(void* self) `
+`pub fn TreeMap_is_empty(TreeMap* self) `
 
 : I return whether the map is empty.
 
-`pub fn TreeMap_size(void* self) `
+`pub fn TreeMap_size(TreeMap* self) `
 
 : I return the number of entries in the map.
 
-`pub fn TreeMap_contains(void* self, void key) `
+`pub fn TreeMap_contains(TreeMap* self, void key) `
 
 : I indicate whether the map has a mapping for `key`.
 
-`pub fn TreeMap_get(void* self, void key) `
+`pub fn TreeMap_get(TreeMap* self, void key) `
 
 : I return the value mapped to the provided `key`, or `null` if one doesn't exit in the map.
 
-`pub fn TreeMap_put(void* self, void key, void value) `
+`pub fn TreeMap_put(TreeMap* self, void key, void value) `
 
 : I ensure the map contains an entry with the provided `key`, mapped to the provided `value`. If a mapping already existed, its `value` is replaced, but its `key` is not.
 
-`pub fn TreeMap_delete(void* self, void key) `
+`pub fn TreeMap_delete(TreeMap* self, void key) `
 
 : I ensure `map` does not contain an entry with the provided `key`, whether one previously existed or not.
+
+`pub fn TreeMap_min_key(TreeMap* self) `
+
+: 
+
+`pub fn TreeMap_max_key(TreeMap* self) `
+
+: 
 
 
 <!--{/johanndoc:jstdlib/TreeMap.jn}-->

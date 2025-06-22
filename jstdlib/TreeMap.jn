@@ -5,16 +5,23 @@
 # as a value works _if `drop_value` is `null`-safe_.
 #
 # Currently, the tree structure is not balanced, so time complexity is nominally
-# `O(n)`, _including `size`/`is_empty`_! This will change.
+# `O(n)`, _including `size`_! This will change.
 
 char* DEBUG_INDENT_LEVEL = "    ";
 
-# pub struct TreeMap {
-#   fn* comparator
-#   Node* root
-#   fn* drop_key
-#   fn* drop_value
-# }
+struct TreeMap {
+    void* comparator,
+    Node* root,
+    void* drop_key,
+    void* drop_value,
+}
+
+struct Node {
+    void key,
+    void value,
+    Node* left,
+    Node* right,
+}
 
 # I create a new `TreeMap`, using the provided `comparator` function pointer to
 # provide total order over its keys.
@@ -23,87 +30,75 @@ pub fn TreeMap__new(void* comparator) {
 }
 
 pub fn TreeMap__new_owned(void* comparator, void* drop_key, void* drop_value) {
-    void* map = malloc(0x20);
-    map = map + 0x8;                # -> root
-    *map = null;
-    map = map + 0x8;                # -> drop_key
-    *map = drop_key;
-    map = map + 0x8;                # -> drop_value
-    *map = drop_value;
-    map = map - 0x18;               # -> comparator
-    *map = comparator;
+    TreeMap* map = malloc(sizeof(TreeMap));
+    map.comparator = comparator;
+    map.root = null;
+    map.drop_key = drop_key;
+    map.drop_value = drop_value;
     return map;
 }
 
 # I drop the map, `free`-ing all internal structure, along with its keys and
 # values (if they are owned).
-pub fn TreeMap_drop(void* self) {
-    self = self + 0x8;              # -> root
-    void* root = *self;
-    self = self + 0x8;              # -> drop_key
-    void* drop_key = *self;
-    self = self + 0x8;              # -> drop_value
-    void* drop_value = *self;
-    drop_subtree(root, drop_key, drop_value);
-    self = self - 0x18;             # -> comp
+pub fn TreeMap_drop(TreeMap* self) {
+    drop_subtree(self.root, self.drop_key, self.drop_value);
     free(self);
 }
 
-fn drop_subtree(void* curr, void* drop_key, void* drop_value) {
+fn drop_subtree(Node* curr, void* drop_key, void* drop_value) {
     if curr == null { return; }
     if drop_key != null {
-        drop_key(Node_key(curr));
+        drop_key(curr.key);
     }
     if drop_value != null {
-        drop_value(Node_value(curr));
+        drop_value(curr.value);
     }
-    drop_subtree(Node_left(curr), drop_key, drop_value);
-    drop_subtree(Node_right(curr), drop_key, drop_value);
+    drop_subtree(curr.left, drop_key, drop_value);
+    drop_subtree(curr.right, drop_key, drop_value);
     free(curr);
 }
 
 # I return whether the map is empty.
-pub fn TreeMap_is_empty(void* self) {
-    return TreeMap_size(self) == 0;
+pub fn TreeMap_is_empty(TreeMap* self) {
+    return self.root == null;
 }
 
 # I return the number of entries in the map.
-pub fn TreeMap_size(void* self) {
-    self = self + 0x8;                # -> root
-    return size(*self);
+pub fn TreeMap_size(TreeMap* self) {
+    return size(self.root);
 }
 
-fn size(void* curr) {
+fn size(Node* curr) {
     if curr == null {
         return 0;
     }
     # todo: store this in Node, and maintain balance
-    return size(Node_left(curr))
-         + size(Node_right(curr))
+    return size(curr.left)
+         + size(curr.right)
          + 1;
 }
 
 # I indicate whether the map has a mapping for `key`.
-pub fn TreeMap_contains(void* self, void key) {
+pub fn TreeMap_contains(TreeMap* self, void key) {
     return find_node(self, key) != null;
 }
 
 # I return the value mapped to the provided `key`, or `null` if one doesn't
 # exit in the map.
-pub fn TreeMap_get(void* self, void key) {
-    void* node = find_node(self, key);
+pub fn TreeMap_get(TreeMap* self, void key) {
+    Node* node = find_node(self, key);
     if node == null { return null; }
-    return Node_value(node);
+    return node.value;
 }
 
-fn find_node(void* self, void key) {
+fn find_node(TreeMap* self, void key) {
     void* comp = *self;
     self = self + 0x8;                # -> root
-    void* curr = *self;
+    Node* curr = *self;
     while curr != null {
-        int c = comp(key, Node_key(curr));
-        if c < 0 { curr = Node_left(curr); }
-        if c > 0 { curr = Node_right(curr); }
+        int c = comp(key, curr.key);
+        if c < 0 { curr = curr.left; }
+        if c > 0 { curr = curr.right; }
         if c == 0 { return curr; }
     }
     return curr;
@@ -112,94 +107,117 @@ fn find_node(void* self, void key) {
 # I ensure the map contains an entry with the provided `key`, mapped to the
 # provided `value`. If a mapping already existed, its `value` is replaced, but
 # its `key` is not.
-pub fn TreeMap_put(void* self, void key, void value) {
+pub fn TreeMap_put(TreeMap* self, void key, void value) {
     void* root = self + 0x8;        # -> root
     *root = put(self, *root, key, value);
 }
 
-fn put(void* self, void* curr, void key, void value) {
+fn put(TreeMap* self, Node* curr, void key, void value) {
     if curr == null { return Node__new(key, value); }
     void* comp = *self;
-    int c = comp(key, Node_key(curr));
-    if c < 0 { Node_set_left(curr, put(self, Node_left(curr), key, value)); }
-    if c > 0 { Node_set_right(curr, put(self, Node_right(curr), key, value)); }
+    int c = comp(key, curr.key);
+    if c < 0 { Node_set_left(curr, put(self, curr.left, key, value)); }
+    if c > 0 { Node_set_right(curr, put(self, curr.right, key, value)); }
     if c == 0 {
         self = self + 0x10;         # -> drop_key
         void* f = *self;
         if f != null { f(key); }
         self = self + 0x8;          # -> drop_value
         f = *self;
-        if f != null { f(Node_value(curr)); }
+        if f != null { f(curr.value); }
         # update value
-        Node_set_value(curr, value);
+        curr.value = value;
     }
     return curr;
 }
 
-# I ensure `map` does not contain an entry with the provided `key`, whether one
-# previously existed or not.
-pub fn TreeMap_delete(void* self, void key) {
+# I ensure the map does not contain an entry with the provided `key`, whether
+# one previously existed or not.
+pub fn TreeMap_delete(TreeMap* self, void key) {
     void* root = self + 0x8;        # -> root
     *root = delete(self, *root, key);
 }
 
-fn delete(void* self, void* curr, void key) {
+fn delete(TreeMap* self, Node* curr, void key) {
     if curr == null { return null; }
     void* comp = *self;
-    int c = comp(key, Node_key(curr));
-    if c < 0 { Node_set_left(curr, delete(self, Node_left(curr), key)); }
-    if c > 0 { Node_set_right(curr, delete(self, Node_right(curr), key)); }
+    int c = comp(key, curr.key);
+    if c < 0 { Node_set_left(curr, delete(self, curr.left, key)); }
+    if c > 0 { Node_set_right(curr, delete(self, curr.right, key)); }
     if c == 0 {
-        void* left = Node_left(curr);
-        void* right = Node_right(curr);
+        void* left = curr.left;
+        void* right = curr.right;
         drop_node_only(self, curr);
         if left == null { return right; }
         if right == null { return left; }
-        # pull up the next-larger key
+        # interior node - replace with the next-larger key
         curr = min(right);
-        Node_set_right(curr, delete_min(self, right));
+        Node_set_right(curr, unlink_min(self, right));
         Node_set_left(curr, left);
     }
     return curr;
 }
 
 # I drop a specific node, orphaning its children (if any).
-fn drop_node_only(void* self, void* n) {
+fn drop_node_only(TreeMap* self, Node* n) {
     self = self + 0x10;         # -> drop_key
     void* f = *self;
-    if f != null { f(Node_key(n)); }
+    if f != null { f(n.key); }
     self = self + 0x8;          # -> drop_value
     f = *self;
-    if f != null { f(Node_value(n)); }
+    if f != null { f(n.value); }
     free(n);
 }
 
+pub fn TreeMap_min_key(TreeMap* self) {
+    self = self + 0x8;                # -> root
+    void* root = *self;
+    if root == null { return null; }
+    Node* n = min(root);
+    return n.key;
+}
+
 # I return the minimum-keyed node in the subtree rooted at `curr`.
-fn min(void* curr) {
-    void* left = Node_left(curr);
+fn min(Node* curr) {
+    void* left = curr.left;
     if left == null { return curr; }
     return min(left);
 }
 
-fn delete_min(void* self, void* curr) {
-    void* left = Node_left(curr);
-    if left == null { return Node_right(curr); }
-    Node_set_left(curr, delete_min(self, left));
+pub fn TreeMap_max_key(TreeMap* self) {
+    self = self + 0x8;                # -> root
+    void* root = *self;
+    if root == null { return null; }
+    Node* n = max(root);
+    return n.key;
+}
+
+# I return the maximum-keyed node in the subtree rooted at `curr`.
+fn max(Node* curr) {
+    void* right = curr.right;
+    if right == null { return curr; }
+    return max(right);
+}
+
+fn unlink_min(TreeMap* self, Node* curr) {
+    void* left = curr.left;
+    if left == null { return curr.right; }
+    Node_set_left(curr, unlink_min(self, left));
     return curr;
 }
 
 # I print the internal structure to STDOUT, rendering keys and values in hex.
-pub fn TreeMap_debug_(void* self) {
+pub fn TreeMap_debug_(TreeMap* self) {
     self = self + 0x8;                # -> root
     void* root = *self;
     int indent = 0;
     debug(root, indent);
 }
 
-fn debug(void* curr, int indent) {
+fn debug(Node* curr, int indent) {
     if curr == null { return; }
 
-    void* it = Node_left(curr);
+    void* it = curr.left;
     debug(it, indent + 1);
 
     char* tmpl = DEBUG_INDENT_LEVEL;
@@ -208,64 +226,25 @@ fn debug(void* curr, int indent) {
         printf(tmpl);
         i = i + 1;
     }
-    printf("%x -> %x\n",
-           Node_key(curr),
-           Node_value(curr));
+    printf("%x -> %x\n", curr.key, curr.value);
 
-    it = Node_right(curr);
+    it = curr.right;
     debug(it, indent + 1);
 }
 
-# struct Node {
-#   void key
-#   void value
-#   Node* left
-#   Node* right
-# }
-
 fn Node__new(void key, void value) {
-    void* n = malloc(0x20);
-    n = n + 0x8;                    # -> value
-    *n = value;
-    n = n + 0x8;                    # -> left
-    *n = null;
-    n = n + 0x8;                    # -> right
-    *n = null;
-    n = n - 0x18;                   # -> key
-    *n = key;
+    Node* n = malloc(sizeof(Node));
+    n.key = key;
+    n.value = value;
+    n.left = null;
+    n.right = null;
     return n;
 }
 
-fn Node_key(void* n) {
-    return *n;
+fn Node_set_left(Node* n, void* next) {
+    n.left = next;
 }
 
-fn Node_value(void* n) {
-    n = n + 0x8;                    # -> value
-    return *n;
-}
-
-fn Node_set_value(void* n, void value) {
-    n = n + 0x8;                    # -> value
-    *n = value;
-}
-
-fn Node_left(void* n) {
-    n = n + 0x10;                   # -> left
-    return *n;
-}
-
-fn Node_set_left(void* n, void* next) {
-    n = n + 0x10;                   # -> left
-    *n = next;
-}
-
-fn Node_right(void* n) {
-    n = n + 0x18;                   # -> right
-    return *n;
-}
-
-fn Node_set_right(void* n, void* next) {
-    n = n + 0x18;                   # -> right
-    *n = next;
+fn Node_set_right(Node* n, void* next) {
+    n.right = next;
 }

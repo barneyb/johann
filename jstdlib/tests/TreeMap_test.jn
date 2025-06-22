@@ -24,11 +24,11 @@ fn put_delete() {
     puts("\nput_delete");
     void* map = TreeMap__new(&intcmp);
 
-    int i = 0;
+    int i = 1;
     int j;
-    while i < 3 {
+    while i <= 3 {
         j = i;
-        while j < 10 {
+        while j <= 10 {
             TreeMap_put(map, j, i);
             j = j + 3;
         }
@@ -39,13 +39,43 @@ fn put_delete() {
     TreeMap_debug_(map);
 
     j = 2;
-    while j < 10 {
+    while j <= 10 {
         TreeMap_delete(map, j);
         j = j + 5;
     }
     puts("With two+fives removed:");
     print_size(map);
     TreeMap_debug_(map);
+
+    TreeMap_delete(map, 4);
+    puts("With four removed:");
+    print_size(map);
+    TreeMap_debug_(map);
+
+    TreeMap_delete(map, 8);
+    puts("With eight removed:");
+    print_size(map);
+    TreeMap_debug_(map);
+
+    int cutoff = TreeMap_size(map) / 2;
+    int key;
+    while TreeMap_size(map) > cutoff {
+        key = TreeMap_max_key(map);
+        printf("\nremove max key: %x\n", key);
+        TreeMap_delete(map, key);
+        print_size(map);
+        TreeMap_debug_(map);
+    }
+    while true {
+        key = TreeMap_min_key(map);
+        printf("\nremove min key: %x\n", key);
+        TreeMap_delete(map, key);
+        print_size(map);
+        if TreeMap_is_empty(map) {
+            done;
+        }
+        TreeMap_debug_(map);
+    }
 
     TreeMap_drop(map);
     mem_stats__();
