@@ -1,0 +1,14 @@
+pub fn main() {
+    int i = 0;
+    while true {
+        char* line = read_line();
+        if line == null {
+            puts("EOF reached");
+            done;
+        }
+        i = i + 1;
+        printf("Line %d: '%s'\n", i, line);
+        free(line);
+    }
+    printf("After EOF: %p\n", read_line());
+}

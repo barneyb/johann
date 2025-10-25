@@ -15,6 +15,7 @@ all: \
 	isspace \
 	printf \
 	putchar \
+	read_line_test \
 	strcmp_test \
 	symbols \
 
@@ -36,6 +37,11 @@ getchar: $(BIN)/getchar getchar.expected.txt
 	@mkdir -p $(OUT)
 	echo "qwerty\nasdf" | $(BIN)/getchar > $(OUT)/getchar.actual.txt
 	diff -u getchar.expected.txt $(OUT)/getchar.actual.txt
+
+read_line_test: $(BIN)/read_line_test read_line_test.expected.txt
+	@mkdir -p $(OUT)
+	echo "qwerty\nasdf\n\nzxcv\n\n" | $(BIN)/read_line_test > $(OUT)/read_line_test.actual.txt
+	diff -u read_line_test.expected.txt $(OUT)/read_line_test.actual.txt
 
 # Pattern targets
 

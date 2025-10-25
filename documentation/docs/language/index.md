@@ -110,7 +110,7 @@ pub fn main() {
 
 ## Control Flow
 
-Conditionals use the `if` keyword and loops use `while`. The conditional expression is not wrapped with parentheses (if present, they're accepted as noise). Braces are required around the body. There is no `else`.
+Conditionals use the `if` keyword and loops use `while`. The conditional expression is not wrapped with parentheses (though you can, of course, wrap any expression with parens). Braces are required around the body. There is no `else`.
 
 ```johann
 int i = 0;
