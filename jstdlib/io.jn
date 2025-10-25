@@ -1,0 +1,17 @@
+# No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found above in the first [`io`](#io).
+
+# I read one line of characters and return a pointer to a heap-allocated
+# null-terminated byte string containing them. A line ends when `EOF` is
+# reached, or a newline (`0xa`) is encountered. Such newlines _are_ consumed,
+# but _are not_ returned as part of the result. If already at `EOF`, `null` is
+# returned (not an empty string).
+pub fn read_line() {
+    if iseof() { return null; }
+    void* b = StringBuilder__new();
+    while !iseof() {
+        char c = getchar();
+        if c == 0xa { done; }
+        StringBuilder_push(b, c);
+    }
+    return StringBuilder_into_chars(b);
+}

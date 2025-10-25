@@ -1,0 +1,8 @@
+Line 1: 'qwerty'
+Line 2: 'asdf'
+Line 3: ''
+Line 4: 'zxcv'
+Line 5: ''
+Line 6: ''
+EOF reached
+After EOF: 0x000000000

@@ -4,7 +4,7 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 
 ??? note "Johann vs Assembly"
 
-    While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the assembly bits (e.g., [`io`](#io)) are hand-documented as if C, while the Johann bits (e.g., [`allocator`](#allocator)) have their docs generated from the source itself.
+    While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the Johann bits (e.g., [`allocator`](#allocator)) have their docs generated from the source itself, while the assembly bits (e.g., the first [`io`](#io)) are hand-documented as if C. The second [`io`](#io_1) is Johann.
 
 <!--{johanndoc:jstdlib/allocator.jn}-->
 
@@ -72,7 +72,7 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 ## `io`
 
-No files, just STDIN and STDOUT. `EOF` is any negative number.
+No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found below in the second [`io`](#io_1).
 
 * `int getchar( )` - consume the next character from STDIN, or `EOF`.
 * `bool iseof( )` - whether STDIN has reached EOF.
@@ -81,6 +81,19 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering).
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
+
+<!--{johanndoc:jstdlib/io.jn}-->
+
+## `io`
+
+No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found above in the first [`io`](#io).
+
+`pub fn read_line() `
+
+: I read one line of characters and return a pointer to a heap-allocated null-terminated byte string containing them. A line ends when `EOF` is reached, or a newline (`0xa`) is encountered. Such newlines _are_ consumed, but _are not_ returned as part of the result. If already at `EOF`, `null` is returned (not an empty string).
+
+
+<!--{/johanndoc:jstdlib/io.jn}-->
 
 <!--{johanndoc:jstdlib/string.jn}-->
 

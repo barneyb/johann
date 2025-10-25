@@ -9,6 +9,7 @@ OBJECTS = \
 	$(LIB)/TreeMap.jn.o \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.o \
+	$(LIB)/io.jn.o \
 	$(LIB)/math.jn.o \
 	$(LIB)/string.jn.o \
 	$(LIB)/sys.jn.o \
