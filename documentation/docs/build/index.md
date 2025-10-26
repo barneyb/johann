@@ -36,6 +36,8 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `36` - Duplicate struct member 
 * `37` - Certain types of invalid block nesting
 * `47` - Unrecognized format conversion spec for `printf`
+* `75` - Unknown struct member
+* `76` - Member or index off non-ID-pointer
 * `77` - Multibyte character
 * `98` - Certain double-`free` errors
 * `99` - Failed to get memory from the OS (a panic, unlike C)

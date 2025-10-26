@@ -28,6 +28,7 @@ int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
+int AST_INDEX;
 int AST_LIT_BOOL;
 int AST_LIT_CHAR;
 int AST_LIT_INT;
@@ -613,13 +614,23 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
         args = *args;
         return Emitter_do_call_but_sillier(self, callee, args);
     }
+    void* rcvr;
+    int width;
     if t == AST_MEMBER { # [AST_MEMBER, rcvr, offset, width]
         expr = expr + 0x8;          # -> rcvr
-        void* rcvr = *expr;
-        expr = expr + 0x8;          # -> offset
-        int offset = *expr;
-        expr = expr + 0x8;          # -> width
-        return Emitter_do_read_member(self, rcvr, offset, *expr);
+        rcvr = *expr;
+        expr = expr + 0x10;         # -> width
+        width = *expr;
+        expr = expr - 0x8;          # -> offset
+        return Emitter_do_read_member(self, rcvr, *expr, width);
+    }
+    if t == AST_INDEX { # [AST_INDEX, rcvr, off_expr]
+        expr = expr + 0x8;          # -> rcvr
+        rcvr = *expr;
+        expr = expr + 0x10;         # -> width
+        width = *expr;
+        expr = expr - 0x8;          # -> off_xpr
+        return Emitter_do_read_index(self, rcvr, *expr, width);
     }
 
     char* f = "Can't eval expr of type %i\n";
@@ -627,6 +638,23 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     eprintf(f, t);
     t = 13;
     panic(t);
+}
+
+fn Emitter_do_read_index(void* self, void* rcvr, void* idx_expr, int width) {
+    # compute the index
+    Emitter_eval_expr(self, idx_expr);
+    puts(TMPL_STASH);
+    # compute the receiver
+    Emitter_eval_expr(self, rcvr);
+    # compute address
+    puts(TMPL_UNSTASH_X1);
+    puts(TMPL_BIN_ADD);
+    # read it into x0
+    char* tmpl = TMPL_QUAD_AT_ADDR;
+    if width == 1 {
+        tmpl = TMPL_BYTE_AT_ADDR;
+    }
+    puts(tmpl);
 }
 
 fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {

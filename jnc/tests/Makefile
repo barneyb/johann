@@ -6,6 +6,7 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
+	arrays \
 	$(LIB)/a_syntactic_menagerie.o \
 	collatz \
 	constants \

@@ -50,6 +50,10 @@ I hold the compiler's AST implementation.
 
 : [AST_MEMBER, rcvr, offset, width]
 
+`pub int AST_INDEX       = 106;`
+
+: [AST_INDEX, rcvr, off_expr, width]
+
 `pub int AST_PROGRAM     = 301;`
 
 : [AST_PROGRAM, decls[]]

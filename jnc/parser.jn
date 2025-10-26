@@ -22,6 +22,7 @@ int T_AMP;
 int T_ASSIGN;
 int T_BANG;
 int T_CBRACE;
+int T_CBRACKET;
 int T_COMMA;
 int T_CPAREN;
 int T_DOT;
@@ -33,6 +34,7 @@ int T_LTE;
 int T_MINUS;
 int T_NEQ;
 int T_OBRACE;
+int T_OBRACKET;
 int T_OPAREN;
 int T_PERCENT;
 int T_PLUS;
@@ -51,6 +53,7 @@ int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
+int AST_INDEX;
 int AST_LIT_BOOL;
 int AST_LIT_CHAR;
 int AST_LIT_INT;
@@ -768,9 +771,44 @@ fn parse_expr_postfix(void* lex) {
             expr = process_dot(expr, id_token(lex));
             again;
         }
+        if t == T_OBRACKET {
+            if *expr != AST_ID {
+                eprintf("ERR: can't index into a %i at %i:%i\n",
+                        *expr,
+                        Token_line(t),
+                        Token_char(t));
+                exit(76);
+            }
+            consume_token(lex, t);
+            expr = process_bracket(expr, parse_expr(lex));
+            consume_token(lex, T_CBRACKET);
+            return expr;
+        }
         done;
     }
     return expr;
+}
+
+fn process_bracket(void* rcvr, void* off_expr) {
+    rcvr = rcvr + 0x8;              # -> nameT
+    char* rname = Token_value(*rcvr);
+    void* rat = Env_typeof_symbol(ENV, rname);
+    if *rat != AST_TYPE_PTR {
+        eprintf("Cannot index a %i node at %i:%i, only a pointer\n",
+                *rat,
+                Token_line(*rcvr),
+                Token_char(*rcvr));
+        exit(76);
+    }
+    rcvr = rcvr - 0x8;              # -> whole AST node
+    rat = rat + 0x8;                # -> type
+    int width = ast_sizeof(*rat);
+    if width != 1 {
+        # multiply by width
+        void* width_ast = ast2(AST_LIT_INT, width);
+        off_expr = join_bin_op(null, T_STAR, off_expr, width_ast);
+    }
+    return ast4(AST_INDEX, rcvr, off_expr, width);
 }
 
 fn process_dot(void* rcvr, void* nameT) {
@@ -780,7 +818,7 @@ fn process_dot(void* rcvr, void* nameT) {
                 *rcvr,
                 Token_line(nameT),
                 Token_char(nameT));
-        exit(12);
+        exit(76);
     }
     rcvr = rcvr + 0x8;              # -> nameT
     char* rname = Token_value(*rcvr);
@@ -790,7 +828,7 @@ fn process_dot(void* rcvr, void* nameT) {
         eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct\n",
                 Token_value(nameT),
                 *rat);
-        exit(77);
+        exit(76);
     }
     rat = rat + 0x8;                # -> type
     rat = *rat;
