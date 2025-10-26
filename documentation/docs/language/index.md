@@ -91,8 +91,6 @@ pub fn main() {
 }
 ```
 
-There is no support for arrays, but the arithmetic isn't _that_ difficult to code manually. Yet!
-
 Both functions and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be declared `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, to use or take an address. This program prints an externally-defined greeting three times, in three different ways:
 
 ```johann
@@ -175,6 +173,24 @@ If you want floats, you'll need to implement IEEE 754 yourself.
 
 Boolean literals `true` and `false` are recognized as aliases for `1` and `0` respectively. Compiled codes always check against `0`, so any non-`0` value will be considered `true`. The `null` keyword is also recognized as an alias for `0`. At some point these will have identity separate from their numeric value.
 
+Pseudo-arrays are also supported: any pointer may be indexed into with brackets to reference the `i`-th "element" of the "array". This does about what you'd expect, but without any typesafety or bounds checking. Nested/multidimensional "arrays" are not supported.
+
+```johann
+char* str = "abcdef";
+char c = str[2];
+printf("Element two is '%c'\n", c);
+
+int* fib = malloc(10 * sizeof(int));
+fib[0] = 1; fib[1] = 1;
+int i = 2;
+while i < 10 {
+    fib[i] = fib[i - 2] + fib[i - 1];
+    printf("fib(%d) = %d\n", i, fib[i]);
+    i = i + 1;
+}
+free(fib);
+```
+
 ## I'm Sorry, What?!
 
-If the above seems like it was designed by a kindergartener, you're half right. Johann started with tooling commensurate to "late 1960's", but without a library of already-coded assembly routines (e.g., regex, a BST, or a hashtable). Now it's somewhere in the early 1970's, plus a few of those library routines. Kindergartener is apropos for synthetic progress of 4-6 years.  
+If the above seems like it was designed by a kindergartener, you're half right. Johann started with tooling commensurate to "late 1960's", but without a library of already-coded assembly routines (e.g., regex, a BST, or a hashtable). Now it's somewhere around 1970, plus a few of those library routines. Kindergartener is apropos for synthetic progress of a few years.  
