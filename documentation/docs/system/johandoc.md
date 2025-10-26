@@ -270,6 +270,10 @@ I store information about a block/scope. I used to be an implementation detail o
 
 : [AST_MEMBER, rcvr, offset, width]
 
+`pub fn Emitter_do_assign_index(void* self, void* ast, void* rhs) `
+
+: [AST_INDEX, rcvr, off_expr, width]
+
 `pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) `
 
 : 

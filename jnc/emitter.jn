@@ -78,6 +78,7 @@ char* TMPL_ASSIGN_GLOBAL_QUAD   = "        adrp    x7, __j_%s@PAGE\n        add 
 char* TMPL_GET_ADDR_LOCAL       = "        ldr     x7, [fp, -%x]\n";
 char* TMPL_GET_ADDR_GLOBAL      = "        adrp    x7, __j_%s@PAGE\n        add     x7, x7, __j_%s@PAGEOFF\n";
 char* TMPL_GET_ADDR_MEMBER      = "        add     x7, x7, %i\n";
+char* TMPL_MOV_Xi_FOR_ASSIGN_PTR= "        mov     x7, x%i\n";
 char* TMPL_ASSIGN_PTR_BYTE      = "        strb    w0, [x7]\n";
 char* TMPL_ASSIGN_PTR_QUAD      = "        str     x0, [x7]\n";
 
@@ -523,6 +524,29 @@ pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
     printf(tmpl);
 }
 
+# [AST_INDEX, rcvr, off_expr, width]
+pub fn Emitter_do_assign_index(void* self, void* ast, void* rhs) {
+    Emitter_eval_expr(self, rhs);
+    puts(TMPL_STASH);
+
+    ast = ast + 0x8;                # -> rcvr
+    void* rcvr = *ast;
+    ast = ast + 0x8;                # -> off_expr
+    void* off_expr = *ast;
+    ast = ast + 0x8;                # -> width
+    int width = *ast;
+
+    Emitter_get_index_with_addr_in_x0(self, rcvr, off_expr);
+
+    printf(TMPL_MOV_Xi_FOR_ASSIGN_PTR, 0);
+    printf(TMPL_UNSTASH_Xi, 0);
+    char* tmpl = TMPL_ASSIGN_PTR_QUAD;
+    if width == 1 {
+        tmpl = TMPL_ASSIGN_PTR_BYTE;
+    }
+    puts(tmpl);
+}
+
 fn get_symbol_with_addr_in_x7(void* self, void* nameT) {
     void* symbol = Emitter_lookup_symbol_for(self, nameT);
     int offset = Symbol_offset(symbol);
@@ -629,7 +653,7 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
         rcvr = *expr;
         expr = expr + 0x10;         # -> width
         width = *expr;
-        expr = expr - 0x8;          # -> off_xpr
+        expr = expr - 0x8;          # -> off_expr
         return Emitter_do_read_index(self, rcvr, *expr, width);
     }
 
@@ -640,7 +664,7 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     panic(t);
 }
 
-fn Emitter_do_read_index(void* self, void* rcvr, void* idx_expr, int width) {
+fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
     # compute the index
     Emitter_eval_expr(self, idx_expr);
     puts(TMPL_STASH);
@@ -649,12 +673,14 @@ fn Emitter_do_read_index(void* self, void* rcvr, void* idx_expr, int width) {
     # compute address
     puts(TMPL_UNSTASH_X1);
     puts(TMPL_BIN_ADD);
-    # read it into x0
-    char* tmpl = TMPL_QUAD_AT_ADDR;
+}
+
+fn Emitter_do_read_index(void* self, void* rcvr, void* idx_expr, int width) {
+    Emitter_get_index_with_addr_in_x0(self, rcvr, idx_expr);
     if width == 1 {
-        tmpl = TMPL_BYTE_AT_ADDR;
+        return puts(TMPL_BYTE_AT_ADDR);
     }
-    puts(tmpl);
+    puts(TMPL_QUAD_AT_ADDR);
 }
 
 fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {

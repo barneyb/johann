@@ -508,6 +508,9 @@ fn parse_eval_or_assign(void* lex) {
     if t == AST_MEMBER {
         return ast3(AST_ASSIGN, expr, rhs);
     }
+    if t == AST_INDEX {
+        return ast3(AST_ASSIGN, expr, rhs);
+    }
     if t == AST_ADDR_OP {
         t = expr + 0x8;             # -> op
         if *t == T_STAR {

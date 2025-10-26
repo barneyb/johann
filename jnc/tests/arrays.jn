@@ -1,85 +1,90 @@
 pub fn main() {
     pointer_arithmetic_str();
+    puts("");
     array_str();
+    puts("");
+    puts("");
     pointer_arithmetic_int();
+    puts("");
     array_int();
 }
 
 fn pointer_arithmetic_str() {
     char* s = "abcdef";
-#    printf("Ptr Arith: '%s'\n", s);
-#    # capitalize the c
-#    char* s_2 = s + 2;
-#    char c = *s_2;
-#    *s_2 = c - 32;
-#    printf("Cap C: '%s'\n", s);
-#    # swap the b and d
-    int s_1 = s + 1;
+    printf("Ptr Arith: '%s'\n", s);
+    # capitalize the c
+    char* s_2 = s + 2;
+    char c = *s_2;
+    *s_2 = c - 32;
+    printf("Cap C: '%s'\n", s);
+    # swap the b and d
+    char* s_1 = s + 1;
     char b = *s_1;
     printf("b: '%c'\n", b);
-#    char s_3 = s + 3;
-##    *s_1 = *s_3;
-#    *s_3 = b;
-#    printf("Swap b & d: '%s'\n", s);
+    char* s_3 = s + 3;
+    *s_1 = *s_3;
+    *s_3 = b;
+    printf("Swap b & d: '%s'\n", s);
 }
 
 fn array_str() {
     char* s = "abcdef";
-#    printf("Array: '%s'\n", s);
-#    # capitalize the c
-#    s[2] = s[2] - 32;
-#    printf("Cap C: '%s'\n", s);
-#    # swap the b and d
+    printf("Array: '%s'\n", s);
+    # capitalize the c
+    char c = s[2] - 32;
+    s[2] = c;
+    printf("Cap C: '%s'\n", s);
+    # swap the b and d
     char b = s[1];
     printf("b: '%c'\n", b);
-##    s[1] = s[3];
-#    s[3] = b;
-#    printf("Swap b & d: '%s'\n", s);
+    s[1] = s[3];
+    s[3] = b;
+    printf("Swap b & d: '%s'\n", s);
 }
 
 fn pointer_arithmetic_int() {
     int* ints = five_ints();
-#    char* str = stringify_five_ints(ints);
-#    printf("Ptr Arith: %s\n", str);
-#    free(str);
-#
-#    # double the three
-#    int p = ints + 2 * sizeof(int);
-#    *p = *p * 2;
-#    printf("six: %d\n", *p);
+    char* str = stringify_five_ints(ints);
+    printf("Ptr Arith: %s\n", str);
+    free(str);
+
+    # double the three
+    int p = ints + 2 * sizeof(int);
+    *p = *p * 2;
+    printf("six: %d\n", *p);
 
     # swap the two and four
     int* ints_1 = ints + 1 * sizeof(int);
-#    int* ints_3 = ints + 3 * sizeof(int);
+    int* ints_3 = ints + 3 * sizeof(int);
     int two = *ints_1;
     printf("two: %d\n", two);
-#    *ints_1 = *ints_3;
-#    *ints_3 = two;
-#    str = stringify_five_ints(ints);
-#    printf("Swap 2 & 4: %s\n", str);
-#    free(str);
+    *ints_1 = *ints_3;
+    *ints_3 = two;
+    str = stringify_five_ints(ints);
+    printf("Swap 2 & 4: %s\n", str);
+    free(str);
     free(ints);
 }
 
 fn array_int() {
     int* ints = five_ints();
-#    char* str = stringify_five_ints(ints);
-#    printf("Array: %s\n", str);
-#    free(str);
-#
-#    # double the three
-#    int p = ints + 2 * sizeof(int);
-#    ints[2] = ints[2] * 2;
-#    printf("six: %d\n", *p);
+    char* str = stringify_five_ints(ints);
+    printf("Array: %s\n", str);
+    free(str);
+
+    # double the three
+    int p = ints + 2 * sizeof(int);
+    ints[2] = ints[2] * 2;
+    printf("six: %d\n", *p);
 
     # swap the two and four
     int two = ints[1];
     printf("two: %d\n", two);
-#    ints[1] = ints[3];
-#    ints[3] = two;
-#    str = stringify_five_ints(ints);
-#    printf("Swap 2 & 4: %s\n", str);
-#    free(str);
+    ints[1] = ints[3];
+    ints[3] = two;
+    str = stringify_five_ints(ints);
+    printf("Swap 2 & 4: %s\n", str);
+    free(str);
     free(ints);
 }
 
