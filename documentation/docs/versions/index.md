@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251026`
 
 Add array-ish syntactic sugar for pointer arithmetic, though not actual arrays or array types. Add a `read_line` function to `io`. Add `push_str` method to `StringBuilder`.
 

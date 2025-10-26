@@ -8,11 +8,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20250622
-build_time: 2025-06-22T22:04:09+00:00
-commit_hash: 237b2d010fcdbbfd0e5aa366b1e77239cd286701
+jnc 0.20251026
+build_time: 2025-10-26T21:22:21+00:00
+commit_hash: 66263821860de9dca4ea5d6514e91b9b38243fd8
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20250622-237b2d0
+; Compiled with jnc 0.20251026-6626382
     .text
     .align  3
 ... snip ...
@@ -25,7 +25,7 @@ The specific versions of the system software I have are listed below. Note that 
 <!--{systemsoftware}-->
 ```
 % uname -a
-Darwin Barneys-MacBook-Air.local 24.5.0 Darwin Kernel Version 24.5.0: Tue Apr 22 19:54:26 PDT 2025; root:xnu-11417.121.6~2/RELEASE_ARM64_T8112 arm64
+Darwin Barneys-MacBook-Air.local 24.6.0 Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:52 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T8112 arm64
 %
 % make --version
 GNU Make 3.81
@@ -37,18 +37,18 @@ PARTICULAR PURPOSE.
 This program built for i386-apple-darwin11.3.0
 %
 % gcc --version
-Apple clang version 17.0.0 (clang-1700.0.13.5)
-Target: arm64-apple-darwin24.5.0
+Apple clang version 17.0.0 (clang-1700.3.19.1)
+Target: arm64-apple-darwin24.6.0
 Thread model: posix
 InstalledDir: /Library/Developer/CommandLineTools/usr/bin
 %
 % ld -v
-@(#)PROGRAM:ld PROJECT:ld-1167.5
-BUILD 01:45:05 Apr 30 2025
-configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em
+@(#)PROGRAM:ld PROJECT:ld-1221.4
+BUILD 16:29:08 Aug 11 2025
+configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em armv8m.main armv8.1m.main
 will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
 LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)
-TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.0.3.5)
+TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.3.8)
 ```
 <!--{/systemsoftware}-->
 
