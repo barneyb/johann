@@ -142,11 +142,15 @@ I am a dynamically resizing builder for null-terminated byte strings.
 
 : I create new builder, with the given initial capacity.
 
-`pub fn StringBuilder_push(void* self, char c) `
+`pub fn StringBuilder_push(StringBuilder* self, char c) `
 
 : I push a single character into the buffer, which will be automatically extended if the character won't fit.
 
-`pub fn StringBuilder_into_chars(void* self) `
+`pub fn StringBuilder_push_str(StringBuilder* self, char* str) `
+
+: I push another string into the buffer, which will be automatically extended if needed.
+
+`pub fn StringBuilder_into_chars(StringBuilder* self) `
 
 : I consume the builder and produce a null-terminated byte string from it.
 

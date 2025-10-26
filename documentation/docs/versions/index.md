@@ -13,7 +13,7 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
-Add a `read_line` function to `io`.
+Add a `read_line` function to `io`. Add `push_str` method to `StringBuilder`.
 
 ### `v0.20250622`
 

@@ -4,6 +4,17 @@ pub fn main() {
     n = 15; build_up_to(n);
     n = 16; build_up_to(n);
     n = 17; build_up_to(n);
+
+    void* sb = StringBuilder__new(1);
+    # catch buffer overrun
+    char* after = malloc(1);
+    StringBuilder_push_str(sb, "qwertyuiop");
+    StringBuilder_push_str(sb, "qwertyuiop");
+    StringBuilder_push_str(sb, "qwertyuiop");
+    free(after);
+    char* str = StringBuilder_into_chars(sb);
+    puts(str);
+    free(str);
 }
 
 fn build_up_to(int count) {
