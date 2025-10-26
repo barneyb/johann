@@ -50,6 +50,10 @@ I hold the compiler's AST implementation.
 
 : [AST_MEMBER, rcvr, offset, width]
 
+`pub int AST_INDEX       = 106;`
+
+: [AST_INDEX, rcvr, off_expr, width]
+
 `pub int AST_PROGRAM     = 301;`
 
 : [AST_PROGRAM, decls[]]
@@ -265,6 +269,10 @@ I store information about a block/scope. I used to be an implementation detail o
 `pub fn Emitter_do_assign_member(void* self, void* member, void* expr) `
 
 : [AST_MEMBER, rcvr, offset, width]
+
+`pub fn Emitter_do_assign_index(void* self, void* ast, void* rhs) `
+
+: [AST_INDEX, rcvr, off_expr, width]
 
 `pub fn Emitter_do_assign_pointer(void* self, void* nameT, void* expr) `
 

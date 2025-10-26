@@ -37,6 +37,8 @@ pub int AST_ADDR_OP     = 103;
 pub int AST_CALL        = 104;
 # [AST_MEMBER, rcvr, offset, width]
 pub int AST_MEMBER      = 105;
+# [AST_INDEX, rcvr, off_expr, width]
+pub int AST_INDEX       = 106;
 
 ##################################################
 # declarations are 3xx
@@ -315,6 +317,11 @@ pub fn drop_ast(Ast4* ast) {
     }
     if type == AST_MEMBER {
         drop_ast(ast.value); # rcvr
+        return free(ast);
+    }
+    if type == AST_INDEX {
+        drop_ast(ast.value); # rcvr
+        drop_ast(ast.left); # off_expr
         return free(ast);
     }
 

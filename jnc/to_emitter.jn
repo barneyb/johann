@@ -7,6 +7,7 @@ int AST_EVAL;
 int AST_FN;
 int AST_ID;
 int AST_IF;
+int AST_INDEX;
 int AST_MEMBER;
 int AST_PROGRAM;
 int AST_RETURN;
@@ -192,6 +193,9 @@ fn to_emitter_assign(void* emitter, void* ast) {
     }
     if t == AST_MEMBER {
         return Emitter_do_assign_member(emitter, expr, rhs);
+    }
+    if t == AST_INDEX {
+        return Emitter_do_assign_index(emitter, expr, rhs);
     }
     if t == AST_ADDR_OP {
         t = expr + 0x10;        # -> name

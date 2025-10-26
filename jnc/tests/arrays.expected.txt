@@ -1,0 +1,20 @@
+Ptr Arith: 'abcdef'
+Cap C: 'abCdef'
+b: 'b'
+Swap b & d: 'adCbef'
+
+Array: 'abcdef'
+Cap C: 'abCdef'
+b: 'b'
+Swap b & d: 'adCbef'
+
+
+Ptr Arith: [1, 2, 3, 4, 5, ]
+six: 6
+two: 2
+Swap 2 & 4: [1, 4, 6, 2, 5, ]
+
+Array: [1, 2, 3, 4, 5, ]
+six: 6
+two: 2
+Swap 2 & 4: [1, 4, 6, 2, 5, ]

@@ -1,10 +1,10 @@
 # I am a dynamically resizing builder for null-terminated byte strings.
 
-# struct StringBuilder {
-#   int capacity
-#   int size
-#   char** buf
-# }
+struct StringBuilder {
+    int capacity,
+    int size,
+    char** buf,
+}
 
 # I create new builder, with the given initial capacity.
 pub fn StringBuilder__new(int capacity) {
@@ -12,49 +12,56 @@ pub fn StringBuilder__new(int capacity) {
         # can't allocate less, so may as well use it
         capacity = 0x10;
     }
-    void* self = malloc(0x18);
-    self = self + 0x8;              # -> size
-    *self = 0;
-    self = self + 0x8;              # -> buf
-    *self = malloc(capacity);
-    self = self - 0x10;             # -> capacity
-    *self = capacity;
+    StringBuilder* self = malloc(0x18);
+    self.size = 0;
+    self.buf = malloc(capacity);
+    self.capacity = capacity;
     return self;
 }
 
 # I push a single character into the buffer, which will be automatically
 # extended if the character won't fit.
-pub fn StringBuilder_push(void* self, char c) {
-    int capacity = *self;
-    self = self + 0x10;             # -> buffer
-    char* chars = *self;
-    self = self - 0x8;              # -> size
-    int size = *self;
-    if size == capacity {
-        # need more!
-        capacity = capacity * 2;
-        char* next = malloc(capacity);
-        memcpy(next, chars, size);
-        free(chars);
-        chars = next;
-        self = self - 0x8;          # -> capacity
-        *self = capacity;
-        self = self + 0x10;         # -> buf
-        *self = chars;
-        self = self - 0x8;          # -> size
-    }
-    char* chars_i = chars + size;
-    *chars_i = c;
-    *self = size + 1;
+pub fn StringBuilder_push(StringBuilder* self, char c) {
+    int size = self.size;
+    char* buf = ensure_buf_capacity(self, size + 1);
+    char* buf_i = buf + size;
+    *buf_i = c;
+    self.size = size + 1;
+}
+
+# I push another string into the buffer, which will be automatically
+# extended if needed.
+pub fn StringBuilder_push_str(StringBuilder* self, char* str) {
+    int size = self.size;
+    int len = strlen(str);
+    char* buf = ensure_buf_capacity(self, size + len);
+    char* buf_i = buf + size;
+    memcpy(buf_i, str, len);
+    self.size = size + len;
 }
 
 # I consume the builder and produce a null-terminated byte string from it.
-pub fn StringBuilder_into_chars(void* self) {
+pub fn StringBuilder_into_chars(StringBuilder* self) {
     # add the null terminator
     StringBuilder_push(self, null);
-    self = self + 0x10;             # -> buf
-    char* chars = *self;
-    self = self - 0x10;             # -> capacity
+    char* buf = self.buf;
     free(self);
-    return chars;
+    return buf;
+}
+
+fn ensure_buf_capacity(StringBuilder* self, int min) {
+    int capacity = self.capacity;
+    int size = self.size;
+    char* buf = self.buf;
+    if capacity >= min { return buf; }
+
+    while capacity < min {
+        capacity = capacity * 2;
+    }
+    char* next = malloc(capacity);
+    memcpy(next, buf, size);
+    free(buf);
+    self.buf = next;
+    self.capacity = capacity;
+    return next;
 }
