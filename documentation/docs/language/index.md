@@ -91,7 +91,7 @@ pub fn main() {
 }
 ```
 
-Both functions and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be declared `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, to use or take an address. This program prints an externally-defined greeting three times, in three different ways:
+Functions, types, and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be declared `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) does. Global variables always require a reference, to use or take an address. This program prints an externally-defined greeting three times, in three different ways:
 
 ```johann
 char* GREETING;             # declare variable defined "somewhere else"

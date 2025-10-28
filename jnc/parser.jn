@@ -346,7 +346,7 @@ fn build_struct_type(void* ast) {
     int total_align = 0;
     void* kids = ast + 0x10;
     kids = *kids;
-    while true {
+    while kids != null {
         void* kid = *kids;
         if kid == null { done; }
         if *kid != AST_VARIABLE {
