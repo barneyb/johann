@@ -55,6 +55,7 @@ fn ensure_buf_capacity(StringBuilder* self, int min) {
     char* buf = self.buf;
     if capacity >= min { return buf; }
 
+    # use math, not iteration
     while capacity < min {
         capacity = capacity * 2;
     }

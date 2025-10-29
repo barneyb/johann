@@ -6,8 +6,8 @@ JNC = ../$(BIN)/jnc
 JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
-	arrays \
 	$(LIB)/a_syntactic_menagerie.o \
+	arrays \
 	collatz \
 	constants \
 	control_flow \
@@ -16,14 +16,15 @@ all: \
 	literals \
 	not_quite_lisp \
 	print_one \
+	pseudo_methods \
 	reverse \
 	store_load \
 	strings \
 	sum \
 	zero \
 
-	# verify there aren't any memory complaints
-	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ')
+	@echo "Memory complaints:"
+	@find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ')
 
 # non-standard targets
 

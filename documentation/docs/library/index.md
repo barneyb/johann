@@ -47,6 +47,10 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 : I add the passed element to the end of the list, extending it if needed.
 
+`pub fn ArrayList_push_all(void* self, void* els) `
+
+: I add every element in the null-terminated `els` array to the end of the list, extending it if needed.
+
 `pub fn ArrayList_get(void* self, int i) `
 
 : I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.

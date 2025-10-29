@@ -44,6 +44,11 @@ fn expr_postfix_call() {
     function_params_base(false, 'T', 42);
 }
 
+struct ExternallyDefined;
+
+fn external_struct_defn(ExternallyDefined* ed) {
+}
+
 struct Animal {
     char* name,
     int num_legs,

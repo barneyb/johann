@@ -67,6 +67,14 @@ fn expand() {
     void* scratch = malloc(0x10);
     void* arr = ArrayList_into_array(list);
     print_array(arr);
+    list = ArrayList__new(3);
+    size_and_cap(list);
+    ArrayList_push_all(list, arr);
+    size_and_cap(list);
+    ArrayList_push_all(list, arr);
+    size_and_cap(list);
+    free(arr);
+    arr = ArrayList_into_array(list);
     free(arr);
     free(scratch);
 }

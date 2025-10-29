@@ -4,11 +4,11 @@
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
-# struct ArrayList {
-#   int capacity
-#   int size
-#   void** data
-#   void* drop_el
+#struct ArrayList {
+#    int capacity,
+#    int size,
+#    void** data,
+#    void* drop_el
 #}
 
 # I create a new list with the specified capacity.
@@ -61,6 +61,17 @@ pub fn ArrayList_push(void* self, void el) {
     arr = arr + *size * 0x8;
     *arr = el;
     *size = *size + 1;
+}
+
+# I add every element in the null-terminated `els` array to the end of the list,
+# extending it if needed.
+pub fn ArrayList_push_all(void* self, void* els) {
+    # todo: resize once, up front
+    void el = els;
+    while *el != null {
+        ArrayList_push(self, *el);
+        el = el + 0x8;
+    }
 }
 
 # I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.

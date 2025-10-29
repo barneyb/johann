@@ -1,0 +1,26 @@
+struct StringBuilder;
+
+pub fn main() {
+    functions();
+    methods();
+}
+
+fn functions() {
+    StringBuilder* sb = StringBuilder__new(10);
+    StringBuilder_push_str(sb, "Hello");
+    StringBuilder_push(sb, ',');
+    StringBuilder_push_str(sb, "World!");
+    char* s = StringBuilder_into_chars(sb);
+    puts(s);
+    free(s);
+}
+
+fn methods() {
+    StringBuilder* sb = StringBuilder__new(10);
+    sb.push_str("Hello");
+    sb.push(',');
+    sb.push_str("World!");
+    char* s = sb.into_chars();
+    puts(s);
+    free(s);
+}
