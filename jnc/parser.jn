@@ -771,7 +771,13 @@ fn parse_expr_postfix(void* lex) {
         }
         if t == T_DOT {
             consume_token(lex, t);
-            expr = process_dot(expr, id_token(lex));
+            void* nameT = id_token(lex);
+            if Token_type(peek_token(lex)) == T_OPAREN {
+                # this is ridiculous
+                expr = process_method(expr, nameT, parse_arg_list(lex));
+                again;
+            }
+            expr = process_member(expr, nameT);
             again;
         }
         if t == T_OBRACKET {
@@ -814,7 +820,7 @@ fn process_bracket(void* rcvr, void* off_expr) {
     return ast4(AST_INDEX, rcvr, off_expr, width);
 }
 
-fn process_dot(void* rcvr, void* nameT) {
+fn get_rcvr_type_name(void* rcvr, void* nameT) {
     if *rcvr != AST_ID {
         eprintf("ERR: can't deref '%s' off a %i at %i:%i\n",
                 Token_value(nameT),
@@ -828,21 +834,53 @@ fn process_dot(void* rcvr, void* nameT) {
     rcvr = rcvr - 0x8;              # -> whole AST node
     void* rat = Env_typeof_symbol(ENV, rname);
     if *rat != AST_TYPE_PTR {
-        eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct\n",
+        eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct, at %i:%i\n",
                 Token_value(nameT),
-                *rat);
+                *rat,
+                Token_line(nameT),
+                Token_char(nameT));
         exit(76);
     }
     rat = rat + 0x8;                # -> type
     rat = *rat;
     if *rat != AST_TYPE_NAMED {
-        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct\n",
+        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct, at %i:%i\n",
                 Token_value(nameT),
-                *rat);
+                *rat,
+                Token_line(nameT),
+                Token_char(nameT));
         exit(76);
     }
     rat = rat + 0x8;                # -> nameT
-    void* structT = Env_get_type(ENV, Token_value(*rat));
+    return Token_value(*rat);
+}
+
+fn process_method(void* rcvr, void* nameT, void* arg_list) {
+    void rcvr_type_name = get_rcvr_type_name(rcvr, nameT);
+
+    # prefix the "method" name w/ the type name to make the function name
+    void* sb = StringBuilder__new(10);
+    StringBuilder_push_str(sb, rcvr_type_name);
+    StringBuilder_push(sb, '_');
+    StringBuilder_push_str(sb, Token_value(nameT));
+    free(Token_value(nameT));
+    Token_set_value(nameT, StringBuilder_into_chars(sb));
+
+    # add rcvr as the implicit first argument
+    void* args = ArrayList__new(5);
+    ArrayList_push(args, rcvr);
+    if arg_list != null {
+        ArrayList_push_all(args, arg_list);
+        free(arg_list);
+    }
+
+    return ast3(AST_CALL, ast2(AST_ID, nameT), ArrayList_into_array(args));
+}
+
+fn process_member(void* rcvr, void* nameT) {
+    void rcvr_type_name = get_rcvr_type_name(rcvr, nameT);
+
+    void* structT = Env_get_type(ENV, rcvr_type_name);
     if *structT != AST_TYPE_STRUCT {
         eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct\n",
                 Token_value(nameT),
@@ -852,9 +890,8 @@ fn process_dot(void* rcvr, void* nameT) {
     void* member = structT + 0x18;
     member = TreeMap_get(*member, Token_value(nameT));
     if member == null {
-        eprintf("Object '%s' (of type '%s') has no member '%s' at line %i, char %i.\n",
-                rname,
-                Token_value(*rat),
+        eprintf("Type '%s' has no member '%s' at line %i, char %i.\n",
+                rcvr_type_name,
                 Token_value(nameT),
                 Token_line(nameT),
                 Token_char(nameT));
@@ -866,12 +903,7 @@ fn process_dot(void* rcvr, void* nameT) {
     member = member + 0x8;          # -> offset
     int offset = *member;
     member = member + 0x8;          # -> width
-#    eprintf("DOT: %s (%i) . %s (%x / %x)\n",
-#            rname,
-#            *structT,
-#            name,
-#            offset,
-#            *member);
+
     return ast4(AST_MEMBER, rcvr, offset, *member);
 }
 
@@ -932,9 +964,7 @@ fn parse_val(void* lex, int type) {
 }
 
 fn parse_id(void* lex) {
-    void* tkn = id_token(lex);
-    int type = AST_ID;
-    return ast2(type, tkn);
+    return ast2(AST_ID, id_token(lex));
 }
 
 fn id_token(void* lex) {
