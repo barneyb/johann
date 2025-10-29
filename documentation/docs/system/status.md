@@ -11,7 +11,8 @@
 - [x] function pointers
 - [x] structs
 - [ ] typechecking
-- [ ] arrays (or at least array _types_)
+- [x] array indexing
+- [ ] array types
 - [ ] blocks/scopes
 - [ ] unconstrained local variables
 - [ ] unconstrained parameter passing (and varargs?)
