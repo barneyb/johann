@@ -4,12 +4,12 @@
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
-#struct ArrayList {
-#    int capacity,
-#    int size,
-#    void** data,
-#    void* drop_el
-#}
+struct ArrayList {
+    int capacity,
+    int size,
+    void** data,
+    void* drop_el
+}
 
 # I create a new list with the specified capacity.
 pub fn ArrayList__new(int capacity) {
@@ -20,97 +20,95 @@ pub fn ArrayList__new(int capacity) {
 # dropping elements.
 pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     if capacity < 4 { capacity = 4; }
-    void* self = malloc(0x20);
-    self = self + 0x8;              # -> size
-    *self = 0;
-    self = self + 0x8;              # -> data
-    *self = null;
-    self = self + 0x8;              # -> drop_el
-    *self = drop_el;
-    self = self - 0x18;             # -> capacity
-    *self = capacity;
+    ArrayList* self = malloc(sizeof(ArrayList));
+    self.capacity = capacity;
+    self.size = 0;
+    self.data = null;
+    self.drop_el = drop_el;
     return self;
 }
 
 # I return the number of elements current in the list.
-pub fn ArrayList_size(void* self) {
-    int* size = self + 0x8;         # -> size
-    return *size;
+pub fn ArrayList_size(ArrayList* self) {
+    return self.size;
 }
 
 # I add the passed element to the end of the list, extending it if needed.
-pub fn ArrayList_push(void* self, void el) {
-    int cap = *self;
-    int* size = self + 0x8;         # -> size
-    void** data = self + 0x10;      # -> data
-    void* arr = *data;
+pub fn ArrayList_push(ArrayList* self, void el) {
+    int size = self.size;
+    void* arr = ensure_capacity(self, size + 1);
+    arr = arr + size * 0x8;
+    *arr = el;
+    self.size = size + 1;
+}
+
+fn ensure_capacity(ArrayList* self, int min_cap) {
+    int cap = self.capacity;
+    # use math, not iteration
+    while cap < min_cap {
+        cap = cap * 2;
+    }
+    void* arr = self.data;
     if arr == null {
         arr = malloc(cap * 0x8);
-        *data = arr;
+        self.capacity = cap;
+        self.data = arr;
+        return arr;
     }
-    if *size == cap {
-        # need more!
-        cap = cap * 2;
-        void* next = malloc(cap * 0x8);
-        memcpy(next, arr, cap * 0x8);
-        free(arr);
-        *self = cap;
-        *data = next;
-        arr = next;
-    }
-    arr = arr + *size * 0x8;
-    *arr = el;
-    *size = *size + 1;
+    # need more!
+    void* next = malloc(cap * 0x8);
+    memcpy(next, arr, self.size * 0x8);
+    free(arr);
+    self.capacity = cap;
+    self.data = next;
+    return next;
 }
 
 # I add every element in the null-terminated `els` array to the end of the list,
 # extending it if needed.
-pub fn ArrayList_push_all(void* self, void* els) {
-    # todo: resize once, up front
-    void el = els;
+pub fn ArrayList_push_all(ArrayList* self, void* els) {
+    int len = 0;
+    void* el = els;
     while *el != null {
-        ArrayList_push(self, *el);
+        len = len + 1;
         el = el + 0x8;
     }
+    int size = self.size;
+    void* arr = ensure_capacity(self, size + len);
+    memcpy(arr, els, len * 0x8);
+    self.size = size + len;
 }
 
 # I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
-pub fn ArrayList_get(void* self, int i) {
+pub fn ArrayList_get(ArrayList* self, int i) {
     if i < 0 { panic(-i, "Index out of bounds\n", 20); }
     if i >= ArrayList_size(self) { panic(i, "Index out of bounds\n", 20); }
-    void** data = self + 0x10;      # -> data
-    void* arr = *data;
+    void* arr = self.data;
     arr = arr + i * 0x8;
     return *arr;
 }
 
 # I consume the list and return a null-terminated array of its elements. The
 # array may have unfreed capacity beyond the terminating null.
-pub fn ArrayList_into_array(void* self) {
-    void** data = self + 0x10;      # -> data
-    if *data == null {
-        # set capacity to one
-        *self = 1;
+pub fn ArrayList_into_array(ArrayList* self) {
+    if self.data == null {
+        self.capacity = 1;
     }
-    ArrayList_push(self, null);
-    data = self + 0x10;             # -> data
-    data = *data;
+    self.push(null);
+    void* data = self.data;
     free(self);
     return data;
 }
 
 # I drop the list, along with its elements (if they are owned).
-pub fn ArrayList_drop(void* self) {
-    void* data = self + 0x10;       # -> data
-    void* arr = *data;
+pub fn ArrayList_drop(ArrayList* self) {
+    void* arr = self.data;
     if arr == null {
         return free(self);
     }
-    data = self + 0x18;             # -> drop_el
-    void* drop_el = *data;
+    void* drop_el = self.drop_el;
     if drop_el != null {
-        data = self + 0x8;          # -> size
-        int end = arr + *data * 0x8;
+        int end = arr + self.size * 0x8;
         int el = arr;
         while el < end {
             drop_el(*el);
@@ -123,34 +121,31 @@ pub fn ArrayList_drop(void* self) {
 
 # I remove and return the last element on the stack (in the list), panicking if
 # the stack is empty.
-pub fn ArrayList_pop(void* self) {
-    void el = ArrayList_peek(self);
-    int cap = *self;
-    int* size = self + 0x8;         # -> size
-    *size = *size - 1;
-    if *size <= cap / 4 { if cap > 4 {
+pub fn ArrayList_pop(ArrayList* self) {
+    void el = self.peek();
+    int cap = self.capacity;
+    int size = self.size - 1;
+    self.size = size;
+    if size <= cap / 4 { if cap > 4 {
         # shrink
         cap = cap / 2;
         void* next = malloc(cap * 0x8);
-        void** data = self + 0x10;  # -> data
-        void arr = *data;
+        void arr = self.data;
         memcpy(next, arr, cap * 0x8);
         free(arr);
-        *self = cap;
-        *data = next;
+        self.capacity = cap;
+        self.data = next;
     } }
     return el;
 }
 
 # I return the last element on the stack (in the list), without removing it,
 # panicking if the stack is empty.
-pub fn ArrayList_peek(void* self) {
-    int* size = self + 0x8;         # -> size
-    if *size == 0 {
+pub fn ArrayList_peek(ArrayList* self) {
+    if self.size < 1 {
         panic(2, "No such element\n", 16);
     }
-    void** data = self + 0x10;      # -> data
-    void arr = *data;
-    arr = arr + (*size - 1) * 0x8;
+    void arr = self.data;
+    arr = arr + (self.size - 1) * 0x8;
     return *arr;
 }
