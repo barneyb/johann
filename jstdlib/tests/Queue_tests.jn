@@ -1,0 +1,57 @@
+fn free(void*);
+
+struct Queue;
+fn Queue_drop(void*);
+
+pub fn main() {
+    unowned();
+    owned();
+    peek_and_remove();
+}
+
+fn unowned() {
+    puts("\nunowned");
+    Queue* q = Queue__new();
+    q.push(0);
+    q.push(1);
+    q.push(2);
+    q.push(3);
+    printf("unowned: %d\n", q.size());
+    q.drop();
+}
+
+fn owned() {
+    puts("\nowned");
+    Queue* outer = Queue__new_owned(&Queue_drop);
+    char* s = "oh hai";
+    Queue* q = Queue__new_owned(&free);
+    q.push(strclone(s));
+    q.push(strclone(s));
+    q.push(strclone(s));
+    outer.push(q);
+    printf("first inner: %d\n", q.size());
+    q = Queue__new_owned(&free);
+    outer.push(q);
+    q.push(strclone(s));
+    printf("second inner: %d\n", q.size());
+    printf("outer: %d\n", outer.size());
+    outer.drop();
+}
+
+fn peek_and_remove() {
+    puts("\npeek_and_remove");
+    Queue* q = Queue__new();
+    q.push(1);
+    q.push(2);
+
+    printf("two: %d\n", q.size());
+    printf("peek: %d\n", q.peek());
+    printf("peek: %d\n", q.peek());
+    printf("remove: %d\n", q.remove());
+    printf("one: %d\n", q.size());
+    printf("peek: %d\n", q.peek());
+    printf("peek: %d\n", q.peek());
+    printf("remove: %d\n", q.remove());
+    printf("zero: %d\n", q.size());
+    q.drop();
+}

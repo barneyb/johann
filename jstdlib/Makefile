@@ -5,11 +5,12 @@ OUT = $(TGT)/out
 JNC = ../bin/jnc
 OBJECTS = \
 	$(LIB)/ArrayList.jn.o \
+	$(LIB)/Queue.jn.o \
 	$(LIB)/StringBuilder.jn.o \
 	$(LIB)/TreeMap.jn.o \
 	$(LIB)/allocator.jn.o \
-	$(LIB)/io.o \
 	$(LIB)/io.jn.o \
+	$(LIB)/io.o \
 	$(LIB)/math.jn.o \
 	$(LIB)/string.jn.o \
 	$(LIB)/sys.jn.o \

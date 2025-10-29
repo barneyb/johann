@@ -1,0 +1,91 @@
+# I am simple Queue structure, implemented as a linked list. Elements are always
+# 64-bit values with pass by value semantics. `Queue__new_owned` can help if the
+# elements are pointers to owned objects.
+
+struct Queue {
+    int size,
+    void* drop_el,
+    Node* head,
+    Node* tail
+}
+
+struct Node {
+    void value,
+    Node* next
+}
+
+# I create a new empty queue.
+pub fn Queue__new() {
+    return Queue__new_owned(null);
+}
+
+# I create a new empty queue, with a function pointer for dropping elements.
+pub fn Queue__new_owned(void* drop_el) {
+    Queue* q = malloc(sizeof(Queue));
+    q.size = 0;
+    q.drop_el = drop_el;
+    q.head = null;
+    q.tail = null;
+    return q;
+}
+
+# I drop the queue, along with its elements (if they are owned).
+pub fn Queue_drop(Queue* self) {
+    Node* curr = self.head;
+    Node* next;
+    void* drop_el = self.drop_el;
+    while curr != null {
+        if (drop_el != null) {
+            drop_el(curr.value);
+        }
+        next = curr.next;
+        free(curr);
+        curr = next;
+    }
+    free(self);
+}
+
+# I return the number of elements currently on the queue.
+pub fn Queue_size(Queue* self) {
+    return self.size;
+}
+
+# I push the passed element onto the queue.
+pub fn Queue_push(Queue* self, void* el) {
+    Node* n = malloc(sizeof(Node));
+    n.value = el;
+    n.next = null;
+    self.size = self.size + 1;
+    if self.head == null {
+        self.head = n;
+        self.tail = n;
+        return;
+    }
+    Node* tail = self.tail;
+    tail.next = n;
+    self.tail = n;
+}
+
+# I return the next element on the queue, without removing it, panicking if the
+# queue is empty.
+pub fn Queue_peek(Queue* self) {
+    Node* head = self.head;
+    if head == null {
+        panic(1, "Queue is empty\n", 15);
+    }
+    return head.value;
+}
+
+# I remove and return the first element on the queue, panicking if the queue is
+# empty.
+pub fn Queue_remove(Queue* self) {
+    Node* head = self.head;
+    if head == null {
+        panic(1, "Queue is empty\n", 15);
+    }
+    void v = head.value;
+    self.head = head.next;
+    free(head);
+    self.size = self.size - 1;
+    return v;
+}

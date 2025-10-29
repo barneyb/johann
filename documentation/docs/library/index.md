@@ -103,6 +103,42 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 * `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
 * `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
+<!--{johanndoc:jstdlib/Queue.jn}-->
+
+## `Queue`
+
+I am simple Queue structure, implemented as a linked list. Elements are always 64-bit values with pass by value semantics. `Queue__new_owned` can help if the elements are pointers to owned objects.
+
+`pub fn Queue__new() `
+
+: I create a new empty queue.
+
+`pub fn Queue__new_owned(void* drop_el) `
+
+: I create a new empty queue, with a function pointer for dropping elements.
+
+`pub fn Queue_drop(Queue* self) `
+
+: I drop the queue, along with its elements (if they are owned).
+
+`pub fn Queue_size(Queue* self) `
+
+: I return the number of elements currently on the queue.
+
+`pub fn Queue_push(Queue* self, void* el) `
+
+: I push the passed element onto the queue.
+
+`pub fn Queue_peek(Queue* self) `
+
+: I return the next element on the queue, without removing it, panicking if the queue is empty.
+
+`pub fn Queue_remove(Queue* self) `
+
+: I remove and return the first element on the queue, panicking if the queue is empty.
+
+
+<!--{/johanndoc:jstdlib/Queue.jn}-->
 <!--{johanndoc:jstdlib/string.jn}-->
 
 ## `string`

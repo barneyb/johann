@@ -43,7 +43,7 @@
 - [ ] read/write files
 - [ ] regular expressions
 - [ ] hash-based symbol table
-- [ ] a queue data type
+- [x] a queue data type
 
 ## Compilation Stages
 

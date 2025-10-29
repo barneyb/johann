@@ -6,6 +6,7 @@ JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: \
 	ArrayList_test \
+	Queue_tests \
 	StringBuilderTest \
 	TreeMap_test \
 	allocations \

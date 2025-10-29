@@ -1,0 +1,19 @@
+
+unowned
+unowned: 4
+
+owned
+first inner: 3
+second inner: 1
+outer: 2
+
+peek_and_remove
+two: 2
+peek: 1
+peek: 1
+remove: 1
+one: 1
+peek: 2
+peek: 2
+remove: 2
+zero: 0
