@@ -17,6 +17,7 @@ all: \
 	putchar \
 	read_line_test \
 	strcmp_test \
+	substr \
 	symbols \
 
 	# verify there aren't any memory complaints

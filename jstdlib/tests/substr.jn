@@ -1,0 +1,12 @@
+pub fn main() {
+    char* s = "strawberry";
+    char* raw = substr(s, 2, 5);
+    printf("raw: '%s'\n", raw);
+    free(raw);
+    char* empty = substr(s, 5, 2);
+    printf("empty: '%s'\n", empty);
+    free(empty);
+    char* berry = substr(s, 5, 99); # WAY long and wasteful
+    printf("berry: '%s'\n", berry);
+    free(berry);
+}

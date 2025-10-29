@@ -11,7 +11,7 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
-Pseudo-method invocation, so `StringBuilder_push(sb, 'c')` becomes `sb.push('c')`, assuming `sb` is declared `StringBuilder*`. Add `ArrayList_push_all`.
+Pseudo-method invocation, so `StringBuilder_push(sb, 'c')` becomes `sb.push('c')`, assuming `sb` is declared `StringBuilder*`. Add `ArrayList_push_all` and `substr` to jstdlib.
 
 ### `v0.20251026`
 

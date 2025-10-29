@@ -96,6 +96,10 @@ No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functi
 
 : I read one line of characters and return a pointer to a heap-allocated null-terminated byte string containing them. A line ends when `EOF` is reached, or a newline (`0xa`) is encountered. Such newlines _are_ consumed, but _are not_ returned as part of the result. If already at `EOF`, `null` is returned (not an empty string).
 
+`pub fn substr(char* str, int start, int end) `
+
+: I create a new null-terminated byte string from the given half-open range of the passed `str`. No bounds checking is performed.
+
 
 <!--{/johanndoc:jstdlib/io.jn}-->
 

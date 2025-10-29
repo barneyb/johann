@@ -15,3 +15,13 @@ pub fn read_line() {
     }
     return StringBuilder_into_chars(b);
 }
+
+# I create a new null-terminated byte string from the given half-open range of
+# the passed `str`. No bounds checking is performed.
+pub fn substr(char* str, int start, int end) {
+    int len = end - start;
+    char* result = malloc(len + 1);
+    memcpy(result, str + start, len);
+    result[len] = null;
+    return result;
+}
