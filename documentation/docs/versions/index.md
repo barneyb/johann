@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251029`
 
 Pseudo-method invocation, so `StringBuilder_push(sb, 'c')` becomes `sb.push('c')`, assuming `sb` is declared `StringBuilder*`. Add `ArrayList_push_all`, `strchr`, and `substr` to jstdlib.
 
