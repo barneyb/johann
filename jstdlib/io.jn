@@ -1,4 +1,4 @@
-# No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found above in the first [`io`](#io).
+# No files, just STDIN and STDOUT. `EOF` is any negative number.
 
 # I read one line of characters and return a pointer to a heap-allocated
 # null-terminated byte string containing them. A line ends when `EOF` is

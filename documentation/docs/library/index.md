@@ -4,7 +4,7 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 
 ??? note "Johann vs Assembly"
 
-    While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the Johann bits (e.g., [`allocator`](#allocator)) have their docs generated from the source itself, while the assembly bits (e.g., the first [`io`](#io)) are hand-documented as if C. The second [`io`](#io_1) is Johann.
+    While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the Johann bits have their docs generated from the source itself, while the assembly bits are hand-documented as if C.
 
 <!--{johanndoc:jstdlib/allocator.jn}-->
 
@@ -27,7 +27,7 @@ Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop
 
 ## `ArrayList`
 
-I am auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList__new_owned` can if the elements are pointers to owned objects.
+I am an auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList__new_owned` can help if the elements are pointers to owned objects.
 
  The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
@@ -37,60 +37,48 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 `pub fn ArrayList__new_owned(int capacity, void* drop_el) `
 
-: I create a new list with the specified capacity, and function pointer for dropping elements.
+: I create a new list with the specified capacity, with a function pointer for dropping elements.
 
-`pub fn ArrayList_size(void* self) `
+`pub fn ArrayList_size(ArrayList* self) `
 
-: I return the number of elements current in the list.
+: I return the number of elements currently in the list.
 
-`pub fn ArrayList_push(void* self, void el) `
+`pub fn ArrayList_push(ArrayList* self, void el) `
 
 : I add the passed element to the end of the list, extending it if needed.
 
-`pub fn ArrayList_push_all(void* self, void* els) `
+`pub fn ArrayList_push_all(ArrayList* self, void* els) `
 
 : I add every element in the null-terminated `els` array to the end of the list, extending it if needed.
 
-`pub fn ArrayList_get(void* self, int i) `
+`pub fn ArrayList_get(ArrayList* self, int i) `
 
 : I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
 
-`pub fn ArrayList_into_array(void* self) `
+`pub fn ArrayList_into_array(ArrayList* self) `
 
 : I consume the list and return a null-terminated array of its elements. The array may have unfreed capacity beyond the terminating null.
 
-`pub fn ArrayList_drop(void* self) `
+`pub fn ArrayList_drop(ArrayList* self) `
 
 : I drop the list, along with its elements (if they are owned).
 
-`pub fn ArrayList_pop(void* self) `
+`pub fn ArrayList_pop(ArrayList* self) `
 
 : I remove and return the last element on the stack (in the list), panicking if the stack is empty.
 
-`pub fn ArrayList_peek(void* self) `
+`pub fn ArrayList_peek(ArrayList* self) `
 
 : I return the last element on the stack (in the list), without removing it, panicking if the stack is empty.
 
 
 <!--{/johanndoc:jstdlib/ArrayList.jn}-->
 
-## `io`
-
-No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found below in the second [`io`](#io_1).
-
-* `int getchar( )` - consume the next character from STDIN, or `EOF`.
-* `bool iseof( )` - whether STDIN has reached EOF.
-* `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
-* `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
-* `int eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering).
-* `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
-* `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
-
 <!--{johanndoc:jstdlib/io.jn}-->
 
 ## `io`
 
-No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functions are found above in the first [`io`](#io).
+No files, just STDIN and STDOUT. `EOF` is any negative number.
 
 `pub fn read_line() `
 
@@ -106,6 +94,14 @@ No files, just STDIN and STDOUT. `EOF` is any negative number. Additional functi
 
 
 <!--{/johanndoc:jstdlib/io.jn}-->
+
+* `int getchar( )` - consume the next character from STDIN, or `EOF`.
+* `bool iseof( )` - whether STDIN has reached EOF.
+* `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
+* `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
+* `int eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering).
+* `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
+* `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
 <!--{johanndoc:jstdlib/string.jn}-->
 

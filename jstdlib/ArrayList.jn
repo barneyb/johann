@@ -1,5 +1,5 @@
-# I am auto-resizing array-backed list structure. Elements are always 64-bit
-# values with pass by value semantics. `ArrayList__new_owned` can if the
+# I am an auto-resizing array-backed list structure. Elements are always 64-bit
+# values with pass by value semantics. `ArrayList__new_owned` can help if the
 # elements are pointers to owned objects.
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
@@ -16,7 +16,7 @@ pub fn ArrayList__new(int capacity) {
     return ArrayList__new_owned(capacity, null);
 }
 
-# I create a new list with the specified capacity, and function pointer for
+# I create a new list with the specified capacity, with a function pointer for
 # dropping elements.
 pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     if capacity < 4 { capacity = 4; }
@@ -28,7 +28,7 @@ pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     return self;
 }
 
-# I return the number of elements current in the list.
+# I return the number of elements currently in the list.
 pub fn ArrayList_size(ArrayList* self) {
     return self.size;
 }
