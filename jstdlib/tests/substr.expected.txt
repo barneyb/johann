@@ -1,3 +1,7 @@
 raw: 'raw'
 empty: ''
 berry: 'berry'
+
+from 'b': 'berry' (idx 5)
+from 'Z': '0x000000000'
+from null: '' (idx 10)

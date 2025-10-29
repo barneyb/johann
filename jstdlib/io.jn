@@ -16,6 +16,18 @@ pub fn read_line() {
     return StringBuilder_into_chars(b);
 }
 
+# I return a pointer to the first occurrence of `ch` in `str`, or `null` if no
+# occurrence was found. The terminating `null` is considered part of `str`.
+pub fn strchr(char* str, char ch) {
+    char* result = str;
+    while true {
+        char c = *result;
+        if c == ch { return result; }
+        if c == null { return null; }
+        result = result + 1;
+    }
+}
+
 # I create a new null-terminated byte string from the given half-open range of
 # the passed `str`. No bounds checking is performed.
 pub fn substr(char* str, int start, int end) {

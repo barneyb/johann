@@ -9,4 +9,8 @@ pub fn main() {
     char* berry = substr(s, 5, 99); # WAY long and wasteful
     printf("berry: '%s'\n", berry);
     free(berry);
+    puts("");
+    printf("from 'b': '%s' (idx %d)\n", strchr(s, 'b'), strchr(s, 'b') - s);
+    printf("from 'Z': '%p'\n", strchr(s, 'Z'));
+    printf("from null: '%s' (idx %d)\n", strchr(s, null), strchr(s, null) - s);
 }
