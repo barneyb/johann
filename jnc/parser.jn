@@ -869,10 +869,8 @@ fn process_method(void* rcvr, void* nameT, void* arg_list) {
     # add rcvr as the implicit first argument
     void* args = ArrayList__new(5);
     ArrayList_push(args, rcvr);
-    if arg_list != null {
-        ArrayList_push_all(args, arg_list);
-        free(arg_list);
-    }
+    ArrayList_push_all(args, arg_list);
+    free(arg_list);
 
     return ast3(AST_CALL, ast2(AST_ID, nameT), ArrayList_into_array(args));
 }

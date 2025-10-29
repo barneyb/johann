@@ -1,5 +1,5 @@
-# I am an auto-resizing array-backed list structure. Elements are always 64-bit
-# values with pass by value semantics. `ArrayList__new_owned` can help if the
+# I am auto-resizing array-backed list structure. Elements are always 64-bit
+# values with pass by value semantics. `ArrayList__new_owned` can if the
 # elements are pointers to owned objects.
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
@@ -16,7 +16,7 @@ pub fn ArrayList__new(int capacity) {
     return ArrayList__new_owned(capacity, null);
 }
 
-# I create a new list with the specified capacity, with a function pointer for
+# I create a new list with the specified capacity, and function pointer for
 # dropping elements.
 pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     if capacity < 4 { capacity = 4; }
@@ -28,7 +28,7 @@ pub fn ArrayList__new_owned(int capacity, void* drop_el) {
     return self;
 }
 
-# I return the number of elements currently in the list.
+# I return the number of elements current in the list.
 pub fn ArrayList_size(ArrayList* self) {
     return self.size;
 }
@@ -36,9 +36,9 @@ pub fn ArrayList_size(ArrayList* self) {
 # I add the passed element to the end of the list, extending it if needed.
 pub fn ArrayList_push(ArrayList* self, void el) {
     int size = self.size;
-    void* arr = ensure_capacity(self, size + 1);
-    arr = arr + size * 0x8;
-    *arr = el;
+    ensure_capacity(self, size + 1);
+    void* idx = self.data + size * 0x8;
+    *idx = el;
     self.size = size + 1;
 }
 
@@ -48,34 +48,32 @@ fn ensure_capacity(ArrayList* self, int min_cap) {
     while cap < min_cap {
         cap = cap * 2;
     }
-    void* arr = self.data;
-    if arr == null {
-        arr = malloc(cap * 0x8);
-        self.capacity = cap;
-        self.data = arr;
-        return arr;
+    if self.data == null {
+        self.data = malloc(cap * 0x8);
     }
-    # need more!
-    void* next = malloc(cap * 0x8);
-    memcpy(next, arr, self.size * 0x8);
-    free(arr);
-    self.capacity = cap;
-    self.data = next;
-    return next;
+    if self.capacity < cap {
+        void* next = malloc(cap * 0x8);
+        memcpy(next, self.data, cap * 0x8);
+        free(self.data);
+        self.capacity = cap;
+        self.data = next;
+    }
 }
 
 # I add every element in the null-terminated `els` array to the end of the list,
 # extending it if needed.
 pub fn ArrayList_push_all(ArrayList* self, void* els) {
+    if els == null { return; }
     int len = 0;
     void* el = els;
     while *el != null {
         len = len + 1;
         el = el + 0x8;
     }
+    if len == 0 { return; }
     int size = self.size;
-    void* arr = ensure_capacity(self, size + len);
-    memcpy(arr, els, len * 0x8);
+    ensure_capacity(self, size + len);
+    memcpy(self.data + size * 0x8, els, len * 0x8);
     self.size = size + len;
 }
 
