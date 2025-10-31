@@ -84,14 +84,6 @@ No files, just STDIN and STDOUT. `EOF` is any negative number.
 
 : I read one line of characters and return a pointer to a heap-allocated null-terminated byte string containing them. A line ends when `EOF` is reached, or a newline (`0xa`) is encountered. Such newlines _are_ consumed, but _are not_ returned as part of the result. If already at `EOF`, `null` is returned (not an empty string).
 
-`pub fn strchr(char* str, char ch) `
-
-: I return a pointer to the first occurrence of `ch` in `str`, or `null` if no occurrence was found. The terminating `null` is considered part of `str`.
-
-`pub fn substr(char* str, int start, int end) `
-
-: I create a new null-terminated byte string from the given half-open range of the passed `str`. No bounds checking is performed.
-
 
 <!--{/johanndoc:jstdlib/io.jn}-->
 
@@ -161,6 +153,10 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 
 : copy bytes between non-overlapping memory regions.
 
+`pub fn strchr(char* str, char ch) `
+
+: I return a pointer to the first occurrence of `ch` in `str`, or `null` if no occurrence was found. The terminating `null` is considered part of `str`.
+
 `pub fn strclone(char* src) `
 
 : clone the passed string into a new allocation.
@@ -172,6 +168,10 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 `pub fn strlen(char* str) `
 
 : I return the length of the passed string, not including the terminating null byte.
+
+`pub fn substr(char* str, int start, int end) `
+
+: I create a new null-terminated byte string from the given half-open range of the passed `str`. No bounds checking is performed.
 
 
 <!--{/johanndoc:jstdlib/string.jn}-->

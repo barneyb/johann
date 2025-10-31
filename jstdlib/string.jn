@@ -62,6 +62,18 @@ fn memcpy_bytes(void* dest, void* src, int count) {
     return dest;
 }
 
+# I return a pointer to the first occurrence of `ch` in `str`, or `null` if no
+# occurrence was found. The terminating `null` is considered part of `str`.
+pub fn strchr(char* str, char ch) {
+    char* result = str;
+    while true {
+        char c = *result;
+        if c == ch { return result; }
+        if c == null { return null; }
+        result = result + 1;
+    }
+}
+
 # clone the passed string into a new allocation.
 pub fn strclone(char* src) {
     int len = strlen(src) + 1; # for the null terminator
@@ -96,4 +108,14 @@ pub fn strlen(char* str) {
         c = *end;
     }
     return end - str;
+}
+
+# I create a new null-terminated byte string from the given half-open range of
+# the passed `str`. No bounds checking is performed.
+pub fn substr(char* str, int start, int end) {
+    int len = end - start;
+    char* result = malloc(len + 1);
+    memcpy(result, str + start, len);
+    result[len] = null;
+    return result;
 }
