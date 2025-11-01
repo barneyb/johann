@@ -27,7 +27,7 @@ Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop
 
 ## `ArrayList`
 
-I am an auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList__new_owned` can help if the elements are pointers to owned objects.
+I am auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList__new_owned` can if the elements are pointers to owned objects.
 
  The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
@@ -37,15 +37,19 @@ I am an auto-resizing array-backed list structure. Elements are always 64-bit va
 
 `pub fn ArrayList__new_owned(int capacity, void* drop_el) `
 
-: I create a new list with the specified capacity, with a function pointer for dropping elements.
+: I create a new list with the specified capacity, and function pointer for dropping elements.
 
 `pub fn ArrayList_size(ArrayList* self) `
 
-: I return the number of elements currently in the list.
+: I return the number of elements current in the list.
 
 `pub fn ArrayList_push(ArrayList* self, void el) `
 
 : I add the passed element to the end of the list, extending it if needed.
+
+`pub fn ArrayList_reserve(ArrayList* self, int min_capacity) `
+
+: I reserve the given minimum capacity in the list, guaranteeing that no allocations will be required to if elements are added up to this size. Note that removing elements may reduce the list's capacity, reserved or not.
 
 `pub fn ArrayList_push_all(ArrayList* self, void* els) `
 

@@ -36,20 +36,25 @@ pub fn ArrayList_size(ArrayList* self) {
 # I add the passed element to the end of the list, extending it if needed.
 pub fn ArrayList_push(ArrayList* self, void el) {
     int size = self.size;
-    ensure_capacity(self, size + 1);
+    self.reserve(size + 1);
     void* idx = self.data + size * 0x8;
     *idx = el;
     self.size = size + 1;
 }
 
-fn ensure_capacity(ArrayList* self, int min_cap) {
+# I reserve the given minimum capacity in the list, guaranteeing that no
+# allocations will be required to if elements are added up to this size. Note
+# that removing elements may reduce the list's capacity, reserved or not.
+pub fn ArrayList_reserve(ArrayList* self, int min_capacity) {
     int cap = self.capacity;
     # use math, not iteration
-    while cap < min_cap {
+    while cap < min_capacity {
         cap = cap * 2;
     }
     if self.data == null {
         self.data = malloc(cap * 0x8);
+        self.capacity = cap;
+        return;
     }
     if self.capacity < cap {
         void* next = malloc(cap * 0x8);
@@ -72,7 +77,7 @@ pub fn ArrayList_push_all(ArrayList* self, void* els) {
     }
     if len == 0 { return; }
     int size = self.size;
-    ensure_capacity(self, size + len);
+    self.reserve(size + len);
     memcpy(self.data + size * 0x8, els, len * 0x8);
     self.size = size + len;
 }
@@ -80,7 +85,7 @@ pub fn ArrayList_push_all(ArrayList* self, void* els) {
 # I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
 pub fn ArrayList_get(ArrayList* self, int i) {
     if i < 0 { panic(-i, "Index out of bounds\n", 20); }
-    if i >= ArrayList_size(self) { panic(i, "Index out of bounds\n", 20); }
+    if i >= self.size() { panic(i, "Index out of bounds\n", 20); }
     void* arr = self.data;
     arr = arr + i * 0x8;
     return *arr;
