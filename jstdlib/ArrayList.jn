@@ -4,11 +4,14 @@
 #
 # The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
 
-struct ArrayList {
+struct StringBuilder;
+
+# Storage for an ArrayList.
+pub struct ArrayList {
     int capacity,
     int size,
     void** data,
-    void* drop_el
+    void* drop_el,
 }
 
 # I create a new list with the specified capacity.
@@ -101,6 +104,42 @@ pub fn ArrayList_into_array(ArrayList* self) {
     void* data = self.data;
     free(self);
     return data;
+}
+
+# I sort the list, in place, using the passed comparator function to define
+# total order over the elements.
+pub fn ArrayList_sort(ArrayList* self, void* cmp) {
+    quicksort(self.data, 0, self.size() - 1, cmp);
+}
+
+# I render the list to a null-terminated byte string, using the passed function
+# to convert each element in turn. If `null` is passed, the elements are assumed
+# to be NTBSs, to be included in the final string directly. The returned string
+# must be `free`-ed by the client. The list is not consumed.
+pub fn ArrayList_to_string(ArrayList* self, void* el_to_string) {
+    int l = self.size();
+    if l == 0 {
+        return strclone("[]");
+    }
+    StringBuilder* sb = StringBuilder__new(l);
+    sb.push('[');
+    int i = 0;
+    while i < l {
+        if i > 0 {
+            sb.push(',');
+        }
+        void* el = self.get(i);
+        if el_to_string != null {
+            el = el_to_string(el, null);
+        }
+        sb.push_str(el);
+        if el_to_string != null {
+            free(el);
+        }
+        i = i + 1;
+    }
+    sb.push(']');
+    return sb.into_chars();
 }
 
 # I drop the list, along with its elements (if they are owned).

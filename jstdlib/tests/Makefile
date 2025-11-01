@@ -16,6 +16,7 @@ all: \
 	isspace \
 	printf \
 	putchar \
+	quicksort_test \
 	read_line_test \
 	strcmp_test \
 	substr \
