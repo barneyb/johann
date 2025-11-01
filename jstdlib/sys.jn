@@ -12,14 +12,13 @@ pub fn panic(int status, char* buf, int nbytes);
 # be the first argument passed to the kernel.
 pub fn syscall(int number);
 
-# todo: make half open
 # todo: use count/width
-pub fn quicksort(void* arr, int lo, int hi, void* cmp) {
+pub fn quicksort_half_open(void* arr, int lo, int hi, void* cmp) {
     # todo: protection for quadratic runtime when largely sorted
-    if lo < hi {
+    if lo < hi - 1 {
         int p = qsort_part(arr, lo, hi, cmp);
-        quicksort(arr, lo,    p,  cmp);
-        quicksort(arr, p + 1, hi, cmp);
+        quicksort_half_open(arr,    lo, p + 1, cmp);
+        quicksort_half_open(arr, p + 1,    hi, cmp);
     }
 }
 
@@ -27,7 +26,7 @@ fn qsort_part(void* arr, int lo, int hi, void* cmp) {
     void pivot = arr[lo];
     # start just outside the target range
     int l = lo - 1;
-    int r = hi + 1;
+    int r = hi;
     while true {
         # move left index to the right at least once
         while true {

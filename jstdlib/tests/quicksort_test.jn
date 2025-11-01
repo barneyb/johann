@@ -26,9 +26,9 @@ fn chars() {
     char* arr = strclone("odneipjsdfk");
     int l = strlen(arr);
     puts(arr);
-    quicksort(arr, 0, l, &chcmp);
+    quicksort_half_open(arr, 0, l, &chcmp);
     puts(arr);
-    quicksort(arr, 0, l, &chrev);
+    quicksort_half_open(arr, 0, l, &chrev);
     puts(arr);
     free(arr);
 }
@@ -48,9 +48,9 @@ fn ints() {
     arr[12] = 5; arr[13] =  3;
 
     print_array(arr, len, &itoa);
-    quicksort(arr, 0, len - 1, &intcmp);
+    quicksort_half_open(arr, 0, len, &intcmp);
     print_array(arr, len, &itoa);
-    quicksort(arr, 0, len - 1, &intrev);
+    quicksort_half_open(arr, 0, len, &intrev);
     print_array(arr, len, &itoa);
     free(arr);
 }
@@ -72,9 +72,9 @@ fn strings() {
     arr[8] = "dog";
 
     print_array(arr, len, &strclone);
-    quicksort(arr, 0, len - 1, &strcmp);
+    quicksort_half_open(arr, 0, len, &strcmp);
     print_array(arr, len, &strclone);
-    quicksort(arr, 0, len - 1, &strrev);
+    quicksort_half_open(arr, 0, len, &strrev);
     print_array(arr, len, &strclone);
     free(arr);
 }
