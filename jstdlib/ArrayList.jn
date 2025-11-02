@@ -6,7 +6,7 @@
 
 struct StringBuilder;
 
-# Storage for an ArrayList.
+# Type of an ArrayList, with private storage.
 pub struct ArrayList {
     int capacity,
     int size,
@@ -109,7 +109,7 @@ pub fn ArrayList_into_array(ArrayList* self) {
 # I sort the list, in place, using the passed comparator function to define
 # total order over the elements.
 pub fn ArrayList_sort(ArrayList* self, void* cmp) {
-    quicksort_half_open(self.data, 0, self.size(), cmp);
+    quicksort(self.data, 0, self.size(), cmp);
 }
 
 # I render the list to a null-terminated byte string, using the passed function

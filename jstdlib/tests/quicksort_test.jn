@@ -5,15 +5,7 @@ fn strclone(char*);
 struct StringBuilder;
 
 pub fn main() {
-
-#chars:
-#odneipjsdfk
-#ddefijknops
-#sponkjifedd
-
-
-# todo: reinstate
-#    chars();
+    chars();
     ints();
     strings();
 }
@@ -23,14 +15,22 @@ fn chrev(char a, char b) { return b - a; }
 
 fn chars() {
     puts("\nchars:");
-    char* arr = strclone("odneipjsdfk");
-    int l = strlen(arr);
-    puts(arr);
-    quicksort_half_open(arr, 0, l, &chcmp);
-    puts(arr);
-    quicksort_half_open(arr, 0, l, &chrev);
-    puts(arr);
-    free(arr);
+
+    puts("not yet supported");
+#chars:
+#odneipjsdfk
+#ddefijknops
+#sponkjifedd
+
+#    char* arr = strclone("odneipjsdfk");
+#    int l = strlen(arr);
+#    puts(arr);
+#    # can't use quicksort here
+#    qsort(arr, l, sizeof(char), &chcmp);
+#    puts(arr);
+#    qsort(arr, l, sizeof(char), &chrev);
+#    puts(arr);
+#    free(arr);
 }
 
 fn intcmp(int a, int b) { return a - b; }
@@ -48,9 +48,9 @@ fn ints() {
     arr[12] = 5; arr[13] =  3;
 
     print_array(arr, len, &itoa);
-    quicksort_half_open(arr, 0, len, &intcmp);
+    quicksort(arr, 0, len, &intcmp);
     print_array(arr, len, &itoa);
-    quicksort_half_open(arr, 0, len, &intrev);
+    quicksort(arr, 0, len, &intrev);
     print_array(arr, len, &itoa);
     free(arr);
 }
@@ -60,7 +60,7 @@ fn strrev(char* a, char* b) { return strcmp(b, a); }
 fn strings() {
     puts("\nstrings:");
     int len = 9;
-    int* arr = malloc(len * sizeof(char*));
+    char** arr = malloc(len * sizeof(char*));
     arr[0] = "horse";
     arr[1] = "rabbit";
     arr[3] = "cattle";
@@ -72,9 +72,9 @@ fn strings() {
     arr[8] = "dog";
 
     print_array(arr, len, &strclone);
-    quicksort_half_open(arr, 0, len, &strcmp);
+    quicksort(arr, 0, len, &strcmp);
     print_array(arr, len, &strclone);
-    quicksort_half_open(arr, 0, len, &strrev);
+    quicksort(arr, 0, len, &strrev);
     print_array(arr, len, &strclone);
     free(arr);
 }

@@ -1,0 +1,46 @@
+# General-purpose algorithms. Currently just sort. Binary search is a likely
+# future addition.
+
+# I sort the elements at indices at or above `lo` and less than `hi` of the
+# given array `arr`, using the comparator function pointer `cmp` to compare
+# elements, _assuming each element is `sizeof(void*)`_. Since Johann puts nearly
+# everything behind a pointer into the heap (Java-like, not C-like), this is
+# probably what you want. If your array has elements of a different size (e.g.,
+# a manually-laid-out array of non-pointers), you'll need to implement sorting
+# manually too.
+pub fn quicksort(void* arr, int lo, int hi, void* cmp) {
+    if lo >= hi - 1 {
+        # only one element (or a nonsensical request)
+        return;
+    }
+    # todo: protection for quadratic runtime when largely sorted
+    int pi = quicksort_partition(arr, lo, hi, cmp);
+    quicksort(arr,     lo, pi + 1, cmp);
+    quicksort(arr, pi + 1,     hi, cmp);
+}
+
+fn quicksort_partition(void* arr, int lo, int hi, void* cmp) {
+    void pivot = arr[lo];
+    # start just outside the target range
+    int l = lo - 1;
+    int r = hi;
+    while true {
+        # move left index to the right at least once
+        while true {
+            l = l + 1;
+            if cmp(arr[l], pivot) >= 0 { done; }
+        }
+        # and same for right index
+        while true {
+            r = r - 1;
+            if cmp(arr[r], pivot) <= 0 { done; }
+        }
+        # if they crossed, partitioning is complete
+        if l >= r { return r; }
+
+        # swap the two elements and keep going
+        void* t = arr[l];
+        arr[l] = arr[r];
+        arr[r] = t;
+    }
+}
