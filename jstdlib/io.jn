@@ -1,7 +1,7 @@
 # No files, just STDIN and STDOUT. `EOF` is any negative number.
 #
-# * `printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT. Only seven variadic args will work.
-# * `eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering). Only seven variadic args will work.
+# * `void printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT. Only seven variadic args will work.
+# * `void eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering). Only seven variadic args will work.
 
 # I consume the next character from STDIN and return it, or `EOF`.
 pub fn getchar();

@@ -2,6 +2,8 @@
 set -e
 
 cd "$(dirname "$0")"
+TARGET=target
+mkdir -p "$TARGET"
 
 ACTION="doc"
 if [ "$1" = "-u" ]; then
@@ -59,6 +61,9 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
         {
             head -n $THRU $DOC_FILE
             if [ "$ACTION" = "doc" ]; then
+                TMP="$TARGET/$STEM"
+                rm -rf $TMP
+                mkdir -p "$TMP"
                 echo
                 echo '## `'"$STEM"'`'
                 echo
@@ -90,8 +95,14 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                         continue
                     elif [[ "$line" =~ ^pub ]]; then
                         line=$(echo "$line" | cut -d '{' -f 1)
+                        type=$(echo "$line" | cut -w -f 2)
                         if ! echo "$line" | grep -F '_(' > /dev/null; then
-                            echo '`'"$line"'`'"\n\n: $DOC\n"
+                            if [[ "$type" = "fn" ]]; then
+                                fn="`echo "$line" | sed -E -e 's/[^a-zA-Z0-9_]/-/g'`.fn.txt"
+                                echo '`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
+                            else
+                                echo '`'"$line"'`'"\n\n$DOC\n"
+                            fi
                         fi
                         do_file=nope
                     elif [[ "$do_file" = "yes" ]]; then
@@ -102,11 +113,12 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     DOC=""
                 done < "$FILE"
                 echo
+                ls $TMP/*.fn.txt | xargs cat
             fi
             echo "<!--{/johanndoc:$FILE}-->"
             tail -n +$(( THRU + END_LINE )) $DOC_FILE
-        } > tmp.md
-        mv tmp.md $DOC_FILE
+        } > $TARGET/tmp.md
+        cp $TARGET/tmp.md $DOC_FILE
     done
 done
 
@@ -118,7 +130,7 @@ JNC=./jnc/target/bin/jnc
 if [ ! -f "$JNC" ]; then
     make -C jnc all
 fi
-OUT=target/out
+OUT=$TARGET/out
 mkdir -p "$OUT"
 cat > $OUT/fixtures.jn << EOF
     pub char* GREETING = "Hello, world!\n";
