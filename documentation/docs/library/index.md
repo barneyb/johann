@@ -197,6 +197,10 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 
 : I return the length of the passed string, not including the terminating null byte.
 
+`pub fn strstr(char* str, char* substr) `
+
+: I return a pointer to the first instance of `substr` within `str`, or null if no occurrence was found. If `substr` is the empty string, `str` is returned.
+
 `pub fn substr(char* str, int start, int end) `
 
 : I create a new null-terminated byte string from the given half-open range of the passed `str`. No bounds checking is performed.

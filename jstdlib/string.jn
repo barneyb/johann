@@ -110,6 +110,44 @@ pub fn strlen(char* str) {
     return end - str;
 }
 
+# I return a pointer to the first instance of `substr` within `str`, or null if
+# no occurrence was found. If `substr` is the empty string, `str` is returned.
+pub fn strstr(char* str, char* substr) {
+    # if substr is empty, it matches the start of str
+    char first_char = *substr;
+    if first_char == null { return str; }
+
+    # otherwise, search
+    char curr = *str;
+    while curr != null {
+        if curr == first_char {
+            # the first chars matched, check the rest
+            char* lhs = str;
+            char* rhs = substr;
+            char l = *lhs;
+            char r = *rhs;
+            while true {
+                if r == null {
+                    # found it!
+                    return str;
+                }
+                if l != r {
+                    done;
+                }
+                lhs = lhs + 1;
+                rhs = rhs + 1;
+                l = *lhs;
+                r = *rhs;
+            }
+        }
+        str = str + 1;
+        curr = *str;
+    }
+
+    # didn't find it
+    return null;
+}
+
 # I create a new null-terminated byte string from the given half-open range of
 # the passed `str`. No bounds checking is performed.
 pub fn substr(char* str, int start, int end) {

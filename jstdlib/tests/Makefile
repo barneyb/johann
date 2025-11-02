@@ -19,6 +19,7 @@ all: \
 	quicksort_test \
 	read_line_test \
 	strcmp_test \
+	string_search \
 	substr \
 	symbols \
 
@@ -53,7 +54,7 @@ read_line_test: $(BIN)/read_line_test read_line_test.expected.txt
 %: $(BIN)/% %.expected.txt
 	@mkdir -p $(OUT)
 	$< > $(OUT)/$@.actual.txt
-	diff -u $@.expected.txt $(OUT)/$@.actual.txt
+	diff -u --text $@.expected.txt $(OUT)/$@.actual.txt
 
 $(BIN)/%: $(LIB)/%.o $(JSTDLIB)
 	@mkdir -p $(BIN)

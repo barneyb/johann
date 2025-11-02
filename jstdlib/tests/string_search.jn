@@ -1,0 +1,40 @@
+pub fn main() {
+    test_strchr();
+    test_strstr();
+}
+
+fn test_strchr() {
+    puts("\ntest_strchr:");
+    char* haystack = "haystack";
+    printf("haystack: '%s'\n", haystack);
+    test_strchr_one(haystack, 's');
+    test_strchr_one(haystack, 'Z');
+    test_strchr_one(haystack, 0);
+    test_strchr_one(haystack, 'a');
+    haystack = strchr(haystack, 'a') + 1;
+    printf("haystack: '%s'\n", haystack);
+    test_strchr_one(haystack, 'a');
+}
+fn test_strchr_one(char* haystack, char ch) {
+    char* sub = strchr(haystack, ch);
+    if sub == null {
+        printf("      '%c': null\n", ch);
+        return;
+    }
+    printf("      '%c': '%s'\n", ch, sub);
+}
+
+fn test_strstr() {
+    puts("\ntest_strstr:");
+    test_strstr_one("haystack", "needle");
+    test_strstr_one("haystack", "");
+    test_strstr_one("ababbabbb", "abb");
+}
+fn test_strstr_one(char* haystack, char* needle) {
+    char* sub = strstr(haystack, needle);
+    if sub == null {
+        printf("strstr('%s', '%s') : null\n", haystack, needle);
+        return;
+    }
+    printf("strstr('%s', '%s') : '%s'\n", haystack, needle, sub);
+}
