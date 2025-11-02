@@ -1,0 +1,29 @@
+struct ArrayList;
+
+pub fn main() {
+    test_strsplit();
+    test_strsplit_after();
+}
+
+fn test_strsplit() {
+    puts("\nTEST strsplit:");
+    dump(strsplit("ab", "a"));
+    dump(strsplit("ab", "b"));
+    dump(strsplit("ab", "c"));
+    dump(strsplit("aababbabbb", "ab"));
+}
+
+fn test_strsplit_after() {
+    puts("\nTEST strsplit_after:");
+    dump(strsplit_after("ab", "a"));
+    dump(strsplit_after("ab", "b"));
+    dump(strsplit_after("ab", "c"));
+    dump(strsplit_after("aababbabbb", "ab"));
+}
+
+fn dump(ArrayList* parts) {
+    char* s = parts.to_string(null);
+    printf("%s\n", s);
+    free(s);
+    parts.drop();
+}

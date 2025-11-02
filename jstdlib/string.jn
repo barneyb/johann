@@ -1,6 +1,11 @@
 # Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`,
 # because those C guys are weird.
 
+fn free(void* ptr);
+
+struct ArrayList;
+struct StringBuilder;
+
 # is the passed character a decimal digit?
 pub fn isdigit(char c) {
     if c < '0' { return false; }
@@ -80,6 +85,55 @@ pub fn strclone(char* src) {
     char* dest = malloc(len);
     memcpy(dest, src, len);
     return dest;
+}
+
+# I return an `ArrayList` containing owned substrings from `str`, delimited by
+# `sep`. If `sep` is the empty string, panic. This program prints `2: '', 'b'`.
+# ```johann
+# ArrayList* parts = strsplit("ab", "a");
+# printf("%d: '%s', '%s'\\n",
+#        parts.size(),
+#        parts.get(0),
+#        parts.get(1));
+# parts.drop();
+# ```
+pub fn strsplit(char* str, char* sep) {
+    int len = strlen(sep);
+    if len == 0 { panic(4, "empty sep to strsplit\n", 22); }
+    ArrayList* parts = ArrayList__new_owned(10, &free);
+    char* ptr = strstr(str, sep);
+    while ptr != null {
+        parts.push(substr(str, 0, ptr - str));
+        str = ptr + len;
+        ptr = strstr(str, sep);
+    }
+    parts.push(substr(str, 0, strlen(str)));
+    return parts;
+}
+
+# I return an `ArrayList` containing owned substrings from `str`, each ending
+# with `sep`, except the last. If `sep` is the empty string, panic. This program
+# prints `2: 'a', 'b'`.
+# ```johann
+# ArrayList* parts = strsplit_after("ab", "a");
+# printf("%d: '%s', '%s'\\n",
+#        parts.size(),
+#        parts.get(0),
+#        parts.get(1));
+# parts.drop();
+# ```
+pub fn strsplit_after(char* str, char* sep) {
+    int len = strlen(sep);
+    if len == 0 { panic(4, "empty sep to strsplit_after\n", 28); }
+    ArrayList* parts = ArrayList__new_owned(10, &free);
+    char* ptr = strstr(str, sep);
+    while ptr != null {
+        parts.push(substr(str, 0, ptr - str + len));
+        str = ptr + len;
+        ptr = strstr(str, sep);
+    }
+    parts.push(substr(str, 0, strlen(str)));
+    return parts;
 }
 
 # I compare two null-terminated byte strings and return a negative number if

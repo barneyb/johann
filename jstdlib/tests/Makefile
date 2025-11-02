@@ -20,6 +20,7 @@ all: \
 	read_line_test \
 	strcmp_test \
 	string_search \
+	strsplit \
 	substr \
 	symbols \
 

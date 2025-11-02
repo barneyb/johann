@@ -159,6 +159,7 @@ I am simple Queue structure, implemented as a linked list. Elements are always 6
 
 
 <!--{/johanndoc:jstdlib/Queue.jn}-->
+
 <!--{johanndoc:jstdlib/string.jn}-->
 
 ## `string`
@@ -188,6 +189,30 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 `pub fn strclone(char* src) `
 
 : clone the passed string into a new allocation.
+
+`pub fn strsplit(char* str, char* sep) `
+
+: I return an `ArrayList` containing owned substrings from `str`, delimited by `sep`. If `sep` is the empty string, panic. This program prints `2: '', 'b'`.
+```johann
+ArrayList* parts = strsplit("ab", "a");
+printf("%d: '%s', '%s'\n",
+       parts.size(),
+       parts.get(0),
+       parts.get(1));
+parts.drop();
+```
+
+`pub fn strsplit_after(char* str, char* sep) `
+
+: I return an `ArrayList` containing owned substrings from `str`, each ending with `sep`, except the last. If `sep` is the empty string, panic. This program prints `2: 'a', 'b'`.
+```johann
+ArrayList* parts = strsplit_after("ab", "a");
+printf("%d: '%s', '%s'\n",
+       parts.size(),
+       parts.get(0),
+       parts.get(1));
+parts.drop();
+```
 
 `pub fn strcmp(char* lhs, char* rhs) `
 
