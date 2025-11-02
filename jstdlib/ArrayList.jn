@@ -94,6 +94,18 @@ pub fn ArrayList_get(ArrayList* self, int i) {
     return *arr;
 }
 
+# I set the `i`th element in the list, returning the prior value there. If `i`
+# < 0 or `i` >= size, panic.
+pub fn ArrayList_set(ArrayList* self, int i, void el) {
+    if i < 0 { panic(-i, "Index out of bounds\n", 20); }
+    if i >= self.size() { panic(i, "Index out of bounds\n", 20); }
+    void* arr = self.data;
+    arr = arr + i * 0x8;
+    void old = *arr;
+    *arr = el;
+    return old;
+}
+
 # I consume the list and return a null-terminated array of its elements. The
 # array may have unfreed capacity beyond the terminating null.
 pub fn ArrayList_into_array(ArrayList* self) {

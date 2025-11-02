@@ -37,9 +37,11 @@ size: 20, cap: 32
 owned_elements:
 size: 2, cap: 17
 
-get:
+get_and_set:
 Found 11 at 1
 Found 14 at 4
+Found 99999 at 4
+Found 0 at 4
 Found 21 at 11
 
 as_stack:

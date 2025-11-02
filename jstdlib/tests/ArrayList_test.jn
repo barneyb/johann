@@ -10,7 +10,7 @@ pub fn main() {
     into_array();
     expand();
     owned_elements();
-    get();
+    get_and_set();
     as_stack();
     sort_and_to_string();
 }
@@ -92,9 +92,9 @@ fn owned_elements() {
     ArrayList_drop(list);
 }
 
-fn get() {
-    puts("\nget:");
-    void* list = ArrayList__new(3);
+fn get_and_set() {
+    puts("\nget_and_set:");
+    ArrayList* list = ArrayList__new(3);
     int i = 10;
     while i < 22 {
         ArrayList_push(list, i);
@@ -102,6 +102,10 @@ fn get() {
     }
     printf("Found %d at 1\n", ArrayList_get(list, 1));
     printf("Found %d at 4\n", ArrayList_get(list, 4));
+    list.set(4, 99999);
+    printf("Found %d at 4\n", list.get(4));
+    list.set(4, null);
+    printf("Found %d at 4\n", list.get(4));
     printf("Found %d at 11\n", ArrayList_get(list, 11));
     ArrayList_drop(list);
 }

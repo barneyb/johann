@@ -75,6 +75,10 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 : I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
 
+`pub fn ArrayList_set(ArrayList* self, int i, void el) `
+
+: I set the `i`th element in the list, returning the prior value there. If `i` < 0 or `i` >= size, panic.
+
 `pub fn ArrayList_into_array(ArrayList* self) `
 
 : I consume the list and return a null-terminated array of its elements. The array may have unfreed capacity beyond the terminating null.
