@@ -8,6 +8,7 @@ OBJECTS = \
 	$(LIB)/Queue.jn.o \
 	$(LIB)/StringBuilder.jn.o \
 	$(LIB)/TreeMap.jn.o \
+	$(LIB)/algorithm.jn.o \
 	$(LIB)/allocator.jn.o \
 	$(LIB)/io.jn.o \
 	$(LIB)/io.o \

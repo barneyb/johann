@@ -1,0 +1,98 @@
+fn itoa(int);
+fn strcmp(char*, char*);
+fn strclone(char*);
+
+struct StringBuilder;
+
+pub fn main() {
+    chars();
+    ints();
+    strings();
+}
+
+fn chcmp(char a, char b) { return a - b; }
+fn chrev(char a, char b) { return b - a; }
+
+fn chars() {
+    puts("\nchars:");
+
+    puts("not yet supported");
+#chars:
+#odneipjsdfk
+#ddefijknops
+#sponkjifedd
+
+#    char* arr = strclone("odneipjsdfk");
+#    int l = strlen(arr);
+#    puts(arr);
+#    # can't use quicksort here
+#    qsort(arr, l, sizeof(char), &chcmp);
+#    puts(arr);
+#    qsort(arr, l, sizeof(char), &chrev);
+#    puts(arr);
+#    free(arr);
+}
+
+fn intcmp(int a, int b) { return a - b; }
+fn intrev(int a, int b) { return b - a; }
+
+struct ArrayList;
+fn ints() {
+    puts("\nints:");
+    int len = 14;
+    int* arr = malloc(len * sizeof(int));
+    # todo: array literals would be nice...
+    arr[ 0] = 7; arr[ 1] =  4; arr[ 2] =  9; arr[ 3] = 1;
+    arr[ 4] = 5; arr[ 5] = 45; arr[ 6] =  0; arr[ 7] = 2;
+    arr[ 8] = 8; arr[ 9] = 12; arr[10] = 98; arr[11] = 5;
+    arr[12] = 5; arr[13] =  3;
+
+    print_array(arr, len, &itoa);
+    quicksort(arr, 0, len, &intcmp);
+    print_array(arr, len, &itoa);
+    quicksort(arr, 0, len, &intrev);
+    print_array(arr, len, &itoa);
+    free(arr);
+}
+
+fn strrev(char* a, char* b) { return strcmp(b, a); }
+
+fn strings() {
+    puts("\nstrings:");
+    int len = 9;
+    char** arr = malloc(len * sizeof(char*));
+    arr[0] = "horse";
+    arr[1] = "rabbit";
+    arr[3] = "cattle";
+    arr[2] = "cat";
+    arr[4] = "";
+    arr[5] = "cow";
+    arr[6] = "cat";
+    arr[7] = "butterfly";
+    arr[8] = "dog";
+
+    print_array(arr, len, &strclone);
+    quicksort(arr, 0, len, &strcmp);
+    print_array(arr, len, &strclone);
+    quicksort(arr, 0, len, &strrev);
+    print_array(arr, len, &strclone);
+    free(arr);
+}
+
+fn print_array(void* arr, int len, void* el_str) {
+    StringBuilder* sb = StringBuilder__new(10);
+    sb.push('[');
+    char* s;
+    int i = 0;
+    while i < len {
+        if i > 0 { sb.push(','); }
+        s = el_str(arr[i]);
+        sb.push_str(s);
+        free(s);
+        i = i + 1;
+    }
+    sb.push(']');
+    s = sb.into_chars();
+    puts(s);
+    free(s);
+}

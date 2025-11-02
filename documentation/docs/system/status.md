@@ -38,12 +38,13 @@
 - [x] dynamic memory recycling
 - [x] array-backed list type
 - [ ] balanced tree-based symbol table
-- [ ] sorting arrays
+- [x] sorting arrays
 - [ ] buffered StdIn & StdErr
 - [ ] read/write files
 - [ ] regular expressions
 - [ ] hash-based symbol table
 - [x] a queue data type
+- [ ] binary search of arrays
 
 ## Compilation Stages
 

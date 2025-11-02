@@ -1,4 +1,7 @@
 fn free(void*);
+fn itoa(int);
+
+struct ArrayList;
 
 pub fn main() {
     drop_empty();
@@ -9,6 +12,7 @@ pub fn main() {
     owned_elements();
     get();
     as_stack();
+    sort_and_to_string();
 }
 
 fn drop_empty() {
@@ -150,4 +154,34 @@ fn print_array(void* arr) {
         if it == null { done; }
         i = i + 1;
     }
+}
+
+fn intcmp(int a, int b) { return a - b; }
+fn intrev(int a, int b) { return b - a; }
+
+fn sort_and_to_string() {
+    puts("\nsort_and_to_string:");
+    ArrayList* l = ArrayList__new(16);
+    l.push(7); l.push( 4); l.push( 9); l.push(1);
+    l.push(5); l.push(45); l.push( 0); l.push(2);
+    l.push(8); l.push(12); l.push(98); l.push(5);
+    l.push(5); l.push( 3);
+
+    char* s = l.to_string(&itoa);
+    printf("unsorted: %s\n", s);
+    free(s);
+
+    l.sort(&intcmp);
+
+    s = l.to_string(&itoa);
+    printf("  sorted: %s\n", s);
+    free(s);
+
+    l.sort(&intrev);
+
+    s = l.to_string(&itoa);
+    printf(" reverse: %s\n", s);
+    free(s);
+
+    l.drop();
 }

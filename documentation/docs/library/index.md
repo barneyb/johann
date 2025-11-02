@@ -6,6 +6,18 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 
     While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the Johann bits have their docs generated from the source itself, while the assembly bits are hand-documented as if C.
 
+<!--{johanndoc:jstdlib/algorithm.jn}-->
+
+## `algorithm`
+
+General-purpose algorithms. Currently just sort. Binary search is a likely future addition.
+
+`pub fn quicksort(void* arr, int lo, int hi, void* cmp) `
+
+: I sort the elements at indices at or above `lo` and less than `hi` of the given array `arr`, using the comparator function pointer `cmp` to compare elements, _assuming each element is `sizeof(void*)`_. Since Johann puts nearly everything behind a pointer into the heap (Java-like, not C-like), this is probably what you want. If your array has elements of a different size (e.g., a manually-laid-out array of non-pointers), you'll need to implement sorting manually too.
+
+
+<!--{/johanndoc:jstdlib/algorithm.jn}-->
 <!--{johanndoc:jstdlib/allocator.jn}-->
 
 ## `allocator`
@@ -30,6 +42,10 @@ Dynamic memory functions. Eventually, these will go away in favor of `new`/`drop
 I am auto-resizing array-backed list structure. Elements are always 64-bit values with pass by value semantics. `ArrayList__new_owned` can if the elements are pointers to owned objects.
 
  The `push`, `peek`, and `pop` "methods" offer graceful use as a stack.
+
+`pub struct ArrayList `
+
+: Type of an ArrayList, with private storage.
 
 `pub fn ArrayList__new(int capacity) `
 
@@ -62,6 +78,14 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 `pub fn ArrayList_into_array(ArrayList* self) `
 
 : I consume the list and return a null-terminated array of its elements. The array may have unfreed capacity beyond the terminating null.
+
+`pub fn ArrayList_sort(ArrayList* self, void* cmp) `
+
+: I sort the list, in place, using the passed comparator function to define total order over the elements.
+
+`pub fn ArrayList_to_string(ArrayList* self, void* el_to_string) `
+
+: I render the list to a null-terminated byte string, using the passed function to convert each element in turn. If `null` is passed, the elements are assumed to be NTBSs, to be included in the final string directly. The returned string must be `free`-ed by the client. The list is not consumed.
 
 `pub fn ArrayList_drop(ArrayList* self) `
 
