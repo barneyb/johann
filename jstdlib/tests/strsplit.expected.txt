@@ -1,0 +1,19 @@
+
+TEST strsplit:
+[,b]
+[a,]
+[ab]
+[a,,b,bb]
+
+TEST strsplit_after:
+[a,b]
+[ab,]
+[ab]
+[aab,ab,bab,bb]
+
+TEST strjoin:
+{}
+{abra}
+{abra|ca|dabra}
+{abra|ca|dabra|}
+{abracadabra}

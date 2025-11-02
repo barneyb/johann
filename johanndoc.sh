@@ -55,6 +55,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
             echo "File '$FILE' opened line $THRU mis-closed by '$END_FILE' on line $((THRU + END_LINE - 1))"
             exit 4
         fi
+        is_pre=nope
         {
             head -n $THRU $DOC_FILE
             if [ "$ACTION" = "doc" ]; then
@@ -68,8 +69,20 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                         DOC="$DOC\n\n"
                         continue
                     elif [[ "$line" =~ ^#.* ]]; then
+                        if [[ "$line" =~ '^# +```' ]]; then
+                            nl="\n"
+                            if [[ "$is_pre" = "yes" ]]; then
+                                is_pre=nope
+                            else
+                                is_pre=yes
+                            fi
+                        elif [[ "$is_pre" == "yes" ]]; then
+                            nl="\n"
+                        else
+                            nl=" "
+                        fi
                         if [ -n "$DOC" ]; then
-                            DOC="$DOC "
+                            DOC="$DOC$nl"
                         fi
                         DOC="$DOC${line:2}"
                         continue
@@ -113,7 +126,7 @@ cat > $OUT/fixtures.jn << EOF
 EOF
 $JNC < $OUT/fixtures.jn > $OUT/fixtures.s
 gcc -o $OUT/fixtures.o -c $OUT/fixtures.s
-for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`; do
+for BLOCK in `grep -HnE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`; do
     DOC_FILE=$(echo $BLOCK | cut -d : -f 1)
     LINE=$(echo $BLOCK | cut -d : -f 2)
     LINE=$(( LINE + 1 ))
@@ -123,8 +136,10 @@ for BLOCK in `grep -nE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,2`
     ROOT="$OUT/$(echo $DOC_FILE | tr -cs '[:alnum:]' "_")_$LINE"
     tail -n +$LINE $DOC_FILE | head -n $NLINES > ${ROOT}.jn
     if ! grep -F 'fn ' ${ROOT}.jn > /dev/null; then
-        # need to wrap with main
-        echo "pub fn main() {" > ${ROOT}.p.jn
+        # need to wrap with prelude
+        rm -f ${ROOT}.p.jn
+        echo "struct ArrayList;" >> ${ROOT}.p.jn
+        echo "pub fn main() {" >> ${ROOT}.p.jn
         cat ${ROOT}.jn >> ${ROOT}.p.jn
         echo "}" >> ${ROOT}.p.jn
         mv ${ROOT}.p.jn ${ROOT}.jn

@@ -1,6 +1,11 @@
 # Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`,
 # because those C guys are weird.
 
+fn free(void* ptr);
+
+struct ArrayList;
+struct StringBuilder;
+
 # is the passed character a decimal digit?
 pub fn isdigit(char c) {
     if c < '0' { return false; }
@@ -82,6 +87,90 @@ pub fn strclone(char* src) {
     return dest;
 }
 
+# I return an `ArrayList` containing owned substrings from `str`, delimited by
+# `sep`. If `sep` is the empty string, panic. I am the inverse of `strjoin`.
+# This program prints `2: '', 'b'`.
+# ```johann
+# ArrayList* parts = strsplit("ab", "a");
+# printf("%d: '%s', '%s'\\n",
+#        parts.size(),
+#        parts.get(0),
+#        parts.get(1));
+# parts.drop();
+# ```
+pub fn strsplit(char* str, char* sep) {
+    int len = strlen(sep);
+    if len == 0 { panic(4, "empty sep to strsplit\n", 22); }
+    ArrayList* parts = ArrayList__new_owned(10, &free);
+    char* ptr = strstr(str, sep);
+    while ptr != null {
+        parts.push(substr(str, 0, ptr - str));
+        str = ptr + len;
+        ptr = strstr(str, sep);
+    }
+    parts.push(substr(str, 0, strlen(str)));
+    return parts;
+}
+
+# I return an `ArrayList` containing owned substrings from `str`, each ending
+# with `sep`, except the last. If `sep` is the empty string, panic. This program
+# prints `2: 'a', 'b'`.
+# ```johann
+# ArrayList* parts = strsplit_after("ab", "a");
+# printf("%d: '%s', '%s'\\n",
+#        parts.size(),
+#        parts.get(0),
+#        parts.get(1));
+# parts.drop();
+# ```
+pub fn strsplit_after(char* str, char* sep) {
+    int len = strlen(sep);
+    if len == 0 { panic(4, "empty sep to strsplit_after\n", 28); }
+    ArrayList* parts = ArrayList__new_owned(10, &free);
+    char* ptr = strstr(str, sep);
+    while ptr != null {
+        parts.push(substr(str, 0, ptr - str + len));
+        str = ptr + len;
+        ptr = strstr(str, sep);
+    }
+    parts.push(substr(str, 0, strlen(str)));
+    return parts;
+}
+
+# I take each `char*` element of `parts` and concatenate them together with
+# `sep` between, returning the newly allocated string. I am the inverse of
+# `strsplit`. This program prints `abc`;
+# ```johann
+# ArrayList* parts = ArrayList__new(2);
+# parts.push("a"); parts.push("c");
+# char* s = strjoin(parts, "b");
+# puts(s);
+# free(s); parts.drop();
+# ```
+pub fn strjoin(ArrayList* parts, char* sep) {
+    int l = parts.size();
+    if l == 0 { return strclone(""); }
+    if l == 1 { return strclone(parts.get(0)); }
+    StringBuilder* sb = StringBuilder__new(l);
+    int i = 0;
+    if *sep == null {
+        # empty separator
+        while i < l {
+            sb.push_str(parts.get(i));
+            i = i + 1;
+        }
+        return sb.into_chars();
+    }
+    sb.push_str(parts.get(0));
+    i = 1;
+    while i < l {
+        sb.push_str(sep);
+        sb.push_str(parts.get(i));
+        i = i + 1;
+    }
+    return sb.into_chars();
+}
+
 # I compare two null-terminated byte strings and return a negative number if
 # `lhs` sorts lexicographically first, a positive number if `rhs` is first, and
 # zero if they are equal.
@@ -108,6 +197,44 @@ pub fn strlen(char* str) {
         c = *end;
     }
     return end - str;
+}
+
+# I return a pointer to the first instance of `substr` within `str`, or null if
+# no occurrence was found. If `substr` is the empty string, `str` is returned.
+pub fn strstr(char* str, char* substr) {
+    # if substr is empty, it matches the start of str
+    char first_char = *substr;
+    if first_char == null { return str; }
+
+    # otherwise, search
+    char curr = *str;
+    while curr != null {
+        if curr == first_char {
+            # the first chars matched, check the rest
+            char* lhs = str;
+            char* rhs = substr;
+            char l = *lhs;
+            char r = *rhs;
+            while true {
+                if r == null {
+                    # found it!
+                    return str;
+                }
+                if l != r {
+                    done;
+                }
+                lhs = lhs + 1;
+                rhs = rhs + 1;
+                l = *lhs;
+                r = *rhs;
+            }
+        }
+        str = str + 1;
+        curr = *str;
+    }
+
+    # didn't find it
+    return null;
 }
 
 # I create a new null-terminated byte string from the given half-open range of

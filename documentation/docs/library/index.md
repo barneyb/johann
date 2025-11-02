@@ -75,6 +75,10 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 : I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
 
+`pub fn ArrayList_set(ArrayList* self, int i, void el) `
+
+: I set the `i`th element in the list, returning the prior value there. If `i` < 0 or `i` >= size, panic.
+
 `pub fn ArrayList_into_array(ArrayList* self) `
 
 : I consume the list and return a null-terminated array of its elements. The array may have unfreed capacity beyond the terminating null.
@@ -159,6 +163,7 @@ I am simple Queue structure, implemented as a linked list. Elements are always 6
 
 
 <!--{/johanndoc:jstdlib/Queue.jn}-->
+
 <!--{johanndoc:jstdlib/string.jn}-->
 
 ## `string`
@@ -189,6 +194,41 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 
 : clone the passed string into a new allocation.
 
+`pub fn strsplit(char* str, char* sep) `
+
+: I return an `ArrayList` containing owned substrings from `str`, delimited by `sep`. If `sep` is the empty string, panic. I am the inverse of `strjoin`. This program prints `2: '', 'b'`.
+```johann
+ArrayList* parts = strsplit("ab", "a");
+printf("%d: '%s', '%s'\n",
+       parts.size(),
+       parts.get(0),
+       parts.get(1));
+parts.drop();
+```
+
+`pub fn strsplit_after(char* str, char* sep) `
+
+: I return an `ArrayList` containing owned substrings from `str`, each ending with `sep`, except the last. If `sep` is the empty string, panic. This program prints `2: 'a', 'b'`.
+```johann
+ArrayList* parts = strsplit_after("ab", "a");
+printf("%d: '%s', '%s'\n",
+       parts.size(),
+       parts.get(0),
+       parts.get(1));
+parts.drop();
+```
+
+`pub fn strjoin(ArrayList* parts, char* sep) `
+
+: I take each `char*` element of `parts` and concatenate them together with `sep` between, returning the newly allocated string. I am the inverse of `strsplit`. This program prints `abc`;
+```johann
+ArrayList* parts = ArrayList__new(2);
+parts.push("a"); parts.push("c");
+char* s = strjoin(parts, "b");
+puts(s);
+free(s); parts.drop();
+```
+
 `pub fn strcmp(char* lhs, char* rhs) `
 
 : I compare two null-terminated byte strings and return a negative number if `lhs` sorts lexicographically first, a positive number if `rhs` is first, and zero if they are equal.
@@ -196,6 +236,10 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 `pub fn strlen(char* str) `
 
 : I return the length of the passed string, not including the terminating null byte.
+
+`pub fn strstr(char* str, char* substr) `
+
+: I return a pointer to the first instance of `substr` within `str`, or null if no occurrence was found. If `substr` is the empty string, `str` is returned.
 
 `pub fn substr(char* str, int start, int end) `
 

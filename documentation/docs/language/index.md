@@ -106,7 +106,7 @@ pub fn main() {
 }
 ```
 
-Finally, method-like syntax is supported _directly_ off identifiers which are typed with a `struct` type, as syntactic sugar for calling a function with the type's name as an underscore-delimited prefix. Easier to show, using [StringBuilder](../library#stringbuilder), where the two `push_str` calls are equivalent, due to the explicit type of `sb`:
+Finally, method-like syntax is supported _directly_ off identifiers which are typed with a `struct` type, as syntactic sugar for calling a function with the type's name as an underscore-delimited prefix. Easier to show, using [StringBuilder](../library/index.md#stringbuilder), where the two `push_str` calls are equivalent, due to the explicit type of `sb`:
 
 ```johann
 struct StringBuilder;                           # bring name into scope
