@@ -112,20 +112,36 @@ I am auto-resizing array-backed list structure. Elements are always 64-bit value
 
 No files, just STDIN and STDOUT. `EOF` is any negative number.
 
+
+* `printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT. Only seven variadic args will work.
+* `eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering). Only seven variadic args will work.
+
+`pub fn getchar();`
+
+: I consume the next character from STDIN and return it, or `EOF`.
+
+`pub fn iseof();`
+
+: I indicate whether STDIN has reached `EOF`.
+
+`pub fn peekchar();`
+
+: I return the next character from STDIN without consuming it, or `EOF`.
+
+`pub fn putchar(char ch);`
+
+: I write `ch` to STDOUT and return the `char` written.
+
+`pub fn puts(char* str);`
+
+: I write the null-terminated byte string `str` _and a newline_ to STDOUT.
+
 `pub fn read_line() `
 
 : I read one line of characters and return a pointer to a heap-allocated null-terminated byte string containing them. A line ends when `EOF` is reached, or a newline (`0xa`) is encountered. Such newlines _are_ consumed, but _are not_ returned as part of the result. If already at `EOF`, `null` is returned (not an empty string).
 
 
 <!--{/johanndoc:jstdlib/io.jn}-->
-
-* `int getchar( )` - consume the next character from STDIN, or `EOF`.
-* `bool iseof( )` - whether STDIN has reached EOF.
-* `int peekchar( )` - peek at the next character from STDIN without consuming it, or `EOF`.
-* `int printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT.
-* `int eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering).
-* `int putchar( int ch )` - write `ch` to STDOUT and return the `char` written.
-* `int puts( char* str )` - write the null-terminated byte string `str` _and a newline_ to STDOUT.
 
 <!--{johanndoc:jstdlib/Queue.jn}-->
 

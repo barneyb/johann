@@ -76,6 +76,8 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                             else
                                 is_pre=yes
                             fi
+                        elif [[ "$line" =~ '^# +(\*|\d+.) ' ]]; then
+                            nl="\n"
                         elif [[ "$is_pre" == "yes" ]]; then
                             nl="\n"
                         else
