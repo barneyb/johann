@@ -10,3 +10,10 @@ TEST strsplit_after:
 [ab,]
 [ab]
 [aab,ab,bab,bb]
+
+TEST strjoin:
+{}
+{abra}
+{abra|ca|dabra}
+{abra|ca|dabra|}
+{abracadabra}

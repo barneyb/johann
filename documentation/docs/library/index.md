@@ -192,7 +192,7 @@ Utilities for null-terminated byte string (NTBS) manipulation. Plus `memcpy`, be
 
 `pub fn strsplit(char* str, char* sep) `
 
-: I return an `ArrayList` containing owned substrings from `str`, delimited by `sep`. If `sep` is the empty string, panic. This program prints `2: '', 'b'`.
+: I return an `ArrayList` containing owned substrings from `str`, delimited by `sep`. If `sep` is the empty string, panic. I am the inverse of `strjoin`. This program prints `2: '', 'b'`.
 ```johann
 ArrayList* parts = strsplit("ab", "a");
 printf("%d: '%s', '%s'\n",
@@ -212,6 +212,17 @@ printf("%d: '%s', '%s'\n",
        parts.get(0),
        parts.get(1));
 parts.drop();
+```
+
+`pub fn strjoin(ArrayList* parts, char* sep) `
+
+: I take each `char*` element of `parts` and concatenate them together with `sep` between, returning the newly allocated string. I am the inverse of `strsplit`. This program prints `abc`;
+```johann
+ArrayList* parts = ArrayList__new(2);
+parts.push("a"); parts.push("c");
+char* s = strjoin(parts, "b");
+puts(s);
+free(s); parts.drop();
 ```
 
 `pub fn strcmp(char* lhs, char* rhs) `

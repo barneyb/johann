@@ -3,6 +3,7 @@ struct ArrayList;
 pub fn main() {
     test_strsplit();
     test_strsplit_after();
+    test_strjoin();
 }
 
 fn test_strsplit() {
@@ -23,7 +24,28 @@ fn test_strsplit_after() {
 
 fn dump(ArrayList* parts) {
     char* s = parts.to_string(null);
-    printf("%s\n", s);
+    puts(s);
     free(s);
     parts.drop();
+}
+
+fn test_strjoin() {
+    puts("\nTEST strjoin:");
+    ArrayList* parts = ArrayList__new(2);
+    join(parts, "|");
+    parts.push("abra");
+    join(parts, "|");
+    parts.push("ca");
+    parts.push("dabra");
+    join(parts, "|");
+    parts.push("");
+    join(parts, "|");
+    join(parts, "");
+    parts.drop();
+}
+
+fn join(ArrayList* parts, char* sep) {
+    char* s = strjoin(parts, sep);
+    printf("{%s}\n", s);
+    free(s);
 }
