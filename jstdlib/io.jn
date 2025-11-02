@@ -1,4 +1,22 @@
 # No files, just STDIN and STDOUT. `EOF` is any negative number.
+#
+# * `void printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT. Only seven variadic args will work.
+# * `void eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering). Only seven variadic args will work.
+
+# I consume the next character from STDIN and return it, or `EOF`.
+pub fn getchar();
+
+# I indicate whether STDIN has reached `EOF`.
+pub fn iseof();
+
+# I return the next character from STDIN without consuming it, or `EOF`.
+pub fn peekchar();
+
+# I write `ch` to STDOUT and return the `char` written.
+pub fn putchar(char ch);
+
+# I write the null-terminated byte string `str` _and a newline_ to STDOUT.
+pub fn puts(char* str);
 
 # I read one line of characters and return a pointer to a heap-allocated
 # null-terminated byte string containing them. A line ends when `EOF` is
