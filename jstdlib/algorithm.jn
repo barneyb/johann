@@ -25,8 +25,19 @@ pub fn quicksort(void* arr, int lo, int hi, void* cmp) {
     if pi < hi - 1 { quicksort(arr, pi + 1, hi, cmp); }
 }
 
+fn move_median_to_lo(void* arr, int lo, int hi, void* cmp) {
+    # Thanks Bob! Now if only the compiler didn't suck...
+    hi = hi - 1; # make hi inclusive
+    int mid = (lo + hi) / 2;
+    if cmp(arr[mid], arr[hi]) < 0 { swap(arr,  hi, mid); }
+    if cmp(arr[ lo], arr[hi]) < 0 { swap(arr,  hi,  lo); }
+    if cmp(arr[mid], arr[lo]) < 0 { swap(arr, mid,  lo); }
+}
+
 fn quicksort_partition(void* arr, int lo, int hi, void* cmp) {
-    # todo: pick better pivot
+    # If the slice to partition is more than an arbitrary 11 in length, do a
+    # little extra work to try and pick a better pivot w/in the slice.
+    if lo < hi - 11 { move_median_to_lo(arr, lo, hi, cmp); }
     void pivot = arr[lo];
     # min index < pivot
     int i = lo;
