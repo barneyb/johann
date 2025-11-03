@@ -10,37 +10,65 @@
 # manually too.
 pub fn quicksort(void* arr, int lo, int hi, void* cmp) {
     if lo >= hi - 1 {
-        # only one element (or a nonsensical request)
+        # a single item (or nonsense range) is always sorted
         return;
     }
-    # todo: protection for quadratic runtime when largely sorted
+    if lo == hi - 2 {
+        # two items can be checked directly
+        if cmp(arr[lo], arr[lo + 1]) > 0 {
+            swap(arr, lo, lo + 1);
+        }
+        return;
+    }
     int pi = quicksort_partition(arr, lo, hi, cmp);
-    quicksort(arr,     lo, pi + 1, cmp);
-    quicksort(arr, pi + 1,     hi, cmp);
+    if pi > lo + 1 { quicksort(arr, lo,     pi, cmp); }
+    if pi < hi - 1 { quicksort(arr, pi + 1, hi, cmp); }
+}
+
+fn move_median_to_lo(void* arr, int lo, int hi, void* cmp) {
+    # Thanks Bob! Now if only the compiler didn't suck...
+    hi = hi - 1; # make hi inclusive
+    int mid = (lo + hi) / 2;
+    if cmp(arr[mid], arr[hi]) < 0 { swap(arr,  hi, mid); }
+    if cmp(arr[ lo], arr[hi]) < 0 { swap(arr,  hi,  lo); }
+    if cmp(arr[mid], arr[lo]) < 0 { swap(arr, mid,  lo); }
 }
 
 fn quicksort_partition(void* arr, int lo, int hi, void* cmp) {
+    # If the slice to partition is more than an arbitrary 11 in length, do a
+    # little extra work to try and pick a better pivot w/in the slice.
+    if lo < hi - 11 { move_median_to_lo(arr, lo, hi, cmp); }
     void pivot = arr[lo];
-    # start just outside the target range
-    int l = lo - 1;
-    int r = hi;
-    while true {
-        # move left index to the right at least once
-        while true {
-            l = l + 1;
-            if cmp(arr[l], pivot) >= 0 { done; }
+    # min index < pivot
+    int i = lo;
+    # max unknown index
+    int j = hi - 1;
+    # search for a j on the wrong side
+    while j > i {
+        if cmp(arr[j], pivot) < 0 {
+            # find an i also on the wrong side
+            i = i + 1;
+            while cmp(arr[i], pivot) < 0 {
+                if i == j {
+                    # crossed indices i->j, so done!
+                    swap(arr, lo, i);
+                    return i;
+                }
+                i = i + 1;
+            }
+            # both on the wrong side, so swap
+            swap(arr, i, j);
         }
-        # and same for right index
-        while true {
-            r = r - 1;
-            if cmp(arr[r], pivot) <= 0 { done; }
-        }
-        # if they crossed, partitioning is complete
-        if l >= r { return r; }
-
-        # swap the two elements and keep going
-        void* t = arr[l];
-        arr[l] = arr[r];
-        arr[r] = t;
+        j = j - 1;
     }
+
+    # crossed indices j->i, so done!
+    swap(arr, lo, i);
+    return i;
+}
+
+fn swap(void* arr, int l, int r) {
+    void t = arr[l];
+    arr[l] = arr[r];
+    arr[r] = t;
 }

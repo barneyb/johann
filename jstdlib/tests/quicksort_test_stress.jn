@@ -1,0 +1,37 @@
+fn free(void*);
+fn strcmp(char*, char*);
+
+struct ArrayList;
+
+fn strrev(char* a, char* b) { return strcmp(b, a); }
+
+pub fn main() {
+    ArrayList* list = ArrayList__new_owned(10, &free);
+    char* line = read_line();
+    void* cmp = &strcmp;
+    while line != null {
+        list.push(line);
+        if list.size() <= 19 {
+            if list.size() % 13 == 0 {
+                cmp = &strrev;
+                puts("flip to descending");
+            }
+            if list.size() % 17 == 0 {
+                cmp = &strcmp;
+                puts("flip to ascending");
+            }
+            list.sort(cmp);
+            printf("%s: ", line);
+            line = strjoin(list, " ");
+            puts(line);
+            free(line);
+        }
+        line = read_line();
+    }
+    puts("the whole thing");
+    list.sort(&strcmp);
+    line = strjoin(list, "\n");
+    puts(line);
+    free(line);
+    list.drop();
+}

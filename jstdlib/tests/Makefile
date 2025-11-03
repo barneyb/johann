@@ -17,6 +17,7 @@ all: \
 	printf \
 	putchar \
 	quicksort_test \
+	quicksort_test_stress \
 	read_line_test \
 	strcmp_test \
 	string_search \
@@ -47,6 +48,16 @@ read_line_test: $(BIN)/read_line_test read_line_test.expected.txt
 	@mkdir -p $(OUT)
 	echo "qwerty\nasdf\n\nzxcv\n\n" | $(BIN)/read_line_test > $(OUT)/read_line_test.actual.txt
 	diff -u read_line_test.expected.txt $(OUT)/read_line_test.actual.txt
+
+quicksort_test_stress: $(BIN)/quicksort_test_stress /tmp/both.txt
+	@mkdir -p $(OUT)
+	$(BIN)/quicksort_test_stress < /tmp/both.txt > $(OUT)/quicksort_test_stress.actual.txt
+	diff -u quicksort_test_stress.expected.txt $(OUT)/quicksort_test_stress.actual.txt
+	rm /tmp/both.txt
+
+# cat-ing multiple files gives an EOF between them... sometimes
+/tmp/both.txt: random_100.txt random_500.txt
+	cat random_100.txt random_500.txt > /tmp/both.txt
 
 # Pattern targets
 

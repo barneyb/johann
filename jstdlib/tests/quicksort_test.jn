@@ -2,6 +2,7 @@ fn itoa(int);
 fn strcmp(char*, char*);
 fn strclone(char*);
 
+struct ArrayList;
 struct StringBuilder;
 
 pub fn main() {
@@ -36,7 +37,6 @@ fn chars() {
 fn intcmp(int a, int b) { return a - b; }
 fn intrev(int a, int b) { return b - a; }
 
-struct ArrayList;
 fn ints() {
     puts("\nints:");
     int len = 14;
