@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251103`
 
 Add a `Queue` type. Quicksort as a platform routine, with sorting `ArrayList` based on it. Several new string functions: `strstr`, `strsplit`, `strjoin`. Support setting an `ArrayList` element, and reserving capacity.
 
