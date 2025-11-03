@@ -51,7 +51,7 @@ if ! make clean test all not_quite_lisp; then
 fi
 git add --force bin/jnc lib/jstdlib.o
 
-./johanndoc.sh
+LC_ALL=C ./johanndoc.sh
 
 # version numbers
 DOC_FILE=documentation/docs/system/index.md
