@@ -190,14 +190,24 @@ pub fn strcmp(char* lhs, char* rhs) {
     return l - r;
 }
 
+# I return an `int` hash value for the passed string. The hash of both the
+# empty string and the null pointer is zero.
+pub fn strhash(char* str) {
+    if str == null { return 0; }
+    int hash = 0;
+    while *str != null {
+        hash = 31 * hash + *str;
+        str = str + 1;
+    }
+    return hash;
+}
+
 # I return the length of the passed string, not including the terminating null
 # byte.
 pub fn strlen(char* str) {
     char* end = str;
-    char c = *end;
-    while c != null {
+    while *end != null {
         end = end + 1;
-        c = *end;
     }
     return end - str;
 }

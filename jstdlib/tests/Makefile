@@ -20,6 +20,7 @@ all: \
 	quicksort_test_stress \
 	read_line_test \
 	strcmp_test \
+	strhash_test \
 	string_search \
 	strsplit \
 	substr \
