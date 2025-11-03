@@ -9,11 +9,20 @@
 # a manually-laid-out array of non-pointers), you'll need to implement sorting
 # manually too.
 pub fn quicksort(void* arr, int lo, int hi, void* cmp) {
-    if lo >= hi - 1 { return; }
-    # todo: short-circuit for small ranges
+    if lo >= hi - 1 {
+        # a single item (or nonsense range) is always sorted
+        return;
+    }
+    if lo == hi - 2 {
+        # two items can be checked directly
+        if cmp(arr[lo], arr[lo + 1]) > 0 {
+            swap(arr, lo, lo + 1);
+        }
+        return;
+    }
     int pi = quicksort_partition(arr, lo, hi, cmp);
-    quicksort(arr, lo,     pi, cmp);
-    quicksort(arr, pi + 1, hi, cmp);
+    if pi > lo + 1 { quicksort(arr, lo,     pi, cmp); }
+    if pi < hi - 1 { quicksort(arr, pi + 1, hi, cmp); }
 }
 
 fn quicksort_partition(void* arr, int lo, int hi, void* cmp) {
@@ -21,7 +30,7 @@ fn quicksort_partition(void* arr, int lo, int hi, void* cmp) {
     void pivot = arr[lo];
     # min index < pivot
     int i = lo;
-    # min unknown index
+    # max unknown index
     int j = hi - 1;
     # search for a j on the wrong side
     while j > i {
