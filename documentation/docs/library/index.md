@@ -18,6 +18,7 @@ General-purpose algorithms. Currently just sort. Binary search is a likely futur
 I sort the elements at indices at or above `lo` and less than `hi` of the given array `arr`, using the comparator function pointer `cmp` to compare elements, _assuming each element is `sizeof(void*)`_. Since Johann puts nearly everything behind a pointer into the heap (Java-like, not C-like), this is probably what you want. If your array has elements of a different size (e.g., a manually-laid-out array of non-pointers), you'll need to implement sorting manually too.
 
 <!--{/johanndoc:jstdlib/algorithm.jn}-->
+
 <!--{johanndoc:jstdlib/allocator.jn}-->
 
 ## `allocator`
@@ -105,6 +106,49 @@ I sort the list, in place, using the passed comparator function to define total 
 I render the list to a null-terminated byte string, using the passed function to convert each element in turn. If `null` is passed, the elements are assumed to be NTBSs, to be included in the final string directly. The returned string must be `free`-ed by the client. The list is not consumed.
 
 <!--{/johanndoc:jstdlib/ArrayList.jn}-->
+ 
+<!--{johanndoc:jstdlib/HashMap.jn}-->
+
+## `HashMap`
+
+I am a hashtable-based map/dict ADT. Keys and values are arbitrary 64-bit values with pass-by-value semantics. `HashMap__new_owned` can help with cleanup if the keys and/or values are pointers to owned objects. Using `null` as a key works _if `hash`, `cmp`, and `drop_key` are `null`-safe_. Using `null` as a value works _if `drop_value` is `null`-safe_.
+
+ The table implementation uses "separate chaining", even though it auto-resizes based on capacity. The load factor is 0.75, and cannot be configured.
+
+
+`pub fn HashMap__new(void* hash, void* cmp) `
+
+I construct a new HashMap with the specified hash function and comparator functions.
+
+`pub fn HashMap__new_owned(void* hash, void* cmp, void* drop_key, void* drop_value) `
+
+I construct a new HashMap with the specified hash function and comparator functions, along with functions for dropping keys and values.
+
+`pub fn HashMap_contains(HashMap* self, void key) `
+
+I return whether the HashMap has an entry for the passed key.
+
+`pub fn HashMap_delete(HashMap* self, void key) `
+
+I ensure the HashMap does not contains an entry with the provided `key`. If one existed, its value is returned, otherwise `null`.
+
+`pub fn HashMap_drop(HashMap* self) `
+
+I drop the HashMap, along with its keys and values (if owned).
+
+`pub fn HashMap_get(HashMap* self, void key) `
+
+I return the value in the HashMap for the passed key, or `null` if no entry exists.
+
+`pub fn HashMap_put(HashMap* self, void key, void value) `
+
+I put a new entry into the HashMap, returning the prior value associated with the key, or `null` if no entry previously existed.
+
+`pub fn HashMap_size(HashMap* self) `
+
+I return the number of entries in the HashMap.
+
+<!--{/johanndoc:jstdlib/HashMap.jn}-->
 
 <!--{johanndoc:jstdlib/io.jn}-->
 
@@ -214,6 +258,10 @@ clone the passed string into a new allocation.
 `pub fn strcmp(char* lhs, char* rhs) `
 
 I compare two null-terminated byte strings and return a negative number if `lhs` sorts lexicographically first, a positive number if `rhs` is first, and zero if they are equal.
+
+`pub fn strhash(char* str) `
+
+I return an `int` hash value for the passed string. The hash of both the empty string and the null pointer is zero. I'm not a _good_ hash function, just a good-enough default.
 
 `pub fn strjoin(ArrayList* parts, char* sep) `
 

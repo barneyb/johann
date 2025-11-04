@@ -191,7 +191,8 @@ pub fn strcmp(char* lhs, char* rhs) {
 }
 
 # I return an `int` hash value for the passed string. The hash of both the
-# empty string and the null pointer is zero.
+# empty string and the null pointer is zero. I'm not a _good_ hash function,
+# just a good-enough default.
 pub fn strhash(char* str) {
     if str == null { return 0; }
     int hash = 0;
