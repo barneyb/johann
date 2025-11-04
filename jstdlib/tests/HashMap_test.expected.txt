@@ -1,0 +1,46 @@
+size: 0
+size: 1
+size: 2
+size: 3
+contains 0? true
+     get 0: 'zero'
+contains 2? false
+     get 2: null
+contains 7? true
+     get 7: 'seven'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+
+hugify
+size: 1003
+contains 0? true
+     get 0: 'zero'
+contains 7? true
+     get 7: 'seven'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+contains 1234? true
+     get 1234: 'big'
+
+delete seven
+contains 7? true
+  delete 7: 'seven'
+size: 1002
+contains 7? false
+  delete 7: null
+size: 1002
+
+smallify
+size: 2
+contains 0? true
+     get 0: 'zero'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+contains 1234? false
+     get 1234: null

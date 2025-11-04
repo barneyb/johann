@@ -1,0 +1,88 @@
+struct HashMap;
+
+fn inthash(int i) { return i; }
+fn intcmp(int a, int b) { return a - b; }
+
+pub fn main() {
+    HashMap* m = HashMap__new(&inthash, &intcmp);
+    printf("size: %d\n", m.size());
+    put(m, 0, "zero");
+    put(m, 7, "seven");
+    put(m, 15, "fifteen"); # to collide with zero
+    check(m, 0);
+    check(m, 2);
+    check(m, 7);
+    check(m, 12);
+    check(m, 15);
+
+    puts("\nhugify");
+    hugify(m);
+    printf("size: %d\n", m.size());
+    check(m, 0);
+    check(m, 7);
+    check(m, 12);
+    check(m, 15);
+    check(m, 1234);
+
+    puts("\ndelete seven");
+    delete(m, 7);
+    printf("size: %d\n", m.size());
+    delete(m, 7);
+    printf("size: %d\n", m.size());
+
+    puts("\nsmallify");
+    smallify(m);
+    printf("size: %d\n", m.size());
+    check(m, 0);
+    check(m, 12);
+    check(m, 15);
+    check(m, 1234);
+    m.drop();
+
+    # todo: owned keys and values
+
+    # todo: stress test
+
+    # todo: perf comparison w/ TreeMap
+}
+
+fn hugify(HashMap* m) {
+    int i = 1000;
+    while i < 2000 {
+        m.put(i, "big");
+        i = i + 1;
+    }
+}
+
+fn smallify(HashMap* m) {
+    int i = 1000;
+    while i < 2000 {
+        m.delete(i);
+        i = i + 1;
+    }
+}
+
+fn put(HashMap* m, int key, char* value) {
+    m.put(key, value);
+    printf("size: %d\n", m.size());
+}
+
+fn delete(HashMap* m, int key) {
+    printf("contains %d? %b\n", key, m.contains(key));
+    char* v = m.delete(key);
+    if v == null {
+        printf("  delete %d: null\n", key);
+        return;
+    }
+    printf("  delete %d: '%s'\n", key, v);
+}
+
+fn check(HashMap* m, int key) {
+    printf("contains %d? %b\n", key, m.contains(key));
+    char* v = m.get(key);
+    if v == null {
+        printf("     get %d: null\n", key);
+        return;
+    }
+    printf("     get %d: '%s'\n", key, v);
+}

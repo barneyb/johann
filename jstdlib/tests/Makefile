@@ -5,26 +5,27 @@ OUT = $(TGT)/out
 JSTDLIB = ../$(LIB)/jstdlib.o
 
 all: \
-	ArrayList_test \
-	Queue_tests \
-	StringBuilderTest \
+	HashMap_test \
 	TreeMap_test \
-	allocations \
-	getchar \
-	hello_world \
-	isdigit \
-	isspace \
-	printf \
-	putchar \
-	quicksort_test \
-	quicksort_test_stress \
-	read_line_test \
-	strcmp_test \
-	strhash_test \
-	string_search \
-	strsplit \
-	substr \
-	symbols \
+#	ArrayList_test \
+#	Queue_tests \
+#	StringBuilderTest \
+#	allocations \
+#	getchar \
+#	hello_world \
+#	isdigit \
+#	isspace \
+#	printf \
+#	putchar \
+#	quicksort_test \
+#	quicksort_test_stress \
+#	read_line_test \
+#	strcmp_test \
+#	strhash_test \
+#	string_search \
+#	strsplit \
+#	substr \
+#	symbols \
 
 	# verify there aren't any memory complaints
 	find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ' )

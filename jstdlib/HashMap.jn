@@ -1,0 +1,201 @@
+# I am a hashtable-based map/dict ADT. Keys and values are arbitrary 64-bit
+# values with pass-by-value semantics. `HashMap__new_owned` can help with
+# cleanup if the keys and/or values are pointers to owned objects. Using `null`
+# as a key works _if `hash`, `cmp`, and `drop_key` are `null`-safe_. Using `null`
+# as a value works _if `drop_value` is `null`-safe_.
+#
+# The table implementation uses "separate chaining", even though it auto-resizes
+# based on capacity. The load factor is 0.75, and cannot be configured.
+
+struct Entry {
+    void key,
+    void value,
+    Entry* next,
+}
+
+fn Entry__new(void key, void value, Entry* next) {
+    Entry* e = malloc(sizeof(Entry));
+    e.key = key;
+    e.value = value;
+    e.next = next;
+    return e;
+}
+
+struct HashMap {
+    int size,
+
+    # always a power of two minus one
+    int capacity,
+    Entry** arr,
+
+    void* hash,
+    void* cmp,
+
+    void* drop_key,
+    void* drop_value,
+}
+
+# I construct a new HashMap with the specified hash function and comparator
+# functions.
+pub fn HashMap__new(void* hash, void* cmp) {
+    return HashMap__new_owned(hash, cmp, null, null);
+}
+
+# I construct a new HashMap with the specified hash function and comparator
+# functions, along with functions for dropping keys and values.
+pub fn HashMap__new_owned(void* hash, void* cmp, void* drop_key, void* drop_value) {
+    HashMap* m = malloc(sizeof(HashMap));
+    m.size = 0;
+    m.capacity = 15; # always 2^n-1, starting n=4
+    m.arr = null;
+    m.hash = hash;
+    m.cmp = cmp;
+    m.drop_key = drop_key;
+    m.drop_value = drop_value;
+    return m;
+}
+
+# I drop the HashMap, along with its keys and values (if owned).
+pub fn HashMap_drop(HashMap* self) {
+    if self.arr != null {
+        int i = self.capacity - 1;
+        void* arr = self.arr;
+        while i >= 0 {
+            Entry* e = arr[i];
+            if e != null { free(e); }
+            i = i - 1;
+        }
+        free(arr);
+    }
+    free(self);
+}
+
+# I return the number of entries in the HashMap.
+pub fn HashMap_size(HashMap* self) {
+    return self.size;
+}
+
+# I return whether the HashMap has an entry for the passed key.
+pub fn HashMap_contains(HashMap* self, void key) {
+    if self.arr == null { return false; }
+    void* arr = self.arr;
+    int idx = index(self, key);
+    return arr[idx] != null;
+}
+
+# I return the value in the HashMap for the passed key, or `null` if no entry
+# exists.
+pub fn HashMap_get(HashMap* self, void key) {
+    if self.arr == null { return null; }
+    void* arr = self.arr;
+    void* cmp = self.cmp;
+    Entry* e = arr[index(self, key)];
+    while e != null {
+        # walk the list and check the keys
+        if cmp(e.key, key) == 0 {
+            return e.value;
+        }
+        e = e.next;
+    }
+    return null;
+}
+
+# I put a new entry into the HashMap, returning the prior value associated with
+# the key, or `null` if no entry previously existed.
+pub fn HashMap_put(HashMap* self, void key, void value) {
+    ensure_capacity(self, self.size + 1);
+
+    void* arr = self.arr;
+    void* cmp = self.cmp;
+    int idx = index(self, key);
+    Entry* e = arr[idx];
+    while e != null {
+        # walk the list and check the keys
+        if cmp(e.key, key) == 0 {
+            # found it!
+            void prior = e.value;
+            e.value = value;
+            return prior;
+        }
+        e = e.next;
+    }
+    # new key; stick it at the front
+    arr[idx] = Entry__new(key, value, arr[idx]);
+    self.size = self.size + 1;
+    return null;
+}
+
+# I ensure the HashMap does not contains an entry with the provided `key`. If
+# one existed, its value is returned, otherwise `null`.
+pub fn HashMap_delete(HashMap* self, void key) {
+    if self.arr == null { return null; }
+    void* cmp = self.cmp;
+    int idx = index(self, key);
+    void* ptr = self.arr + idx * sizeof(void*);
+    while *ptr != null {
+        Entry* e = *ptr;
+        if cmp(e.key, key) == 0 {
+            # found it!
+            void v = e.value;
+            *ptr = e.next;
+            free(e);
+            self.size = self.size - 1;
+            return v;
+        }
+    }
+    return null;
+}
+
+fn index(HashMap* self, void key) {
+    void* hash = self.hash;
+    int idx = hash(key);
+    if idx < 0 {
+        # 2^63-1 = 9223372036854775807
+        idx = idx + 9223372036854775807;
+    }
+    return idx % self.capacity;
+}
+
+fn ensure_capacity(HashMap* self, int min_capacity) {
+    min_capacity = min_capacity * 4 / 3; # 0.75 load factor
+    Entry** old_arr = self.arr;
+    int cap = self.capacity;
+    int old_cap = cap;
+    if cap >= min_capacity { if old_arr != null {
+        return;
+    } }
+    while cap < min_capacity {
+        cap = (cap + 1) * 2 - 1;
+    }
+    Entry** next = malloc(sizeof(Entry*) * cap);
+    self.arr = next;
+    self.capacity = cap;
+    cap = cap - 1;
+    while cap >= 0 {
+        next[cap] = null;
+        cap = cap - 1;
+    }
+    if old_arr == null {
+        # table was empty
+        return;
+    }
+    # move each entry to its new bucket
+    rehash(self, old_arr, old_cap);
+}
+
+fn rehash(HashMap* self, Entry** old_arr, int old_cap) {
+    Entry** next = self.arr;
+    int i = old_cap - 1;
+    while i >= 0 {
+        Entry* e = old_arr[i];
+        while e != null {
+            int idx = index(self, e.key);
+            Entry* ne = e.next;
+            e.next = next[idx];
+            next[idx] = e;
+            e = ne;
+        }
+        i = i - 1;
+    }
+    free(old_arr);
+}
