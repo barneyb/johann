@@ -62,12 +62,22 @@ pub fn HashMap_drop(HashMap* self) {
         void* arr = self.arr;
         while i >= 0 {
             Entry* e = arr[i];
-            if e != null { free(e); }
+            while e != null {
+                Entry* n = e.next;
+                self.drop_entry(e);
+                e = n;
+            }
             i = i - 1;
         }
         free(arr);
     }
     free(self);
+}
+
+fn HashMap_drop_entry(HashMap* self, Entry* e) {
+    void* drop;
+    if self.drop_key != null { drop = self.drop_key; drop(e.key); }
+    free(e);
 }
 
 # I return the number of entries in the HashMap.
@@ -115,6 +125,11 @@ pub fn HashMap_put(HashMap* self, void key, void value) {
             # found it!
             void prior = e.value;
             e.value = value;
+            # drop the passed key
+            if self.drop_key != null {
+                cmp = self.drop_key;
+                cmp(key);
+            }
             return prior;
         }
         e = e.next;
@@ -138,7 +153,7 @@ pub fn HashMap_delete(HashMap* self, void key) {
             # found it!
             void v = e.value;
             *ptr = e.next;
-            free(e);
+            self.drop_entry(e);
             self.size = self.size - 1;
             return v;
         }
@@ -171,7 +186,7 @@ fn ensure_capacity(HashMap* self, int min_capacity) {
     self.arr = next;
     self.capacity = cap;
     cap = cap - 1;
-    while cap >= 0 {
+    while cap >= 0 { # todo move this to allocator
         next[cap] = null;
         cap = cap - 1;
     }

@@ -1,3 +1,5 @@
+
+basics:
 size: 0
 size: 1
 size: 2
@@ -44,3 +46,13 @@ contains 15? true
      get 15: 'fifteen'
 contains 1234? false
      get 1234: null
+
+owned_keys:
+size: 3
+size: 33
+get    'el 68': 68
+delete 'el 69': 69
+size: 32
+put    'el 70': 70
+get    'el 70': 99999
+size: 32
