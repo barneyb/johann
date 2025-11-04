@@ -7,7 +7,7 @@
 struct StringBuilder;
 
 # Type of an ArrayList, with private storage.
-pub struct ArrayList {
+struct ArrayList {
     int capacity,
     int size,
     void** data,

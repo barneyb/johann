@@ -1,0 +1,37 @@
+pub fn main() {
+    printf("null -> %d\n", strhash(null));
+    doit("");
+    doit("a");
+    doit("ab");
+    doit("abc");
+    doit("az");
+    doit("z");
+
+    find_a_negative();
+}
+
+fn find_a_negative() {
+    char* base = "a fairly long string";
+    doit(base);
+    char* str = strclone(base);
+    int i = 0;
+    str[0] = null;
+    int h = strhash(str);
+    while strcmp(base, str) != 0 {
+        str[i] = base[i];
+        i = i + 1;
+        str[i] = null;
+        int next = strhash(str);
+        if next < h {
+            doit(str);
+            str[i - 1] = null;
+            doit(str);
+            done;
+        }
+    }
+    free(str);
+}
+
+fn doit(char* s) {
+    printf("'%s' -> %d\n", s, strhash(s));
+}

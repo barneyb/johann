@@ -1,0 +1,95 @@
+
+basics:
+size: 0
+size: 1
+size: 2
+size: 3
+contains 0? true
+     get 0: 'zero'
+contains 2? false
+     get 2: null
+contains 7? true
+     get 7: 'seven'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+
+hugify
+size: 1003
+contains 0? true
+     get 0: 'zero'
+contains 7? true
+     get 7: 'seven'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+contains 1234? true
+     get 1234: 'big'
+
+delete seven
+contains 7? true
+  delete 7: 'seven'
+size: 1002
+contains 7? false
+  delete 7: null
+size: 1002
+
+smallify
+size: 2
+contains 0? true
+     get 0: 'zero'
+contains 12? false
+     get 12: null
+contains 15? true
+     get 15: 'fifteen'
+contains 1234? false
+     get 1234: null
+
+delete_collisions:
+size: 1
+size: 2
+size: 3
+contains 0? true
+  delete 0: 'zero'
+contains 0? false
+  delete 0: null
+size: 3
+contains 0? true
+  delete 0: 'zero'
+contains 0? false
+  delete 0: null
+size: 1
+size: 2
+size: 3
+contains 15? true
+  delete 15: 'fifteen'
+contains 15? false
+  delete 15: null
+size: 3
+contains 15? true
+  delete 15: 'fifteen'
+contains 15? false
+  delete 15: null
+
+owned_keys:
+size: 3
+size: 33
+get    'el 68': 68
+delete 'el 69': 69
+size: 32
+put    'el 70': 70
+get    'el 70': 99999
+size: 32
+
+owned_values:
+size: 4
+size: 23
+get 0: 'el 0'
+get 4: 'el 1'
+get 32: 'el 8'
+delete 2: 'two'
+size: 22
+delete 2: 0x0
+size: 22

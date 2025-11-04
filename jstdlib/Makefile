@@ -5,6 +5,7 @@ OUT = $(TGT)/out
 JNC = ../bin/jnc
 OBJECTS = \
 	$(LIB)/ArrayList.jn.o \
+	$(LIB)/HashMap.jn.o \
 	$(LIB)/Queue.jn.o \
 	$(LIB)/StringBuilder.jn.o \
 	$(LIB)/TreeMap.jn.o \
