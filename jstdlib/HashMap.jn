@@ -64,7 +64,7 @@ pub fn HashMap_drop(HashMap* self) {
             Entry* e = arr[i];
             while e != null {
                 Entry* n = e.next;
-                self.drop_entry(e);
+                drop_entry(self, e);
                 e = n;
             }
             i = i - 1;
@@ -74,12 +74,6 @@ pub fn HashMap_drop(HashMap* self) {
     free(self);
 }
 
-fn HashMap_drop_entry(HashMap* self, Entry* e) {
-    void* drop;
-    if self.drop_key != null { drop = self.drop_key; drop(e.key); }
-    free(e);
-}
-
 # I return the number of entries in the HashMap.
 pub fn HashMap_size(HashMap* self) {
     return self.size;
@@ -87,78 +81,72 @@ pub fn HashMap_size(HashMap* self) {
 
 # I return whether the HashMap has an entry for the passed key.
 pub fn HashMap_contains(HashMap* self, void key) {
-    if self.arr == null { return false; }
-    void* arr = self.arr;
     int idx = index(self, key);
-    return arr[idx] != null;
+    return find_entry(self, key, idx) != null;
 }
 
 # I return the value in the HashMap for the passed key, or `null` if no entry
 # exists.
 pub fn HashMap_get(HashMap* self, void key) {
-    if self.arr == null { return null; }
-    void* arr = self.arr;
-    void* cmp = self.cmp;
-    Entry* e = arr[index(self, key)];
-    while e != null {
-        # walk the list and check the keys
-        if cmp(e.key, key) == 0 {
-            return e.value;
-        }
-        e = e.next;
-    }
-    return null;
+    int idx = index(self, key);
+    Entry* e = find_entry(self, key, idx);
+    if e == null { return null; }
+    return e.value;
 }
 
 # I put a new entry into the HashMap, returning the prior value associated with
 # the key, or `null` if no entry previously existed.
 pub fn HashMap_put(HashMap* self, void key, void value) {
     ensure_capacity(self, self.size + 1);
-
-    void* arr = self.arr;
-    void* cmp = self.cmp;
     int idx = index(self, key);
-    Entry* e = arr[idx];
-    while e != null {
-        # walk the list and check the keys
-        if cmp(e.key, key) == 0 {
-            # found it!
-            void prior = e.value;
-            e.value = value;
-            # drop the passed key
-            if self.drop_key != null {
-                cmp = self.drop_key;
-                cmp(key);
-            }
-            return prior;
-        }
-        e = e.next;
+    Entry* e = find_entry(self, key, idx);
+
+    if e == null {
+        Entry** arr = self.arr;
+        arr[idx] = Entry__new(key, value, arr[idx]);
+        self.size = self.size + 1;
+        return null;
     }
-    # new key; stick it at the front
-    arr[idx] = Entry__new(key, value, arr[idx]);
-    self.size = self.size + 1;
-    return null;
+
+    void prior = e.value;
+    e.value = value;
+    # drop the passed key
+    if self.drop_key != null {
+        void* drop = self.drop_key;
+        drop(key);
+    }
+    return prior;
 }
 
 # I ensure the HashMap does not contains an entry with the provided `key`. If
 # one existed, its value is returned, otherwise `null`.
 pub fn HashMap_delete(HashMap* self, void key) {
-    if self.arr == null { return null; }
-    void* cmp = self.cmp;
     int idx = index(self, key);
-    void* ptr = self.arr + idx * sizeof(void*);
-    while *ptr != null {
-        Entry* e = *ptr;
-        if cmp(e.key, key) == 0 {
-            # found it!
-            void v = e.value;
-            *ptr = e.next;
-            self.drop_entry(e);
-            self.size = self.size - 1;
-            return v;
+    Entry* e = find_entry(self, key, idx);
+    if e == null { return null; }
+
+    # unlink it first
+    Entry** arr = self.arr;
+    Entry* prev = arr[idx];
+    if prev == e {
+        arr[idx] = e.next;
+    }
+    if prev != e {
+        Entry* curr = prev.next;
+        while curr != null {
+            if curr == e {
+                prev.next = e.next;
+                done;
+            }
         }
     }
-    return null;
+
+    # dissect and return
+    void v = e.value;
+    e.value = null; # in case its owned
+    drop_entry(self, e);
+    self.size = self.size - 1;
+    return v;
 }
 
 fn index(HashMap* self, void key) {
@@ -213,4 +201,27 @@ fn rehash(HashMap* self, Entry** old_arr, int old_cap) {
         i = i - 1;
     }
     free(old_arr);
+}
+
+fn drop_entry(HashMap* self, Entry* e) {
+    void* drop = self.drop_key;
+    if drop != null { drop(e.key); }
+    drop = self.drop_value;
+    if drop != null { drop(e.value); }
+    free(e);
+}
+
+fn find_entry(HashMap* self, void key, int idx) {
+    if self.arr == null { return null; }
+    void* arr = self.arr;
+    void* cmp = self.cmp;
+    Entry* e = arr[idx];
+    while e != null {
+        # walk the list and check the keys
+        if cmp(e.key, key) == 0 {
+            return e;
+        }
+        e = e.next;
+    }
+    return null;
 }

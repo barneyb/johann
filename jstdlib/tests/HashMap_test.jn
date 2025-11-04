@@ -10,13 +10,9 @@ fn intcmp(int a, int b) { return a - b; }
 
 pub fn main() {
     basics();
+    delete_collisions();
     owned_keys();
-
-    # todo: owned  values
-
-    # todo: stress test
-
-    # todo: perf comparison w/ TreeMap
+    owned_values();
 }
 
 fn basics() {
@@ -54,6 +50,31 @@ fn basics() {
     check(m, 12);
     check(m, 15);
     check(m, 1234);
+    m.drop();
+}
+
+fn delete_collisions() {
+    puts("\ndelete_collisions:");
+    HashMap* m = HashMap__new(&inthash, &intcmp);
+    put(m, 0, "zero");
+    put(m, 7, "seven");
+    put(m, 15, "fifteen"); # to collide with zero
+    delete(m, 0);
+    delete(m, 0);
+    put(m, 0, "zero");
+    delete(m, 0);
+    delete(m, 0);
+    m.drop();
+
+    m = HashMap__new(&inthash, &intcmp);
+    put(m, 0, "zero");
+    put(m, 7, "seven");
+    put(m, 15, "fifteen"); # to collide with zero
+    delete(m, 15);;
+    delete(m, 15);;
+    put(m, 15, "fifteen");
+    delete(m, 15);;
+    delete(m, 15);;
     m.drop();
 }
 
@@ -121,6 +142,40 @@ fn owned_keys() {
     printf("size: %d\n", m.size());
     printf("put    'el 70': %d\n", m.put(strclone("el 70"), 99999));
     printf("get    'el 70': %d\n", m.get("el 70"));
+    printf("size: %d\n", m.size());
+    m.drop();
+}
+
+fn owned_values() {
+    puts("\nowned_values:");
+    HashMap* m = HashMap__new_owned(&inthash, &intcmp, null, &free);
+    m.put(1, strclone("one"));
+    m.put(2, strclone("two"));
+    m.put(3, strclone("three"));
+    m.put(4, strclone("four"));
+    printf("size: %d\n", m.size());
+    void* old;
+    int i = 0;
+    while i < 20 {
+        StringBuilder* sb = StringBuilder__new(10);
+        sb.push_str("el ");
+        char* s = itoa(i);
+        sb.push_str(s);
+        free(s);
+        old = m.put(i * 4, sb.into_chars());
+        if old != null { free(old); }
+        i = i + 1;
+    }
+    printf("size: %d\n", m.size());
+    printf("get 0: '%s'\n", m.get(0));
+    printf("get 4: '%s'\n", m.get(4));
+    printf("get 32: '%s'\n", m.get(32));
+    old = m.delete(2);
+    printf("delete 2: '%s'\n", old);
+    free(old);
+    printf("size: %d\n", m.size());
+    old = m.delete(2);
+    printf("delete 2: %x\n", old);
     printf("size: %d\n", m.size());
     m.drop();
 }
