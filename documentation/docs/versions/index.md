@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251104`
 
 Add a new `HashMap` type, along with `strhash` which computes a hash for a NTSB. Index docs by declaration, not just file, and break some of the large pages into smaller ones.
 
