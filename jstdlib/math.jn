@@ -1,8 +1,10 @@
+# I return the larger of my two `int` arguments.
 pub fn imax(int a, int b) {
     if a > b { return a; }
     return b;
 }
 
+# I return the smaller of my two `int` arguments.
 pub fn imin(int a, int b) {
     if a < b { return a; }
     return b;

@@ -141,7 +141,7 @@ pub fn strsplit_after(char* str, char* sep) {
 
 # I take each `char*` element of `parts` and concatenate them together with
 # `sep` between, returning the newly allocated string. I am the inverse of
-# `strsplit`. This program prints `abc`;
+# `strsplit`. This program prints `abc`:
 #
 # ```johann
 # ArrayList* parts = ArrayList__new(2);

@@ -42,7 +42,7 @@
 - [ ] buffered StdIn & StdErr
 - [ ] read/write files
 - [ ] regular expressions
-- [ ] hash-based symbol table
+- [x] hash-based symbol table
 - [x] a queue data type
 - [ ] binary search of arrays
 

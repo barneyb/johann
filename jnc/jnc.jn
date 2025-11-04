@@ -58,7 +58,7 @@ fn jnc_compile() {
 }
 
 # `token` is a `[val, line, col]` tuple to dissect for the format, which will
-# be passed four values: `status`, `val`, `line`, and `col`;
+# be passed four values: `status`, `val`, `line`, and `col`.
 pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
     int val = *token;

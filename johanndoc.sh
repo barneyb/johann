@@ -15,23 +15,22 @@ if [ "$1" = "--undoc" ]; then
     shift
 fi
 
-DOC_FILE=documentation/docs/system/johandoc.md
-if [ "$ACTION" = "doc" ]; then
-    {
-        cat << EOF
-# Compiler Docs
+find documentation/docs/ -name '*.jn.md' -exec rm {} \;
 
-Below are the generated docs for the compiler's internals. Not that much is
-documented, but searching just declarations has advantages over searching the
-full sources.
-EOF
-        # globs are case-sensitive. :/
-        for f in $(ls jnc/*.jn | sort -df); do
-            echo "\n<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->\n"
-        done
-    } > $DOC_FILE
-else
-    rm -f $DOC_FILE
+if [ "$ACTION" = "doc" ]; then
+    for f in $(ls jnc/*.jn | sort -df); do
+        (
+            echo "---\ntitle: $(basename "$f" | cut -d . -f 1)\n---"
+            echo "<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->"
+        ) > documentation/docs/system/compiler/$(basename "$f" | tr '[:upper:]' '[:lower:]').md
+    done
+
+    for f in $(ls jstdlib/*.jn | sort -df); do
+        (
+            echo "---\ntitle: $(basename "$f" | cut -d . -f 1)\n---"
+            echo "<!--{johanndoc:$f}-->\n<!--{/johanndoc}-->"
+        ) > documentation/docs/library/$(basename "$f" | tr '[:upper:]' '[:lower:]').md
+    done
 fi
 
 for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
@@ -65,8 +64,6 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                 rm -rf $TMP
                 mkdir -p "$TMP"
                 echo
-                echo '## `'"$STEM"'`'
-                echo
                 DOC=""
                 do_file=yes
                 while IFS= read -r line; do
@@ -94,14 +91,15 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                         DOC="$DOC${line:2}"
                         continue
                     elif [[ "$line" =~ ^pub ]]; then
-                        line=$(echo "$line" | cut -d '{' -f 1)
                         type=$(echo "$line" | cut -w -f 2)
+                        name=$(echo "$line" | cut -w -f 3 | cut -d '(' -f 1)
+                        line=$(echo "$line" | cut -d '{' -f 1)
                         if ! echo "$line" | grep -F '_(' > /dev/null; then
                             if [[ "$type" = "fn" ]]; then
                                 fn="`echo "$line" | sed -E -e 's/[^a-zA-Z0-9_]/-/g'`.fn.txt"
-                                echo '`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
+                                echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
                             else
-                                echo '`'"$line"'`'"\n\n$DOC\n"
+                                echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n"
                             fi
                         fi
                         do_file=nope
