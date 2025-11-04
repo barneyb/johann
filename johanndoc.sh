@@ -91,8 +91,8 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                         DOC="$DOC${line:2}"
                         continue
                     elif [[ "$line" =~ ^pub ]]; then
-                        type=$(echo "$line" | cut -w -f 2)
-                        name=$(echo "$line" | cut -w -f 3 | cut -d '(' -f 1)
+                        type=$(echo "$line" | cut -d ' ' -f 2)
+                        name=$(echo "$line" | cut -d ' ' -f 3 | cut -d '(' -f 1)
                         line=$(echo "$line" | cut -d '{' -f 1)
                         if ! echo "$line" | grep -F '_(' > /dev/null; then
                             if [[ "$type" = "fn" ]]; then
@@ -121,6 +121,10 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
 done
 
 if [ "$ACTION" = "undoc" ]; then
+    exit
+fi
+
+if [ "$CI" = "true" ]; then
     exit
 fi
 
