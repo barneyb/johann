@@ -28,14 +28,15 @@ fn build_up_to(int count) {
         count = count - 1;
         StringBuilder_push(buf, c);
     }
+    count = StringBuilder_length(buf);
     char* str = StringBuilder_into_chars(buf);
     char* suffix = malloc(cap);
 
     free(prefix);
     free(middle);
-    middle = "%s: %i\n";
+    middle = "%s: %i / %i\n";
     cap = strlen(str);
-    printf(middle, str, cap);
+    printf(middle, str, cap, count);
     free(str);
     free(suffix);
 }

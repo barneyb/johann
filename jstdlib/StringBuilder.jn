@@ -49,6 +49,11 @@ pub fn StringBuilder_into_chars(StringBuilder* self) {
     return buf;
 }
 
+# I return the number of characters in the buffer, as if by `strlen`.
+pub fn StringBuilder_length(StringBuilder* self) {
+    return self.size;
+}
+
 fn ensure_buf_capacity(StringBuilder* self, int min) {
     int capacity = self.capacity;
     int size = self.size;
