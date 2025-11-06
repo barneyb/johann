@@ -10,10 +10,6 @@ Johann's standard library is minimal. Functions are grouped by the file defining
 
 These are still present, but should not be used. They'll be removed, eventually.
 
-### `io`
-
-* `char* itoa( int n )` - no direct replacement, but `printf` can do it on the way to STDOUT
-
 ### `table`
 
 Superseded by [TreeMap](treemap.jn.md)

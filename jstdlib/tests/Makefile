@@ -15,6 +15,7 @@ all: \
 	hello_world \
 	isdigit \
 	isspace \
+	itoatoi \
 	printf \
 	putchar \
 	quicksort_test \

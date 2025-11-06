@@ -1,0 +1,7 @@
+int 1 formatted is '1' and parsed is 1
+int 0 formatted is '0' and parsed is 0
+int 123 formatted is '123' and parsed is 123
+int -456 formatted is '-456' and parsed is -456
+string '-123' parsed is -123 and formatted is '-123'
+string '+123' parsed is 123 and formatted is '123'
+string '92345678901234567890' parsed is 111958532686809810 and formatted is '111958532686809810'

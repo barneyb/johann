@@ -11,7 +11,7 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
-Add a `length` "method" to `StringBuilder`.
+Add a `length` "method" to `StringBuilder`. Reinstate `itoa` and add its complement `atoi` as well.
 
 ### `v0.20251104`
 

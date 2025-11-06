@@ -1,0 +1,39 @@
+pub fn main() {
+    int i = 1;
+    char* s = itoa(i);
+    printf("int %d formatted is '%s' and parsed is %d\n", i, s, atoi(s));
+    free(s);
+
+    i = 0;
+    s = itoa(i);
+    printf("int %d formatted is '%s' and parsed is %d\n", i, s, atoi(s));
+    free(s);
+
+    i = 123;
+    s = itoa(i);
+    printf("int %d formatted is '%s' and parsed is %d\n", i, s, atoi(s));
+    free(s);
+
+    i = -456;
+    s = itoa(i);
+    printf("int %d formatted is '%s' and parsed is %d\n", i, s, atoi(s));
+    free(s);
+
+    s = "-123";
+    i = atoi(s);
+    char* s2 = itoa(i);
+    printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
+    free(s2);
+
+    s = "+123"; # explicit positive
+    i = atoi(s);
+    s2 = itoa(i);
+    printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
+    free(s2);
+
+    s = "92345678901234567890"; # overflow
+    i = atoi(s);
+    s2 = itoa(i);
+    printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
+    free(s2);
+}
