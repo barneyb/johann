@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251106`
 
 Add a `length` "method" to `StringBuilder`. Reinstate `itoa` and add its complement `atoi` as well.
 
