@@ -44,11 +44,18 @@ pub fn Token_set_type(Token* self, int type) {
     self.type = type;
 }
 
+# I return the line the token started on.
 pub fn Token_line(Token* self) {
     return self.line_num;
 }
 
+# Deprecated: use `Token_col`
 pub fn Token_char(Token* self) {
+    return self.char_offset;
+}
+
+# I return the column the token started at.
+pub fn Token_col(Token* self) {
     return self.char_offset;
 }
 
