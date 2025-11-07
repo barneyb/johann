@@ -1,3 +1,5 @@
+struct ArrayList;
+
 int T_BOOL;
 int T_CHAR;
 int T_ID;
@@ -256,17 +258,17 @@ fn parse_parameter_list(void* lex) {
         consume_token(lex, T_CPAREN);
         return null;
     }
-    void* params = ArrayList__new(8);
-    ArrayList_push(params, parse_param_variable_member(lex, false));
+    ArrayList* params = ArrayList__new(8);
+    params.push(parse_param_variable_member(lex, false));
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
-        ArrayList_push(params, parse_param_variable_member(lex, false));
+        params.push(parse_param_variable_member(lex, false));
     }
     consume_token(lex, T_CPAREN);
-    return ArrayList_into_array(params);
+    return params.into_array();
 }
 
 fn parse_param_variable_member(void* lex, bool allow_init) {

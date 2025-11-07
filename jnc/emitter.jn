@@ -123,11 +123,11 @@ char* TMPL_ADDR_FN              = "        adrp    x0, __j_%s@PAGE\n        add 
 char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
-# struct Emitter {
-#   int seq                         ; sequence for unique label names
-#   int depth
-#   [Block] blocks                  ; array/stack of "lexical" Blocks
-# }
+struct Emitter {
+    int seq,        # sequence for unique label names
+    int depth,
+    Block* blocks,  # array/stack of "lexical" Blocks
+}
 
 int SIZEOF_BLOCK;
 int BLOCKS_CAP = 10;
@@ -135,11 +135,9 @@ int BLOCKS_CAP = 10;
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
     bytes = bytes + 0x10;
-    void* self = malloc(bytes);
-    *self = 0;
-    self = self + 0x8;              # -> depth
-    *self = 0;
-    self = self - 0x8;              # -> seq
+    Emitter* self = malloc(bytes);
+    self.seq = 0;
+    self.depth = 0;
     int type = null;
     Emitter_enter_block(self, type);
     char* tmpl = TMPL_PRELUDE;
@@ -154,11 +152,9 @@ pub fn Emitter_drop(void* self) {
     free(self);
 }
 
-fn Emitter_seqnum(void* self) {
-    int seq = *self;
-    seq = seq + 1;
-    *self = seq;
-    return seq;
+fn Emitter_seqnum(Emitter* self) {
+    self.seq = self.seq + 1;
+    return self.seq;
 }
 
 fn Emitter_enter_block(void* self, int type) {
@@ -234,10 +230,9 @@ fn Emitter_try_lookup_symbol_for(void* self, void* id_token) {
     return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
 }
 
-fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool allow_null) {
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    void* blocks = self + 0x8;
+fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, bool allow_null) {
+    int depth = self.depth;
+    void* blocks = self + 0x10; # &self.blocks;
     while depth > 0 {
         depth = depth - 1;
         void* symbols = depth * SIZEOF_BLOCK;
@@ -254,9 +249,7 @@ fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool
         return null;
     }
     Token_set_type(t, name);
-    name = ERR_UNKNOWN_SYMBOL;
-    depth = 22;
-    jnc_panic(name, t, depth);
+    jnc_panic(ERR_UNKNOWN_SYMBOL, t, 22);
 }
 
 pub fn Emitter_mark_global(void* nameT) {
