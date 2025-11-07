@@ -41,7 +41,7 @@ fn expr_primary() {
 
 fn expr_postfix_call() {
     expr_id();
-    function_params_base(false, 'T', 42);
+#    function_params_base(false, 'T', 42);
 }
 
 struct ExternallyDefined;
@@ -159,6 +159,14 @@ fn stmt_empty() {
 
 fn stmt_assign(int i) {
     i = 42;
+}
+
+fn call_fn_wrong() {
+    goob(1234);
+    boog(&stmt_empty);
+#    stmt_assign(123, 456);
+    stmt_eval(123, 456); # todo: not declared here, but should be disallowed
+#    moob(&goob);
 }
 
 fn stmt_eval() {

@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Add check that calls to _declared_ functions pass the right number of params (types are not checked). Calls to undeclared functions are not checked.
 
 ### `v0.20251106`
 
