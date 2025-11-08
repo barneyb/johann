@@ -64,6 +64,7 @@ Johann provides no debugging support, but you might be able to use various third
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
+* `14` - Unassignable lvalue
 * `17` - Unrecognized character
 * `20` - Missing token
 * `21` - Too many call parameters

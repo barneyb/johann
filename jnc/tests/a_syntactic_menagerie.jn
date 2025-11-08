@@ -56,7 +56,12 @@ struct Rabbit;
 fn fstructptr(Rabbit**);
 #fn fstructptr(Cow**);
 fn fstructptr(void**);
-#fn fstructptr(Rabbit**);
+pub fn so_many_animals(Cow*****, Horse**, Rabbit*, Cow*, Cow);
+pub fn so_many_animals(Cow***** a, Horse** b, Rabbit* peter, Cow* c, Cow c2) {
+#    Pig** p = null;
+#    void j = p;
+#    q = c;
+}
 
 pub fn lotta_cows(Cow*****, Cow** bessie, Cow*, Cow);
 
