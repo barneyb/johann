@@ -83,6 +83,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `77` - Multibyte character
 * `98` - Certain double-`free` errors
 * `99` - Failed to get memory from the OS (a panic, unlike C)
+* `100` - Unknown function
 * `101` - Incorrect number of function params
 
 Most errors are not caught and result in compiler crashes, invalid assembly code, or code which will crash when executed.

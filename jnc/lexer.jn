@@ -294,7 +294,7 @@ fn next_char(void* self) {
 }
 
 fn bad_char(void* self, int ch) {
-    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n";
+    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, col %i\n";
     void* token = new_token(self, ch);
     int status = 17;
     jnc_panic(f, token, status);

@@ -71,11 +71,9 @@ fn parse_ast() {
 # be passed four values: `status`, `val`, `line`, and `col`.
 pub fn jnc_panic(char* format, void* token, int status) {
     # todo: array indexing (or destructuring!) would be nice...
-    int val = *token;
-    token = token + 0x8;            # -> line
-    int ln = *token;
-    token = token + 0x8;            # -> char
-    int ch = *token;
+    void val = token[0];
+    int ln = token[1];
+    int ch = token[2];
     # to StdErr
     eprintf(format, status, val, ln, ch);
     # to the output file

@@ -77,7 +77,8 @@ fn expr_primary() {
 }
 
 fn expr_postfix_call() {
-    expr_id();
+    expr_primary();
+    expr_id(); # todo: unknown
     function_params_base(false, 'T', 42, 0);
     function_params_anon(true, 'q', 123, null);
 }
@@ -200,10 +201,14 @@ fn stmt_assign(int i) {
 }
 
 fn call_fn_wrong() {
-    goob(1234);
+    goob(1234); # todo: unknown
     boog(&stmt_empty);
+    void* se = &stmt_empty;
+    se(se); # dunno about se, but it's zero-arg
+    se = &a_function;
+    se(se);
 #    stmt_assign(123, 456);
-    stmt_eval(123, 456); # todo: not declared yet, but should be disallowed
+#    stmt_eval(123, 456);
     moob(&goob);
 }
 
