@@ -89,12 +89,14 @@ char* ERR_DUPE_STRUCT_MEMBER = "ERROR(%i): duplicate '%s' member\n";
 char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, col %i\n";
 char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, col %i\n";
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, col %i\n";
+char* ERR_EXPECTED_TOKEN_CH  = "ERROR(%i): Expected '%c' token at line %i, col %i\n";
 char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, col %i\n";
 char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, col %i\n";
 char* ERR_CANT_ASSIGN        = "ERROR(%i): Can't assign to a %i node at line %i, col %i\n";
 char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
 char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
 char* ERR_MISSING_PARAM_NAME = "ERROR(%i): missing parameter name on %x at line %i\n";
+char* ERR_ANONYMOUS_DECL     = "ERROR(%i): Anonymous declaration (%x) at line %i, col %i?!\n";
 pub char* ERR_UNKNOWN_SYMBOL = "ERROR(%i): Unknown symbol '%s' at line %i, col %i\n";
 
 fn is_type_kw(void* token) {
@@ -194,7 +196,12 @@ fn consume_token(void* lex, int type) {
 fn expected_token(void* tkn, int type) {
     if Token_type(tkn) != type {
         Token_set_type(tkn, type);
-        jnc_panic(ERR_EXPECTED_TOKEN, tkn, 26);
+        char* tmpl = ERR_EXPECTED_TOKEN;
+        if type >= 0x20 { if type < 0x7f {
+            # show the char directly
+            tmpl = ERR_EXPECTED_TOKEN_CH;
+        } }
+        jnc_panic(tmpl, tkn, 26);
     }
 }
 
@@ -430,13 +437,13 @@ fn parse_block(void* lex) {
 }
 
 fn parse_block_item(void* lex) {
-    void* tkn = peek_token(lex);
-    int t = Token_type(tkn);
+    Token* tkn = peek_token(lex);
+    int t = tkn.type();
     if is_type_kw(tkn)  {
         void* ast = parse_param_variable_member(lex, true);
         void* nt = ast + 0x10;      # -> nameT
         if *nt == null {
-            jnc_panic("ERR(%i) Anonymous declaration (%x) at line %i, col %i?!\n", tkn, 89);
+            jnc_panic(ERR_ANONYMOUS_DECL, tkn, 89);
         }
         void* type = ast + 0x8;            # -> type
         Env_register_symbol(ENV, *nt, *type);
@@ -499,6 +506,15 @@ fn parse_return(void* lex) {
 fn parse_eval_or_assign(void* lex) {
     Token* tkn = peek_token(lex);
     void* expr = parse_expr(lex);
+
+    # If AST_ID was parsed, and next is T_ID, the first is an undeclared type
+    int t = *expr;
+    if t == AST_ID { if Token_type(peek_token(lex)) == T_ID {
+        # munge for panic
+        Token_set_type(tkn, tkn.value());
+        jnc_panic(ERR_UNKNOWN_SYMBOL, tkn, 23);
+    } }
+
     void* rhs = null;
     if Token_type(peek_token(lex)) == T_ASSIGN {
         consume_token(lex, T_ASSIGN);
@@ -511,7 +527,6 @@ fn parse_eval_or_assign(void* lex) {
         return ast3(AST_EVAL, expr);
     }
 
-    int t = *expr;
     if t == AST_ID {
         return ast3(AST_ASSIGN, expr, rhs);
     }

@@ -58,7 +58,11 @@ fn fstructptr(Rabbit**);
 fn fstructptr(void**);
 pub fn so_many_animals(Cow*****, Horse**, Rabbit*, Cow*, Cow);
 pub fn so_many_animals(Cow***** a, Horse** b, Rabbit* peter, Cow* c, Cow c2) {
+    Cow c3 = c;
+    Cow* c4 = c;
 #    Pig** p = null;
+#    Pig* p2 = null;
+#    Pig p2 = null;
 #    void j = p;
 #    q = c;
 }
