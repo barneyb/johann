@@ -24,7 +24,7 @@ all: \
 	zero \
 
 	@echo "Memory complaints:"
-	@find $(OUT) -name '*.s' | (! xargs grep -A3 '; MEM: ')
+	@find $(OUT) -name '*.s' -o -name '*.jnh' | (! xargs grep -A3 '; MEM: ')
 
 # non-standard targets
 

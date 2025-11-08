@@ -75,19 +75,15 @@ fn to_emitter_decl(void* emitter, void* ast) {
 
 fn to_emitter_variable(void* emitter, void* ast) {
     # [AST_VARIABLE, type, nameT? init?]
-    ast = ast + 0x8;                # -> type
-    void* type = *ast;
-    ast = ast + 0x8;                # -> nameT
-    void* nameT = *ast;
-    ast = ast + 0x8;                # -> init
-    void* init = *ast;
+    void* type = ast[1];
+    void* nameT = ast[2];
+    void* init = ast[3];
 
     # unwrap any PTR nodes, counting along the way
     int nptr = 0;
     while *type == AST_TYPE_PTR {
         nptr = nptr + 1;
-        type = type + 0x8;          # -> type
-        type = *type;
+        type = type[1];
     }
 
     if IS_PUB { if init != null {

@@ -3,7 +3,10 @@ bool ANOTHER_BOOL = true;
 char A_CHAR;
 char ANOTHER_CHAR = 'j';
 int AN_INT;
+#int ANOTHER_INT; # todo: should be allowed
 int ANOTHER_INT = 42;
+#int AN_INT; # todo: should be allowed
+#int ANOTHER_INT; # todo: should be allowed
 char* A_STRING;
 char* ANOTHER_STRING = "Hello, world!";
 void* A_PTR;
@@ -13,9 +16,12 @@ pub bool PUB_ANOTHER_BOOL = true;
 pub char PUB_A_CHAR;
 pub char PUB_ANOTHER_CHAR = 'j';
 pub int PUB_AN_INT;
+#pub int PUB_ANOTHER_INT; # todo: should be allowed
 pub int PUB_ANOTHER_INT = 42;
+#pub int PUB_ANOTHER_INT; # todo: should be allowed
+#pub int PUB_ANOTHER_INT = 1; # can't re-define
 pub char* PUB_A_STRING;
-#pub char* PUB_A_STRING; # todo: should be allowed, but vars aren't symbols yet
+#pub char* PUB_A_STRING; # todo: should be allowed
 pub char* PUB_ANOTHER_STRING = "Hello, world!";
 pub void* PUB_A_PTR;
 
