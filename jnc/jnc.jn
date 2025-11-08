@@ -31,6 +31,8 @@ pub fn main(int argc, char** argv) {
         if strcmp(arg, OPT_HEADER) == 0 {
             return jnc_header();
         }
+        eprintf("Unrecognized argument: '%s'\n", arg);
+        exit(1);
     }
     return jnc_compile();
 }
