@@ -4,44 +4,38 @@
 fn free(void*);
 fn strcmp(char* left, char* right);
 
-# struct Block {
-#   int type                        ; type of the block, identified by its token
-#   int id                          ; unique id num of the block
-#   int nvars                       ; number of vars (function only)
-#   Table* symbols
-# }
+struct Table;
 
-pub int SIZEOF_BLOCK = 0x20;
+struct Block {
+    int type,       # type of the block, identified by its token
+    int id,         # unique id num of the block
+    int nvars,      # number of vars (function only)
+    Table* symbols,
+}
 
-pub fn Block_init(void* self, int type, int id) {
-    void* cmp = &strcmp;
-    void* symbols = Table__new(cmp);
-    *self = type;
-    self = self + 0x8;              # -> id
-    *self = id;
-    self = self + 0x8;              # -> nvars
-    *self = 0;
-    self = self + 0x8;              # -> symbols
-    *self = symbols;
-    self = self - 0x18;             # -> type
+pub int SIZEOF_BLOCK = 0x20; # todo: sizeof(Block);
+
+pub fn Block_init(Block* self, int type, int id) {
+    self.type = type;
+    self.id = id;
+    self.nvars = 0;
+    self.symbols = Table__new(&strcmp);
     return self;
 }
 
-pub fn Block_drop(void* self) {
+pub fn Block_drop(Block* self) {
     void* symbols = Block_symbols(self);
     Table_drop_owned(symbols, &free, &free);
 }
 
-pub fn Block_type(void* self) {
-    return *self;
+pub fn Block_type(Block* self) {
+    return self.type;
 }
 
-pub fn Block_id(void* self) {
-    self = self + 0x8;              # -> id
-    return *self;
+pub fn Block_id(Block* self) {
+    return self.id;
 }
 
-pub fn Block_symbols(void* self) {
-    self = self + 0x18;             # -> symbols
-    return *self;
+pub fn Block_symbols(Block* self) {
+    return self.symbols;
 }

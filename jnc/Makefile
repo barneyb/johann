@@ -15,6 +15,7 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/parser.o \
 	$(LIB)/to_emitter.o \
 	$(LIB)/token_table.o \
+	$(LIB)/util.o \
 	$(LIB)/version.o \
 
 all: $(BIN)/jnc

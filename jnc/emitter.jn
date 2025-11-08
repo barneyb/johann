@@ -1,3 +1,5 @@
+struct Symbol;
+
 int T_AMP;
 int T_BANG;
 int T_CHAR;
@@ -118,16 +120,15 @@ char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 # "add-a-negative" so it matches the addressing offsets
 char* TMPL_ADDR_LOCAL           = "        add     x0, fp, -%x\n";
 char* TMPL_ADDR_GLOBAL          = "        adrp    x0, __j_%s@PAGE\n        add     x0, x0, __j_%s@PAGEOFF\n";
-char* TMPL_ADDR_FN              = "        adrp    x0, __j_%s@PAGE\n        add     x0, x0, __j_%s@PAGEOFF\n";
 
 char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
-# struct Emitter {
-#   int seq                         ; sequence for unique label names
-#   int depth
-#   [Block] blocks                  ; array/stack of "lexical" Blocks
-# }
+struct Emitter {
+    int seq,        # sequence for unique label names
+    int depth,
+    Block* blocks,  # array/stack of "lexical" Blocks
+}
 
 int SIZEOF_BLOCK;
 int BLOCKS_CAP = 10;
@@ -135,11 +136,9 @@ int BLOCKS_CAP = 10;
 pub fn Emitter__new() {
     int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
     bytes = bytes + 0x10;
-    void* self = malloc(bytes);
-    *self = 0;
-    self = self + 0x8;              # -> depth
-    *self = 0;
-    self = self - 0x8;              # -> seq
+    Emitter* self = malloc(bytes);
+    self.seq = 0;
+    self.depth = 0;
     int type = null;
     Emitter_enter_block(self, type);
     char* tmpl = TMPL_PRELUDE;
@@ -154,11 +153,9 @@ pub fn Emitter_drop(void* self) {
     free(self);
 }
 
-fn Emitter_seqnum(void* self) {
-    int seq = *self;
-    seq = seq + 1;
-    *self = seq;
-    return seq;
+fn Emitter_seqnum(Emitter* self) {
+    self.seq = self.seq + 1;
+    return self.seq;
 }
 
 fn Emitter_enter_block(void* self, int type) {
@@ -224,6 +221,7 @@ fn Emitter_leave_block(void* self) {
 
 fn Emitter_lookup_symbol_for(void* self, void* id_token) {
     char* name = Token_value(id_token);
+    printf("; Emitter_lookup_symbol_for '%s'\n", name);
     bool allow_null = false;
     return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
 }
@@ -234,10 +232,9 @@ fn Emitter_try_lookup_symbol_for(void* self, void* id_token) {
     return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
 }
 
-fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool allow_null) {
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    void* blocks = self + 0x8;
+fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, bool allow_null) {
+    int depth = self.depth;
+    void* blocks = self + 0x10; # &self.blocks;
     while depth > 0 {
         depth = depth - 1;
         void* symbols = depth * SIZEOF_BLOCK;
@@ -254,9 +251,7 @@ fn Emitter_lookup_symbol_by_name_and_token(void* self, char* name, void* t, bool
         return null;
     }
     Token_set_type(t, name);
-    name = ERR_UNKNOWN_SYMBOL;
-    depth = 22;
-    jnc_panic(name, t, depth);
+    jnc_panic(ERR_UNKNOWN_SYMBOL, t, 22);
 }
 
 pub fn Emitter_mark_global(void* nameT) {
@@ -364,14 +359,8 @@ fn decl_global_string(void* self, char* name, char* value) {
     return printf(tmpl, name, q, value, q);
 }
 
-pub fn Emitter_do_fn_proto(void* self, void* nameT, void* args) {
-    char* name = Token_value(nameT);
-    fn_symbol(self, name);
-}
-
 pub fn Emitter_do_fn_intro(void* self, void* nameT, void* args) {
     char* name = Token_value(nameT);
-    fn_symbol(self, name);
 
     introduce_fn(self, name);
 
@@ -393,18 +382,6 @@ pub fn Emitter_do_fn_outro(void* self, void* nameT) {
     Block_drop(block);
     char* tmpl = TMPL_FN_OUTRO;
     printf(tmpl, id);
-}
-
-fn fn_symbol(void* self, char* name) {
-    name = strclone(name);
-    void* block = Emitter_current_block(self);
-    void* symbols = Block_symbols(block);
-    void* symbol = Symbol__new(T_KW_FN, 0);
-    void* old = Table_put(symbols, name, symbol);
-    if old != null {
-        free(name);
-        free(old);
-    }
 }
 
 fn introduce_fn(void* self, char* name) {
@@ -694,7 +671,7 @@ fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {
 fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
     void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
-    void* symbol = Emitter_try_lookup_symbol_for(self, nameT);
+    Symbol* symbol = Emitter_try_lookup_symbol_for(self, nameT);
     if symbol != null {
         # function pointer - do setup first, as it corrupts x0
         do_address_of(self, nameT, symbol);
@@ -778,12 +755,17 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
 fn Emitter_eval_expr_addr(void* self, void* expr) {
     void* nameT = expr + 0x10;      # -> nameT
     nameT = *nameT;
-    void * symbol = Emitter_lookup_symbol_for(self, nameT);
+    void* symbol;
 
     int op = expr + 0x8;            # -> op
     op = *op;
-    if op == T_AMP  { return do_address_of(self, nameT, symbol); }
+    if op == T_AMP  {
+        # best effort - jump on blind faith to unknown names
+        symbol = Emitter_try_lookup_symbol_for(self, nameT);
+        return do_address_of(self, nameT, symbol);
+    }
     if op == T_STAR {
+        symbol = Emitter_lookup_symbol_for(self, nameT);
         Emitter_do_value_id(self, nameT);
         return do_load_addr(self, nameT, symbol);
     }
@@ -873,13 +855,15 @@ fn Emitter_do_value_id(void* self, void* t) {
 }
 
 fn do_address_of(void* self, void* token, void* symbol) {
-    int offset = Symbol_offset(symbol);
-    if offset > 0 {
-        # local
-        offset = offset * 0x8;
-        return printf(TMPL_ADDR_LOCAL, offset);
+    if symbol != null {
+        int offset = Symbol_offset(symbol);
+        if offset > 0 {
+            # local
+            offset = offset * 0x8;
+            return printf(TMPL_ADDR_LOCAL, offset);
+        }
     }
-    # global
+    # global or unknown
     char* name = Token_value(token);
     printf(TMPL_ADDR_GLOBAL, name, name);
 }

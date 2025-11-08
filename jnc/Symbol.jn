@@ -8,52 +8,44 @@ int T_KW_CHAR;
 int AST_TYPE_BOOL;
 int AST_TYPE_CHAR;
 
-# struct Symbol {
-#   int width       ; byte width of a value - ick!
-#   int nptr        ; number of pointer indirections
-#   int offset      ; locals : offset from fp (one-indexed)
-#                   ; statics: non-positive
-#   int type        ; type of the symbol
-# }
+struct Symbol {
+    int width,  # byte width of a value - ick!
+    int nptr,   # number of pointer indirections
+    int offset, # locals : offset from fp (one-indexed)
+                # statics: non-positive
+    int type,   # type of the symbol
+}
 
 # I create a new symbol, computing its width from its type (ick).
 pub fn Symbol__new(int type, int nptr) {
-    int s = malloc(0x20);
-    int width = 0x8;
-    if type == T_KW_BOOL     { width = 0x1; }
-    if type == T_KW_CHAR     { width = 0x1; }
-    if type == AST_TYPE_BOOL { width = 0x1; }
-    if type == AST_TYPE_CHAR { width = 0x1; }
-    *s = width;
-    s = s + 0x8;                    # -> nptr
-    *s = nptr;
-    s = s + 0x8;                    # -> offset
-    *s = 0;
-    s = s + 0x8;                    # -> type
-    *s = type;
-    return s - 0x18;                # -> width
+    Symbol* s = malloc(sizeof(Symbol));
+    s.width = 0x8;
+    if type == T_KW_BOOL     { s.width = 0x1; }
+    if type == T_KW_CHAR     { s.width = 0x1; }
+    if type == AST_TYPE_BOOL { s.width = 0x1; }
+    if type == AST_TYPE_CHAR { s.width = 0x1; }
+    s.nptr = nptr;
+    s.offset = 0;
+    s.type = type;
+    return s;
 }
 
-pub fn Symbol_type(void* self) {
-    self = self + 0x18;             # -> type
-    return *self;
+pub fn Symbol_type(Symbol* self) {
+    return self.type;
 }
 
-pub fn Symbol_width(void* self) {
-    return *self;
+pub fn Symbol_width(Symbol* self) {
+    return self.width;
 }
 
-pub fn Symbol_nptr(void* self) {
-    self = self + 0x8;             # -> nptr
-    return *self;
+pub fn Symbol_nptr(Symbol* self) {
+    return self.nptr;
 }
 
-pub fn Symbol_offset(void* self) {
-    self = self + 0x10;             # -> offset
-    return *self;
+pub fn Symbol_offset(Symbol* self) {
+    return self.offset;
 }
 
-pub fn Symbol_set_offset(void* self, int offset) {
-    self = self + 0x10;             # -> offset
-    *self = offset;
+pub fn Symbol_set_offset(Symbol* self, int offset) {
+    self.offset = offset;
 }

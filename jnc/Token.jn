@@ -3,80 +3,77 @@
 int T_ID;
 int T_STRING;
 
-# struct Token {
-#   int type                        ; type of token
-#   int line_num                    ; line of the source the token started on
-#   int char_offset                 ; position in the line the token started on
-#   ? value                         ; a 64-bit "something"
-# }
+struct Token {
+    int type,           # type of token
+    int line_num,       # line of the source the token started on
+    int char_offset,    # position in the line the token started on
+    void value,         # a 64-bit "something"
+}
 
 # I create a new token, with the given type.
 pub fn Token__new(int type) {
-    void* token = malloc(0x20);
-    *token = type;
-#    Token_set_coords(token, 0, 0);
-#    Token_set_value(token, 0);
-    return token;
+    Token* t = malloc(sizeof(Token));
+    t.type = type;
+#    Token_set_coords(t, 0, 0);
+#    Token_set_value(t, 0);
+    return t;
 }
 
-pub fn Token_drop(void* token) {
-    int type = *token;
-    void* val;
+pub fn Token_drop(Token* self) {
+    int type = self.type;
     if type == T_ID {
-        val = Token_value(token);
-        free(val);
+        free(self.value);
     }
     if type == T_STRING {
-        val = Token_value(token);
-        free(val);
+        free(self.value);
     }
-    free(token);
+    free(self);
 }
 
-pub fn Token_type(void* token) {
-    return *token;
+pub fn Token_type(Token* self) {
+    return self.type;
 }
 
-pub fn Token_into_type(void* token) {
-    void v = *token;
-    Token_drop(token);
+pub fn Token_into_type(Token* self) {
+    void v = self.type;
+    self.drop();
     return v;
 }
 
-pub fn Token_set_type(void* token, int type) {
-    *token = type;
+pub fn Token_set_type(Token* self, int type) {
+    self.type = type;
 }
 
-pub fn Token_line(void* token) {
-    token = token + 0x8;            # -> line_num
-    return *token;
+# I return the line the token started on.
+pub fn Token_line(Token* self) {
+    return self.line_num;
 }
 
-pub fn Token_char(void* token) {
-    token = token + 0x10;           # -> char_offset
-    return *token;
+# Deprecated: use `Token_col`
+pub fn Token_char(Token* self) {
+    return self.char_offset;
 }
 
-pub fn Token_set_coords(void* token, int line_num, int char_offset) {
-    token = token + 0x8;            # -> line_num
-    *token = line_num;
-    token = token + 0x8;            # -> char_offset
-    *token = char_offset;
+# I return the column the token started at.
+pub fn Token_col(Token* self) {
+    return self.char_offset;
 }
 
-pub fn Token_value(void* token) {
-    token = token + 0x18;           # -> value
-    return *token;
+pub fn Token_set_coords(Token* self, int line_num, int char_offset) {
+    self.line_num = line_num;
+    self.char_offset = char_offset;
 }
 
-pub fn Token_into_value(void* token) {
-    void v = token + 0x18;           # -> value
-    v = *v;
-    free(token); # not Token_drop, as the value needs to live on
+pub fn Token_value(Token* self) {
+    return self.value;
+}
+
+pub fn Token_into_value(Token* self) {
+    void v = self.value;
+    free(self); # not Token_drop, as the value needs to live on
     return v;
 }
 
-pub fn Token_set_value(void* token, void value) {
-    token = token + 0x18;           # -> value
-    *token = value;
+pub fn Token_set_value(Token* self, void value) {
+    self.value = value;
 }

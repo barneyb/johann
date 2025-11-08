@@ -1,7 +1,5 @@
 
 fn a() { return 'a'; }
-fn b();
-fn puts(char* str);
 
 pub fn main() {
     non_pointers();
