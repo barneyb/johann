@@ -54,40 +54,40 @@ int T_SLASH;
 int T_SQUOTE;
 int T_STAR;
 
+struct StringBuilder;
+
+pub char* RESTART_LINE_COUNT = "![[jnc_restart_line_count]]";
+
 pub char* KW_BOOL   = "bool";
 pub char* KW_CHAR   = "char";
 pub char* KW_INT    = "int";
 pub char* KW_VOID   = "void";
+pub char* KW_FN     = "fn";
+pub char* KW_STRUCT = "struct";
 char* KW_AGAIN  = "again";
 char* KW_CONST  = "const";
 char* KW_DONE   = "done";
 char* KW_FALSE  = "false";
-char* KW_FN     = "fn";
 char* KW_IF     = "if";
 char* KW_LET    = "let";
 char* KW_NULL   = "null";
 char* KW_PUB    = "pub";
 char* KW_RETURN = "return";
 char* KW_SIZEOF = "sizeof";
-char* KW_STRUCT = "struct";
 char* KW_TRUE   = "true";
 char* KW_WHILE  = "while";
 
-# struct Lexer {
-#   int line;
-#   int col;
-#   Token* next;
-# }
+struct Lexer {
+    int line,
+    int col,
+    Token* next,
+}
 
 pub fn Lexer__new() {
-    int bytes = 0x18;
-    void* lex = malloc(bytes);
-    *lex = 1;
-    lex = lex + 0x8;
-    *lex = 0;
-    lex = lex + 0x8;
-    *lex = null;
-    lex = lex - 0x10;
+    Lexer* lex = malloc(sizeof(Lexer));
+    lex.line = 1;
+    lex.col = 0;
+    lex.next = null;
     return lex;
 }
 
@@ -124,7 +124,7 @@ pub fn get_next_token(void* self) {
         }
         if c == ' ' { again; }
         if c == '	' { again; } # a literal tab # todo: char escapes
-        if c == '#' {
+        if c == T_HASH {
             Lexer_lex_comment(self);
             again;
         }
@@ -162,10 +162,30 @@ pub fn get_next_token(void* self) {
 }
 
 # eat chars through the next newline
-fn Lexer_lex_comment(void* self) {
+fn Lexer_lex_comment(Lexer* self) {
+    char c;
+    if peekchar() == T_BANG {
+        # might be a directive...
+        StringBuilder* sb = StringBuilder__new(32);
+        while true {
+            if iseof() { return; }
+            c = getchar();
+            if c == 0xa { # newline
+                char* s = sb.into_chars();
+                if strcmp(s, RESTART_LINE_COUNT) == 0 {
+                    # reset the line, and keep on going
+                    self.line = 0;
+                }
+                free(s);
+                next_line(self);
+                return;
+            }
+            sb.push(c);
+        }
+    }
     while true {
         if iseof() { return; }
-        char c = getchar();
+        c = getchar();
         if c == 0xa { # newline
             done;
         }

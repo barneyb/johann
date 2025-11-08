@@ -1,0 +1,116 @@
+int T_COMMA;
+int T_CPAREN;
+int T_HASH;
+int T_OPAREN;
+int T_SEMI;
+int T_STAR;
+
+char* RESTART_LINE_COUNT;
+
+char* KW_BOOL;
+char* KW_CHAR;
+char* KW_FN;
+char* KW_INT;
+char* KW_STRUCT;
+char* KW_VOID;
+char* NAME_MAIN;
+
+int AST_DECL;
+int AST_FN;
+int AST_PROGRAM;
+int AST_STRUCT;
+int AST_TYPE_BOOL;
+int AST_TYPE_CHAR;
+int AST_TYPE_INT;
+int AST_TYPE_NAMED;
+int AST_TYPE_PTR;
+int AST_TYPE_VOID;
+int AST_VARIABLE;
+
+struct Token;
+
+pub fn to_header(void* ast) {
+    int t = *ast;
+    if t == AST_PROGRAM { return to_program(ast); }
+    if t == AST_DECL    { return to_decl(ast); }
+    if t == AST_VARIABLE{ return; }
+    if t == AST_FN      { return to_fn(ast); }
+    if t == AST_STRUCT  { return to_struct(ast); }
+
+    eprintf("Can't emit a %i node?!\n", t);
+    exit(t);
+}
+
+fn to_struct(void* ast) {
+    # [AST_STRUCT, nameT, members?]
+    Token* nameT = ast[1];
+    char* name = nameT.value();
+    printf("%s %s%c\n", KW_STRUCT, name, T_SEMI);
+}
+
+fn to_program(void* ast) {
+    # [AST_PROGRAM, decls[], null, null]
+    do_array(ast[1], &to_header);
+    printf("%c%s\n", T_HASH, RESTART_LINE_COUNT);
+}
+
+fn to_decl(void* ast) {
+    # [AST_DECL, is_pub, fn_or_var, null]
+    if !ast[1] {
+        return; # not public
+    }
+    to_header(ast[2]);
+}
+
+fn to_type(void* ast) {
+    # [AST_TYPE_BOOL]
+    # [AST_TYPE_CHAR]
+    # [AST_TYPE_INT]
+    # [AST_TYPE_VOID]
+    # [AST_TYPE_PTR, type]
+    # [AST_TYPE_NAMED, nameT]
+    # in case it was named...
+    # [AST_VARIABLE, type, nameT? init?]
+    int t = ast[0];
+    if t == AST_TYPE_BOOL  { return printf(KW_BOOL); }
+    if t == AST_TYPE_CHAR  { return printf(KW_CHAR); }
+    if t == AST_TYPE_INT   { return printf(KW_INT ); }
+    if t == AST_TYPE_VOID  { return printf(KW_VOID); }
+    if t == AST_TYPE_PTR   { to_type(ast[1]); return putchar(T_STAR); }
+    if t == AST_TYPE_NAMED { return printf("%s", Token_value(ast[1])); }
+    if t == AST_VARIABLE   { return to_type(ast[1]); }
+    eprintf("Unknown type %d / %x\n", t, t);
+    exit(5);
+}
+
+fn comma_to_type(void* ast) {
+    putchar(T_COMMA);
+    to_type(ast);
+}
+
+fn to_fn(void* ast) {
+    # [AST_FN, nameT, params[], block?]
+    Token* nameT = ast[1];
+    char* name = nameT.value();
+    if strcmp(name, NAME_MAIN) == 0 {
+        return; # never expose main
+    }
+    printf("%s %s%c", KW_FN, name, T_OPAREN);
+    void* args = ast[2];
+    if args != null {
+        to_type(args[0]);
+        do_array(args + 0x8, &comma_to_type);
+    }
+    printf("%c%c\n", T_CPAREN, T_SEMI);
+}
+
+# I run the work on each element of the null-terminated array of 8-byte values.
+fn do_array(void* arr, void* work) {
+    void* p = arr;
+    while true {
+        void it = *p;
+        if it == null { done; }
+        work(it);
+        p = p + 0x8;
+    }
+}

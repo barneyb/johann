@@ -13,6 +13,8 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 Add check that calls to _declared_ functions pass the right number of params (types are not checked). Calls to undeclared functions are not checked. Don't require a declaration to take a function pointer. Add checks that function redeclarations are compatible, and disallow redefining.
 
+Add a `--header` option to `jnc` to emit a Johann source file containing the compilation unit's `pub` declarations (aside from `main`).
+
 ### `v0.20251106`
 
 Add a `length` "method" to `StringBuilder`. Reinstate `itoa` and add its complement `atoi` as well.

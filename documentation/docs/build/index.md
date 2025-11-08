@@ -11,6 +11,48 @@ Implicit is a command shell that understands redirection. Compilation is always 
 
 The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
 
+## "Header" Files
+
+If you compile with `jnc --header`, the compiler will emit a "header" file with the input's public declarations as valid Johann source, instead of assembly codes. On modern platforms, this linkage info is implicit and used automatically. In C/C++, you (meaning your IDE) write the header file manually and explicitly use it. With Johann, the info is implicit, but you have to explicitly materialize and use it.
+
+Why is it useful? `jnc` will give you better errors with header info from libraries you intend to link against. Consider a simple library with `add` and a (buggy) program that uses it:
+
+```
+% cat add.jn
+# I add two integers. An extremely useful library routine.
+pub fn add(int a, int b) {
+    return a + b;
+}
+
+% cat main.jn
+pub fn main() {
+    return add(2); # BUG! add takes two params
+}
+```
+
+Compiling `main.jn` by itself succeeds:
+
+```
+% ./bin/jnc < main.jn > main.s
+% echo $?
+0
+```
+
+If you compile `add.jn`, assemble them both, and link with `jstdlib`, the executable will even run, despite the defect. If, however, you create and use a header file for `add`, compilation of the program will fail:
+
+```
+% ./bin/jnc --header < add.jn > add.jnh
+% cat add.jnh
+fn add(int,int);
+#![[jnc_restart_line_count]]
+% ./bin/jnc < add.jnh < main.jn > main.s
+Expected 2 args, not 1, passed to add (at 2:5)
+% echo $?
+101
+```
+
+In particular, note that the error references line 2 (of `main.jn`), even though `jnc` worked through the header file first. That's why there's that ugly trailing comment.
+
 ## Debugging Johann Programs
 
 !!! tip
@@ -41,5 +83,6 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `77` - Multibyte character
 * `98` - Certain double-`free` errors
 * `99` - Failed to get memory from the OS (a panic, unlike C)
+* `101` - Incorrect number of function params
 
 Most errors are not caught and result in compiler crashes, invalid assembly code, or code which will crash when executed.

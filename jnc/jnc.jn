@@ -13,34 +13,49 @@ int AST_TYPE_VOID;
 
 char* OPT_V = "-v";
 char* OPT_VERSION = "--version";
+char* OPT_HEADER = "--header";
 
 pub fn main(int argc, char** argv) {
     int i = 1; # argv[0] is the command name
-    char* v = OPT_V;
-    char* version = OPT_VERSION;
     while i < argc {
-        argv = argv + 0x8;
-        char* arg = *argv;
+        char* arg = argv[i];
         i = i + 1;
-        bool cmp = strcmp(arg, v);
-        if cmp == 0 {
-            v = JNC_SHORT_VERSION;
-            puts(v);
+        if strcmp(arg, OPT_V) == 0 {
+            puts(JNC_SHORT_VERSION);
             return 0;
         }
-        cmp = strcmp(arg, version);
-        if cmp == 0 {
-            v = JNC_LONG_VERSION;
-            puts(v);
+        if strcmp(arg, OPT_VERSION) == 0 {
+            puts(JNC_LONG_VERSION);
             return 0;
         }
+        if strcmp(arg, OPT_HEADER) == 0 {
+            return jnc_header();
+        }
+        eprintf("Unrecognized argument: '%s'\n", arg);
+        exit(1);
     }
     return jnc_compile();
 }
 
 pub void ENV = null;
 
+fn jnc_header() {
+    void* ast = parse_ast();
+    to_header(ast);
+    drop_ast(ast);
+    Env_drop(ENV);
+}
+
 fn jnc_compile() {
+    void* ast = parse_ast();
+    void* emitter = Emitter__new();
+    to_emitter(emitter, ast);
+    drop_ast(ast);
+    Emitter_drop(emitter);
+    Env_drop(ENV);
+}
+
+fn parse_ast() {
     ENV = Env__new(null);
     Env_seed_type(ENV, KW_BOOL, ast1(AST_TYPE_BOOL));
     Env_seed_type(ENV, KW_CHAR, ast1(AST_TYPE_CHAR));
@@ -49,12 +64,7 @@ fn jnc_compile() {
     void* lex = Lexer__new();
     void* ast = parse_program(lex);
     Lexer_drop(lex);
-
-    void* emitter = Emitter__new();
-    to_emitter(emitter, ast);
-    drop_ast(ast);
-    Emitter_drop(emitter);
-    Env_drop(ENV);
+    return ast;
 }
 
 # `token` is a `[val, line, col]` tuple to dissect for the format, which will

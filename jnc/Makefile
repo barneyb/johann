@@ -14,6 +14,7 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/lexer.o \
 	$(LIB)/parser.o \
 	$(LIB)/to_emitter.o \
+	$(LIB)/to_header.o \
 	$(LIB)/token_table.o \
 	$(LIB)/util.o \
 	$(LIB)/version.o \
