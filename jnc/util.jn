@@ -1,0 +1,10 @@
+# Utility functions for `jnc`, which aren't general enough to go in `jstdlib`.
+
+# I return the length of the null-terminated array of 8-byte values.
+pub fn arrlen(void* arr) {
+    void* end = arr;
+    while *end != null {
+        end = end + 0x8;
+    }
+    return (end - arr) / 0x8;
+}

@@ -766,14 +766,6 @@ fn join_un_op_rtl(void* lex, int op) {
     return ast3(AST_UNARY, op, operand);
 }
 
-fn ptrs_len(void* arr) { # todo: jstdlib?
-    void* end = arr;
-    while *end != null {
-        end = end + 0x8;
-    }
-    return (end - arr) / 0x8;
-}
-
 fn do_call_with_args(void* expr, void* args) {
     void* nameT = expr + 0x8;       # -> nameT
     nameT = *nameT;
@@ -784,11 +776,11 @@ fn do_call_with_args(void* expr, void* args) {
         tast = tast + 0x10;         # -> params
         if *tast != null {
             # if params is not null, the function has formal args
-            fl = ptrs_len(*tast);
+            fl = arrlen(*tast);
         }
         int pl = 0;
         if args != null {
-            pl = ptrs_len(args);
+            pl = arrlen(args);
         }
         if pl != fl {
             eprintf("Expected %d args, not %d, passed to %s (at %d:%d)\n",
