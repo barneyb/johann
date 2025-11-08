@@ -1,8 +1,11 @@
 int T_COMMA;
 int T_CPAREN;
+int T_HASH;
 int T_OPAREN;
 int T_SEMI;
 int T_STAR;
+
+char* RESTART_LINE_COUNT;
 
 char* KW_BOOL;
 char* KW_CHAR;
@@ -48,6 +51,7 @@ fn to_struct(void* ast) {
 fn to_program(void* ast) {
     # [AST_PROGRAM, decls[], null, null]
     do_array(ast[1], &to_header);
+    printf("%c%s\n", T_HASH, RESTART_LINE_COUNT);
 }
 
 fn to_decl(void* ast) {
