@@ -186,10 +186,8 @@ fn Emitter_current_block(void* self) {
     return blocks;
 }
 
-fn Emitter_is_global(void* self) {
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    return depth == 1;
+fn Emitter_is_global(Emitter* self) {
+    return self.depth == 1;
 }
 
 fn Emitter_innermost_block_of(void* self, int type, void* token) {
@@ -265,13 +263,13 @@ pub fn Emitter_mark_global(void* nameT) {
     }
 }
 
-pub fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
+fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
     char* name = Token_value(nameT);
     void* symbols = decl_symbols(self, nameT);
     void* symbol = Symbol__new(type, nptr);
     # reuse type for offset, because "8 vars"
     type = Emitter_is_global(self);
-    type = ! type;
+    type = !type;
     if type {
         type = Table_size(symbols);
         type = type + 1; # local vars are one-indexed
@@ -283,7 +281,7 @@ pub fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
 }
 
 fn decl_symbols(void* self, void* id_token) {
-    void * block;
+    void* block;
     bool global = Emitter_is_global(self);
     int n;
     if global {
@@ -298,9 +296,7 @@ fn decl_symbols(void* self, void* id_token) {
     if Table_contains(symbols, name) {
         # munge for panic
         Token_set_type(id_token, name);
-        name = ERR_DUPE_DECL;
-        n = 22;
-        jnc_panic(name, id_token, n);
+        jnc_panic(ERR_DUPE_DECL, id_token, 22);
     }
     if ! global {
         n = Table_size(symbols);
@@ -315,6 +311,8 @@ fn decl_symbols(void* self, void* id_token) {
     return symbols;
 }
 
+# This is both (re)declare and define, but "re" doesn't differentiate
+# and is always denied. So redeclaration isn't supported.
 pub fn Emitter_do_decl(void* self, void* nameT, int type, int nptr, void* expr) {
     void* symbol = Emitter_vardecl(self, nameT, type, nptr);
     if expr == null { return; }

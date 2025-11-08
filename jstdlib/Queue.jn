@@ -2,7 +2,8 @@
 # 64-bit values with pass by value semantics. `Queue__new_owned` can help if the
 # elements are pointers to owned objects.
 
-struct Queue {
+# Type of `Queue`s.
+pub struct Queue {
     int size,
     void* drop_el,
     Node* head,

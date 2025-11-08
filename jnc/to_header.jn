@@ -33,7 +33,7 @@ pub fn to_header(void* ast) {
     int t = *ast;
     if t == AST_PROGRAM { return to_program(ast); }
     if t == AST_DECL    { return to_decl(ast); }
-    if t == AST_VARIABLE{ return; }
+    if t == AST_VARIABLE{ return to_var(ast); }
     if t == AST_FN      { return to_fn(ast); }
     if t == AST_STRUCT  { return to_struct(ast); }
 
@@ -88,11 +88,25 @@ fn comma_to_type(void* ast) {
     to_type(ast);
 }
 
+fn to_var(void* ast) {
+    # [AST_VARIABLE, type, nameT? init?]
+    if ast[3] == null {
+        # only expose defined names, not merely declared ones
+        return;
+    }
+    char* name = Token_value(ast[2]);
+    if name[0] == '_' { return; }
+    if name[strlen(name) - 1] == '_' { return; }
+    to_type(ast[1]);
+    printf(" %s%c\n", name, T_SEMI);
+}
+
 fn to_fn(void* ast) {
     # [AST_FN, nameT, params[], block?]
     typecheck_formal_args(ast);
-    Token* nameT = ast[1];
-    char* name = nameT.value();
+    char* name = Token_value(ast[1]);
+    if name[0] == '_' { return; }
+    if name[strlen(name) - 1] == '_' { return; }
     if strcmp(name, NAME_MAIN) == 0 {
         return; # never expose main
     }
