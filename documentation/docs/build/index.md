@@ -46,12 +46,13 @@ If you compile `add.jn`, assemble them both, and link with `jstdlib`, the execut
 fn add(int,int);
 #![[jnc_restart_line_count]]
 % ./bin/jnc < add.jnh < main.jn > main.s
-Expected 2 args, not 1, passed to add (at 2:5)
+ERROR(101): Expected 1 args at line 2, col 12
+Compilation error
 % echo $?
 101
 ```
 
-In particular, note that the error references line 2 (of `main.jn`), even though `jnc` worked through the header file first. That's why there's that ugly trailing comment.
+In particular, note that the error references line 2 (of `main.jn`), even though `jnc` worked through the header file first.
 
 ## Debugging Johann Programs
 

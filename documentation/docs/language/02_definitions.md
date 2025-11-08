@@ -2,7 +2,7 @@
 
 By default, definitions are private to the file they're declared in. Use `pub` to make a definition available elsewhere, whether a function or a global variable. To use a `pub` variable in another file, it must redeclared in that file. 
 
-You _really_ want to use [header files](../../build/#header-files) for relating compilation units - the errors are much better.
+You _really_ want to use [header files](../build/index.md#header-files) for relating compilation units - the errors are much better.
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. They will move to the other side of the identifier, so `int i = ...` will become `let i: int = ...`, and the type may become optional as well. Pointers are declared with `*`. `void` can be used to represent "a 64-bit value", and thus `void*` means "a pointer to something". No type checking is performed, but the type is used for `sizeof` and struct member access. This mess will improve.
 
@@ -43,7 +43,7 @@ pub fn main() {
 
 Functions, types, and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be declared `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) sometimes does. Global variables always require a reference, to use or take an address.
 
-Again, you _really_ want to use [header files](../../build/#header-files) for relating compilation units, though this time it's for saving copy'n'paste.
+Again, you _really_ want to use [header files](../build/index.md#header-files) for relating compilation units, though this time it's for saving copy'n'paste.
 
 This program prints an externally-defined greeting three times, in three different ways:
 
