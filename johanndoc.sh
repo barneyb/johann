@@ -93,14 +93,20 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     elif [[ "$line" =~ ^pub ]]; then
                         type=$(echo "$line" | cut -d ' ' -f 2)
                         name=$(echo "$line" | cut -d ' ' -f 3 | cut -d '(' -f 1)
-                        line=$(echo "$line" | cut -d '{' -f 1)
+                        line=$(echo "$line" | cut -d '{' -f 1 | cut -d '#' -f 1)
                         if ! echo "$line" | grep -F '_(' > /dev/null; then
                             if [[ "$type" = "fn" ]]; then
-                                fn="`echo "$line" | sed -E -e 's/[^a-zA-Z0-9_]/-/g'`.fn.txt"
-                                echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
+                                type="zzfn"
+                            elif [[ "$type" = "struct" ]]; then
+                                type="yystruct"
                             else
-                                echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n"
+                                type="var"
                             fi
+                            fn="member.$type.`echo "$line" \
+                                | cut -d '"' -f 1 \
+                                | cut -d "'" -f 1 \
+                                | sed -E -e 's/[^a-zA-Z0-9_]/-/g'`.txt"
+                            echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
                         fi
                         do_file=nope
                     elif [[ "$do_file" = "yes" ]]; then
@@ -111,7 +117,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     DOC=""
                 done < "$FILE"
                 echo
-                ls $TMP/*.fn.txt | xargs cat
+                ls $TMP/member.*.txt | sort --ignore-case | xargs cat
             fi
             echo "<!--{/johanndoc:$FILE}-->"
             tail -n +$(( THRU + END_LINE )) $DOC_FILE
