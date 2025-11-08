@@ -42,10 +42,19 @@ fn function_params_ptr(bool* b, char* c, int* i, void v);
 pub struct Cow;
 fn function_params_ptr(bool* b, char* c, int* i, int* v);
 struct Rabbit;
+struct Rabbit;
 pub fn fstruct(Cow);
 #fn fstruct(Rabbit);
 fn fstruct(void);
-fn fstructptr(Cow**);
+struct Rabbit {
+    int tail_count
+}
+#struct Rabbit {
+#    int tail_count
+#}
+struct Rabbit;
+fn fstructptr(Rabbit**);
+#fn fstructptr(Cow**);
 fn fstructptr(void**);
 #fn fstructptr(Rabbit**);
 
