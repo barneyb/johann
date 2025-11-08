@@ -40,12 +40,12 @@ int AST_RETURN;
 int AST_UNARY;
 int AST_WHILE;
 
+pub char* NAME_MAIN = "main";
+
 char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
 char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
 char* ERR_UNKNOWN_SYMBOL    = "ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
 char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, char %i\n";
-
-char* NAME_MAIN = "main";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 char* TMPL_GLOBAL               = ".global __j_%s\n";

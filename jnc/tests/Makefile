@@ -61,6 +61,7 @@ $(LIB)/%.o: $(OUT)/%.s
 $(OUT)/%.s: %.jn $(JNC)
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
+	$(JNC) --header < $< > $(OUT)/$<h
 
 # Utility targets
 

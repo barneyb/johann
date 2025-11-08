@@ -11,6 +11,19 @@ Implicit is a command shell that understands redirection. Compilation is always 
 
 The various `Makefile` may provide additional inspiration. It's worth mentioning that my `make` skills are commensurate with my skill coding assembly.
 
+## Header Files
+
+If you compile with `jnc --header`, the compiler will emit a "header" file with the input's public declarations instead of assembly. Paste that at the top of any source file that you'll be linking the first's object file to get _slightly_ improved compiler errors.
+
+```
+% echo "pub fn add(int a, int b) { return a + b; }" > add.jn
+% ./bin/jnc --header < add.jn > add.jnh
+% cat add.jnh
+fn add(int,int);
+```
+
+This is the reverse of C/C++, and is hidden in modern languages, but Johann fits into neither of those categories.
+
 ## Debugging Johann Programs
 
 !!! tip
