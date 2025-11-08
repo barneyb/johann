@@ -294,7 +294,7 @@ fn next_char(void* self) {
 }
 
 fn bad_char(void* self, int ch) {
-    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, char %i\n";
+    char* f = "\n; ERROR(%i): Unrecognized char '%c' at line %i, col %i\n";
     void* token = new_token(self, ch);
     int status = 17;
     jnc_panic(f, token, status);
@@ -326,9 +326,8 @@ fn token_id(void* self, int first_char) {
     return token;
 }
 
-fn token_char(void* self, int first_char) {
-    first_char = T_CHAR;
-    void* token = new_token(self, first_char);
+fn token_char(void* self) {
+    void* token = new_token(self, T_CHAR);
     char c = next_char(self); # the actual char
     # todo: escape sequences
     Token_set_value(token, c);
@@ -336,9 +335,8 @@ fn token_char(void* self, int first_char) {
     return token;
 }
 
-fn token_string(void* self, int first_char) {
-    first_char = T_STRING;
-    void* token = new_token(self, first_char);
+fn token_string(void* self) {
+    void* token = new_token(self, T_STRING);
     char* name = lex_string(self);
     Token_set_value(token, name);
     return token;

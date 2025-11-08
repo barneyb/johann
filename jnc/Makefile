@@ -56,6 +56,9 @@ $(LIB)/%.o: $(OUT)/%.s
 test: all
 	$(MAKE) -C tests all
 
+touch_all:
+	find . -name '*.jn' | xargs touch
+
 clean:
 	rm -rf $(TGT)
 	$(MAKE) -C ../jstdlib clean

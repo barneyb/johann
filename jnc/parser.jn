@@ -1,4 +1,5 @@
 struct ArrayList;
+struct Token;
 
 int T_BOOL;
 int T_CHAR;
@@ -83,16 +84,20 @@ fn drop_ast(void*);
 fn Env_push(void*);
 fn Env_pop(void*);
 
-char* ERR_ZERO_MEMBER_STRUCT = "ERROR(%i): Struct '%s' must declare at least one member at line %i, char %i\n";
+char* ERR_ZERO_MEMBER_STRUCT = "ERROR(%i): Struct '%s' must declare at least one member at line %i, col %i\n";
 char* ERR_DUPE_STRUCT_MEMBER = "ERROR(%i): duplicate '%s' member\n";
-char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, char %i\n";
-char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, char %i\n";
-char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, char %i\n";
-char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, char %i\n";
-char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, char %i\n";
+char* ERR_BAD_TYPE           = "ERROR(%i): Bad type %x at line %i, col %i\n";
+char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, col %i\n";
+char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, col %i\n";
+char* ERR_EXPECTED_TOKEN_CH  = "ERROR(%i): Expected '%c' token at line %i, col %i\n";
+char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, col %i\n";
+char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, col %i\n";
+char* ERR_CANT_ASSIGN        = "ERROR(%i): Can't assign to a %i node at line %i, col %i\n";
 char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
 char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
 char* ERR_MISSING_PARAM_NAME = "ERROR(%i): missing parameter name on %x at line %i\n";
+char* ERR_ANONYMOUS_DECL     = "ERROR(%i): Anonymous declaration (%x) at line %i, col %i?!\n";
+pub char* ERR_UNKNOWN_SYMBOL = "ERROR(%i): Unknown symbol '%s' at line %i, col %i\n";
 
 fn is_type_kw(void* token) {
     int t = Token_type(token);
@@ -191,7 +196,12 @@ fn consume_token(void* lex, int type) {
 fn expected_token(void* tkn, int type) {
     if Token_type(tkn) != type {
         Token_set_type(tkn, type);
-        jnc_panic(ERR_EXPECTED_TOKEN, tkn, 26);
+        char* tmpl = ERR_EXPECTED_TOKEN;
+        if type >= 0x20 { if type < 0x7f {
+            # show the char directly
+            tmpl = ERR_EXPECTED_TOKEN_CH;
+        } }
+        jnc_panic(tmpl, tkn, 26);
     }
 }
 
@@ -427,13 +437,13 @@ fn parse_block(void* lex) {
 }
 
 fn parse_block_item(void* lex) {
-    void* tkn = peek_token(lex);
-    int t = Token_type(tkn);
+    Token* tkn = peek_token(lex);
+    int t = tkn.type();
     if is_type_kw(tkn)  {
         void* ast = parse_param_variable_member(lex, true);
         void* nt = ast + 0x10;      # -> nameT
         if *nt == null {
-            jnc_panic("ERR(%i) Anonymous declaration (%x) at line %i, char %i?!\n", tkn, 89);
+            jnc_panic(ERR_ANONYMOUS_DECL, tkn, 89);
         }
         void* type = ast + 0x8;            # -> type
         Env_register_symbol(ENV, *nt, *type);
@@ -494,8 +504,17 @@ fn parse_return(void* lex) {
 }
 
 fn parse_eval_or_assign(void* lex) {
-    int line = Token_line(peek_token(lex));
+    Token* tkn = peek_token(lex);
     void* expr = parse_expr(lex);
+
+    # If AST_ID was parsed, and next is T_ID, the first is an undeclared type
+    int t = *expr;
+    if t == AST_ID { if Token_type(peek_token(lex)) == T_ID {
+        # munge for panic
+        Token_set_type(tkn, tkn.value());
+        jnc_panic(ERR_UNKNOWN_SYMBOL, tkn, 23);
+    } }
+
     void* rhs = null;
     if Token_type(peek_token(lex)) == T_ASSIGN {
         consume_token(lex, T_ASSIGN);
@@ -505,10 +524,9 @@ fn parse_eval_or_assign(void* lex) {
 
     # bare evaluation
     if rhs == null {
-        return ast3(AST_EVAL, expr);
+        return ast2(AST_EVAL, expr);
     }
 
-    int t = *expr;
     if t == AST_ID {
         return ast3(AST_ASSIGN, expr, rhs);
     }
@@ -531,13 +549,16 @@ fn parse_eval_or_assign(void* lex) {
             t = *t;
             if *t == AST_ID {
                 t = t + 0x8; # -> nameT
-                eprintf("Did you forget to declare '%s'?\n", Token_value(*t));
+                # munge for panic
+                Token_set_type(tkn, Token_value(*t));
+                jnc_panic(ERR_UNKNOWN_SYMBOL, tkn, 23);
             }
         }
     }
 
-    eprintf("Can't assign to a %i node at line %i\n", *expr, line);
-    exit(14);
+    # munge for panic
+    Token_set_type(tkn, *expr);
+    jnc_panic(ERR_CANT_ASSIGN, tkn, 14);
 }
 
 fn parse_expr(void* lex) {
@@ -766,36 +787,6 @@ fn join_un_op_rtl(void* lex, int op) {
     return ast3(AST_UNARY, op, operand);
 }
 
-fn do_call_with_args(void* expr, void* args) {
-    void* nameT = expr + 0x8;       # -> nameT
-    nameT = *nameT;
-    void* tast = Env_opt_typeof_symbol(ENV, nameT);
-    if tast != null { if *tast == AST_FN {
-        # if tast is AST_FN, we know about the function
-        int fl = 0; # assume zero-arg for now
-        tast = tast + 0x10;         # -> params
-        if *tast != null {
-            # if params is not null, the function has formal args
-            fl = arrlen(*tast);
-        }
-        int pl = 0;
-        if args != null {
-            pl = arrlen(args);
-        }
-        if pl != fl {
-            eprintf("Expected %d args, not %d, passed to %s (at %d:%d)\n",
-                    fl,
-                    pl,
-                    Token_value(nameT),
-                    Token_line(nameT),
-                    Token_char(nameT));
-            exit(101);
-        }
-        # todo: check types too, not just count (once exprs have types)
-    } }
-    return ast3(AST_CALL, expr, args);
-}
-
 fn parse_expr_postfix(void* lex) {
     void* expr = parse_expr_primary(lex);
     while true {
@@ -803,7 +794,7 @@ fn parse_expr_postfix(void* lex) {
         if tkn == null { done; }
         int t = Token_type(tkn);
         if t == T_OPAREN {
-            expr = do_call_with_args(expr, parse_arg_list(lex));
+            expr = ast3(AST_CALL, expr, parse_arg_list(lex));
             again;
         }
         if t == T_DOT {
@@ -909,7 +900,7 @@ fn process_method(void* rcvr, void* nameT, void* arg_list) {
     ArrayList_push_all(args, arg_list);
     free(arg_list);
 
-    return do_call_with_args(ast2(AST_ID, nameT), ArrayList_into_array(args));
+    return ast3(AST_CALL, ast2(AST_ID, nameT), ArrayList_into_array(args));
 }
 
 fn process_member(void* rcvr, void* nameT) {
@@ -925,7 +916,7 @@ fn process_member(void* rcvr, void* nameT) {
     void* member = structT + 0x18;
     member = TreeMap_get(*member, Token_value(nameT));
     if member == null {
-        eprintf("Type '%s' has no member '%s' at line %i, char %i.\n",
+        eprintf("Type '%s' has no member '%s' at line %i, col %i.\n",
                 rcvr_type_name,
                 Token_value(nameT),
                 Token_line(nameT),

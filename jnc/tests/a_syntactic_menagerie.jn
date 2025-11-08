@@ -42,12 +42,30 @@ fn function_params_ptr(bool* b, char* c, int* i, void v);
 pub struct Cow;
 fn function_params_ptr(bool* b, char* c, int* i, int* v);
 struct Rabbit;
-pub fn fstruct(Cow);
-#fn fstruct(Rabbit);
+struct Rabbit;
+#fn fstruct(Cow);
+pub fn fstruct(Rabbit);
 fn fstruct(void);
-fn fstructptr(Cow**);
+struct Rabbit {
+    int tail_count
+}
+#struct Rabbit {
+#    int tail_count
+#}
+pub struct Rabbit;
+fn fstructptr(Rabbit**);
+#fn fstructptr(Cow**);
 fn fstructptr(void**);
-#fn fstructptr(Rabbit**);
+#pub fn so_many_animals(Cow*****, Horse**, Rabbit*, Cow*, Cow);
+#pub fn so_many_animals(Cow***** a, Horse** b, Rabbit* peter, Cow* c, Cow c2) {
+#    Cow c3 = c;
+#    Cow* c4 = c;
+##    Pig** p = null;
+##    Pig* p2 = null;
+##    Pig p2 = null;
+##    void j = p;
+##    q = c;
+#}
 
 pub fn lotta_cows(Cow*****, Cow** bessie, Cow*, Cow);
 
@@ -68,7 +86,8 @@ fn expr_primary() {
 }
 
 fn expr_postfix_call() {
-    expr_id();
+    expr_primary();
+    expr_id(); # todo: unknown
     function_params_base(false, 'T', 42, 0);
     function_params_anon(true, 'q', 123, null);
 }
@@ -191,10 +210,14 @@ fn stmt_assign(int i) {
 }
 
 fn call_fn_wrong() {
-    goob(1234);
+    goob(1234); # todo: unknown
     boog(&stmt_empty);
+    void* se = &stmt_empty;
+    se(se); # dunno about se, but it's zero-arg
+    se = &a_function;
+    se(se);
 #    stmt_assign(123, 456);
-    stmt_eval(123, 456); # todo: not declared yet, but should be disallowed
+#    stmt_eval(123, 456);
     moob(&goob);
 }
 

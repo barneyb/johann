@@ -40,12 +40,16 @@ int AST_RETURN;
 int AST_UNARY;
 int AST_WHILE;
 
+void ENV;
+
 pub char* NAME_MAIN = "main";
 
-char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, char %i\n";
-char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, char %i\n";
-char* ERR_UNKNOWN_SYMBOL    = "ERROR(%i): Unknown symbol '%s' at line %i, char %i\n";
-char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, char %i\n";
+char* ERR_DUPE_DECL         = "ERROR(%i): Duplicate declaration of '%s' at line %i, col %i\n";
+char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s' is a ninth at line %i, col %i\n";
+char* ERR_UNKNOWN_SYMBOL    ; # shared with parser
+char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, col %i\n";
+char* ERR_UNKNOWN_FN        = "ERROR(%i): Unknown function '%s' at line %i, col %i\n";
+char* ERR_WRONG_FN_ARGS     = "ERROR(%i): Expected %i args at line %i, col %i\n";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 char* TMPL_GLOBAL               = ".global __j_%s\n";
@@ -221,7 +225,6 @@ fn Emitter_leave_block(void* self) {
 
 fn Emitter_lookup_symbol_for(void* self, void* id_token) {
     char* name = Token_value(id_token);
-    printf("; Emitter_lookup_symbol_for '%s'\n", name);
     bool allow_null = false;
     return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
 }
@@ -251,7 +254,7 @@ fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, b
         return null;
     }
     Token_set_type(t, name);
-    jnc_panic(ERR_UNKNOWN_SYMBOL, t, 22);
+    jnc_panic(ERR_UNKNOWN_SYMBOL, t, 23);
 }
 
 pub fn Emitter_mark_global(void* nameT) {
@@ -671,12 +674,44 @@ fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {
 fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
     void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
+    # If ENV knows about it, it's a declared function, so check args
+    # todo: this belongs in typechecking
+    void* tast = Env_opt_typeof_symbol(ENV, nameT);
+    if tast != null {
+        if *tast == AST_FN {
+            # if tast is AST_FN, we know about the function
+            int fl = 0; # assume zero-arg for now
+            tast = tast + 0x10;         # -> params
+            if *tast != null {
+                # if params is not null, the function has formal args
+                fl = arrlen(*tast);
+            }
+            int pl = 0;
+            if args != null {
+                pl = arrlen(args);
+            }
+            if pl != fl {
+                # munge for panic
+                Token_set_type(nameT, pl);
+                jnc_panic(ERR_WRONG_FN_ARGS, nameT, 101);
+            }
+            # todo: check types too, not just count (once exprs have types)
+        }
+    }
+    # If Emitter knows about it, it's a fn* local
     Symbol* symbol = Emitter_try_lookup_symbol_for(self, nameT);
+#    # if not declared nor a variable, something's wrong
+#    if symbol == null { if tast == null {
+##        # munge for panic
+##        Token_set_type(nameT, Token_value(nameT));
+##        jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
+#        # todo: just warn for now...
+#        eprintf(ERR_UNKNOWN_FN, 100, nameT[3], nameT[1], nameT[2]);
+#    } }
     if symbol != null {
-        # function pointer - do setup first, as it corrupts x0
+        # fn* setup corrupts x0, so do it before params
         do_address_of(self, nameT, symbol);
-        int nptr = Symbol_nptr(symbol);
-        if nptr > 0 {
+        if symbol.nptr() > 0 {
             do_load_addr(self, nameT, symbol);
         }
         printf(TMPL_CALL_PTR_INTRO);

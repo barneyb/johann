@@ -90,6 +90,7 @@ fn comma_to_type(void* ast) {
 
 fn to_fn(void* ast) {
     # [AST_FN, nameT, params[], block?]
+    typecheck_formal_args(ast);
     Token* nameT = ast[1];
     char* name = nameT.value();
     if strcmp(name, NAME_MAIN) == 0 {

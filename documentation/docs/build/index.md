@@ -64,6 +64,7 @@ Johann provides no debugging support, but you might be able to use various third
 
 A few errors are explicitly caught by the compiler, with the exit status they yield:
 
+* `14` - Unassignable lvalue
 * `17` - Unrecognized character
 * `20` - Missing token
 * `21` - Too many call parameters
@@ -83,6 +84,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `77` - Multibyte character
 * `98` - Certain double-`free` errors
 * `99` - Failed to get memory from the OS (a panic, unlike C)
+* `100` - Unknown function
 * `101` - Incorrect number of function params
 
 Most errors are not caught and result in compiler crashes, invalid assembly code, or code which will crash when executed.
