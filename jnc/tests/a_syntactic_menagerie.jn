@@ -165,8 +165,8 @@ fn call_fn_wrong() {
     goob(1234);
     boog(&stmt_empty);
 #    stmt_assign(123, 456);
-    stmt_eval(123, 456); # todo: not declared here, but should be disallowed
-#    moob(&goob);
+    stmt_eval(123, 456); # todo: not declared yet, but should be disallowed
+    moob(&goob);
 }
 
 fn stmt_eval() {

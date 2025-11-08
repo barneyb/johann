@@ -94,16 +94,13 @@ fn to_emitter_variable(void* emitter, void* ast) {
 
 fn to_emitter_fn(void* emitter, void* ast) {
     # [AST_FN, nameT, params[], block?]
-    ast = ast + 0x8;
-    void* nameT = *ast;
-    ast = ast + 0x8;
-    void* args = *ast;
-    ast = ast + 0x8;
-    void* block = *ast;
+    void* block = ast[3];
     if block == null {
-        Emitter_do_fn_proto(emitter, nameT);
+        # nothing to emit for declarations
         return;
     }
+    void* nameT = ast[1];
+    void* args = ast[2];
     if IS_PUB {
         IS_PUB = false;
         Emitter_mark_global(nameT);
