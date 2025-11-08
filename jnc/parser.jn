@@ -524,7 +524,7 @@ fn parse_eval_or_assign(void* lex) {
 
     # bare evaluation
     if rhs == null {
-        return ast3(AST_EVAL, expr);
+        return ast2(AST_EVAL, expr);
     }
 
     if t == AST_ID {
