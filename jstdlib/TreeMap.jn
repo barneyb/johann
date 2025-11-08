@@ -9,7 +9,8 @@
 
 char* DEBUG_INDENT_LEVEL = "    ";
 
-struct TreeMap {
+# Type of `TreeMap`s.
+pub struct TreeMap {
     void* comparator,
     Node* root,
     void* drop_key,

@@ -21,7 +21,8 @@ fn Entry__new(void key, void value, Entry* next) {
     return e;
 }
 
-struct HashMap {
+# Type of `HashMap`s.
+pub struct HashMap {
     int size,
 
     # always a power of two minus one

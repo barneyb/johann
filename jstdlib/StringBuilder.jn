@@ -1,6 +1,7 @@
 # I am a dynamically resizing builder for null-terminated byte strings.
 
-struct StringBuilder {
+# Type of `StringBuilder`s.
+pub struct StringBuilder {
     int capacity,
     int size,
     char** buf,
