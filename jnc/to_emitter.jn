@@ -12,9 +12,14 @@ int AST_MEMBER;
 int AST_PROGRAM;
 int AST_RETURN;
 int AST_STRUCT;
+int AST_TYPE_NAMED;
 int AST_TYPE_PTR;
 int AST_VARIABLE;
 int AST_WHILE;
+
+void ENV;
+
+struct Token;
 
 bool IS_PUB = false; # this is still pretty ridiculous
 
@@ -92,8 +97,45 @@ fn to_emitter_variable(void* emitter, void* ast) {
     Emitter_do_decl(emitter, nameT, *type, nptr, init);
 }
 
+# todo: move to typechecking
+pub fn typecheck_formal_args(void* ast) {
+    # [AST_FN, nameT, params[], block?]
+    Token* nameT = ast[1];
+
+    void* args = ast[2];
+    if args == null { return; }
+    int i = 0;
+    while args[i] != null {
+        typecheck_formal_arg(nameT, i, args[i]);
+        i = i + 1;
+    }
+}
+
+fn typecheck_formal_arg(Token* nameT, int arg_num, void* arg) {
+    # [AST_VARIABLE, type, nameT?]
+    # [AST_TYPE_PTR, type]
+    void* tast = arg[1];
+
+    # named types must resolve
+    if *tast == AST_TYPE_NAMED {
+        # [AST_TYPE_NAMED, nameT]
+        char* tn = Token_value(tast[1]);
+        if !Env_is_type(ENV, tn) {
+            eprintf("  arg %d of %s on line %d\n", arg_num + 1, nameT.value(), nameT.line());
+            # this is sorta silly
+            Env_get_type(ENV, tn);
+        }
+    }
+
+    # drill through pointers
+    if *tast == AST_TYPE_PTR {
+        typecheck_formal_arg(nameT, arg_num, tast);
+    }
+}
+
 fn to_emitter_fn(void* emitter, void* ast) {
     # [AST_FN, nameT, params[], block?]
+    typecheck_formal_args(ast);
     void* block = ast[3];
     if block == null {
         # nothing to emit for declarations

@@ -43,8 +43,8 @@ pub struct Cow;
 fn function_params_ptr(bool* b, char* c, int* i, int* v);
 struct Rabbit;
 struct Rabbit;
-pub fn fstruct(Cow);
-#fn fstruct(Rabbit);
+#fn fstruct(Cow);
+pub fn fstruct(Rabbit);
 fn fstruct(void);
 struct Rabbit {
     int tail_count
@@ -52,20 +52,20 @@ struct Rabbit {
 #struct Rabbit {
 #    int tail_count
 #}
-struct Rabbit;
+pub struct Rabbit;
 fn fstructptr(Rabbit**);
 #fn fstructptr(Cow**);
 fn fstructptr(void**);
-pub fn so_many_animals(Cow*****, Horse**, Rabbit*, Cow*, Cow);
-pub fn so_many_animals(Cow***** a, Horse** b, Rabbit* peter, Cow* c, Cow c2) {
-    Cow c3 = c;
-    Cow* c4 = c;
-#    Pig** p = null;
-#    Pig* p2 = null;
-#    Pig p2 = null;
-#    void j = p;
-#    q = c;
-}
+#pub fn so_many_animals(Cow*****, Horse**, Rabbit*, Cow*, Cow);
+#pub fn so_many_animals(Cow***** a, Horse** b, Rabbit* peter, Cow* c, Cow c2) {
+#    Cow c3 = c;
+#    Cow* c4 = c;
+##    Pig** p = null;
+##    Pig* p2 = null;
+##    Pig p2 = null;
+##    void j = p;
+##    q = c;
+#}
 
 pub fn lotta_cows(Cow*****, Cow** bessie, Cow*, Cow);
 

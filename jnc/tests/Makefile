@@ -58,10 +58,15 @@ $(LIB)/%.o: $(OUT)/%.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
 
-$(OUT)/%.s: %.jn $(JNC)
+$(OUT)/%.s: %.jn $(JNC) $(OUT)/%.jnh
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
-	$(JNC) --header < $< > $(OUT)/$<h
+
+$(OUT)/%.jnh: %.jn $(JNC)
+	@mkdir -p $(OUT)
+	@# compile the header, a no-op, to ensure validity
+	$(JNC) --header < $< > $@
+	$(JNC) < $@ > /dev/null
 
 # Utility targets
 
