@@ -1,0 +1,30 @@
+
+with m=2 and b=-1:
+    at 0: -1
+    at 5: 9
+    at 7: 13
+
+with m=-1 and b=2:
+    at 0: 2
+    at 5: -3
+    at 7: -5
+
+with m=-2 and b=2:
+    at 0: 2
+    at 5: -8
+    at 7: -12
+
+with m=1 and b=-1:
+    at 0: -1
+    at 5: 4
+    at 7: 6
+
+with m=4 and b=-1:
+    at 0: -1
+    at 5: 19
+    at 7: 27
+
+with m=7 and b=-1:
+    at 0: -1
+    at 5: 34
+    at 7: 48

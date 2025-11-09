@@ -1,0 +1,19 @@
+pub struct Line {
+    int m,
+    int b,
+}
+
+pub fn Line__new(int m, int b) {
+    Line* l = malloc(sizeof(Line)); # time for 'new'?
+    l.m = m;
+    l.b = b;
+    return l;
+}
+
+pub fn Line_drop(Line* self) {
+    free(self);
+}
+
+pub fn Line_at(Line* self, int x) {
+    return self.m * x + self.b;
+}
