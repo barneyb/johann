@@ -1,0 +1,28 @@
+struct ArrayList;
+
+fn malloc(int);
+fn free(void);
+
+pub fn main() {
+    do_m(2);
+    do_m(-1);
+    ArrayList* ms = ArrayList__new(5);
+    int i = -2;
+    while i < 10 {
+        ms.push(i);
+        i = i + 3;
+    }
+    ms.for_each(&do_m);
+    ms.drop();
+}
+
+fn do_m(int m) {
+    int b = -1;
+    if m < 0 { b = 2; }
+    printf("\nwith m=%d and b=%d:\n", m, b);
+    Line* l = Line__new(m, b);
+    printf("    at 0: %d\n", l.at(0));
+    printf("    at 5: %d\n", l.at(5));
+    printf("    at 7: %d\n", l.at(7));
+    l.drop();
+}

@@ -2,6 +2,8 @@
 
 Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
 
+If you want to use [header files](../build/index.md#header-files) for the standard library, you must build them yourself; they're not currently provided. You'll need the sources, of course, but there's nothing different from creating headers from your files.
+
 ??? note "Johann vs Assembly"
 
     While the compiler is written entirely in Johann itself, parts of the standard library are still implemented in assembly. You can see behind the curtain a bit below; the Johann bits have their docs generated from the source itself, while the assembly bits are hand-documented as if C.
@@ -12,7 +14,7 @@ These are still present, but should not be used. They'll be removed, eventually.
 
 ### `table`
 
-Superseded by [TreeMap](treemap.jn.md)
+Superseded by [HashMap](hashmap.jn.md) (or [TreeMap](treemap.jn.md)).
 
 A table/map/associative-array ADT, which has a reasonable interface (for a tree-based structure), and a linear-scan implementation. This is intended to eventually be a "class". Keys and values are arbitrary 64-bit values, with pass-by-value semantics, and otherwise generic/open-ended. The `Table_drop_owned` method can help if the keys and/or value are pointers to table-owned objects.
 

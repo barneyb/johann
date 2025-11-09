@@ -12,6 +12,7 @@ all: \
 	constants \
 	control_flow \
 	function_pointers \
+	line_client \
 	lisp \
 	literals \
 	not_quite_lisp \
@@ -40,7 +41,36 @@ collatz: $(BIN)/collatz collatz.expected.txt
 	$(BIN)/collatz 5 12 19 27 > $(OUT)/collatz.actual.txt
 	diff -u collatz.expected.txt $(OUT)/collatz.actual.txt
 
+define CATPILE
+	@mkdir -p $(OUT)
+	cat $^ > $*.jni
+	$(JNC) --strict < $*.jni > $@
+endef
+
+define HEADPILE
+	@mkdir -p $(OUT)
+	$(JNC) --header --strict < $< > $@
+	@# compile the header (a no-op) to ensure validity
+	$(JNC) --strict < $@ > /dev/null
+endef
+
+$(OUT)/line.s: $(OUT)/allocator.jstd.jnh line.jn
+	${CATPILE}
+
+$(OUT)/line_client.s: $(OUT)/line.jnh $(OUT)/arraylist_utils.jnh $(OUT)/ArrayList.jstd.jnh $(OUT)/io.jstd.jnh line_client.jn
+	${CATPILE}
+
+$(OUT)/arraylist_utils.s: $(OUT)/ArrayList.jstd.jnh arraylist_utils.jn
+	${CATPILE}
+
+$(BIN)/line_client: $(LIB)/line_client.o $(LIB)/arraylist_utils.o $(LIB)/line.o $(JSTDLIB)
+	@mkdir -p $(BIN)
+	gcc $^ -o $@
+
 # Pattern targets
+
+$(OUT)/%.jstd.jnh: ../../jstdlib/%.jn $(JNC)
+	${HEADPILE}
 
 $(BIN)/%Test: $(LIB)/%Test.o ../$(LIB)/%.jn.o $(JSTDLIB)
 	@mkdir -p $(BIN)
@@ -58,15 +88,12 @@ $(LIB)/%.o: $(OUT)/%.s
 	@mkdir -p $(LIB)
 	gcc -c $< -o $@
 
-$(OUT)/%.s: %.jn $(JNC) $(OUT)/%.jnh
+$(OUT)/%.s: %.jn $(JNC)
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
 
 $(OUT)/%.jnh: %.jn $(JNC)
-	@mkdir -p $(OUT)
-	@# compile the header, a no-op, to ensure validity
-	$(JNC) --header < $< > $@
-	$(JNC) < $@ > /dev/null
+	${HEADPILE}
 
 # Utility targets
 

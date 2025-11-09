@@ -11,15 +11,28 @@ int AST_TYPE_CHAR;
 int AST_TYPE_INT;
 int AST_TYPE_VOID;
 
+char* OPT_H = "-h";
+char* OPT_HELP = "--help";
 char* OPT_V = "-v";
 char* OPT_VERSION = "--version";
 char* OPT_HEADER = "--header";
+char* OPT_STRICT = "--strict";
+
+pub void ENV = null;
+pub bool STRICT = false;
 
 pub fn main(int argc, char** argv) {
     int i = 1; # argv[0] is the command name
     while i < argc {
         char* arg = argv[i];
         i = i + 1;
+        # todo: switch, please.
+        if strcmp(arg, OPT_H) == 0 {
+            return jnc_help();
+        }
+        if strcmp(arg, OPT_HELP) == 0 {
+            return jnc_help();
+        }
         if strcmp(arg, OPT_V) == 0 {
             puts(JNC_SHORT_VERSION);
             return 0;
@@ -31,15 +44,27 @@ pub fn main(int argc, char** argv) {
         if strcmp(arg, OPT_HEADER) == 0 {
             return jnc_header();
         }
+        if strcmp(arg, OPT_STRICT) == 0 {
+            STRICT = true;
+            again;
+        }
         eprintf("Unrecognized argument: '%s'\n", arg);
         exit(1);
     }
     return jnc_compile();
 }
 
-pub void ENV = null;
+fn jnc_help() {
+    printf("Usage: jnc [options] < program.jn > program.s\n");
+    # printf only respects widths for ints, but eventually!
+    printf("  %s, %9s  show version info\n", OPT_V, OPT_VERSION);
+    printf("  %s, %9s  show this help\n", OPT_H, OPT_HELP);
+    printf("  %13s  generate header file, instead of compiling\n", OPT_HEADER);
+    printf("  %13s  compile with strict checks\n", OPT_STRICT);
+}
 
 fn jnc_header() {
+    STRICT = true;
     void* ast = parse_ast();
     to_header(ast);
     drop_ast(ast);

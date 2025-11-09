@@ -1,0 +1,10 @@
+pub struct ArrayList;
+
+pub fn ArrayList_for_each(ArrayList* self, void* work) {
+    int i = 0;
+    int l = self.size();
+    while i < l {
+        work(self.get(i));
+        i = i + 1;
+    }
+}

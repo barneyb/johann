@@ -41,6 +41,7 @@ int AST_UNARY;
 int AST_WHILE;
 
 void ENV;
+bool STRICT;
 
 pub char* NAME_MAIN = "main";
 
@@ -49,7 +50,7 @@ char* ERR_TOO_MANY_LOCALS   = "ERROR(%i): Only eight local vars are allowed; '%s
 char* ERR_UNKNOWN_SYMBOL    ; # shared with parser
 char* ERR_INVALID_NESTING   = "ERROR(%i): Invalid nesting %x at line %i, col %i\n";
 char* ERR_UNKNOWN_FN        = "ERROR(%i): Unknown function '%s' at line %i, col %i\n";
-char* ERR_WRONG_FN_ARGS     = "ERROR(%i): Expected %i args at line %i, col %i\n";
+char* ERR_WRONG_FN_ARGS     = "ERROR(%i): Function call expects %i params (or method expects one fewer) at line %i, col %i\n";
 
 char* TMPL_PRELUDE              = "; Compiled with %s\n    .text\n    .align  3\n    NULL  = 0\n    TRUE  = 1\n    FALSE = 0\n";
 char* TMPL_GLOBAL               = ".global __j_%s\n";
@@ -690,7 +691,7 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
             }
             if pl != fl {
                 # munge for panic
-                Token_set_type(nameT, pl);
+                Token_set_type(nameT, fl);
                 jnc_panic(ERR_WRONG_FN_ARGS, nameT, 101);
             }
             # todo: check types too, not just count (once exprs have types)
@@ -698,14 +699,16 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
     }
     # If Emitter knows about it, it's a fn* local
     Symbol* symbol = Emitter_try_lookup_symbol_for(self, nameT);
-#    # if not declared nor a variable, something's wrong
-#    if symbol == null { if tast == null {
-##        # munge for panic
-##        Token_set_type(nameT, Token_value(nameT));
-##        jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
-#        # todo: just warn for now...
-#        eprintf(ERR_UNKNOWN_FN, 100, nameT[3], nameT[1], nameT[2]);
-#    } }
+    # if not declared nor a variable, something's wrong
+    if symbol == null { if tast == null { if STRICT {
+        # Since these two are currently inexpressable in Johann, they HAVE to
+        # be unknown, and just rely on the linker to do its thing.
+        if strcmp(nameT[3], "printf") != 0 { if strcmp(nameT[3], "eprintf") != 0 {
+            # munge for panic
+            Token_set_type(nameT, Token_value(nameT));
+            jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
+        } }
+    } } }
     if symbol != null {
         # fn* setup corrupts x0, so do it before params
         do_address_of(self, nameT, symbol);
