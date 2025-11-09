@@ -8,11 +8,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20251108
-build_time: 2025-11-08T06:03:03+00:00
-commit_hash: fbe47ed9b23ecdc7ff46224147fb3ae84066a0e5
+jnc 0.20251109
+build_time: 2025-11-09T21:45:26+00:00
+commit_hash: 4da4f90001675609e630371a3bc7f4e6cc620dc6
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20251108-fbe47ed
+; Compiled with jnc 0.20251109-4da4f90
     .text
     .align  3
 ... snip ...
@@ -25,7 +25,7 @@ The specific versions of the system software I have are listed below. Note that 
 <!--{systemsoftware}-->
 ```
 % uname -a
-Darwin mac.lan 24.6.0 Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:52 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T8112 arm64
+Darwin Barneys-MacBook-Air.local 24.6.0 Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:52 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T8112 arm64
 %
 % make --version
 GNU Make 3.81

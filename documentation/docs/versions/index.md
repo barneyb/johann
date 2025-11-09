@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251109`
 
 Allow redeclaring (but not redefining) structs. Formal args can only use declared types. Include variables in headers. Alphabetize all members in the johanndocs.
 
