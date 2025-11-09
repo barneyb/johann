@@ -38,28 +38,28 @@ Compiling `main.jn` by itself succeeds:
 0
 ```
 
-If you compile `add.jn`, assemble them both, and link with `jstdlib`, the executable will even run, despite the defect. If, however, you create and use a header file for `add`, compilation of the program will fail:
+If you assemble and link, the program will even run! Which is bad. If you create and use a header file (the extra `< add.jnh` in the second command), compilation will fail and tell you why:
 
 ```
 % ./bin/jnc --header < add.jn > add.jnh
-% cat add.jnh
-fn add(int,int);
-#![[jnc_restart_line_count]]
+
 % ./bin/jnc < add.jnh < main.jn > main.s
-ERROR(101): Expected 1 args at line 2, col 12
+ERROR(101): Function call expects 2 params at line 2, col 12
 Compilation error
 % echo $?
 101
 ```
 
-In particular, note that the error references line 2 (of `main.jn`), even though `jnc` worked through the header file first.
+The double redirection of STDIN is a `zsh` feature; if you switched your shell, you may need to tweak the command.
 
 ## Debugging Johann Programs
 
 !!! tip
      It's generally better to simply not write bugs to begin with.
 
-Johann provides no debugging support, but you might be able to use various third-party tools (e.g., GDB) to help? 
+Johann provides no debugging support. Start adding `printf` everywhere to narrow it down. Don't discount defects in `jnc` and/or `jstdlib` themselves!
+
+You might be able to use various third-party tools (e.g., GDB) to help, though `jnc` doesn't emit debug symbols...
 
 ## Compiler Errors  
 

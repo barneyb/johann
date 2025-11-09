@@ -9,15 +9,17 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Allow redeclaring (but not redefining) structs. Formal args can only use declared types. Include variables in headers. Alphabetize all members in the johanndocs.
+
+Add a `--strict` option to `jnc` to fail on unknown function calls; you'll need header file(s) for multi-file projects. Using `--header` implies `--strict`.
 
 ### `v0.20251108`
 
-Add check that calls to _declared_ functions pass the right number of params (types are not checked). Calls to undeclared functions are not checked. Don't require a declaration to take a function pointer. Add checks that function and struct redeclarations are compatible, and disallow redefining.
+Add check that calls to _declared_ functions pass the right number of params (types are not checked). Calls to undeclared functions are not checked. Don't require a declaration to take a function pointer. Add checks that function redeclarations are compatible, and disallow redefining.
 
 Add a `--header` option to `jnc` to emit a Johann source file containing the compilation unit's `pub` declarations (aside from `main`).
-
-Add a `--strict` option to `jnc` to fail on unknown function calls; you'll need header file(s) for multi-file projects.
 
 ### `v0.20251106`
 
