@@ -41,6 +41,7 @@ int AST_UNARY;
 int AST_WHILE;
 
 void ENV;
+bool STRICT;
 
 pub char* NAME_MAIN = "main";
 
@@ -698,14 +699,16 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
     }
     # If Emitter knows about it, it's a fn* local
     Symbol* symbol = Emitter_try_lookup_symbol_for(self, nameT);
-#    # if not declared nor a variable, something's wrong
-#    if symbol == null { if tast == null {
-##        # munge for panic
-##        Token_set_type(nameT, Token_value(nameT));
-##        jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
-#        # todo: just warn for now...
-#        eprintf(ERR_UNKNOWN_FN, 100, nameT[3], nameT[1], nameT[2]);
-#    } }
+    # if not declared nor a variable, something's wrong
+    if symbol == null { if tast == null { if STRICT {
+        # Since these two are currently inexpressable in Johann, they HAVE to
+        # be unknown, and just rely on the linker to do its thing.
+        if strcmp(nameT[3], "printf") != 0 { if strcmp(nameT[3], "eprintf") != 0 {
+            # munge for panic
+            Token_set_type(nameT, Token_value(nameT));
+            jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
+        } }
+    } } }
     if symbol != null {
         # fn* setup corrupts x0, so do it before params
         do_address_of(self, nameT, symbol);

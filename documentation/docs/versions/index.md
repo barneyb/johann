@@ -17,6 +17,8 @@ Add check that calls to _declared_ functions pass the right number of params (ty
 
 Add a `--header` option to `jnc` to emit a Johann source file containing the compilation unit's `pub` declarations (aside from `main`).
 
+Add a `--strict` option to `jnc` to fail on unknown function calls; you'll need header file(s) for multi-file projects.
+
 ### `v0.20251106`
 
 Add a `length` "method" to `StringBuilder`. Reinstate `itoa` and add its complement `atoi` as well.

@@ -44,14 +44,14 @@ collatz: $(BIN)/collatz collatz.expected.txt
 define CATPILE
 	@mkdir -p $(OUT)
 	cat $^ > $*.jni
-	$(JNC) < $*.jni > $@
+	$(JNC) --strict < $*.jni > $@
 endef
 
 define HEADPILE
 	@mkdir -p $(OUT)
-	$(JNC) --header < $< > $@
+	$(JNC) --header --strict < $< > $@
 	@# compile the header (a no-op) to ensure validity
-	$(JNC) < $@ > /dev/null
+	$(JNC) --strict < $@ > /dev/null
 endef
 
 $(OUT)/line.s: $(OUT)/allocator.jstd.jnh line.jn
