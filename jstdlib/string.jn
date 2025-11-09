@@ -3,7 +3,7 @@
 
 fn free(void* ptr);
 
-struct ArrayList;
+pub struct ArrayList;
 struct StringBuilder;
 
 # Parse the passed NTBS as a decimal (base-10) integer. Overflow is silently
