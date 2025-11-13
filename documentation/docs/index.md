@@ -16,7 +16,7 @@ This is clearly a ridiculous undertaking. The nominal goal is to do this fall's 
 
 ## The Short Version
 
-Clone and compile a test program as below. You'll need the command-line developer/Xcode tools installed.
+Clone (or download a [release](https://github.com/barneyb/johann/tags)) and compile a test program as below. You'll need the command-line developer/Xcode tools installed.
 
     git clone git@github.com:barneyb/johann.git
     cd johann

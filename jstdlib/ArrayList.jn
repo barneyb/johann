@@ -87,22 +87,32 @@ pub fn ArrayList_push_all(ArrayList* self, void* els) {
 
 # I return the `i`th element in the list. If `i` < 0 or `i` >= size, panic.
 pub fn ArrayList_get(ArrayList* self, int i) {
-    if i < 0 { panic(-i, "Index out of bounds\n", 20); }
-    if i >= self.size() { panic(i, "Index out of bounds\n", 20); }
+    if i < 0 {
+        eprintf("Index out of bounds: %d not in 0..%d", i, self.size());
+        exit(1);
+    }
+    if i >= self.size() {
+        eprintf("Index out of bounds: %d not in 0..%d", i, self.size());
+        exit(1);
+    }
     void* arr = self.data;
-    arr = arr + i * 0x8;
-    return *arr;
+    return arr[i];
 }
 
 # I set the `i`th element in the list, returning the prior value there. If `i`
 # < 0 or `i` >= size, panic.
 pub fn ArrayList_set(ArrayList* self, int i, void el) {
-    if i < 0 { panic(-i, "Index out of bounds\n", 20); }
-    if i >= self.size() { panic(i, "Index out of bounds\n", 20); }
+    if i < 0 {
+        eprintf("Index out of bounds: %d not in 0..%d", i, self.size());
+        exit(1);
+    }
+    if i >= self.size() {
+        eprintf("Index out of bounds: %d not in 0..%d", i, self.size());
+        exit(1);
+    }
     void* arr = self.data;
-    arr = arr + i * 0x8;
-    void old = *arr;
-    *arr = el;
+    void old = arr[i];
+    arr[i] = el;
     return old;
 }
 
