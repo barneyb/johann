@@ -1,5 +1,14 @@
+build up...
 nmlkjihgfedcba: 14 / 14
 onmlkjihgfedcba: 15 / 15
 ponmlkjihgfedcba: 16 / 16
 qponmlkjihgfedcba: 17 / 17
+rqponmlkjihgfedcba: 18 / 18
+
+into int...
+'123': 123
+'-456': -456
+'+789': 789
+
+overruns...
 qwertyuiopqwertyuiopqwertyuiop

@@ -10,6 +10,7 @@ struct StringBuilder;
 # ignored. If `str` is not a pointer to a NTBS containing only characters `'0'`
 # though `'9'` with an optional leading `'+'` or `'-'`, results are undefined.
 pub fn atoi(char* str) {
+    char* orig = str;
     int i = 0;
     bool neg = *str == '-';
     if neg {
@@ -19,8 +20,15 @@ pub fn atoi(char* str) {
         str = str + 1;
     } }
     while *str != null {
-        i = i * 10 + (*str - '0');
-        str = str + 1;
+        char c = *str;
+        if c >= '0' { if c <= '9' {
+            i = i * 10 + (c - '0');
+            str = str + 1;
+            again;
+        } }
+        # not a base-10 digit...
+        eprintf("Can't parse '%c' as a base-10 digit in '%s'\n", c, orig);
+        exit(77);
     }
     if neg { return -i; }
     return i;

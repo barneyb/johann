@@ -19,9 +19,15 @@ pub fn main() {
     printf("int %d formatted is '%s' and parsed is %d\n", i, s, atoi(s));
     free(s);
 
-    s = "-123";
+    s = "";
     i = atoi(s);
     char* s2 = itoa(i);
+    printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
+    free(s2);
+
+    s = "-123";
+    i = atoi(s);
+    s2 = itoa(i);
     printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
     free(s2);
 

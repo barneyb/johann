@@ -1,18 +1,34 @@
+struct StringBuilder;
+
 pub fn main() {
+    puts("build up...");
     int n;
     n = 14; build_up_to(n);
     n = 15; build_up_to(n);
     n = 16; build_up_to(n);
     n = 17; build_up_to(n);
+    n = 18; build_up_to(n);
 
-    void* sb = StringBuilder__new(1);
+    puts("\ninto int...");
+    StringBuilder* sb = StringBuilder__new(1);
+    sb.push_str("123");
+    printf("'123': %d\n", sb.into_int());
+    sb = StringBuilder__new(1);
+    sb.push_str("-456");
+    printf("'-456': %d\n", sb.into_int());
+    sb = StringBuilder__new(1);
+    sb.push_str("789");
+    printf("'+789': %d\n", sb.into_int());
+
+    puts("\noverruns...");
+    sb = StringBuilder__new(1);
     # catch buffer overrun
     char* after = malloc(1);
-    StringBuilder_push_str(sb, "qwertyuiop");
-    StringBuilder_push_str(sb, "qwertyuiop");
-    StringBuilder_push_str(sb, "qwertyuiop");
+    sb.push_str("qwertyuiop");
+    sb.push_str("qwertyuiop");
+    sb.push_str("qwertyuiop");
     free(after);
-    char* str = StringBuilder_into_chars(sb);
+    char* str = sb.into_chars();
     puts(str);
     free(str);
 }

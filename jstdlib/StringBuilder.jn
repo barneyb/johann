@@ -50,6 +50,15 @@ pub fn StringBuilder_into_chars(StringBuilder* self) {
     return buf;
 }
 
+# I consume the builder and produce a base-10 integer from it.
+pub fn StringBuilder_into_int(StringBuilder* self) {
+    self.push(null);
+    int i = atoi(self.buf);
+    free(self.buf);
+    free(self);
+    return i;
+}
+
 # I return the number of characters in the buffer, as if by `strlen`.
 pub fn StringBuilder_length(StringBuilder* self) {
     return self.size;
