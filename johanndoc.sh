@@ -105,7 +105,8 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                             fn="member.$type.`echo "$line" \
                                 | cut -d '"' -f 1 \
                                 | cut -d "'" -f 1 \
-                                | sed -E -e 's/[^a-zA-Z0-9_]/-/g'`.txt"
+                                | tr '[:upper:]' '[:lower:]' \
+                                | sed -E -e 's/[^a-z0-9_]/-/g'`.txt"
                             echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
                         fi
                         do_file=nope
@@ -117,7 +118,7 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                     DOC=""
                 done < "$FILE"
                 echo
-                ls $TMP/member.*.txt | sort --ignore-case | xargs cat
+                ls $TMP/member.*.txt | sort | xargs cat
             fi
             echo "<!--{/johanndoc:$FILE}-->"
             tail -n +$(( THRU + END_LINE )) $DOC_FILE
