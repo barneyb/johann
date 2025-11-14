@@ -47,8 +47,10 @@ pub int AST_INDEX       = 106;
 pub int AST_PROGRAM     = 301;
 # [AST_DECL, is_pub, fn_or_var]
 pub int AST_DECL        = 302;
-# [AST_FN, nameT, params[], block?]
+# [AST_FN, nameT, params[], body?]
 pub int AST_FN          = 303;
+# [AST_FN_BODY, nlocal, stmts[]]
+pub int AST_FN_BODY     = 353;
 # [AST_STRUCT, nameT, members?]
 pub int AST_STRUCT      = 306;
 # [AST_VARIABLE, type, nameT? init?]
@@ -61,9 +63,9 @@ pub int AST_VARIABLE    = 307;
 pub int AST_EVAL        = 401;
 # [AST_ASSIGN, expr, rhs]
 pub int AST_ASSIGN      = 402;
-# [AST_IF, cond, block]
+# [AST_IF, cond, stmts[]]
 pub int AST_IF          = 403;
-# [AST_WHILE, cond, block]
+# [AST_WHILE, cond, stmts[]]
 pub int AST_WHILE       = 404;
 # [AST_DONE, kwT]
 pub int AST_DONE        = 405;
@@ -218,7 +220,11 @@ pub fn drop_ast(Ast4* ast) {
     if type == AST_FN {
         Token_drop(ast.value); # nameT
         drop_ast_array(ast.left); # args
-        drop_ast_array(ast.right); # stmts
+        drop_ast(ast.right); # body?
+        return free(ast);
+    }
+    if type == AST_FN_BODY {
+        drop_ast_array(ast.left); # stmts
         return free(ast);
     }
     if type == AST_STRUCT {

@@ -54,6 +54,7 @@ int AST_DECL;
 int AST_DONE;
 int AST_EVAL;
 int AST_FN;
+int AST_FN_BODY;
 int AST_ID;
 int AST_IF;
 int AST_INDEX;
@@ -219,7 +220,7 @@ pub fn parse_program(void* lex) {
 
 fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
-    void* nameT = id_token(lex);
+    Token* nameT = id_token(lex);
     ENV = Env_push(ENV);
     void params = parse_parameter_list(lex);
     void* tkn = peek_token(lex);
@@ -234,9 +235,13 @@ fn parse_function_declaration(void* lex) {
     }
     if t == T_OBRACE {
         set_up_params_as_args(nameT, params);
+        # have to parse the block before counting symbols
         void* block = parse_block(lex);
-        ENV = Env_pop(ENV);
+        block = ast3(AST_FN_BODY,
+                     Env_symbol_count(ENV),
+                     block);
         ast = ast4(AST_FN, nameT, params, block);
+        ENV = Env_pop(ENV);
         Env_register_symbol(ENV, nameT, ast);
         return ast;
     }
