@@ -1,6 +1,4 @@
-# I store information about a symbol in a Johann program. I was originally an
-# unencapsulated memory location, and there are still assumptions that the first
-# and second quad of my layout are width and nptr.
+# I store information about a symbol in a Johann program (during emission).
 
 int T_KW_BOOL;
 int T_KW_CHAR;
