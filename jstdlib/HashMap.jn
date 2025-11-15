@@ -171,14 +171,8 @@ fn ensure_capacity(HashMap* self, int min_capacity) {
     while cap < min_capacity {
         cap = (cap + 1) * 2 - 1;
     }
-    Entry** next = malloc(sizeof(Entry*) * cap);
-    self.arr = next;
+    self.arr = calloc(cap, sizeof(Entry*));
     self.capacity = cap;
-    cap = cap - 1;
-    while cap >= 0 { # todo move this to allocator
-        next[cap] = null;
-        cap = cap - 1;
-    }
     if old_arr == null {
         # table was empty
         return;

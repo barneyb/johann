@@ -1,0 +1,22 @@
+
+first_page:
+sm/md delta: 0x28
+md/lg delta: 0x1008
+realloc @ sm: 0x0
+realloc @ sm: 0x0
+realloc @ md: 0x0
+realloc @ md: 0x0
+realloc @ md: 0x0
+realloc @ lg: 0x0
+realloc @ lg: 0x0
+realloc @ lg: 0x0
+
+multi_page:
+a/b delta: 0x8000
+realloc @ a: 0x0
+realloc @ b: 0x0
+realloc @ a: 0x0
+realloc @ b: 0x0
+realloc @ a: 0x0
+realloc @ b: 0x0
+realloc @ b: 0x0

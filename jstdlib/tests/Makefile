@@ -11,11 +11,13 @@ all: \
 	StringBuilderTest \
 	TreeMap_test \
 	allocations \
+	calloc_zeros \
 	getchar \
 	hello_world \
 	isdigit \
 	isspace \
 	itoatoi \
+	mem_recycling \
 	printf \
 	putchar \
 	quicksort_test \

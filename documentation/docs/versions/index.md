@@ -15,6 +15,10 @@ Add `StringBuilder_into_int` to ease memory management.
 
 Unlimited local variables, instead of being capped at eight.
 
+Add `calloc`, mostly for auto-zeroed memory (not array allocations).
+
+Fix a couple allocation defects, one mis-allocating on page boundaries, one on recycling freed chunks.
+
 ### `v0.20251109`
 
 Allow redeclaring (but not redefining) structs. Formal args can only use declared types. Include variables in headers. Alphabetize all members in the johanndocs.
