@@ -92,6 +92,7 @@ char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, col %i\
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, col %i\n";
 char* ERR_EXPECTED_TOKEN_CH  = "ERROR(%i): Expected '%c' token at line %i, col %i\n";
 char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, col %i\n";
+char* ERR_TOO_MANY_ARGS      = "ERROR(%i): Only eight formal args are allowed; '%s' is a ninth at line %i, col %i\n";
 char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, col %i\n";
 char* ERR_CANT_ASSIGN        = "ERROR(%i): Can't assign to a %i node at line %i, col %i\n";
 char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
@@ -283,7 +284,19 @@ fn parse_parameter_list(void* lex) {
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
-        params.push(parse_param_variable_member(lex, false));
+        tkn = peek_token(lex);
+        void* p = parse_param_variable_member(lex, false);
+        if params.size() == 8 { # todo: can't pass more than 8 for now
+            if p[2] != null {
+                # has a name!
+                tkn = p[2];
+                Token_set_type(tkn, Token_value(tkn));
+                jnc_panic(ERR_TOO_MANY_ARGS, tkn, 21);
+            }
+            Token_set_type(tkn, "{anon}");
+            jnc_panic(ERR_TOO_MANY_ARGS, tkn, 21);
+        }
+        params.push(p);
     }
     consume_token(lex, T_CPAREN);
     return params.into_array();
@@ -968,9 +981,10 @@ fn parse_arg_list(void* lex) {
         if i == 8 { # todo: can't have more than eight at the moment...
             tkn = peek_token(lex);
             if Token_type(tkn) == T_ID {
-                char* name = Token_value(tkn);
-                Token_set_type(tkn, name);
+                Token_set_type(tkn, Token_value(tkn));
+                jnc_panic(ERR_TOO_MANY_PARAMS, tkn, 21);
             }
+            Token_set_type(tkn, "{expr}");
             jnc_panic(ERR_TOO_MANY_PARAMS, tkn, 21);
         }
         ArrayList_push(args, parse_expr(lex));

@@ -220,6 +220,9 @@ fn stmt_assign(int i) {
     i = 42;
 }
 
+#fn mega_args(int, int, int, int, int, int, int, int, int, int, int);
+#fn mega_args(int, int, int, int, int, int, int seven, int eight, int nine, int, int);
+
 fn call_fn_wrong() {
     goob(1234); # todo: unknown
     boog(&stmt_empty);
@@ -230,6 +233,8 @@ fn call_fn_wrong() {
 #    stmt_assign(123, 456);
 #    stmt_eval(123, 456);
     moob(&goob);
+#    printf("", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+#    printf("", 1, 2, 3, 4, 5, 6, 7, se, 9, 10, 11);
 }
 
 fn stmt_eval() {

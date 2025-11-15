@@ -74,7 +74,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `14` - Unassignable lvalue
 * `17` - Unrecognized character
 * `20` - Missing token
-* `21` - Too many call parameters
+* `21` - Too many args/params
 * `22` - Duplicate declaration
 * `23` - Unknown symbol
 * `24` - Too many local vars
