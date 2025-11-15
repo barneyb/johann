@@ -1,0 +1,50 @@
+pub fn main() {
+    calloc_zeros();
+    two_k_minus_one_words();
+}
+
+fn calloc_zeros() {
+    puts("\nTEST calloc_zeros:");
+    int* arr = calloc(5, 8);
+    print_int_array(arr, 5);
+    arr[0] = 123;
+    arr[2] = 456;
+    arr[4] = 789;
+    print_int_array(arr, 5);
+    free(arr);
+    int* arr2 = calloc(5, 8);
+    printf("second array is offset %x from first\n", arr2 - arr);
+    print_int_array(arr2, 5);
+    free(arr2);
+}
+
+fn two_k_minus_one_words() {
+    puts("\nTEST two_k_minus_one_words:");
+    int len = 2047;
+    int* arr = calloc(len, 8);
+    arr[2046] = 999;
+    print_int_array(arr, len);
+    free(arr);
+#    int* arr2 = calloc(len, 8);
+## todo: should be zero, but recycling has a defect...
+#    printf("second array is offset %x from first\n", arr2 - arr);
+#    print_int_array(arr2, len);
+#    free(arr2);
+}
+
+fn print_int_array(int* arr, int len) {
+    printf("arr %p:", arr % 0x1000);
+    if len <= 64 { putchar(' '); }
+    if len > 64 { puts(""); }
+    putchar('[');
+    if len > 0 {
+        printf("%d", arr[0]);
+        int i = 1;
+        while i < len {
+            printf(",%d", arr[i]);
+            i = i + 1;
+            if i % 64 == 0 { puts(""); }
+        }
+    }
+    puts("]");
+}

@@ -11,6 +11,7 @@ all: \
 	StringBuilderTest \
 	TreeMap_test \
 	allocations \
+	calloc_zeros \
 	getchar \
 	hello_world \
 	isdigit \

@@ -173,6 +173,7 @@ fn print_free_list() {
 }
 
 fn find_free_chunk(int bytes) {
+#    printf(" Looking for free %x\n", bytes);
 #    char* f;
     if FREE_LIST == null {
 #            f = "   No free chunks!";
@@ -219,6 +220,20 @@ fn find_free_chunk(int bytes) {
         *prev = next;
     }
     return curr;
+}
+
+# Allocate memory for an array of `num` elements, each `width` bytes wide,
+# initialize each byte to zero, and return a pointer to the first byte. The same
+# pointer must be passed back to `free` at some point.
+pub fn calloc(int num, int width) {
+    int bytes = align(num * width, MALLOC_ALIGN);
+    void* mem = malloc(bytes);
+    void* end = mem + bytes;
+    while end > mem {
+        end = end - sizeof(void);
+        *end = null;
+    }
+    return mem;
 }
 
 # Allocate (at least) the specified number of bytes of memory and return a
