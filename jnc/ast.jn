@@ -53,7 +53,7 @@ pub int AST_FN          = 303;
 pub int AST_FN_BODY     = 353;
 # [AST_STRUCT, nameT, members?]
 pub int AST_STRUCT      = 306;
-# [AST_VARIABLE, type, nameT? init?]
+# [AST_VARIABLE, type, nameT?, init?]
 pub int AST_VARIABLE    = 307;
 
 ##################################################

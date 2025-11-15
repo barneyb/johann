@@ -25,6 +25,7 @@ fn print_series(char* c) {
         if b == 0 {
             a = a / 2;
         }
+        int a; # legal, though pointless, no-op
         if b == 1 {
             a = a * 3;
             a = a + 1;

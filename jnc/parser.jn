@@ -264,8 +264,6 @@ fn set_up_params_as_args(void* nameT, void* args) {
             eprintf(err, name, i);
             jnc_panic(ERR_MISSING_PARAM_NAME, nameT, i);
         }
-        arg = arg + 0x8;            # -> type
-        Env_register_symbol(ENV, *nt, *arg);
         args = args + 0x8;
         i = i + 1;
     }
@@ -302,7 +300,12 @@ fn parse_param_variable_member(void* lex, bool allow_init) {
             init = parse_expr(lex);
         } }
     }
-    return ast4(AST_VARIABLE, type, nameT, init);
+    void* ast = ast4(AST_VARIABLE, type, nameT, init);
+    # if not an anonymous prototoype arg, register it
+    if nameT != null {
+        Env_register_symbol(ENV, nameT, ast);
+    }
+    return ast;
 }
 
 fn parse_declaration(void* lex) {
@@ -450,8 +453,6 @@ fn parse_block_item(void* lex) {
         if *nt == null {
             jnc_panic(ERR_ANONYMOUS_DECL, tkn, 89);
         }
-        void* type = ast + 0x8;            # -> type
-        Env_register_symbol(ENV, *nt, *type);
         consume_token(lex, T_SEMI);
         return ast;
     }
@@ -833,6 +834,14 @@ fn parse_expr_postfix(void* lex) {
 
 fn process_bracket(void* rcvr, void* off_expr) {
     void* rat = Env_typeof_symbol(ENV, rcvr[1]);
+    if *rat != AST_VARIABLE {
+        eprintf("Cannot index a %i node at %i:%i, only a variable\n",
+                *rat,
+                Token_line(rcvr[1]),
+                Token_char(rcvr[1]));
+        exit(76);
+    }
+    rat = rat[1];
     if *rat != AST_TYPE_PTR {
         eprintf("Cannot index a %i node at %i:%i, only a pointer\n",
                 *rat,
@@ -860,6 +869,14 @@ fn get_rcvr_type_name(void* rcvr, void* nameT) {
         exit(76);
     }
     void* rat = Env_typeof_symbol(ENV, rcvr[1]);
+    if *rat != AST_VARIABLE {
+        eprintf("Cannot deref '%s' off a %i node, only a variable\n",
+                *rat,
+                Token_line(rcvr[1]),
+                Token_char(rcvr[1]));
+        exit(76);
+    }
+    rat = rat[1];
     if *rat != AST_TYPE_PTR {
         eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct, at %i:%i\n",
                 Token_value(nameT),

@@ -277,15 +277,13 @@ pub fn Emitter_do_decl(void* self, Token* nameT, int type, int nptr, void* expr)
         block = Emitter_innermost_block_of(self, T_KW_FN, nameT);
     }
 
-    # Check for collisions.
+    # Ignore redeclarations.
     char* name = nameT.value();
-    if block.contains_symbol(name) {
-        # munge for panic
-        nameT.set_type(name);
-        jnc_panic(ERR_DUPE_DECL, nameT, 22);
-    }
+    if expr == null { if block.contains_symbol(name) {
+        return;
+    } }
 
-    # Register the symbol.
+    # Set the offset and register
     Symbol* symbol = Symbol__new(type, nptr);
     if !global {
         # local vars are one-indexed (zero is global symbols' sentinel)
