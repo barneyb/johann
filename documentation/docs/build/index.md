@@ -13,9 +13,9 @@ The various `Makefile` may provide additional inspiration. It's worth mentioning
 
 ## "Header" Files
 
-If you compile with `jnc --header`, the compiler will emit a "header" file with the input's public declarations as valid Johann source, instead of assembly codes. On modern platforms, this linkage info is implicit and used automatically. In C/C++, you (meaning your IDE) write the header file manually and explicitly use it. With Johann, the info is implicit, but you have to explicitly materialize and use it.
+If you compile with `jnc --header`, the compiler will emit a "header" file with the input's `pub` declarations instead of assembly codes. On modern platforms, this linkage info is implicit and used automatically. In C/C++, you (meaning your IDE) write the header file manually and explicitly use it. With Johann, the info is implicit, but you have to explicitly materialize and use it.
 
-Why is it useful? `jnc` will give you better errors with header info from libraries you intend to link against. Consider a simple library with `add` and a (buggy) program that uses it:
+Why is it useful? `jnc` can give you better errors with header info from libraries you intend to link against. Consider a simple `add` library and a (buggy) program that uses it:
 
 ```
 % cat add.jn
@@ -34,8 +34,6 @@ Compiling `main.jn` by itself succeeds:
 
 ```
 % ./bin/jnc < main.jn > main.s
-% echo $?
-0
 ```
 
 If you assemble and link, the program will even run! Which is bad. If you create and use a header file (the extra `< add.jnh` in the second command), compilation will fail and tell you why:
@@ -46,11 +44,19 @@ If you assemble and link, the program will even run! Which is bad. If you create
 % ./bin/jnc < add.jnh < main.jn > main.s
 ERROR(101): Function call expects 2 params at line 2, col 12
 Compilation error
-% echo $?
-101
 ```
 
 The double redirection of STDIN is a `zsh` feature; if you switched your shell, you may need to tweak the command.
+
+### Strict Mode
+
+If you pass `--strict` to `jnc`, it will require complete header info. It doesn't _have_ to be a header file, you can manually declare everything in your source, but everything needs a declaration. Recompiling the above program with strict mode (and no header):
+
+```
+% ./bin/jnc --strict < main.jn > main.s
+ERROR(100): Unknown function 'add' at line 2, col 12
+Compilation error
+```
 
 ## Debugging Johann Programs
 

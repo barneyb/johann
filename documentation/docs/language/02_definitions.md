@@ -1,14 +1,15 @@
 # Definitions
 
-By default, definitions are private to the file they're declared in. Use `pub` to make a definition available elsewhere, whether a function or a global variable. To use a `pub` variable in another file, it must redeclared in that file. 
+By default, definitions are private to the file they're declared in. Use `pub` to make a definition available elsewhere, whether a function, global variable, or struct. To use a `pub` variable in another file, it must be redeclared in that file. 
 
-You _really_ want to use [header files](../build/index.md#header-files) for relating compilation units - the errors are much better.
+!!! tip
+    You _really_ want to use [header files](../build/index.md#header-files) for relating compilation units. Compile with `--strict` for much better errors.
 
 The `bool`, `char`, `int`, and `void` keywords are used to introduce a variable, local or global. They will move to the other side of the identifier, so `int i = ...` will become `let i: int = ...`, and the type may become optional as well. Pointers are declared with `*`. `void` can be used to represent "a 64-bit value", and thus `void*` means "a pointer to something". No type checking is performed, but the type is used for `sizeof` and struct member access. This mess will improve.
 
 ## Structs
 
-Structs can be used to model compound data. They can be marked `pub` too, but it doesn't _do_ anything, since there's no definition past the declaration. That is, you can't make a struct's members public, only its name.
+Structs can be used to model compound data. They can be marked `pub` too, but it doesn't _do_ anything, since there's no definition past the declaration. You can't make a struct's members public, only its name.
 
 If you wanted to implement a Lisp-ish DSL in Johann, you might start with the code below, which also illustrates using a declared type to introduce parameters and local variables:
 
@@ -43,7 +44,8 @@ pub fn main() {
 
 Functions, types, and global variables can be declared without being defined. This is needed to reference definitions from other files (where they must be declared `pub`, of course). Function calls do not (yet) require a reference, but taking an address (to make a function pointer) sometimes does. Global variables always require a reference, to use or take an address.
 
-Again, you _really_ want to use [header files](../build/index.md#header-files) for relating compilation units, though this time it's for saving copy'n'paste.
+!!! tip
+    Again, you _really_ want to use [header files](../build/index.md#header-files) for relating compilation units, though this time it's for saving copy'n'paste.
 
 This program prints an externally-defined greeting three times, in three different ways:
 

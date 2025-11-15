@@ -46,7 +46,7 @@ pub fn Block_get_symbol(Block* self, char* name) {
 
 pub fn Block_put_symbol(Block* self, char* name, void* symbol) {
     # only take ownership of the symbol, not the name
-    return HashMap_put(self.symbols, strclone(name), symbol);
+    return free(HashMap_put(self.symbols, strclone(name), symbol));
 }
 
 pub fn Block_symbol_count(Block* self) {
