@@ -17,6 +17,7 @@ all: \
 	isdigit \
 	isspace \
 	itoatoi \
+	mem_recycling \
 	printf \
 	putchar \
 	quicksort_test \

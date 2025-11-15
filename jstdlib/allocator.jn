@@ -99,6 +99,7 @@ pub fn free(void* mem) {
     # load the size/bytes from the header
     int a = mem - 0x8;
     int bytes = *a;
+#    printf("\n\nfree(%x) at %x\n", bytes, mem);
 
 #        printf(" ; free  %x bytes at %p\n", bytes, mem);
 
@@ -150,7 +151,7 @@ pub fn free(void* mem) {
     mem = mem + 8;
     *mem = next;
 
-#        print_free_list();
+#    print_free_list();
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
@@ -174,44 +175,38 @@ fn print_free_list() {
 
 fn find_free_chunk(int bytes) {
 #    printf(" Looking for free %x\n", bytes);
-#    char* f;
     if FREE_LIST == null {
-#            f = "   No free chunks!";
-#            puts(f);
+#        puts("   No free chunks!");
         return null;
     }
     void curr = FREE_LIST; # pointer -> a chunk
-#        f = "   CURR %p\n";
-#        printf(f, curr);
+#    printf("  CURR %p\n", curr);
     int a;
     while curr != null {
         a = curr - 0x8;
         int size = *a; # size of chunk
-#            f = "   FREE: %x bytes at %p\n";
-#            printf(f, size, curr);
+#        printf("   FREE: %x bytes at %p\n", size, curr);
         if bytes <= size {
             # big enough
             done;
         }
-        curr = *curr; # pointer -> previous chunk
+        a = curr + 0x8;
+        curr = *a; # next chunk
     }
     if curr == null {
         # didn't find one
-#            f = "   No free chunk >= %x bytes\n";
-#            printf(f, bytes);
+#        printf("   No free chunk >= %x bytes\n", bytes);
         return null;
     }
     # unlink and return the chunk's address
-#        f = "   Recycle %x byte chunk at %p\n";
-#        printf(f, size, curr);
+#    printf("   Recycle %x byte chunk at %p\n", size, curr);
     void prev = *curr;
     a = curr + 0x8;
     void next = *a;
     if curr == FREE_LIST {
         FREE_LIST = next; # null or not
     }
-#        f = "   CURR %p is preceded by %p and succeeded by %p\n";
-#        printf(f, curr, prev, next);
+#    printf("   CURR %p is preceded by %p and succeeded by %p\n", curr, prev, next);
     if next != null {
         *next = prev;
     }
@@ -239,6 +234,8 @@ pub fn calloc(int num, int width) {
 # Allocate (at least) the specified number of bytes of memory and return a
 # pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
+#    printf("\n\nmalloc(%x)\n", bytes);
+
     bytes = align(bytes, MALLOC_ALIGN);
 
     # first, see if there's a free chunk to recycle
@@ -259,8 +256,7 @@ pub fn malloc(int bytes) {
         *mem = bytes; # the header
         mem = mem + 0x8; # user chunk
         HEAP_TOP = mem + bytes;
-#            f = " ; new %x byte chunk\n";
-#            printf(f, bytes);
+#        printf(" ; new %x byte chunk\n", bytes);
         STAT_CHUNK_COUNT = STAT_CHUNK_COUNT + 1;
         STAT_CHUNK_SIZE = STAT_CHUNK_SIZE + bytes;
     }

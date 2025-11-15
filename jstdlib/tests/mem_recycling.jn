@@ -1,0 +1,76 @@
+pub fn main() {
+    first_page();
+    multi_page();
+}
+
+fn first_page() {
+    puts("\nfirst_page:");
+
+    # setup, with offsets just for inspection
+    void* sm = malloc(0x20); free(sm);
+    void* md = malloc(0x1000); free(md);
+    printf("sm/md delta: %x\n", md - sm);
+    void* lg = malloc(0x2000); free(lg);
+    printf("md/lg delta: %x\n", lg - md);
+
+    # reallocate sm
+    void* ptr = malloc(0x10); free(ptr);
+    printf("realloc @ sm: %x\n", ptr - sm);
+    ptr = malloc(0x10); free(ptr);
+    printf("realloc @ sm: %x\n", ptr - sm);
+
+    # reallocate into md
+    ptr = malloc(0x100); free(ptr);
+    printf("realloc @ md: %x\n", ptr - md);
+    ptr = malloc(0x100); free(ptr);
+    printf("realloc @ md: %x\n", ptr - md);
+
+    # reallocate all of md
+    ptr = malloc(0x1000); free(ptr);
+    printf("realloc @ md: %x\n", ptr - md);
+
+    # reallocate into lg
+    ptr = malloc(0x1200); free(ptr);
+    printf("realloc @ lg: %x\n", ptr - lg);
+    ptr = malloc(0x1800); free(ptr);
+    printf("realloc @ lg: %x\n", ptr - lg);
+
+    # reallocate all of lg
+    ptr = malloc(0x2000); free(ptr);
+    printf("realloc @ lg: %x\n", ptr - lg);
+}
+
+fn multi_page() {
+    puts("\nmulti_page:");
+
+    void* a = malloc(0x6000); free(a);
+    void* b = malloc(0x7000); free(b);
+    printf("a/b delta: %x\n", b - a);
+
+    void* pa = malloc(0x5000);
+    printf("realloc @ a: %x\n", pa - a);
+    void* pb = malloc(0x5000);
+    printf("realloc @ b: %x\n", pb - b);
+
+    free(pa);
+    pa = malloc(0x5000);
+    printf("realloc @ a: %x\n", pa - a);
+
+    free(pb);
+    pb = malloc(0x5000);
+    printf("realloc @ b: %x\n", pb - b);
+
+    free(pa);
+    free(pb);
+    pa = malloc(0x5555);
+    printf("realloc @ a: %x\n", pa - a);
+    pb = malloc(0x5555);
+    printf("realloc @ b: %x\n", pb - b);
+
+    free(pb);
+    pb = malloc(0x3456);
+    printf("realloc @ b: %x\n", pb - b);
+
+    free(pa);
+    free(pb);
+}
