@@ -171,7 +171,7 @@ fn expr_binary_constant() {
     b = 6 != 7;
 }
 
-fn stmt_vardecl() {
+fn stmt_vardecl(void a_void) {
     bool a_bool;
     bool another_bool = true;
     char a_char;
@@ -180,6 +180,7 @@ fn stmt_vardecl() {
     int another_int = 42;
     char* a_string;
     char* another_string = "Hello, world!";
+    void* a_ptr = null;
 }
 
 fn stmt_if() {

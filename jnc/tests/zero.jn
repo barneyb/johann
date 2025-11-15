@@ -20,8 +20,8 @@ fn make_zero(int one) {
     three = seven / two; printf(format, three);
     int eight = four * two; printf(format, eight);
     two = eight % three; printf(format, two);
-#    int six = three * two; printf(format, six); # todo
-#    int five = six - one; printf(format, five); # todo
-    int zero = four % two; printf(format, zero);
+    int six = three * two; printf(format, six);
+    int five = six - one; printf(format, five);
+    int zero = five / six; printf(format, zero);
     return zero;
 }

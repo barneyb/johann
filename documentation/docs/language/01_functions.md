@@ -17,7 +17,7 @@ pub fn main(int argc, char** argv) {
 }
 ```
 
-More generally, functions can declare parameters (aka formal arguments) within their parentheses, to create local variables from call arguments. Each function may have up to eight local variables, whether they come from parameters or are declared within. A pointless `add` function:
+More generally, functions can declare parameters (aka formal arguments) within their parentheses, to create local variables from call arguments. Each function may any number of local variables, whether they come from parameters or are declared within. A pointless `add` function:
 
 ```johann
 fn add(int a, int b) {
@@ -25,7 +25,7 @@ fn add(int a, int b) {
 }
 ```
 
-Function calls similarly have a max of eight parameters (which really only matters for [`printf`](../library/io.jn.md)). A few ways to print `one: 1` to STDOUT, using the `add` function defined above and several of the standard library functions:
+Function calls have a max of eight parameters, which really only matters for [`printf`](../library/io.jn.md). A few ways to print `one: 1` to STDOUT, using the `add` function defined above and several of the standard library functions:
 
 ```johann
 # convoluted:

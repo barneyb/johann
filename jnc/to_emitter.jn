@@ -137,13 +137,16 @@ fn to_emitter_fn(void* emitter, void* ast) {
         # nothing to emit for declarations
         return;
     }
-    void* nameT = ast[1];
+    Token* nameT = ast[1];
     void* args = ast[2];
     if IS_PUB {
         IS_PUB = false;
         Emitter_mark_global(nameT);
     }
-    Emitter_do_fn_intro(emitter, nameT, args);
+    int lbytes = block[1];
+    lbytes = lbytes + (lbytes % 2); # SP must be 16-byte aligned
+    lbytes = lbytes * sizeof(void);
+    Emitter_do_fn_intro(emitter, nameT, lbytes, args);
     if args != null {
         while true {
             void var = *args;
@@ -152,8 +155,8 @@ fn to_emitter_fn(void* emitter, void* ast) {
             args = args + 0x8;
         }
     }
-    array_to_emitter(emitter, block);
-    Emitter_do_fn_outro(emitter, nameT);
+    array_to_emitter(emitter, block[2]);
+    Emitter_do_fn_outro(emitter, nameT, lbytes);
 }
 
 fn to_emitter_if(void* emitter, void* ast) {
