@@ -36,14 +36,13 @@ pub struct HashMap {
     void* drop_value,
 }
 
-# I construct a new HashMap with the specified hash function and comparator
-# functions.
+# I construct a new HashMap with the specified hash and comparator functions.
 pub fn HashMap__new(void* hash, void* cmp) {
     return HashMap__new_owned(hash, cmp, null, null);
 }
 
-# I construct a new HashMap with the specified hash function and comparator
-# functions, along with functions for dropping keys and values.
+# I construct a new HashMap with the specified hash and comparator functions,
+# along with optional functions for dropping keys and values.
 pub fn HashMap__new_owned(void* hash, void* cmp, void* drop_key, void* drop_value) {
     HashMap* m = malloc(sizeof(HashMap));
     m.size = 0;

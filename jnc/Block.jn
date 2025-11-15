@@ -2,15 +2,16 @@
 # of Emitter, which still hard-codes some layout information.
 
 fn free(void*);
-fn strcmp(char* left, char* right);
+fn strcmp(char*, char*);
+fn strhash(char*);
 
-struct Table;
+struct HashMap;
 
 struct Block {
     int type,       # type of the block, identified by its token
     int id,         # unique id num of the block
     int nvars,      # number of vars (function only)
-    Table* symbols,
+    HashMap* symbols,
 }
 
 pub int SIZEOF_BLOCK = sizeof(Block);
@@ -19,12 +20,12 @@ pub fn Block_init(Block* self, int type, int id) {
     self.type = type;
     self.id = id;
     self.nvars = 0;
-    self.symbols = Table__new(&strcmp);
+    self.symbols = HashMap__new_owned(&strhash, &strcmp, &free, &free);
     return self;
 }
 
 pub fn Block_drop(Block* self) {
-    Table_drop_owned(self.symbols, &free, &free);
+    HashMap_drop(self.symbols);
 }
 
 pub fn Block_type(Block* self) {
@@ -36,20 +37,20 @@ pub fn Block_id(Block* self) {
 }
 
 pub fn Block_contains_symbol(Block* self, char* name) {
-    return Table_contains(self.symbols, name);
+    return HashMap_contains(self.symbols, name);
 }
 
 pub fn Block_get_symbol(Block* self, char* name) {
-    return Table_get(self.symbols, name);
+    return HashMap_get(self.symbols, name);
 }
 
 pub fn Block_put_symbol(Block* self, char* name, void* symbol) {
     # only take ownership of the symbol, not the name
-    return Table_put(self.symbols, strclone(name), symbol);
+    return HashMap_put(self.symbols, strclone(name), symbol);
 }
 
 pub fn Block_symbol_count(Block* self) {
-    return Table_size(self.symbols);
+    return HashMap_size(self.symbols);
 }
 
 pub fn Block_symbols(Block* self) {
