@@ -11,7 +11,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
-Remove the sequential-scan `table` type; `HashMap` and `TreeMap` are better. 
+Remove the sequential-scan `table` type; `HashMap` and `TreeMap` are better.
+
+Allow redeclaring variables w/ the same type.
 
 ### `v0.20251115`
 
@@ -22,8 +24,6 @@ Unlimited local variables, instead of being capped at eight.
 Add `calloc`, mostly for auto-zeroed memory (not array allocations).
 
 Fix a couple allocation defects, one mis-allocating on page boundaries, one on recycling freed chunks.
-
-Allow redeclaring variables w/ the same type.
 
 ### `v0.20251109`
 
