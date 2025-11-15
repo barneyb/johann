@@ -24,7 +24,7 @@ if git log --oneline | grep -E 'fixup|WIP|DEV'; then
     nope 9 "Found temp commits in log."
 fi
 
-if ! grep -E '^### Bleeding Edge' documentation/docs/versions/index.md; then
+if ! grep -qE '^### Bleeding Edge' documentation/docs/versions/index.md; then
     nope 10 "No docs for this release."
 fi
 
