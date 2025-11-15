@@ -1,3 +1,5 @@
+struct Block;
+struct Token;
 struct Symbol;
 
 int T_AMP;
@@ -239,10 +241,8 @@ fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, b
     void* blocks = self + 0x10; # &self.blocks;
     while depth > 0 {
         depth = depth - 1;
-        void* symbols = depth * SIZEOF_BLOCK;
-        symbols = symbols + blocks;
-        symbols = Block_symbols(symbols);
-        void* sym = Table_get(symbols, name);
+        Block* block = blocks + (depth * SIZEOF_BLOCK);
+        void* sym = block.get_symbol(name);
         if sym != null {
             return sym;
         }
@@ -264,69 +264,54 @@ pub fn Emitter_mark_global(void* nameT) {
     }
 }
 
-fn Emitter_vardecl(void* self, void* nameT, int type, int nptr) {
-    char* name = Token_value(nameT);
-    void* symbols = decl_symbols(self, nameT);
-    void* symbol = Symbol__new(type, nptr);
-    # reuse type for offset, because "8 vars"
-    type = Emitter_is_global(self);
-    type = !type;
-    if type {
-        type = Table_size(symbols);
-        type = type + 1; # local vars are one-indexed
-    }
-    Symbol_set_offset(symbol, type);
-    name = strclone(name);
-    Table_put(symbols, name, symbol);
-    return symbol;
-}
-
-fn decl_symbols(void* self, void* id_token) {
-    void* block;
+# This is both declare and define, based on whether `expr` is null.
+pub fn Emitter_do_decl(void* self, Token* nameT, int type, int nptr, void* expr) {
+    # First, find the relevant block.
+    Block* block;
     bool global = Emitter_is_global(self);
-    int n;
     if global {
         block = Emitter_current_block(self);
     }
-    if ! global {
-        n = T_KW_FN;
-        block = Emitter_innermost_block_of(self, n, id_token);
+    if !global {
+        # local vars have function scope, not block scope
+        block = Emitter_innermost_block_of(self, T_KW_FN, nameT);
     }
-    void* symbols = Block_symbols(block);
-    char* name = Token_value(id_token);
-    if Table_contains(symbols, name) {
-        # munge for panic
-        Token_set_type(id_token, name);
-        jnc_panic(ERR_DUPE_DECL, id_token, 22);
-    }
-    return symbols;
-}
 
-# This is both (re)declare and define, but "re" doesn't differentiate
-# and is always denied. So redeclaration isn't supported.
-pub fn Emitter_do_decl(void* self, void* nameT, int type, int nptr, void* expr) {
-    void* symbol = Emitter_vardecl(self, nameT, type, nptr);
+    # Check for collisions.
+    char* name = nameT.value();
+    if block.contains_symbol(name) {
+        # munge for panic
+        nameT.set_type(name);
+        jnc_panic(ERR_DUPE_DECL, nameT, 22);
+    }
+
+    # Register the symbol.
+    Symbol* symbol = Symbol__new(type, nptr);
+    if !global {
+        # local vars are one-indexed (zero is global symbols' sentinel)
+        symbol.set_offset(block.symbol_count() + 1);
+    }
+    block.put_symbol(name, symbol);
+
+    # Define/initialize
     if expr == null { return; }
-    if !Emitter_is_global(self) {
+    if !global {
         return Emitter_do_assign(self, nameT, expr);
     }
     decl_global(self, nameT, expr, symbol);
 }
 
-fn decl_global(void* self, void* nameT, void* expr, void* symbol) {
-    char* name = Token_value(nameT);
-    int type = *expr;
-    # strings are easy, storage and value must both be strings
-    if type == AST_LIT_STRING {
-        expr = expr + 0x8;          # -> value
-        return decl_global_string(self, name, *expr);
-    }
-    # the rest are messy, as any type of value can initialize any size of storage
-    decl_global_num(self, symbol, name, type, expr);
-}
+fn decl_global(void* self, Token* nameT, void* expr, Symbol* symbol) {
+    char* name = nameT.value();
+    int val_type = *expr;
 
-fn decl_global_num(void* self, void* symbol, char* name, int val_type, void* expr) {
-    int var_width = Symbol_width(symbol);
+    # strings are easy, storage and value must both be strings
+    if val_type == AST_LIT_STRING {
+        return printf(TMPL_GLOBAL_STRING, name, '"', expr[1], '"');
+    }
+
+    # the rest are messy, as any type of value can initialize any size of storage
+    int var_width = symbol.width();
     char* width;
     if var_width == 1 {
         width = WIDTH_BYTE;
@@ -342,13 +327,7 @@ fn decl_global_num(void* self, void* symbol, char* name, int val_type, void* exp
         tmpl = TMPL_GLOBAL_NUM;
     }
     expr = Emitter_eval_const(self, expr);
-    return printf(tmpl, name, width, expr);
-}
-
-fn decl_global_string(void* self, char* name, char* value) {
-    char* tmpl = TMPL_GLOBAL_STRING;
-    char q = '"';
-    return printf(tmpl, name, q, value, q);
+    printf(tmpl, name, width, expr);
 }
 
 pub fn Emitter_do_fn_intro(void* self, void* nameT, int lbytes, void* args) {

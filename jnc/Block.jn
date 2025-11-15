@@ -13,7 +13,7 @@ struct Block {
     Table* symbols,
 }
 
-pub int SIZEOF_BLOCK = 0x20; # todo: sizeof(Block);
+pub int SIZEOF_BLOCK = sizeof(Block);
 
 pub fn Block_init(Block* self, int type, int id) {
     self.type = type;
@@ -24,8 +24,7 @@ pub fn Block_init(Block* self, int type, int id) {
 }
 
 pub fn Block_drop(Block* self) {
-    void* symbols = Block_symbols(self);
-    Table_drop_owned(symbols, &free, &free);
+    Table_drop_owned(self.symbols, &free, &free);
 }
 
 pub fn Block_type(Block* self) {
@@ -34,6 +33,23 @@ pub fn Block_type(Block* self) {
 
 pub fn Block_id(Block* self) {
     return self.id;
+}
+
+pub fn Block_contains_symbol(Block* self, char* name) {
+    return Table_contains(self.symbols, name);
+}
+
+pub fn Block_get_symbol(Block* self, char* name) {
+    return Table_get(self.symbols, name);
+}
+
+pub fn Block_put_symbol(Block* self, char* name, void* symbol) {
+    # only take ownership of the symbol, not the name
+    return Table_put(self.symbols, strclone(name), symbol);
+}
+
+pub fn Block_symbol_count(Block* self) {
+    return Table_size(self.symbols);
 }
 
 pub fn Block_symbols(Block* self) {
