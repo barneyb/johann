@@ -17,7 +17,6 @@ OBJECTS = \
 	$(LIB)/string.jn.o \
 	$(LIB)/sys.jn.o \
 	$(LIB)/sys.o \
-	$(LIB)/table.o \
 
 all: $(LIB)/jstdlib.o
 
