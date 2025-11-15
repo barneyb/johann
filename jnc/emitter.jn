@@ -118,6 +118,7 @@ char* TMPL_BIN_LOGICAL          = "        cmp     x0, x1\n        b.%s    expr_
 
 char* TMPL_VALUE_STRING         = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
 char* TMPL_VALUE_INT            = "        mov     x0, #%i\n";
+char* TMPL_VALUE_Xi_INT         = "        mov     x%i, #%i\n";
 char* TMPL_VALUE_INT_LARGE      = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
 char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 
@@ -469,17 +470,14 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
 pub fn Emitter_do_assign_member(void* self, void* member, void* expr) {
     Emitter_eval_expr(self, expr);
 
-    member = member + 0x8;          # -> rcvr
-    void* rcvr = *member;
-    rcvr = rcvr + 0x8;              # -> nameT - guaranteed to be AST_ID
-    get_symbol_with_addr_in_x7(self, *rcvr);
+    void* rcvr = member[1];
+    # rcvr[1] -> nameT - guaranteed to be AST_ID
+    get_symbol_with_addr_in_x7(self, rcvr[1]);
 
-    member = member + 0x8;          # -> offset
-    printf(TMPL_GET_ADDR_MEMBER, *member);
+    printf(TMPL_GET_ADDR_MEMBER, member[2]);
 
-    member = member + 0x8;          # -> width
     char* tmpl = TMPL_ASSIGN_PTR_QUAD;
-    if *member == 1 {
+    if member[3] == 1 {
         tmpl = TMPL_ASSIGN_PTR_BYTE;
     }
     printf(tmpl);
@@ -490,19 +488,15 @@ pub fn Emitter_do_assign_index(void* self, void* ast, void* rhs) {
     Emitter_eval_expr(self, rhs);
     puts(TMPL_STASH);
 
-    ast = ast + 0x8;                # -> rcvr
-    void* rcvr = *ast;
-    ast = ast + 0x8;                # -> off_expr
-    void* off_expr = *ast;
-    ast = ast + 0x8;                # -> width
-    int width = *ast;
+    void* rcvr = ast[1];
+    void* off_expr = ast[2];
 
     Emitter_get_index_with_addr_in_x0(self, rcvr, off_expr);
 
     printf(TMPL_MOV_Xi_FOR_ASSIGN_PTR, 0);
     printf(TMPL_UNSTASH_Xi, 0);
     char* tmpl = TMPL_ASSIGN_PTR_QUAD;
-    if width == 1 {
+    if ast[3] == 1 {
         tmpl = TMPL_ASSIGN_PTR_BYTE;
     }
     puts(tmpl);
@@ -626,7 +620,13 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
 }
 
 fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
-    # todo: this works, but is pretty inefficient
+    if *idx_expr == AST_LIT_INT {
+        # if it's a literal index, save some shenanigans
+        Emitter_eval_expr(self, rcvr);
+        printf(TMPL_VALUE_Xi_INT, 1, idx_expr[1]);
+        puts(TMPL_BIN_ADD);
+        return;
+    }
     # compute the index
     Emitter_eval_expr(self, idx_expr);
     puts(TMPL_STASH);
@@ -638,6 +638,10 @@ fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
 }
 
 fn Emitter_do_read_index(void* self, void* rcvr, void* idx_expr, int width) {
+    if *idx_expr == AST_LIT_INT {
+        Emitter_do_read_member(self, rcvr, idx_expr[1], width);
+        return;
+    }
     Emitter_get_index_with_addr_in_x0(self, rcvr, idx_expr);
     if width == 1 {
         return puts(TMPL_BYTE_AT_ADDR);
