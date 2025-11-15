@@ -829,11 +829,8 @@ fn parse_expr_postfix(void* lex) {
         }
         if t == T_OBRACKET {
             if *expr != AST_ID {
-                eprintf("ERR: can't index into a %i at %i:%i\n",
-                        *expr,
-                        Token_line(t),
-                        Token_char(t));
-                exit(76);
+                Token_set_type(tkn, *expr);
+                jnc_panic("ERR(%i): can't index into a %i, only a variable at %i:%i\n", tkn, 76);
             }
             consume_token(lex, t);
             expr = process_bracket(expr, parse_expr(lex));
@@ -848,19 +845,13 @@ fn parse_expr_postfix(void* lex) {
 fn process_bracket(void* rcvr, void* off_expr) {
     void* rat = Env_typeof_symbol(ENV, rcvr[1]);
     if *rat != AST_VARIABLE {
-        eprintf("Cannot index a %i node at %i:%i, only a variable\n",
-                *rat,
-                Token_line(rcvr[1]),
-                Token_char(rcvr[1]));
-        exit(76);
+        Token_set_type(rcvr[1], *rat);
+        jnc_panic("ERR(%i): Cannot index a %i node at %i:%i, only a variable\n", rcvr[1], 76);
     }
     rat = rat[1];
     if *rat != AST_TYPE_PTR {
-        eprintf("Cannot index a %i node at %i:%i, only a pointer\n",
-                *rat,
-                Token_line(rcvr[1]),
-                Token_char(rcvr[1]));
-        exit(76);
+        Token_set_type(rcvr[1], *rat);
+        jnc_panic("ERR(%i): Cannot index a %i node at %i:%i, only a pointer\n", rcvr[1], 76);
     }
     rat = rat + 0x8;                # -> type
     int width = ast_sizeof(*rat);
@@ -872,41 +863,26 @@ fn process_bracket(void* rcvr, void* off_expr) {
     return ast4(AST_INDEX, rcvr, off_expr, width);
 }
 
-fn get_rcvr_type_name(void* rcvr, void* nameT) {
+fn get_rcvr_type_name(void* rcvr, Token* nameT) {
     if *rcvr != AST_ID {
-        eprintf("ERR: can't deref '%s' off a %i at %i:%i\n",
-                Token_value(nameT),
-                *rcvr,
-                Token_line(nameT),
-                Token_char(nameT));
-        exit(76);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): can't deref '%s' at %i:%i\n", nameT, 76);
     }
     void* rat = Env_typeof_symbol(ENV, rcvr[1]);
     if *rat != AST_VARIABLE {
-        eprintf("Cannot deref '%s' off a %i node, only a variable\n",
-                *rat,
-                Token_line(rcvr[1]),
-                Token_char(rcvr[1]));
-        exit(76);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): Can only deref '%s' off a variable at %i:%i\n", nameT, 76);
     }
     rat = rat[1];
     if *rat != AST_TYPE_PTR {
-        eprintf("Cannot deref '%s' off a %i node, only pointer-to-struct, at %i:%i\n",
-                Token_value(nameT),
-                *rat,
-                Token_line(nameT),
-                Token_char(nameT));
-        exit(76);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): Can only deref '%s' off a pointer-to-struct at %i:%i\n", nameT, 76);
     }
     rat = rat + 0x8;                # -> type
     rat = *rat;
     if *rat != AST_TYPE_NAMED {
-        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct, at %i:%i\n",
-                Token_value(nameT),
-                *rat,
-                Token_line(nameT),
-                Token_char(nameT));
-        exit(76);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): Can only deref '%s' off a pointer-to-struct at %i:%i\n", nameT, 76);
     }
     rat = rat + 0x8;                # -> nameT
     return Token_value(*rat);
@@ -932,25 +908,19 @@ fn process_method(void* rcvr, void* nameT, void* arg_list) {
     return ast3(AST_CALL, ast2(AST_ID, nameT), ArrayList_into_array(args));
 }
 
-fn process_member(void* rcvr, void* nameT) {
+fn process_member(void* rcvr, Token* nameT) {
     void rcvr_type_name = get_rcvr_type_name(rcvr, nameT);
 
     void* structT = Env_get_type(ENV, rcvr_type_name);
     if *structT != AST_TYPE_STRUCT {
-        eprintf("Cannot deref '%s' off a pointer-to-%i node, only pointer-to-struct\n",
-                Token_value(nameT),
-                *structT);
-        exit(76);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): Can only deref '%s' off a pointer-to-struct at %i:%i\n", nameT, 76);
     }
     void* member = structT + 0x18;
     member = TreeMap_get(*member, Token_value(nameT));
     if member == null {
-        eprintf("Type '%s' has no member '%s' at line %i, col %i.\n",
-                rcvr_type_name,
-                Token_value(nameT),
-                Token_line(nameT),
-                Token_char(nameT));
-        exit(75);
+        nameT.set_type(nameT.value());
+        jnc_panic("ERR(%i): Unknown member '%s' at line %i, col %i.\n", nameT, 75);
     }
     Token_drop(nameT); # no longer needed
     member = member + 0x8;          # -> name

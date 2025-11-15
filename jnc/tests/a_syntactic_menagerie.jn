@@ -122,6 +122,8 @@ fn expr_postfix_dot(Animal* dog) {
     if dog.mammal {
         food.is_extinct = true;
     }
+#    food = dog.fav_prey[2];
+#    dog.fav_prey[1] = null;
 }
 
 pub fn expr_unary(int i, bool b) {
