@@ -14,7 +14,7 @@
 - [x] array indexing
 - [ ] array types
 - [ ] blocks/scopes
-- [ ] unconstrained local variables
+- [x] unconstrained local variables
 - [ ] unconstrained parameter passing (and varargs?)
 - [ ] logical operators
 - [ ] bitwise operators
