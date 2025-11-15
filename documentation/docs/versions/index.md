@@ -15,6 +15,8 @@ Remove the sequential-scan `table` type; `HashMap` and `TreeMap` are better.
 
 Allow redeclaring variables w/ the same type.
 
+`--header` no longer implies `--strict`. Too annoying to set up the build chains.
+
 ### `v0.20251115`
 
 Add `StringBuilder_into_int` to ease memory management.

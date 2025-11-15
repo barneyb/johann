@@ -64,7 +64,6 @@ fn jnc_help() {
 }
 
 fn jnc_header() {
-    STRICT = true;
     void* ast = parse_ast();
     to_header(ast);
     drop_ast(ast);
