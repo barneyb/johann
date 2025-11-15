@@ -236,7 +236,7 @@ pub fn malloc(int bytes) {
         int thru = mem + bytes;
         thru = thru + 0x8; # for the header
         if HEAP_END < thru {
-            get_more_memory(bytes);
+            get_more_memory(bytes + 0x8);
             mem = HEAP_TOP;
         }
 
