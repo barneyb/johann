@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251116`
 
 Remove the sequential-scan `table` type; `HashMap` and `TreeMap` are better.
 
