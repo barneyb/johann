@@ -97,7 +97,7 @@ fn expr_primary() {
 
 fn expr_postfix_call() {
     expr_primary();
-    expr_id(); # todo: unknown
+#    expr_id();
     function_params_base(false, 'T', 42, 0);
     function_params_anon(true, 'q', 123, null);
 }
@@ -225,16 +225,21 @@ fn stmt_assign(int i) {
 #fn mega_args(int, int, int, int, int, int, int, int, int, int, int);
 #fn mega_args(int, int, int, int, int, int, int seven, int eight, int nine, int, int);
 
+fn stmt_eval();
+
 fn call_fn_wrong() {
-    goob(1234); # todo: unknown
-    boog(&stmt_empty);
+#    goob(1234);
+    stmt_vardecl(&stmt_assign);
+    stmt_vardecl(&stmt_eval);
+#    stmt_vardecl(&unknown);
     void* se = &stmt_empty;
     se(se); # dunno about se, but it's zero-arg
     se = &a_function;
     se(se);
 #    stmt_assign(123, 456);
 #    stmt_eval(123, 456);
-    moob(&goob);
+#    moob(se);
+#    moob(&goob);
 #    printf("", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
 #    printf("", 1, 2, 3, 4, 5, 6, 7, se, 9, 10, 11);
 }

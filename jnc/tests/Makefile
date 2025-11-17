@@ -7,6 +7,7 @@ JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 
 all: \
 	$(LIB)/a_syntactic_menagerie.o \
+	$(OUT)/a_syntactic_menagerie.strict.s \
 	arrays \
 	collatz \
 	constants \
@@ -91,6 +92,10 @@ $(LIB)/%.o: $(OUT)/%.s
 $(OUT)/%.s: %.jn $(JNC)
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
+
+$(OUT)/%.strict.s: %.jn $(JNC)
+	@mkdir -p $(OUT)
+	$(JNC) --strict < $< > $@
 
 $(OUT)/%.jnh: %.jn $(JNC)
 	${HEADPILE}

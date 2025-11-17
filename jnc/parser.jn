@@ -79,6 +79,7 @@ int AST_VARIABLE;
 int AST_WHILE;
 
 void ENV;
+bool STRICT;
 
 fn strcmp(char*, char*);
 fn drop_ast(void*);
@@ -770,11 +771,16 @@ fn parse_expr_unary(void* lex) {
 
 fn un_addr_op(void* lex, int op) {
     consume_token(lex, op);
-    void* nameT = next_token(lex);
+    Token* nameT = next_token(lex);
     int tto = *nameT;
     if tto != T_ID {
         jnc_panic(ERR_BAD_EXPRESSION, nameT, 28);
     }
+    # this can't look forward
+    if STRICT { if Env_opt_typeof_symbol(ENV, nameT) == null {
+        nameT.set_type(nameT.value());
+        jnc_panic(ERR_UNKNOWN_SYMBOL, nameT, 23);
+    } }
     return ast3(AST_ADDR_OP, op, nameT);
 }
 

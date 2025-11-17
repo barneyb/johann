@@ -3,6 +3,8 @@ struct ArrayList;
 fn malloc(int);
 fn free(void);
 
+fn do_m(int);
+
 pub fn main() {
     do_m(2);
     do_m(-1);
