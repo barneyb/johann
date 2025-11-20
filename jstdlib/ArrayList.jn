@@ -166,6 +166,7 @@ pub fn ArrayList_to_string(ArrayList* self, void* el_to_string) {
 
 # I drop the list, along with its elements (if they are owned).
 pub fn ArrayList_drop(ArrayList* self) {
+    if self == null { return; }
     void* arr = self.data;
     if arr == null {
         return free(self);

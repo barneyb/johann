@@ -29,6 +29,7 @@
 - [ ] import/include
 - [ ] automatic memory management
 - [ ] `for` loops/iterators
+- [ ] `enum` support
 
 ## Library Features
 

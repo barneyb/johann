@@ -57,6 +57,7 @@ pub fn HashMap__new_owned(void* hash, void* cmp, void* drop_key, void* drop_valu
 
 # I drop the HashMap, along with its keys and values (if owned).
 pub fn HashMap_drop(HashMap* self) {
+    if self == null { return; }
     if self.arr != null {
         int i = self.capacity - 1;
         void* arr = self.arr;

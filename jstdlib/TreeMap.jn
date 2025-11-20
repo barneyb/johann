@@ -42,6 +42,7 @@ pub fn TreeMap__new_owned(void* comparator, void* drop_key, void* drop_value) {
 # I drop the map, `free`-ing all internal structure, along with its keys and
 # values (if they are owned).
 pub fn TreeMap_drop(TreeMap* self) {
+    if self == null { return; }
     drop_subtree(self.root, self.drop_key, self.drop_value);
     free(self);
 }

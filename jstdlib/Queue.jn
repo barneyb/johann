@@ -32,6 +32,7 @@ pub fn Queue__new_owned(void* drop_el) {
 
 # I drop the queue, along with its elements (if they are owned).
 pub fn Queue_drop(Queue* self) {
+    if self == null { return; }
     Node* curr = self.head;
     Node* next;
     void* drop_el = self.drop_el;
