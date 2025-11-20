@@ -37,13 +37,23 @@ pub struct HashMap {
 }
 
 # I construct a new HashMap with the specified hash and comparator functions.
+# `null` can be passed for either to use identity, useful with primitives or
+# when pointer-equality is appropriate.
 pub fn HashMap__new(void* hash, void* cmp) {
     return HashMap__new_owned(hash, cmp, null, null);
 }
 
+fn identity(void i) { return i; }
+fn idcmp(void a, void b) { return a - b; }
+
 # I construct a new HashMap with the specified hash and comparator functions,
-# along with optional functions for dropping keys and values.
+# along with functions for dropping keys and values. `null` can be passed as
+# `hash` and `cmp` to use identity, useful with primitives or when
+# pointer-equality is appropriate. `null` can be passed for the drop functions
+# when keys and/or values are not owned allocations.
 pub fn HashMap__new_owned(void* hash, void* cmp, void* drop_key, void* drop_value) {
+    if hash == null { hash = &identity; }
+    if cmp == null { cmp = &idcmp; }
     HashMap* m = malloc(sizeof(HashMap));
     m.size = 0;
     m.capacity = 15; # always 2^n-1, starting n=4

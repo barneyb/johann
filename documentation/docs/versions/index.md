@@ -9,7 +9,11 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+HashMap supports pointer-identity internally, so callers don't have to do it explicitly.
+
+The standard library's collection types' "drop" functions accept `null` (like `free` does).
 
 ### `v0.20251116`
 

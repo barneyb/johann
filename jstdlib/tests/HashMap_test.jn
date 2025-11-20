@@ -17,7 +17,7 @@ pub fn main() {
 
 fn basics() {
     puts("\nbasics:");
-    HashMap* m = HashMap__new(&inthash, &intcmp);
+    HashMap* m = HashMap__new(null, null);
     printf("size: %d\n", m.size());
     put(m, 0, "zero");
     put(m, 7, "seven");
@@ -66,7 +66,7 @@ fn delete_collisions() {
     delete(m, 0);
     m.drop();
 
-    m = HashMap__new(&inthash, &intcmp);
+    m = HashMap__new(null, null);
     put(m, 0, "zero");
     put(m, 7, "seven");
     put(m, 15, "fifteen"); # to collide with zero
