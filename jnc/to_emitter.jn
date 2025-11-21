@@ -1,22 +1,3 @@
-int AST_ADDR_OP;
-int AST_AGAIN;
-int AST_ASSIGN;
-int AST_DECL;
-int AST_DONE;
-int AST_EVAL;
-int AST_FN;
-int AST_ID;
-int AST_IF;
-int AST_INDEX;
-int AST_MEMBER;
-int AST_PROGRAM;
-int AST_RETURN;
-int AST_STRUCT;
-int AST_TYPE_NAMED;
-int AST_TYPE_PTR;
-int AST_VARIABLE;
-int AST_WHILE;
-
 void ENV;
 
 struct Token;
@@ -59,14 +40,14 @@ fn array_to_emitter(void* emitter, void* arr) {
 }
 
 fn to_emitter_program(void* emitter, void* ast) {
-    # [AST_PROGRAM, decls[], null, null]
+    # [AST_PROGRAM, decls[]]
     ast = ast + 0x8;
     void* decls = *ast;
     array_to_emitter(emitter, decls);
 }
 
 fn to_emitter_decl(void* emitter, void* ast) {
-    # [AST_DECL, is_pub, fn_or_var, null]
+    # [AST_DECL, is_pub, fn_or_var]
     ast = ast + 0x8;
     IS_PUB = *ast;
     ast = ast + 0x8;
@@ -160,18 +141,25 @@ fn to_emitter_fn(void* emitter, void* ast) {
 }
 
 fn to_emitter_if(void* emitter, void* ast) {
-    # [AST_IF, cond, block, null]
-    ast = ast + 0x8;
-    void* cond = *ast;
-    ast = ast + 0x8;
-    void* block = *ast;
-    Emitter_do_if(emitter, cond);
-    array_to_emitter(emitter, block);
+    # [AST_IF, cond, body[], else[]?]
+    void* cond = ast[1];
+    void* body = ast[2];
+    void* ebody = ast[3];
+    if ebody == null {
+        Emitter_do_if(emitter, cond);
+        array_to_emitter(emitter, body);
+        Emitter_do_close_block(emitter);
+        return;
+    } # ... it's funny!
+    Emitter_do_if_else(emitter, cond);
+    array_to_emitter(emitter, body);
+    Emitter_do_else(emitter);
+    array_to_emitter(emitter, ebody);
     Emitter_do_close_block(emitter);
 }
 
 fn to_emitter_while(void* emitter, void* ast) {
-    # [AST_WHILE, cond, block, null]
+    # [AST_WHILE, cond, stmts[]]
     ast = ast + 0x8;
     void* cond = *ast;
     ast = ast + 0x8;
@@ -182,21 +170,21 @@ fn to_emitter_while(void* emitter, void* ast) {
 }
 
 fn to_emitter_done(void* emitter, void* ast) {
-    # [AST_DONE, token, null, null]
+    # [AST_DONE, token]
     ast = ast + 0x8;
     void* token = *ast;
     Emitter_do_done(emitter, token);
 }
 
 fn to_emitter_again(void* emitter, void* ast) {
-    # [AST_AGAIN, token, null, null]
+    # [AST_AGAIN, token]
     ast = ast + 0x8;
     void* token = *ast;
     Emitter_do_again(emitter, token);
 }
 
 fn to_emitter_return(void* emitter, void* ast) {
-    # [AST_RETURN, token, expr?, null]
+    # [AST_RETURN, token, expr?]
     ast = ast + 0x8;
     void* token = *ast;
     ast = ast + 0x8;
@@ -208,14 +196,14 @@ fn to_emitter_return(void* emitter, void* ast) {
 }
 
 fn to_emitter_eval(void* emitter, void* ast) {
-    # [AST_EVAL, expr, null, null]
+    # [AST_EVAL, expr]
     ast = ast + 0x8;
     void* expr = *ast;
     Emitter_eval_expr(emitter, expr);
 }
 
 fn to_emitter_assign(void* emitter, void* ast) {
-    # [AST_ASSIGN, expr, rhs, null]
+    # [AST_ASSIGN, expr, rhs]
     ast = ast + 0x8;
     void* expr = *ast;
     ast = ast + 0x8;

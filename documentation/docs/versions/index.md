@@ -11,6 +11,8 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
+`else` and `else if` are supported!
+
 HashMap supports pointer-identity internally, so callers don't have to do it explicitly.
 
 The standard library's collection types' "drop" functions accept `null` (like `free` does).

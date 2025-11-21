@@ -24,8 +24,7 @@ pub fn main() {
                 f = f * -1;
                 b = false;
             }
-        }
-        if !d {
+        } else {
             g = "+ %i\n";
             printf(g, f);
             a = add(a, f);  # add to the answer

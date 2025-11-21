@@ -1,0 +1,95 @@
+pub fn main(int i) {
+    printf("do_if: %d, %d\n",
+           do_if(1),
+           do_if(2));
+    printf("do_if_else: %d, %d, %d\n",
+           do_if_else(1),
+           do_if_else(2),
+           do_if_else(3));
+    printf("do_if_else_nested_if: %d, %d, %d, %d\n",
+           do_if_else_nested_if(3),
+           do_if_else_nested_if(4),
+           do_if_else_nested_if(5),
+           do_if_else_nested_if(6));
+    printf("do_if_else_nested_if_else: %d, %d, %d, %d\n",
+           do_if_else_nested_if_else(3),
+           do_if_else_nested_if_else(4),
+           do_if_else_nested_if_else(5),
+           do_if_else_nested_if_else(6));
+    printf("do_if_elif: %d, %d, %d, %d\n",
+           do_if_elif(3),
+           do_if_elif(4),
+           do_if_elif(5),
+           do_if_elif(6));
+    printf("do_if_elif_else: %d, %d, %d, %d\n",
+           do_if_elif_else(3),
+           do_if_elif_else(4),
+           do_if_elif_else(5),
+           do_if_elif_else(6));
+}
+
+fn do_if(int i) {
+    int r = -1;
+    if i == 1 {
+        r = 11;
+    }
+    return r;
+}
+
+fn do_if_else(int i) {
+    int r = -1;
+    if i == 2 {
+        r = 22;
+    } else {
+        r = 99;
+    }
+    return r;
+}
+
+fn do_if_else_nested_if(int i) {
+    int r = -1;
+    if i == 4 {
+        r = 44;
+    } else {
+        if i == 5 {
+            r = 55;
+        }
+    }
+    return r;
+}
+
+fn do_if_else_nested_if_else(int i) {
+    int r = -1;
+    if i == 4 {
+        r = 44;
+    } else {
+        if i == 5 {
+            r = 55;
+        } else {
+            r = 66;
+        }
+    }
+    return r;
+}
+
+fn do_if_elif(int i) {
+    int r = -1;
+    if i == 4 {
+        r = 44;
+    } else if i == 5 {
+        r = 55;
+    }
+    return r;
+}
+
+fn do_if_elif_else(int i) {
+    int r = -1;
+    if i == 4 {
+        r = 44;
+    } else if i == 5 {
+        r = 55;
+    } else {
+        r = 66;
+    }
+    return r;
+}

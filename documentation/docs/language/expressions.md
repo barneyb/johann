@@ -42,7 +42,7 @@ char* str = "abcdef";
 char c = str[2];
 printf("Element two is '%c'\n", c);
 
-int* fib = malloc(10 * sizeof(int));
+int* fib = calloc(10, sizeof(int));
 fib[0] = 1; fib[1] = 1;
 int i = 2;
 while i < 10 {

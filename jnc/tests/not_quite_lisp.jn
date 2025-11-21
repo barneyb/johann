@@ -8,8 +8,7 @@ pub fn main() {
         g = g + 1;
         if c == '(' {
             f = f + 1;
-        }
-        if c == ')' {
+        } else if c == ')' {
             f = f - 1;
         }
         int d = f + 1;

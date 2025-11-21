@@ -63,7 +63,7 @@ pub int AST_VARIABLE    = 307;
 pub int AST_EVAL        = 401;
 # [AST_ASSIGN, expr, rhs]
 pub int AST_ASSIGN      = 402;
-# [AST_IF, cond, stmts[]]
+# [AST_IF, cond, body[], else[]?]
 pub int AST_IF          = 403;
 # [AST_WHILE, cond, stmts[]]
 pub int AST_WHILE       = 404;
@@ -140,7 +140,7 @@ pub fn ast3(int type, void value, void left) {
     return ast;
 }
 
-struct Ast4 {
+pub struct Ast4 {
     int type,
     void value,
     void left,
@@ -266,6 +266,7 @@ pub fn drop_ast(Ast4* ast) {
     if type == AST_IF {
         drop_ast(ast.value); # condition
         drop_ast_array(ast.left); # body
+        drop_ast_array(ast.right); # else
         return free(ast);
     }
     if type == AST_WHILE {

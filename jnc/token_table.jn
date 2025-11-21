@@ -17,6 +17,7 @@ pub int T_STRING    = 0x173; # 0x100 + 's';
 
 pub int T_KW_AGAIN  = 0x341; # 0x300 + 'A';
 pub int T_KW_DONE   = 0x344; # 0x300 + 'D';
+pub int T_KW_ELSE   = 0x345; # 0x300 + 'E';
 pub int T_KW_IF     = 0x349; # 0x300 + 'I';
 pub int T_KW_RETURN = 0x352; # 0x300 + 'R';
 pub int T_KW_WHILE  = 0x357; # 0x300 + 'W';

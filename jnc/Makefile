@@ -19,6 +19,12 @@ OBJECTS = $(JSTDLIB) \
 	$(LIB)/util.o \
 	$(LIB)/version.o \
 
+define CATPILE
+	@mkdir -p $(OUT)
+	cat $^ > $*.jni
+	$(JNC) < $*.jni > $@
+endef
+
 all: $(BIN)/jnc
 	@echo -----------------------------------------------------
 	@for opt in -v --version --help; do \
@@ -33,6 +39,22 @@ $(LIB)/version.o:
 	> $(OUT)/version.jn
 	$(JNC) < $(OUT)/version.jn | gcc -o $(LIB)/version.o -x assembler -c -
 
+$(OUT)/lexer.s: $(OUT)/token_table.jnh lexer.jn
+	${CATPILE}
+
+$(OUT)/parser.s: $(OUT)/token_table.jnh \
+		$(OUT)/ast.jnh \
+		parser.jn
+	${CATPILE}
+
+$(OUT)/to_emitter.s: $(OUT)/ast.jnh to_emitter.jn
+	${CATPILE}
+
+$(OUT)/emitter.s: $(OUT)/token_table.jnh \
+		$(OUT)/ast.jnh \
+		emitter.jn
+	${CATPILE}
+
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
 
@@ -46,6 +68,11 @@ $(BIN)/%: $(LIB)/%.o $(OBJECTS)
 $(OUT)/%.s: %.jn
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
+
+$(OUT)/%.jnh: %.jn $(JNC)
+	@mkdir -p $(OUT)
+	$(JNC) --header < $< > $@
+	$(JNC) < $@ > /dev/null
 
 $(LIB)/%.o: $(OUT)/%.s
 	@mkdir -p $(LIB)

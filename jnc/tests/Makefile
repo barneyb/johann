@@ -13,6 +13,7 @@ all: \
 	constants \
 	control_flow \
 	function_pointers \
+	if_else \
 	line_client \
 	lisp \
 	literals \
