@@ -33,6 +33,8 @@ char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\
 char* TMPL_RETURN               = "        b       _return_%i\n";
 
 char* TMPL_IF_INTRO             = "        cmp     x0, FALSE\n        b.eq    if_%i_done\n";
+char* TMPL_IF_ELSE_INTRO        = "        cmp     x0, FALSE\n        b.eq    if_%i_else\n";
+char* TMPL_ELSE_PRELUDE         = "        b       if_%i_done\n        if_%i_else:\n";
 char* TMPL_IF_OUTRO             = "        if_%i_done:\n";
 
 char* TMPL_WHILE_PRELUDE        = "        while_%i_again:\n";
@@ -327,6 +329,7 @@ pub fn Emitter_do_close_block(void* self) {
     int id = Block_id(block);
     int type = Block_type(block);
     Block_drop(block);
+    if type == null { return; }
     if type == T_KW_IF {
         return printf(TMPL_IF_OUTRO, id);
     }
@@ -345,10 +348,20 @@ pub fn Emitter_do_return(void* self, void* token) {
 }
 
 pub fn Emitter_do_if(void* self, void* cond) {
-    int type = T_KW_IF;
-    char* prelude = null;
-    char* intro = TMPL_IF_INTRO;
-    do_conditional(self, type, prelude, intro, cond);
+    do_conditional(self, T_KW_IF, null, TMPL_IF_INTRO, cond);
+}
+
+pub fn Emitter_do_if_else(void* self, void* cond) {
+    do_conditional(self, null, null, TMPL_IF_ELSE_INTRO, cond);
+}
+
+pub fn Emitter_do_else(void* self, void* cond) {
+    Block* block = Emitter_current_block(self);
+    int ifid = block.id();
+    Emitter_do_close_block(self);
+    block = Emitter_enter_block(self, T_KW_IF);
+    int elseid = block.id();
+    printf(TMPL_ELSE_PRELUDE, elseid, ifid);
 }
 
 pub fn Emitter_do_while(void* self, void* cond) {

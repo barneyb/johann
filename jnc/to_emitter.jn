@@ -141,13 +141,20 @@ fn to_emitter_fn(void* emitter, void* ast) {
 }
 
 fn to_emitter_if(void* emitter, void* ast) {
-    # [AST_IF, cond, stmts[]]
-    ast = ast + 0x8;
-    void* cond = *ast;
-    ast = ast + 0x8;
-    void* block = *ast;
-    Emitter_do_if(emitter, cond);
-    array_to_emitter(emitter, block);
+    # [AST_IF, cond, body[], else[]?]
+    void* cond = ast[1];
+    void* body = ast[2];
+    void* ebody = ast[3];
+    if ebody == null {
+        Emitter_do_if(emitter, cond);
+        array_to_emitter(emitter, body);
+        Emitter_do_close_block(emitter);
+        return;
+    } # ... it's funny!
+    Emitter_do_if_else(emitter, cond);
+    array_to_emitter(emitter, body);
+    Emitter_do_else(emitter);
+    array_to_emitter(emitter, ebody);
     Emitter_do_close_block(emitter);
 }
 

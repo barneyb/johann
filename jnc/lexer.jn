@@ -11,6 +11,7 @@ pub char* KW_STRUCT = "struct";
 char* KW_AGAIN  = "again";
 char* KW_CONST  = "const";
 char* KW_DONE   = "done";
+char* KW_ELSE   = "else";
 char* KW_FALSE  = "false";
 char* KW_IF     = "if";
 char* KW_LET    = "let";
@@ -452,6 +453,10 @@ fn convert_keyword(void* token) {
         kw = KW_DONE;
         type = T_KW_DONE;
         if to_keyword(token, name, kw, type) { return; }
+        return;
+    }
+    if c == 'e' {
+        if to_keyword(token, name, KW_ELSE, T_KW_ELSE) { return; }
         return;
     }
     if c == 'f' {

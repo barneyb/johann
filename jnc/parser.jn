@@ -412,7 +412,12 @@ fn parse_if(void* lex) {
     consume_token(lex, T_KW_IF);
     void* cond = parse_expr(lex);
     void* body = parse_block(lex);
-    return ast3(AST_IF, cond, body);
+    Token* t = peek_token(lex);
+    if t.type() == T_KW_ELSE {
+        consume_token(lex, T_KW_ELSE);
+        return ast4(AST_IF, cond, body, parse_block(lex));
+    }
+    return ast4(AST_IF, cond, body, null);
 }
 
 fn parse_while(void* lex) {

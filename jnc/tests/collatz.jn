@@ -23,14 +23,18 @@ fn print_series(char* c) {
     while a > 1 {
         int b = a % 2;
         if b == 0 {
+            int a; # legal, though pointless, no-op
             a = a / 2;
-        }
-        int a; # legal, though pointless, no-op
-        if b == 1 {
+            printf(f, a);
+            again;
+        } else {
             a = a * 3;
             a = a + 1;
+            printf(f, a);
+            again;
         }
-        printf(f, a);
+        eprintf("um. you did it wrong.\n");
+        exit(1);
     }
     f = " !\n";
     printf(f);

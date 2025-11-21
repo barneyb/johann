@@ -1,0 +1,28 @@
+pub fn main(int argc) {
+    int i;
+    if argc == 1 {
+        i = 11;
+    }
+    if argc == 2 {
+        i = 22;
+    } else {
+        i = 33;
+    }
+    if argc == 4 {
+        i = 44;
+    } else {
+        if argc == 5 {
+            i = 55;
+        } else {
+            i = 66;
+        }
+    }
+# todo: else if
+#    if argc == 7 {
+#        i = 77;
+#    } else if argc == 8 {
+#        i = 88;
+#    } else {
+#        i = 99;
+#    }
+}
