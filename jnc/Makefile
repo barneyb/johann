@@ -42,6 +42,11 @@ $(LIB)/version.o:
 $(OUT)/lexer.s: $(OUT)/token_table.jnh lexer.jn
 	${CATPILE}
 
+$(OUT)/parser.s: $(OUT)/token_table.jnh \
+		$(OUT)/ast.jnh \
+		parser.jn
+	${CATPILE}
+
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
 
@@ -59,6 +64,7 @@ $(OUT)/%.s: %.jn
 $(OUT)/%.jnh: %.jn $(JNC)
 	@mkdir -p $(OUT)
 	$(JNC) --header < $< > $@
+	$(JNC) < $@ > /dev/null
 
 $(LIB)/%.o: $(OUT)/%.s
 	@mkdir -p $(LIB)

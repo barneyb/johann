@@ -140,7 +140,7 @@ pub fn ast3(int type, void value, void left) {
     return ast;
 }
 
-struct Ast4 {
+pub struct Ast4 {
     int type,
     void value,
     void left,
