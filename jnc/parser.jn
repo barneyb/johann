@@ -415,6 +415,12 @@ fn parse_if(void* lex) {
     Token* t = peek_token(lex);
     if t.type() == T_KW_ELSE {
         consume_token(lex, T_KW_ELSE);
+        t = peek_token(lex);
+        if t.type() == T_KW_IF {
+            void* ebody = calloc(2, sizeof(void*));
+            ebody[0] = parse_if(lex);
+            return ast4(AST_IF, cond, body, ebody);
+        }
         return ast4(AST_IF, cond, body, parse_block(lex));
     }
     return ast4(AST_IF, cond, body, null);

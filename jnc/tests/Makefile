@@ -8,12 +8,12 @@ JSTDLIB = ../../jstdlib/$(LIB)/jstdlib.o
 all: \
 	$(LIB)/a_syntactic_menagerie.o \
 	$(OUT)/a_syntactic_menagerie.strict.s \
-	$(OUT)/if_else.s \
 	arrays \
 	collatz \
 	constants \
 	control_flow \
 	function_pointers \
+	if_else \
 	line_client \
 	lisp \
 	literals \
