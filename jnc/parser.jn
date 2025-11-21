@@ -464,6 +464,7 @@ fn parse_eval_or_assign(void* lex) {
     # If AST_ID was parsed, and next is T_ID, the first is an undeclared type
     int t = *expr;
     if t == AST_ID { if Token_type(peek_token(lex)) == T_ID {
+        eprintf("Did you forget to declare '%s'?\n", tkn.value());
         # munge for panic
         Token_set_type(tkn, tkn.value());
         jnc_panic(ERR_UNKNOWN_SYMBOL, tkn, 23);
@@ -502,7 +503,10 @@ fn parse_eval_or_assign(void* lex) {
             t = t + 0x8;            # -> left
             t = *t;
             if *t == AST_ID {
+                # If AST_BINARY of T_STAR was parsed, this is declaring a
+                # pointer to an undeclared type. Only checking one indirection.
                 t = t + 0x8; # -> nameT
+                eprintf("Did you forget to declare '%s'?\n", Token_value(*t));
                 # munge for panic
                 Token_set_type(tkn, Token_value(*t));
                 jnc_panic(ERR_UNKNOWN_SYMBOL, tkn, 23);
