@@ -4,16 +4,17 @@ set -ex
 git restore bin/jnc lib/jstdlib.o
 
 NOW="$(date +%Y%m%d-%H%M%S)"
-if git diff --quiet; then
+TAG="build-$NOW"
+if git diff --quiet && git diff --staged --quiet; then
     # working copy is clean
-    git tag -f build
+    git tag $TAG
 else
     # working copy is dirty
     git commit -am "for build: $NOW"
-    git tag -f build
+    git tag $TAG
     git reset --soft HEAD^
 fi
-git tag "build-$NOW" build
+git branch -f auto-build $TAG
 # only keep the last few build tags
 git tag --list 'build-*' \
     | sort -nr \
