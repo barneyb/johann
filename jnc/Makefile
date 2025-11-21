@@ -50,6 +50,11 @@ $(OUT)/parser.s: $(OUT)/token_table.jnh \
 $(OUT)/to_emitter.s: $(OUT)/ast.jnh to_emitter.jn
 	${CATPILE}
 
+$(OUT)/emitter.s: $(OUT)/token_table.jnh \
+		$(OUT)/ast.jnh \
+		emitter.jn
+	${CATPILE}
+
 $(JSTDLIB)::
 	$(MAKE) -C ../jstdlib
 
