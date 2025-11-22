@@ -220,8 +220,6 @@ printf:
         b.eq    printf_decimal
         cmp     x0, 'i'
         b.eq    printf_decimal
-        cmp     x0, 'n'
-        b.eq    printf_newline
         cmp     x0, 'o'
         b.eq    printf_octal
         cmp     x0, 'p'
@@ -389,11 +387,6 @@ printf:
         ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x10]      ; store a
-        b       printf_normal
-
-    printf_newline:
-        ; replace the spec w/ a newline and 'normal'
-        mov     x0, '\n'
         b       printf_normal
 
     printf_bool:

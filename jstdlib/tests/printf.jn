@@ -50,10 +50,7 @@ pub fn main() {
 #    n = printf("null pointer: [[%p]]\n", null);
 #    printf(count, n);
 
-    n = printf("newline: [[%n]]\n"); # not num chars emitted!
-    printf(count, n);
-
-    n = printf("everything: %%, %c, %s, %d, %x, %p%n",
+    n = printf("everything: %%, %c, %s, %d, %x, %p\n",
                'Z',
                greet,
                456,
