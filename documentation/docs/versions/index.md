@@ -1,11 +1,13 @@
 # Versions
 
-At the moment, Johann is building up from "nothing" towards "complete". There's a _lot_ of kludge in the syntax and a host of random restrictions, all in service of "anything is better than writing assembly." As the compiler gains power, the language will gel, hopefully ending up somewhere graceful. Right now, there only two constraints:
+At the moment, Johann is building up from "nothing" towards "enough". There's a _lot_ of kludge in the syntax and a host of random restrictions, all in service of "anything is better than writing assembly." Right now, there only two constraints on versioning:
 
 1. The current release can compile the development sources.
 1. The development sources can compile themselves.
 
-This provides a backwards compatibility guarantee _for a single release_. Skipping a release may break things. For example, upgrading to `v0.20250610` introduced `==` and deprecated `=`. Support wasn't removed until the following release. 
+This provides a backwards compatibility guarantee _for a single release_. Skipping a release may break things. For example, upgrading to `v0.20250610` introduced `==` and deprecated `=`. Support for `=` (as a comparison operator) wasn't removed until `v0.20250613`.
+
+Once the last bits of hand-coded assembly are gone, a syntactic revision is next. After that, the compilation pipeline itself has two major shortcomings: typechecks are half during parsing and half during codegen, and codegen is direct from the parse tree without an intermediate representation (aka "three address codes").
 
 ## Release History
 
