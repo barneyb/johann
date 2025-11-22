@@ -11,7 +11,20 @@ void HEAP_START = null;
 void HEAP_TOP   = null;
 void HEAP_END   = null;
 
-void FREE_LIST  = null;
+# it's an "array"!
+void** free_lists = 0;
+void* free_lists_1 = 0;
+void* free_lists_2 = 0;
+void* free_lists_3 = 0;
+void* free_lists_4 = 0;
+void* free_lists_5 = 0;
+void* free_lists_6 = 0;
+
+fn free_list_for(int bytes) {
+    int sz = bytes / MALLOC_ALIGN;
+    if sz > 6 { sz = 0; }
+    return &free_lists + sz * sizeof(void*);
+}
 
 int STAT_MMAP_COUNT  = 0;
 int STAT_MMAP_SIZE   = 0;
@@ -103,7 +116,7 @@ pub fn dump_around__(void* mem) {
 # `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
     if mem == null {
-        return null;
+        return;
     }
     # load the size/bytes from the header
     int a = mem - 0x8;
@@ -130,7 +143,8 @@ pub fn free(void* mem) {
     # first quad is "prev" pointer
     # second quad is "next" pointer
 
-    void next = FREE_LIST;
+    void free_list = free_list_for(bytes);
+    void next = *free_list;
     void prev = null;
     while next != null {
         if mem == next {
@@ -152,7 +166,7 @@ pub fn free(void* mem) {
 
     *mem = prev;
     if prev == null {
-        FREE_LIST = mem;
+        *free_list = mem;
     }
     if prev != null {
         prev = prev + 8;
@@ -164,14 +178,13 @@ pub fn free(void* mem) {
     mem = mem + 8;
     *mem = next;
 
-#    print_free_list();
+#    print_free_list(*free_list);
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
-#fn print_free_list() {
-#    void curr = FREE_LIST;
+#fn print_free_list(void* curr) {
 #    printf("[FREE LIST: %p\n", curr);
 #    while curr != null {
 #        curr = curr - 0x8;
@@ -188,11 +201,12 @@ pub fn free(void* mem) {
 
 fn find_free_chunk(int bytes) {
 #    printf(" Looking for free %x\n", bytes);
-    if FREE_LIST == null {
+    void free_list = free_list_for(bytes);
+    if *free_list == null {
 #        puts("   No free chunks!");
         return null;
     }
-    void curr = FREE_LIST; # pointer -> a chunk
+    void curr = *free_list; # pointer -> a chunk
 #    printf("  CURR %p\n", curr);
     int a;
     while curr != null {
@@ -216,8 +230,8 @@ fn find_free_chunk(int bytes) {
     void prev = *curr;
     a = curr + 0x8;
     void next = *a;
-    if curr == FREE_LIST {
-        FREE_LIST = next; # null or not
+    if curr == *free_list {
+        *free_list = next; # null or not
     }
 #    printf("   CURR %p is preceded by %p and succeeded by %p\n", curr, prev, next);
     if next != null {
@@ -227,6 +241,7 @@ fn find_free_chunk(int bytes) {
         prev = prev + 0x8;
         *prev = next;
     }
+#    print_free_list(*free_list);
     return curr;
 }
 
@@ -283,14 +298,12 @@ pub fn malloc(int bytes) {
     int chunk_size = mem - 0x8;
     chunk_size = *chunk_size;
 
-#        if chunk_size == bytes {
-#            printf(" ; alloc %x bytes at %p\n", chunk_size, mem);
+#        int waste = chunk_size - bytes;
+#        if waste == 0 {
+#            printf(" ; alloc %x bytes at %p\n", bytes, mem);
+#        } else {
+#            printf(" ; alloc %x bytes at %p (waste %x)\n", bytes, mem, waste);
 #        }
-#        if chunk_size != bytes {
-#            int waste = chunk_size - bytes;
-#            printf(" ; alloc %x bytes at %p (waste %x)\n", chunk_size, mem, waste);
-#        }
-#        print_free_list();
 
     STAT_ALLOC_COUNT = STAT_ALLOC_COUNT + 1;
     # Only 'bytes` were requested, but the chunk size is what free can correlate

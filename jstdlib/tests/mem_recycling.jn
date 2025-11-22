@@ -14,9 +14,9 @@ fn first_page() {
     printf("md/lg delta: %x\n", lg - md);
 
     # reallocate sm
-    void* ptr = malloc(0x10); free(ptr);
+    void* ptr = malloc(0x20); free(ptr);
     printf("realloc @ sm: %x\n", ptr - sm);
-    ptr = malloc(0x10); free(ptr);
+    ptr = malloc(0x20); free(ptr);
     printf("realloc @ sm: %x\n", ptr - sm);
 
     # reallocate into md
