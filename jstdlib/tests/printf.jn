@@ -1,0 +1,46 @@
+pub fn main() {
+    char* count = "written: %d\n";
+
+    int n = printf("percent: [[%%]]\n");
+    printf(count, n);
+
+    n = printf("char: [[%c]]\n", 'B');
+    printf(count, n);
+
+    char* greet = "Hello, this most beautiful world!";
+    n = printf("string: [[%s]]\n", greet);
+    printf(count, n);
+
+    char* int_fmt = "integer: [[%d:%7i]]\n";
+    n = printf(int_fmt, 0, 0);
+    printf(count, n);
+
+    n = printf(int_fmt, 12345, 12345);
+    printf(count, n);
+
+    n = printf(int_fmt, -987, -987);
+    printf(count, n);
+
+    n = printf("octal: [[%o]]\n", 88);
+    printf(count, n);
+
+    n = printf("hex: [[%x:%X]]\n", 123, 123);
+    printf(count, n);
+
+    n = printf("pointer: [[%p:%4p:%12p]]\n",
+               123,
+               2345,
+               34567);
+    printf(count, n);
+
+    n = printf("newline: [[%n]]\n"); # not num chars emitted!
+    printf(count, n);
+
+    n = printf("everything: %%, %c, %s, %d, %x, %p%n",
+               'Z',
+               greet,
+               456,
+               1024,
+               1023);
+    printf(count, n);
+}
