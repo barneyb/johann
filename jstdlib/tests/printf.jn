@@ -4,6 +4,9 @@ pub fn main() {
     int n = printf("percent: [[%%]]\n");
     printf(count, n);
 
+    n = printf("bool: [[%b:%b:%b]]\n", true, false, 34);
+    printf(count, n);
+
     n = printf("char: [[%c]]\n", 'B');
     printf(count, n);
 

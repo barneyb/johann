@@ -1,5 +1,7 @@
 percent: [[%]]
 written: 15
+bool: [[true:false:true]]
+written: 26
 char: [[B]]
 written: 12
 string: [[Hello, this most beautiful world!]]
