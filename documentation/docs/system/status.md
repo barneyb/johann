@@ -17,7 +17,8 @@
 - [x] unconstrained local variables
 - [ ] unconstrained parameter passing (and varargs?)
 - [ ] logical operators
-- [ ] bitwise operators
+- [x] shift operators
+- [ ] non-shift bitwise operators
 - [ ] conditional/ternary operator
 - [ ] `+=` and friends
 - [ ] implicit types in declarations
