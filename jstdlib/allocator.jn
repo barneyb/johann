@@ -4,10 +4,8 @@
 
 int MALLOC_ALIGN= 0x10;
 int PAGE_SIZE   = 0x4000;
-int MAP_ANON    = 0x1000;
-int MAP_PRIVATE = 2;
-int PROT_READ   = 1;
-int PROT_WRITE  = 2;
+int MMAP_FLAGS  = 0x1000 + 2; # MAP_ANON + MAP_PRIVATE
+int MMAP_PROTO  = 1 + 2;      # PROT_READ + PROT_WRITE
 
 void HEAP_START = null;
 void HEAP_TOP   = null;
@@ -318,10 +316,5 @@ fn get_more_memory(int bytes) {
 }
 
 fn mmap_internal(void at, int bytes) {
-    # todo: having to use vars for constants is sorta silly...
-    int protocol = PROT_READ + PROT_WRITE;
-    int flags = MAP_ANON + MAP_PRIVATE;
-    int negOne = -1;
-    int zero = 0;
-    return sys_mmap(at, bytes, protocol, flags, negOne, zero);
+    return sys_mmap(at, bytes, MMAP_PROTO, MMAP_FLAGS, -1, 0);
 }
