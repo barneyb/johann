@@ -1,11 +1,9 @@
 # Operators / Expressions
 
-Operator precedence is as in C-family languages, including using parentheses to override things. The five standard arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Six comparisons operators are supported: `==`, `!=`, `<`, `<=`, `>` and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address). Note that unary `*` can (currently) only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width. There is also the `sizeof` ... construct, which acts as either a unary operator on a parenthesized type name or a function which accepts a single type argument, depending on your mindset.
-
-A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs are often easier to reason about/with.
+Operator precedence is as in C-family languages, including using parentheses to override things. The five standard arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Two bitwise operators are supported: `<<` and `>>` Six relational operators are supported: `==`, `!=`, `<`, `<=`, `>`, and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address).
 
 ```johann
-int e = 16;
+int e = 1 << 4;     # e = 16
 int* a = malloc(e); # a = new int[2];
 *a = 1;             # a[0] = 1;
 int p = &a;         # p = a;
@@ -14,8 +12,16 @@ p = p + 8;
 int b = *p;         # b = 2;
 int c = *a;         # c = 1;
 *a = b + c;         # a[0] = 3;
+printf("i <%d u!\n",
+       a[0]);       # i <3 u!
 free(a);
 ```
+
+Note that unary `*` can (currently) only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width. There is also the `sizeof` construct, which is either a unary operator on a parenthesized type name, or a function which accepts a single type argument, depending on your mindset.
+
+A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs/arrays are often easier to reason about/with.
+
+The shift operators work as you'd expect for reasonable operands. Be careful if you might hit over- or underflow, if either operand might be negative, or if the second operand might be greater than 63. All those cases are undefined.
 
 ## Strings
 

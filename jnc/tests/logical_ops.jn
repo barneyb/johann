@@ -1,6 +1,17 @@
 struct ArrayList;
 
 pub fn main() {
+    int n = 1;
+    printf("n = %d\n", n); # 1
+    n = n << 4;
+    printf("n = %d\n", n); # 16
+    n = n - 1;
+    printf("n = %d\n", n); # 15
+    n = n >> 1;
+    printf("n = %d\n", n); # 7
+    n = ((1 << 4) - 1) >> 1;
+    printf("n = %d, again\n", n); # 7
+
     lsr();
     lsl();
 }

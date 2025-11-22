@@ -1,3 +1,8 @@
+n = 1
+n = 16
+n = 15
+n = 7
+n = 7, again
 
 logical shift right:
 0x0 >> 1 := 0x0

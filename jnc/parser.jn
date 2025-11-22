@@ -660,39 +660,42 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
     int ttl = *left;
     int ttr = *right;
 
+    # todo: should be CONSTANT, not LITERAL
     if ttl < 10 { if ttr < 10 {
         # both literal values, evaluate
         if ttl < ttr { ttl = ttr; }
         ttr = left + 0x8;
         ttr = *ttr;
-        drop_ast(left);
+        void* old_left = left;
         left = ttr;
         ttr = right + 0x8;
         ttr = *ttr;
-        drop_ast(right);
+        void* old_right = right;
         right = ttr;
         bool did_it = false;
         if op == T_EQ      { ttr = left == right; did_it = true; }
         if op == T_NEQ     { ttr = left != right; did_it = true; }
-        if op == T_GT      { ttr = left > right; did_it = true; }
-        if op == T_LT      { ttr = left < right; did_it = true; }
+        if op == T_GT      { ttr = left >  right; did_it = true; }
+        if op == T_LT      { ttr = left <  right; did_it = true; }
         if op == T_GTE     { ttr = left >= right; did_it = true; }
         if op == T_LTE     { ttr = left <= right; did_it = true; }
-        if op == T_PLUS    { ttr = left + right; did_it = true; }
-        if op == T_MINUS   { ttr = left - right; did_it = true; }
-        if op == T_STAR    { ttr = left * right; did_it = true; }
-        if op == T_SLASH   { ttr = left / right; did_it = true; }
-        if op == T_PERCENT { ttr = left % right; did_it = true; }
+        if op == T_PLUS    { ttr = left +  right; did_it = true; }
+        if op == T_MINUS   { ttr = left -  right; did_it = true; }
+        if op == T_STAR    { ttr = left *  right; did_it = true; }
+        if op == T_SLASH   { ttr = left /  right; did_it = true; }
+        if op == T_PERCENT { ttr = left %  right; did_it = true; }
 # todo: once jnc supports the bit shifts, statically eval
 #        if op == T_BIN_LSL { ttr = left << right; did_it = true; }
 #        if op == T_BIN_LSR { ttr = left >> right; did_it = true; }
         if did_it {
+            drop_ast(old_left);
+            drop_ast(old_right);
             return ast2(ttl, ttr);
         }
-        char* tmpl = "Can't statically eval %x (%c) with %i and %i\n";
-        printf(tmpl, op, op, left, right);
-        eprintf(tmpl, op, op, left, right);
-        panic(16);
+        eprintf("Can't statically eval %x (%c) with %i and %i\n",
+                op, op, left, right);
+        left = old_left;
+        right = old_right;
     } }
 
     return ast4(AST_BINARY, op, left, right);

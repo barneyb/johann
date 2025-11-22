@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Logical shift operators `<<` and `>>`, _for reasonable operands_.
 
 ### `v0.20251121`
 
