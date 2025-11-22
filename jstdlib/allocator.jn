@@ -170,21 +170,21 @@ pub fn free(void* mem) {
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
-fn print_free_list() {
-    void curr = FREE_LIST;
-    printf("[FREE LIST: %p\n", curr);
-    while curr != null {
-        curr = curr - 0x8;
-        int bytes = *curr;
-        curr = curr + 0x10;
-        void* next = *curr;
-        curr = curr - 0x8;
-        void* prev = *curr;
-        printf("  -> %x bytes at %p < %p : %p >\n", bytes, curr, prev, next);
-        curr = next;
-    }
-    puts("]");
-}
+#fn print_free_list() {
+#    void curr = FREE_LIST;
+#    printf("[FREE LIST: %p\n", curr);
+#    while curr != null {
+#        curr = curr - 0x8;
+#        int bytes = *curr;
+#        curr = curr + 0x10;
+#        void* next = *curr;
+#        curr = curr - 0x8;
+#        void* prev = *curr;
+#        printf("  -> %x bytes at %p < %p : %p >\n", bytes, curr, prev, next);
+#        curr = next;
+#    }
+#    puts("]");
+#}
 
 fn find_free_chunk(int bytes) {
 #    printf(" Looking for free %x\n", bytes);
@@ -290,9 +290,7 @@ pub fn malloc(int bytes) {
 #            int waste = chunk_size - bytes;
 #            printf(" ; alloc %x bytes at %p (waste %x)\n", chunk_size, mem, waste);
 #        }
-#        if FREE_LIST != null {
-#            print_free_list();
-#        }
+#        print_free_list();
 
     STAT_ALLOC_COUNT = STAT_ALLOC_COUNT + 1;
     # Only 'bytes` were requested, but the chunk size is what free can correlate
