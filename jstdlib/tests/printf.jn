@@ -21,28 +21,34 @@ pub fn main() {
     n = printf(int_fmt, -987, -987, -987);
     printf(count, n);
 
-    char* octal_fmt = "octal: [[%o]]\n";
-    n = printf(octal_fmt, 0);
+    char* octal_fmt = "octal: [[%o:%5o:%05o]]\n";
+    n = printf(octal_fmt, 0, 0, 0);
     printf(count, n);
-    n = printf(octal_fmt, 88);
+    n = printf(octal_fmt, 88, 88, 88);
     printf(count, n);
-    n = printf(octal_fmt, -1);
+    n = printf(octal_fmt, 12345, 12345, 12345);
+    printf(count, n);
+    n = printf(octal_fmt, -1, -1, -1);
     printf(count, n);
 
-    char* hex_fmt = "hex: [[%x:%X]]\n";
-    n = printf(hex_fmt, 0, 0);
+    char* hex_fmt = "hex: [[%x:%X:%6x]]\n";
+    n = printf(hex_fmt, 0, 0, 0);
     printf(count, n);
-    n = printf(hex_fmt, 123, 123);
+    n = printf(hex_fmt, 123, 123, 123);
     printf(count, n);
-    n = printf(hex_fmt, -1, -1);
+    n = printf(hex_fmt, 1234567890, 1234567890, 1234567890);
+    printf(count, n);
+    n = printf(hex_fmt, -1, -1, -1);
     printf(count, n);
 
     # minimum of nine digits, padded with zeros
     n = printf("pointer: [[%p:%4p:%14p]]\n",
-               123,
-               2345,
-               34567);
+               0x7b,
+               0x929,
+               0x8707);
     printf(count, n);
+#    n = printf("null pointer: [[%p]]\n", null);
+#    printf(count, n);
 
     n = printf("newline: [[%n]]\n"); # not num chars emitted!
     printf(count, n);
@@ -51,7 +57,7 @@ pub fn main() {
                'Z',
                greet,
                456,
-               1024,
-               1023);
+               0x400,
+               0x3ff);
     printf(count, n);
 }

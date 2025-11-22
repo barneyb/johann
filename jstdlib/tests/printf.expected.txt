@@ -4,28 +4,32 @@ char: [[B]]
 written: 12
 string: [[Hello, this most beautiful world!]]
 written: 46
-integer: [[0:0000000:0000000]]
+integer: [[0:      0:0000000]]
 written: 31
-integer: [[1:0000001:0000001]]
+integer: [[1:      1:0000001]]
 written: 31
-integer: [[12345:0012345:0012345]]
+integer: [[12345:  12345:0012345]]
 written: 35
-integer: [[-987:-000987:-000987]]
+integer: [[-987:-   987:-000987]]
 written: 34
-octal: [[00]]
-written: 14
-octal: [[0130]]
-written: 16
-octal: [[-01]]
-written: 15
-hex: [[0x0:0X0]]
-written: 17
-hex: [[0x7b:0X7B]]
-written: 19
-hex: [[-0x1:-0X1]]
-written: 19
-pointer: [[0x00000007b:0x000000929:0x00000000008707]]
-written: 54
+octal: [[00:0   0:00000]]
+written: 26
+octal: [[0130:0 130:00130]]
+written: 28
+octal: [[030071:030071:030071]]
+written: 32
+octal: [[-01:-0  1:-0001]]
+written: 27
+hex: [[0x0:0X0:0x   0]]
+written: 24
+hex: [[0x7b:0X7B:0x  7b]]
+written: 26
+hex: [[0x499602d2:0X499602D2:0x499602d2]]
+written: 42
+hex: [[-0x1:-0X1:-0x  1]]
+written: 26
+pointer: [[0x00000007b:0x000000929:0x000000008707]]
+written: 52
 newline: [[
 ]]
 written: 15
