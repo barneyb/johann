@@ -139,8 +139,14 @@ fn Lexer_lex_comment(Lexer* self) {
 }
 
 fn token_gt(void* self, char c) {
+    void* tkn;
     if peekchar() == T_ASSIGN {
-        void* tkn = new_token(self, T_GTE);
+        tkn = new_token(self, T_GTE);
+        next_char(self); # consume
+        return tkn;
+    }
+    if peekchar() == T_GT {
+        tkn = new_token(self, T_BIT_LSR);
         next_char(self); # consume
         return tkn;
     }
@@ -148,8 +154,14 @@ fn token_gt(void* self, char c) {
 }
 
 fn token_lt(void* self, char c) {
+    void* tkn;
     if peekchar() == T_ASSIGN {
-        void* tkn = new_token(self, T_LTE);
+        tkn = new_token(self, T_LTE);
+        next_char(self); # consume
+        return tkn;
+    }
+    if peekchar() == T_LT {
+        tkn = new_token(self, T_BIT_LSL);
         next_char(self); # consume
         return tkn;
     }
