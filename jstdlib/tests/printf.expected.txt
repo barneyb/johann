@@ -1,5 +1,7 @@
 percent: [[%]]
 written: 15
+bool: [[true:false:true]]
+written: 26
 char: [[B]]
 written: 12
 string: [[Hello, this most beautiful world!]]
@@ -30,8 +32,5 @@ hex: [[-0x1:-0X1:-0x  1]]
 written: 26
 pointer: [[0x00000007b:0x000000929:0x000000008707]]
 written: 52
-newline: [[
-]]
-written: 15
 everything: %, Z, Hello, this most beautiful world!, 456, 0x400, 0x0000003ff
 written: 77

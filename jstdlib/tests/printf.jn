@@ -4,6 +4,9 @@ pub fn main() {
     int n = printf("percent: [[%%]]\n");
     printf(count, n);
 
+    n = printf("bool: [[%b:%b:%b]]\n", true, false, 34);
+    printf(count, n);
+
     n = printf("char: [[%c]]\n", 'B');
     printf(count, n);
 
@@ -50,10 +53,7 @@ pub fn main() {
 #    n = printf("null pointer: [[%p]]\n", null);
 #    printf(count, n);
 
-    n = printf("newline: [[%n]]\n"); # not num chars emitted!
-    printf(count, n);
-
-    n = printf("everything: %%, %c, %s, %d, %x, %p%n",
+    n = printf("everything: %%, %c, %s, %d, %x, %p\n",
                'Z',
                greet,
                456,

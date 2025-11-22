@@ -56,7 +56,6 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
             echo "File '$FILE' opened line $THRU mis-closed by '$END_FILE' on line $((THRU + END_LINE - 1))"
             exit 4
         fi
-        is_pre=nope
         {
             head -n $THRU $DOC_FILE
             if [ "$ACTION" = "doc" ]; then
@@ -68,25 +67,11 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                 do_file=yes
                 while IFS= read -r line; do
                     if [ "$line" = "#" ]; then
-                        DOC="$DOC\n\n"
+                        DOC="$DOC\n"
                         continue
-                    elif [[ "$line" =~ ^#.* ]]; then
-                        if [[ "$line" =~ '^# +```' ]]; then
-                            nl="\n"
-                            if [[ "$is_pre" = "yes" ]]; then
-                                is_pre=nope
-                            else
-                                is_pre=yes
-                            fi
-                        elif [[ "$line" =~ '^# +(\*|\d+.) ' ]]; then
-                            nl="\n"
-                        elif [[ "$is_pre" == "yes" ]]; then
-                            nl="\n"
-                        else
-                            nl=" "
-                        fi
+                    elif [[ "$line" =~ ^#.+ ]]; then
                         if [ -n "$DOC" ]; then
-                            DOC="$DOC$nl"
+                            DOC="$DOC\n"
                         fi
                         DOC="$DOC${line:2}"
                         continue
@@ -102,12 +87,19 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                             else
                                 type="var"
                             fi
-                            fn="member.$type.`echo "$line" \
+                            fn="member.$type.$(echo "$line" \
                                 | cut -d '"' -f 1 \
                                 | cut -d "'" -f 1 \
                                 | tr '[:upper:]' '[:lower:]' \
-                                | sed -E -e 's/[^a-z0-9_]/-/g'`.txt"
-                            echo '### `'"$name"'`'"\n\n"'`'"$line"'`'"\n\n$DOC\n" > $TMP/$fn
+                                | sed -E -e 's/[^a-z0-9_]/-/g').txt"
+                            (
+                                echo '### `'"$name"'`'
+                                echo
+                                echo '`'"$line"'`'
+                                echo
+                                echo "$DOC"
+                                echo
+                            ) > "$TMP/$fn"
                         fi
                         do_file=nope
                     elif [[ "$do_file" = "yes" ]]; then
