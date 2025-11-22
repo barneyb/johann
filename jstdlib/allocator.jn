@@ -35,37 +35,95 @@ int STAT_ALLOC_SIZE  = 0;
 int STAT_FREE_COUNT  = 0;
 int STAT_FREE_SIZE   = 0;
 
+# they're "arrays"!
+int* allocs = 0;
+int allocs_1 = 0;
+int allocs_2 = 0;
+int allocs_3 = 0;
+int allocs_4 = 0;
+int allocs_5 = 0;
+int allocs_6 = 0;
+
+int* frees = 0;
+int frees_1 = 0;
+int frees_2 = 0;
+int frees_3 = 0;
+int frees_4 = 0;
+int frees_5 = 0;
+int frees_6 = 0;
+
+int* chunks = 0;
+int chunks_1 = 0;
+int chunks_2 = 0;
+int chunks_3 = 0;
+int chunks_4 = 0;
+int chunks_5 = 0;
+int chunks_6 = 0;
+
+fn track_by_size(int bytes, int* stat) {
+    int sz = bytes / MALLOC_ALIGN;
+    if sz > 6 { sz = 0; }
+    stat[sz] = stat[sz] + 1;
+}
+
 pub fn mem_stats__(bool force) {
-    int ac = STAT_ALLOC_COUNT;
-    int as = STAT_ALLOC_SIZE;
-    int fc = STAT_FREE_COUNT;
-    int fs = STAT_FREE_SIZE;
-    bool c = fc - ac;
-    bool s = fs - as;
-    bool doit = force;
-    if c + s {
-        force = false;
-        doit = true;
+    int unfreed_count = STAT_FREE_COUNT - STAT_ALLOC_COUNT;
+    # undetected double free can leave count right but size wrong
+    int unfreed_size = STAT_FREE_SIZE - STAT_ALLOC_SIZE;
+    if ! force { if unfreed_count == 0 { if unfreed_size == 0 {
+        return;
+    } } }
+    char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
+    if !force {
+        # if not forced, send to STDOUT too
+        printf(format, STAT_ALLOC_COUNT, STAT_ALLOC_SIZE, STAT_FREE_COUNT, STAT_FREE_SIZE, unfreed_count, unfreed_size);
     }
-    if doit {
-        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
-        if !force {
-            # if not forced, send to STDOUT too
-            printf(format, ac, as, fc, fs, c, s);
-        }
-        eprintf(format, ac, as, fc, fs, c, s);
-        format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
-        ac = STAT_CHUNK_COUNT;
-        as = STAT_CHUNK_SIZE;
-        fc = STAT_MMAP_COUNT;
-        fs = STAT_MMAP_SIZE;
-        fs = fs / PAGE_SIZE;
-        if !force {
-            # if not forced, send to STDOUT too
-            printf(format, ac, as, fc, fs);
-        }
-        eprintf(format, ac, as, fc, fs);
+    eprintf(format, STAT_ALLOC_COUNT, STAT_ALLOC_SIZE, STAT_FREE_COUNT, STAT_FREE_SIZE, unfreed_count, unfreed_size);
+    format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
+    int page_count = STAT_MMAP_SIZE / PAGE_SIZE;
+    if !force {
+        # if not forced, send to STDOUT too
+        printf(format, STAT_CHUNK_COUNT, STAT_CHUNK_SIZE, STAT_MMAP_COUNT, page_count);
     }
+    eprintf(format, STAT_CHUNK_COUNT, STAT_CHUNK_SIZE, STAT_MMAP_COUNT, page_count);
+
+    format = "; %s |%7d %7d %7d %7d %7d %7d";
+    char* format2 = " %7d | %7d\n";
+    eprintf(";            'big'%7d %7d %7d %7d %7d"
+                  , MALLOC_ALIGN
+                  , MALLOC_ALIGN * 2
+                  , MALLOC_ALIGN * 3
+                  , MALLOC_ALIGN * 4
+                  , MALLOC_ALIGN * 5);eprintf(" %7d     total\n"
+                  , MALLOC_ALIGN * 6
+                  );
+    eprintf(format, "allocs"
+                  , allocs[0]
+                  , allocs[1]
+                  , allocs[2]
+                  , allocs[3]
+                  , allocs[4]
+                  , allocs[5]);eprintf(format2
+                  , allocs[6]
+                  , STAT_ALLOC_COUNT);
+    eprintf(format, "frees "
+                  , frees[0]
+                  , frees[1]
+                  , frees[2]
+                  , frees[3]
+                  , frees[4]
+                  , frees[5]);eprintf(format2
+                  , frees[6]
+                  , STAT_FREE_COUNT);
+    eprintf(format, "chunks"
+                  , chunks[0]
+                  , chunks[1]
+                  , chunks[2]
+                  , chunks[3]
+                  , chunks[4]
+                  , chunks[5]);eprintf(format2
+                  , chunks[6]
+                  , STAT_CHUNK_COUNT);
 }
 
 pub fn print_mem_chain__(void* mem) {
@@ -138,6 +196,7 @@ pub fn free(void* mem) {
 
     STAT_FREE_COUNT = STAT_FREE_COUNT + 1;
     STAT_FREE_SIZE = STAT_FREE_SIZE + bytes;
+    track_by_size(bytes, frees);
 
     # header remains "len"
     # first quad is "prev" pointer
@@ -291,9 +350,10 @@ pub fn malloc(int bytes) {
         *mem = bytes; # the header
         mem = mem + 0x8; # user chunk
         HEAP_TOP = mem + bytes;
-#        printf(" ; new %x byte chunk\n", bytes);
+#            printf(" ; new %x byte chunk\n", bytes);
         STAT_CHUNK_COUNT = STAT_CHUNK_COUNT + 1;
         STAT_CHUNK_SIZE = STAT_CHUNK_SIZE + bytes;
+        track_by_size(bytes, chunks);
     }
     int chunk_size = mem - 0x8;
     chunk_size = *chunk_size;
@@ -309,6 +369,7 @@ pub fn malloc(int bytes) {
     # Only 'bytes` were requested, but the chunk size is what free can correlate
     # with, so that's what gets recorded.
     STAT_ALLOC_SIZE = STAT_ALLOC_SIZE + chunk_size;
+    track_by_size(bytes, allocs);
     return mem;
 }
 
