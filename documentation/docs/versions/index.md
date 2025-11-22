@@ -9,7 +9,9 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+`printf` pads numbers with spaces by default, instead of zeros, and no longer supports `%n` (for newline).
 
 ### `v0.20251121`
 
