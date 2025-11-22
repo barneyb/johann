@@ -73,6 +73,8 @@ char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
 char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
 char* TMPL_BIN_DIV              = "        sdiv    x0, x0, x1\n";
 char* TMPL_BIN_MOD              = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
+char* TMPL_BIN_LSL              = "        lsl     x0, x0, x1\n";
+char* TMPL_BIN_LSR              = "        lsr     x0, x0, x1\n";
 
 char* COMP_EQ = "eq";
 char* COMP_GE = "ge";
@@ -692,38 +694,37 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     void* e = expr + 0x18;          # -> right
     e = *e;
     Emitter_eval_expr(self, e);
-    char* tmpl = TMPL_STASH;
-    printf(tmpl);
+    printf(TMPL_STASH);
 
     e = expr + 0x10;                # -> left
     e = *e;
     Emitter_eval_expr(self, e);
 
     # restore the right operand
-    tmpl = TMPL_UNSTASH_X1;
-    printf(tmpl);
+    printf(TMPL_UNSTASH_X1);
 
     # and the operator
     int op = expr + 0x8;            # -> op
     op = *op;
-    if op == T_MINUS   { tmpl = TMPL_BIN_SUB; return printf(tmpl); }
-    if op == T_PLUS    { tmpl = TMPL_BIN_ADD; return printf(tmpl); }
-    if op == T_STAR    { tmpl = TMPL_BIN_MUL; return printf(tmpl); }
-    if op == T_SLASH   { tmpl = TMPL_BIN_DIV; return printf(tmpl); }
-    if op == T_PERCENT { tmpl = TMPL_BIN_MOD; return printf(tmpl); }
+    if op == T_MINUS   { return printf(TMPL_BIN_SUB); }
+    if op == T_PLUS    { return printf(TMPL_BIN_ADD); }
+    if op == T_STAR    { return printf(TMPL_BIN_MUL); }
+    if op == T_SLASH   { return printf(TMPL_BIN_DIV); }
+    if op == T_PERCENT { return printf(TMPL_BIN_MOD); }
+    if op == T_BIT_LSL { return printf(TMPL_BIN_LSL); }
+    if op == T_BIT_LSR { return printf(TMPL_BIN_LSR); }
 
-    if op == T_EQ  { tmpl = COMP_EQ; return do_binary_op_logical(self, tmpl); }
-    if op == T_GT  { tmpl = COMP_GT; return do_binary_op_logical(self, tmpl); }
-    if op == T_GTE { tmpl = COMP_GE; return do_binary_op_logical(self, tmpl); }
-    if op == T_LT  { tmpl = COMP_LT; return do_binary_op_logical(self, tmpl); }
-    if op == T_LTE { tmpl = COMP_LE; return do_binary_op_logical(self, tmpl); }
-    if op == T_NEQ { tmpl = COMP_NE; return do_binary_op_logical(self, tmpl); }
+    if op == T_EQ  { return do_binary_op_logical(self, COMP_EQ); }
+    if op == T_GT  { return do_binary_op_logical(self, COMP_GT); }
+    if op == T_GTE { return do_binary_op_logical(self, COMP_GE); }
+    if op == T_LT  { return do_binary_op_logical(self, COMP_LT); }
+    if op == T_LTE { return do_binary_op_logical(self, COMP_LE); }
+    if op == T_NEQ { return do_binary_op_logical(self, COMP_NE); }
 
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    op = 13;
-    panic(op);
+    panic(13);
 }
 
 # [AST_ADDR_OP, op, nameT]

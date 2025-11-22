@@ -43,6 +43,8 @@ pub int T_KW_STRUCT = 0x553; # 0x500 + 'S';
 ##################################################
 # compound tokens (0x200)
 
+pub int T_BIT_LSL   = 0x200 + 'L';
+pub int T_BIT_LSR   = 0x200 + 'R';
 pub int T_EQ        = 0x23d; # 0x200 + '=';
 pub int T_GTE       = 0x23e; # 0x200 + '>';
 pub int T_LOG_AND   = 0x226; # 0x200 + '&';
