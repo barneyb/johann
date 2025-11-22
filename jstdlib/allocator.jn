@@ -4,16 +4,27 @@
 
 int MALLOC_ALIGN= 0x10;
 int PAGE_SIZE   = 0x4000;
-int MAP_ANON    = 0x1000;
-int MAP_PRIVATE = 2;
-int PROT_READ   = 1;
-int PROT_WRITE  = 2;
+int MMAP_FLAGS  = 0x1000 + 2; # MAP_ANON + MAP_PRIVATE
+int MMAP_PROTO  = 1 + 2;      # PROT_READ + PROT_WRITE
 
 void HEAP_START = null;
 void HEAP_TOP   = null;
 void HEAP_END   = null;
 
-void FREE_LIST  = null;
+# it's an "array"!
+void** free_lists = 0;
+void* free_lists_1 = 0;
+void* free_lists_2 = 0;
+void* free_lists_3 = 0;
+void* free_lists_4 = 0;
+void* free_lists_5 = 0;
+void* free_lists_6 = 0;
+
+fn free_list_for(int bytes) {
+    int sz = bytes / MALLOC_ALIGN;
+    if sz > 6 { sz = 0; }
+    return &free_lists + sz * sizeof(void*);
+}
 
 int STAT_MMAP_COUNT  = 0;
 int STAT_MMAP_SIZE   = 0;
@@ -24,26 +35,95 @@ int STAT_ALLOC_SIZE  = 0;
 int STAT_FREE_COUNT  = 0;
 int STAT_FREE_SIZE   = 0;
 
-pub fn mem_stats__() {
-    int ac = STAT_ALLOC_COUNT;
-    int as = STAT_ALLOC_SIZE;
-    int fc = STAT_FREE_COUNT;
-    int fs = STAT_FREE_SIZE;
-    bool c = fc - ac;
-    bool s = fs - as;
-    if c + s {
-        char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
-        printf(format, ac, as, fc, fs, c, s);
-        eprintf(format, ac, as, fc, fs, c, s);
-        format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
-        ac = STAT_CHUNK_COUNT;
-        as = STAT_CHUNK_SIZE;
-        fc = STAT_MMAP_COUNT;
-        fs = STAT_MMAP_SIZE;
-        fs = fs / PAGE_SIZE;
-        printf(format, ac, as, fc, fs);
-        eprintf(format, ac, as, fc, fs);
+# they're "arrays"!
+int* allocs = 0;
+int allocs_1 = 0;
+int allocs_2 = 0;
+int allocs_3 = 0;
+int allocs_4 = 0;
+int allocs_5 = 0;
+int allocs_6 = 0;
+
+int* frees = 0;
+int frees_1 = 0;
+int frees_2 = 0;
+int frees_3 = 0;
+int frees_4 = 0;
+int frees_5 = 0;
+int frees_6 = 0;
+
+int* chunks = 0;
+int chunks_1 = 0;
+int chunks_2 = 0;
+int chunks_3 = 0;
+int chunks_4 = 0;
+int chunks_5 = 0;
+int chunks_6 = 0;
+
+fn track_by_size(int bytes, int* stat) {
+    int sz = bytes / MALLOC_ALIGN;
+    if sz > 6 { sz = 0; }
+    stat[sz] = stat[sz] + 1;
+}
+
+pub fn mem_stats__(bool force) {
+    int unfreed_count = STAT_FREE_COUNT - STAT_ALLOC_COUNT;
+    # undetected double free can leave count right but size wrong
+    int unfreed_size = STAT_FREE_SIZE - STAT_ALLOC_SIZE;
+    if ! force { if unfreed_count == 0 { if unfreed_size == 0 {
+        return;
+    } } }
+    char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
+    if !force {
+        # if not forced, send to STDOUT too
+        printf(format, STAT_ALLOC_COUNT, STAT_ALLOC_SIZE, STAT_FREE_COUNT, STAT_FREE_SIZE, unfreed_count, unfreed_size);
     }
+    eprintf(format, STAT_ALLOC_COUNT, STAT_ALLOC_SIZE, STAT_FREE_COUNT, STAT_FREE_SIZE, unfreed_count, unfreed_size);
+    format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
+    int page_count = STAT_MMAP_SIZE / PAGE_SIZE;
+    if !force {
+        # if not forced, send to STDOUT too
+        printf(format, STAT_CHUNK_COUNT, STAT_CHUNK_SIZE, STAT_MMAP_COUNT, page_count);
+    }
+    eprintf(format, STAT_CHUNK_COUNT, STAT_CHUNK_SIZE, STAT_MMAP_COUNT, page_count);
+
+    format = "; %s |%7d %7d %7d %7d %7d %7d";
+    char* format2 = " %7d | %7d\n";
+    eprintf(";            'big'%7d %7d %7d %7d %7d"
+                  , MALLOC_ALIGN
+                  , MALLOC_ALIGN * 2
+                  , MALLOC_ALIGN * 3
+                  , MALLOC_ALIGN * 4
+                  , MALLOC_ALIGN * 5);eprintf(" %7d     total\n"
+                  , MALLOC_ALIGN * 6
+                  );
+    eprintf(format, "allocs"
+                  , allocs[0]
+                  , allocs[1]
+                  , allocs[2]
+                  , allocs[3]
+                  , allocs[4]
+                  , allocs[5]);eprintf(format2
+                  , allocs[6]
+                  , STAT_ALLOC_COUNT);
+    eprintf(format, "frees "
+                  , frees[0]
+                  , frees[1]
+                  , frees[2]
+                  , frees[3]
+                  , frees[4]
+                  , frees[5]);eprintf(format2
+                  , frees[6]
+                  , STAT_FREE_COUNT);
+    eprintf(format, "chunks"
+                  , chunks[0]
+                  , chunks[1]
+                  , chunks[2]
+                  , chunks[3]
+                  , chunks[4]
+                  , chunks[5]);eprintf(format2
+                  , chunks[6]
+                  , STAT_CHUNK_COUNT);
 }
 
 pub fn print_mem_chain__(void* mem) {
@@ -94,7 +174,7 @@ pub fn dump_around__(void* mem) {
 # `malloc`. A null pointer may be "freed" as a no-op.
 pub fn free(void* mem) {
     if mem == null {
-        return null;
+        return;
     }
     # load the size/bytes from the header
     int a = mem - 0x8;
@@ -103,8 +183,12 @@ pub fn free(void* mem) {
 
 #        printf(" ; free  %x bytes at %p\n", bytes, mem);
 
-    if bytes == 0 {
-        eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
+    if bytes <= 0 {
+        if bytes == 0 {
+            eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
+        } else {
+            eprintf("Negative-byte (%d) free at %p?! First quadword of chunk: %x\n", bytes, mem, *mem);
+        }
         a = mem - 0x10; # go back to last quadword of prev chunk
         eprintf("  Last quadword of prev chunk: %x\n", *a);
         exit(88);
@@ -112,12 +196,14 @@ pub fn free(void* mem) {
 
     STAT_FREE_COUNT = STAT_FREE_COUNT + 1;
     STAT_FREE_SIZE = STAT_FREE_SIZE + bytes;
+    track_by_size(bytes, frees);
 
     # header remains "len"
     # first quad is "prev" pointer
     # second quad is "next" pointer
 
-    void next = FREE_LIST;
+    void free_list = free_list_for(bytes);
+    void next = *free_list;
     void prev = null;
     while next != null {
         if mem == next {
@@ -139,7 +225,7 @@ pub fn free(void* mem) {
 
     *mem = prev;
     if prev == null {
-        FREE_LIST = mem;
+        *free_list = mem;
     }
     if prev != null {
         prev = prev + 8;
@@ -151,35 +237,35 @@ pub fn free(void* mem) {
     mem = mem + 8;
     *mem = next;
 
-#    print_free_list();
+#    print_free_list(*free_list);
 
 
     # todo /* 73 - int munmap(caddr_t addr, size_t len) */
 }
 
-fn print_free_list() {
-    void curr = FREE_LIST;
-    printf("[FREE LIST: %p\n", curr);
-    while curr != null {
-        curr = curr - 0x8;
-        int bytes = *curr;
-        curr = curr + 0x10;
-        void* next = *curr;
-        curr = curr - 0x8;
-        void* prev = *curr;
-        printf("  -> %x bytes at %p < %p : %p >\n", bytes, curr, prev, next);
-        curr = next;
-    }
-    puts("]");
-}
+#fn print_free_list(void* curr) {
+#    printf("[FREE LIST: %p\n", curr);
+#    while curr != null {
+#        curr = curr - 0x8;
+#        int bytes = *curr;
+#        curr = curr + 0x10;
+#        void* next = *curr;
+#        curr = curr - 0x8;
+#        void* prev = *curr;
+#        printf("  -> %x bytes at %p < %p : %p >\n", bytes, curr, prev, next);
+#        curr = next;
+#    }
+#    puts("]");
+#}
 
 fn find_free_chunk(int bytes) {
 #    printf(" Looking for free %x\n", bytes);
-    if FREE_LIST == null {
+    void free_list = free_list_for(bytes);
+    if *free_list == null {
 #        puts("   No free chunks!");
         return null;
     }
-    void curr = FREE_LIST; # pointer -> a chunk
+    void curr = *free_list; # pointer -> a chunk
 #    printf("  CURR %p\n", curr);
     int a;
     while curr != null {
@@ -203,8 +289,8 @@ fn find_free_chunk(int bytes) {
     void prev = *curr;
     a = curr + 0x8;
     void next = *a;
-    if curr == FREE_LIST {
-        FREE_LIST = next; # null or not
+    if curr == *free_list {
+        *free_list = next; # null or not
     }
 #    printf("   CURR %p is preceded by %p and succeeded by %p\n", curr, prev, next);
     if next != null {
@@ -214,6 +300,7 @@ fn find_free_chunk(int bytes) {
         prev = prev + 0x8;
         *prev = next;
     }
+#    print_free_list(*free_list);
     return curr;
 }
 
@@ -235,6 +322,13 @@ pub fn calloc(int num, int width) {
 # pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
 #    printf("\n\nmalloc(%x)\n", bytes);
+    if bytes <= 0 {
+        if bytes == 0 {
+            return null;
+        }
+        eprintf("Negative-byte (%d) malloc?!\n", bytes);
+        exit(88);
+    }
 
     bytes = align(bytes, MALLOC_ALIGN);
 
@@ -256,28 +350,26 @@ pub fn malloc(int bytes) {
         *mem = bytes; # the header
         mem = mem + 0x8; # user chunk
         HEAP_TOP = mem + bytes;
-#        printf(" ; new %x byte chunk\n", bytes);
+#            printf(" ; new %x byte chunk\n", bytes);
         STAT_CHUNK_COUNT = STAT_CHUNK_COUNT + 1;
         STAT_CHUNK_SIZE = STAT_CHUNK_SIZE + bytes;
+        track_by_size(bytes, chunks);
     }
     int chunk_size = mem - 0x8;
     chunk_size = *chunk_size;
 
-#        if chunk_size == bytes {
-#            printf(" ; alloc %x bytes at %p\n", chunk_size, mem);
-#        }
-#        if chunk_size != bytes {
-#            int waste = chunk_size - bytes;
-#            printf(" ; alloc %x bytes at %p (waste %x)\n", chunk_size, mem, waste);
-#        }
-#        if FREE_LIST != null {
-#            print_free_list();
+#        int waste = chunk_size - bytes;
+#        if waste == 0 {
+#            printf(" ; alloc %x bytes at %p\n", bytes, mem);
+#        } else {
+#            printf(" ; alloc %x bytes at %p (waste %x)\n", bytes, mem, waste);
 #        }
 
     STAT_ALLOC_COUNT = STAT_ALLOC_COUNT + 1;
     # Only 'bytes` were requested, but the chunk size is what free can correlate
     # with, so that's what gets recorded.
     STAT_ALLOC_SIZE = STAT_ALLOC_SIZE + chunk_size;
+    track_by_size(bytes, allocs);
     return mem;
 }
 
@@ -318,10 +410,5 @@ fn get_more_memory(int bytes) {
 }
 
 fn mmap_internal(void at, int bytes) {
-    # todo: having to use vars for constants is sorta silly...
-    int protocol = PROT_READ + PROT_WRITE;
-    int flags = MAP_ANON + MAP_PRIVATE;
-    int negOne = -1;
-    int zero = 0;
-    return sys_mmap(at, bytes, protocol, flags, negOne, zero);
+    return sys_mmap(at, bytes, MMAP_PROTO, MMAP_FLAGS, -1, 0);
 }

@@ -23,6 +23,7 @@ char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
 char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
 char* ERR_MISSING_PARAM_NAME = "ERROR(%i): missing parameter name on %x at line %i\n";
 char* ERR_ANONYMOUS_DECL     = "ERROR(%i): Anonymous declaration (%x) at line %i, col %i?!\n";
+char* ERR_FAILED_TO_ADVANCE  = "PANIC(%i): Failed to advance %d times at line %i, col %i?!\n";
 pub char* ERR_UNKNOWN_SYMBOL = "ERROR(%i): Unknown symbol '%s' at line %i, col %i\n";
 
 fn is_type_kw(void* token) {
@@ -69,30 +70,23 @@ pub fn print_token(void* t) {
     putchar(0xa);
 }
 
-int PEEKED_AT = null;
 int PEEK_COUNT = 0;
 fn peek_token(void* lex) {
-    void* token = Lexer_peek(lex);
+    Token* token = Lexer_peek(lex);
     if token == null { return token; }
 #    printf("            ");
 #    print_token(token);
-    if token == PEEKED_AT {
-        PEEK_COUNT = PEEK_COUNT + 1;
-        if PEEK_COUNT > 50 {
-            char* err = "... and not advancing\n";
-            int status = 57;
-            jnc_panic(err, token, status);
-        }
-    }
-    if token != PEEKED_AT {
-        PEEKED_AT = token;
-        PEEK_COUNT = 0;
+    PEEK_COUNT = PEEK_COUNT + 1;
+    if PEEK_COUNT >= 50 {
+        token.set_type(PEEK_COUNT);
+        jnc_panic(ERR_FAILED_TO_ADVANCE, token, 57);
     }
     return token;
 }
 
 fn next_token(void* lex) {
     void* token = Lexer_token(lex);
+    PEEK_COUNT = 0;
 #    print_token(token);
     return token;
 }

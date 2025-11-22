@@ -88,7 +88,7 @@ A few errors are explicitly caught by the compiler, with the exit status they yi
 * `75` - Unknown struct member
 * `76` - Member or index off non-ID-pointer
 * `77` - Multibyte character
-* `98` - Certain double-`free` errors
+* `98` - Certain alloc/free errors
 * `99` - Failed to get memory from the OS (a panic, unlike C)
 * `100` - Unknown function
 * `101` - Incorrect number of function params

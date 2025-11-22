@@ -17,7 +17,7 @@ fn drop_empty() {
     puts("\ndrop_empty");
     void* map = TreeMap__new(&intcmp);
     TreeMap_drop(map);
-    mem_stats__();
+    mem_stats__(false);
 }
 
 fn put_delete() {
@@ -78,7 +78,7 @@ fn put_delete() {
     }
 
     TreeMap_drop(map);
-    mem_stats__();
+    mem_stats__(false);
 }
 
 fn owned_keys() {
@@ -91,7 +91,7 @@ fn owned_keys() {
     TreeMap_put(map, strclone("b"), 3); # new value for existing key
     print_size(map);
     TreeMap_drop(map);
-    mem_stats__();
+    mem_stats__(false);
 }
 
 fn owned_values() {
@@ -104,7 +104,7 @@ fn owned_values() {
     TreeMap_put(map, 2, malloc(8)); # replace a value
     print_size(map);
     TreeMap_drop(map);
-    mem_stats__();
+    mem_stats__(false);
 }
 
 fn the_old_symbols_test() {
@@ -156,7 +156,7 @@ fn the_old_symbols_test() {
 
     # drop it
     TreeMap_drop(map);
-    mem_stats__();
+    mem_stats__(false);
 }
 
 fn one_and_two(void* map) {

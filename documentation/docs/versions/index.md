@@ -11,6 +11,8 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 ### Bleeding Edge
 
+Massive performance gains in the allocator, particularly for `free`.
+
 Logical shift operators `<<` and `>>`, _for reasonable operands_.
 
 `printf` pads numbers with spaces by default, instead of zeros, and no longer supports `%n` (for newline).
