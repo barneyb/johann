@@ -17,6 +17,7 @@ __j_exit:
     cmp     x0, #0
     b.ne    sys_exit
     str     x0, [sp, -0x10]!
+    mov     x1, xzr                 ; don't force
     bl      __j_mem_stats__
     ldr     x0, [sp], 0x10
 

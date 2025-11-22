@@ -22,16 +22,24 @@ int STAT_ALLOC_SIZE  = 0;
 int STAT_FREE_COUNT  = 0;
 int STAT_FREE_SIZE   = 0;
 
-pub fn mem_stats__() {
+pub fn mem_stats__(bool force) {
     int ac = STAT_ALLOC_COUNT;
     int as = STAT_ALLOC_SIZE;
     int fc = STAT_FREE_COUNT;
     int fs = STAT_FREE_SIZE;
     bool c = fc - ac;
     bool s = fs - as;
+    bool doit = force;
     if c + s {
+        force = false;
+        doit = true;
+    }
+    if doit {
         char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
-        printf(format, ac, as, fc, fs, c, s);
+        if !force {
+            # if not forced, send to STDOUT too
+            printf(format, ac, as, fc, fs, c, s);
+        }
         eprintf(format, ac, as, fc, fs, c, s);
         format = ";      %d chunks (%x bytes)\n;      %d mmaps  (%i pages)\n";
         ac = STAT_CHUNK_COUNT;
@@ -39,7 +47,10 @@ pub fn mem_stats__() {
         fc = STAT_MMAP_COUNT;
         fs = STAT_MMAP_SIZE;
         fs = fs / PAGE_SIZE;
-        printf(format, ac, as, fc, fs);
+        if !force {
+            # if not forced, send to STDOUT too
+            printf(format, ac, as, fc, fs);
+        }
         eprintf(format, ac, as, fc, fs);
     }
 }
