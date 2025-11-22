@@ -1,0 +1,39 @@
+struct ArrayList;
+
+pub fn main() {
+    lsr();
+    lsl();
+}
+
+fn lsr() {
+    puts("\nlogical shift right:");
+    lsr_one(0, 1);
+    lsr_one(1, 0);
+    lsr_one(1, 1);
+    lsr_one(16, 4);
+    lsr_one(0x7fffffff_ffffffff, 0);
+    lsr_one(0x7fffffff_ffffffff, 1);
+    # hex should just format bits, not interpret them
+    lsr_one(0xffffffff_ffffffff, 0);
+    lsr_one(0xffffffff_ffffffff, 1);
+}
+
+fn lsr_one(int n, int by) {
+    printf("%x >> %d := %x\n", n, by, n >> by);
+}
+
+fn lsl() {
+    puts("\nlogical shift left:");
+    lsl_one(0, 1);
+    lsl_one(1, 0);
+    lsl_one(1, 1);
+    lsl_one(1, 4);
+    lsl_one(0x7fffffff_ffffffff, 0);
+    lsl_one(0x7fffffff_ffffffff, 1);
+    lsl_one(0xffffffff_ffffffff, 0);
+    lsl_one(0xffffffff_ffffffff, 1);
+}
+
+fn lsl_one(int n, int by) {
+    printf("%x << %d := %x\n", n, by, n << by);
+}

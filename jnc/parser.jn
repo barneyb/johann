@@ -599,7 +599,21 @@ fn parse_expr_rel(void* lex) {
 }
 
 fn parse_expr_shift(void* lex) {
-    return parse_expr_add(lex);
+    void* expr = parse_expr_add(lex);
+    void* right;
+    while true {
+        Token* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = tkn.type();
+        bool doit = false;
+        if t == T_BIT_LSL { doit = true; }
+        if t == T_BIT_LSR { doit = true; }
+        if !doit { done; }
+        consume_token(lex, t);
+        right = parse_expr_add(lex);
+        expr = join_bin_op(lex, t, expr, right);
+    }
+    return expr;
 }
 
 fn parse_expr_add(void* lex) {
@@ -669,6 +683,9 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         if op == T_STAR    { ttr = left * right; did_it = true; }
         if op == T_SLASH   { ttr = left / right; did_it = true; }
         if op == T_PERCENT { ttr = left % right; did_it = true; }
+# todo: once jnc supports the bit shifts, statically eval
+#        if op == T_BIN_LSL { ttr = left << right; did_it = true; }
+#        if op == T_BIN_LSR { ttr = left >> right; did_it = true; }
         if did_it {
             return ast2(ttl, ttr);
         }
