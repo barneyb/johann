@@ -13,6 +13,8 @@ This provides a backwards compatibility guarantee _for a single release_. Skippi
 
 Logical shift operators `<<` and `>>`, _for reasonable operands_.
 
+`printf` pads numbers with spaces by default, instead of zeros, and no longer supports `%n` (for newline).
+
 ### `v0.20251121`
 
 `else` and `else if` are supported!

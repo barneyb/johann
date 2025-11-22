@@ -1,0 +1,63 @@
+pub fn main() {
+    char* count = "written: %d\n";
+
+    int n = printf("percent: [[%%]]\n");
+    printf(count, n);
+
+    n = printf("bool: [[%b:%b:%b]]\n", true, false, 34);
+    printf(count, n);
+
+    n = printf("char: [[%c]]\n", 'B');
+    printf(count, n);
+
+    char* greet = "Hello, this most beautiful world!";
+    n = printf("string: [[%s]]\n", greet);
+    printf(count, n);
+
+    char* int_fmt = "integer: [[%d:%7i:%07d]]\n";
+    n = printf(int_fmt, 0, 0, 0);
+    printf(count, n);
+    n = printf(int_fmt, 1, 1, 1);
+    printf(count, n);
+    n = printf(int_fmt, 12345, 12345, 12345);
+    printf(count, n);
+    n = printf(int_fmt, -987, -987, -987);
+    printf(count, n);
+
+    char* octal_fmt = "octal: [[%o:%5o:%05o]]\n";
+    n = printf(octal_fmt, 0, 0, 0);
+    printf(count, n);
+    n = printf(octal_fmt, 88, 88, 88);
+    printf(count, n);
+    n = printf(octal_fmt, 12345, 12345, 12345);
+    printf(count, n);
+    n = printf(octal_fmt, -1, -1, -1);
+    printf(count, n);
+
+    char* hex_fmt = "hex: [[%x:%X:%6x]]\n";
+    n = printf(hex_fmt, 0, 0, 0);
+    printf(count, n);
+    n = printf(hex_fmt, 123, 123, 123);
+    printf(count, n);
+    n = printf(hex_fmt, 1234567890, 1234567890, 1234567890);
+    printf(count, n);
+    n = printf(hex_fmt, -1, -1, -1);
+    printf(count, n);
+
+    # minimum of nine digits, padded with zeros
+    n = printf("pointer: [[%p:%4p:%14p]]\n",
+               0x7b,
+               0x929,
+               0x8707);
+    printf(count, n);
+#    n = printf("null pointer: [[%p]]\n", null);
+#    printf(count, n);
+
+    n = printf("everything: %%, %c, %s, %d, %x, %p\n",
+               'Z',
+               greet,
+               456,
+               0x400,
+               0x3ff);
+    printf(count, n);
+}

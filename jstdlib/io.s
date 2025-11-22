@@ -146,8 +146,9 @@ __j_eprintf:
 printf:
     stp     fp, lr, [sp, -0x10]!
     mov     fp, sp
-    ; fp[-16] : emit_char( c )
-    str     x8, [sp, -0x10]!
+    ; fp[-8] : padding char
+    ; fp[-10] : emit_char( c )
+    stp     x8, xzr, [sp, -0x10]!
     ; sp[10] : void* args ; todo: the caller should set these up...
     stp     x6, x7, [sp, -0x10]!
     stp     x4, x5, [sp, -0x10]!
@@ -184,6 +185,15 @@ printf:
         cmp     x0, '%'
         b.eq    printf_normal       ; the _second_ % is "normal"
         stp     x0, xzr, [sp, -0x10]!   ; store char and width
+        cmp     x0, '0'             ; pad with zeros?
+        b.eq    printf_pad_zero
+            mov     x1, ' '
+            b       printf_reset_pad
+        printf_pad_zero:
+            mov     x1, '0'
+        printf_reset_pad:
+        str     x1, [fp, -0x8]      ; reset padding char
+
         printf_width_again:
         bl      __j_isdigit
         cmp     x0, FALSE
@@ -210,8 +220,6 @@ printf:
         b.eq    printf_decimal
         cmp     x0, 'i'
         b.eq    printf_decimal
-        cmp     x0, 'n'
-        b.eq    printf_newline
         cmp     x0, 'o'
         b.eq    printf_octal
         cmp     x0, 'p'
@@ -230,18 +238,23 @@ printf:
         mov     x6, #10
         b       printf_integer
     printf_pointer:
-        cmp     x3, #9              ; pointers have minimum width 9
+        mov     x1, '0'             ; pointers pad with zero
+        str     x1, [fp, -0x8]
+        cmp     x3, #11             ; pointers have minimum width 11
         b.ge    printf_hex          ; but are otherwise just 'hex'
-        mov     x3, #9
+        mov     x3, #11
     printf_hex:
+        sub     x3, x3, 2           ; two char prefix
         mov     x6, #16
         mov     x7, #0x57           ; 10 before 'a'
         b       printf_integer
     printf_HEX:
+        sub     x3, x3, 2           ; two char prefix
         mov     x6, #16
         mov     x7, #0x37           ; 10 before 'A'
         b       printf_integer
     printf_octal:
+        sub     x3, x3, 1           ; one char prefix
         mov     x6, #8
         b       printf_integer
 
@@ -259,13 +272,27 @@ printf:
         mov     x4, xzr
         ; allocate at 32 bytes on the stack
         str     xzr, [sp, -0x20]!
-        ; if x0 is negative,
+        ; if x0 is zero or negative
         cmp     x0, #0
+        b.eq    printf_integer_zero
         b.ge    printf_integer_again
-        mov     x1, TRUE
+        mov     x1, TRUE            ; negative!
         str     x1, [sp]            ; store true at SP
         sub     x3, x3, #1          ; leave room for the minus sign
         neg     x0, x0              ; negate x0
+        b       printf_integer_again
+
+        printf_integer_zero:
+;        mov     w2, ' '             ; always pad zero with spaces
+;        str     x2, [fp, -0x8]
+        mov     w2, '0'
+        ; pre-decrement and store at x5
+        strb    w2, [x5, #-1]!
+        ; increment counter in x4
+        add     x4, x4, #1
+        bl      printf_integer_pad_and_return
+;        b       printf_integer_emit
+        b       printf_integer_prefix
 
         printf_integer_again:
         ; divide by base into x1
@@ -288,9 +315,12 @@ printf:
         add     x4, x4, #1
         cmp     x0, xzr
         b.gt    printf_integer_again
+        bl      printf_integer_pad_and_return
+        b       printf_integer_prefix
 
+        printf_integer_pad_and_return:
         ; pad to min width
-        mov     w2, '0'
+        ldrb    w2, [fp, -0x8]      ; get the padding char
         printf_pad_again:
             cmp     x4, x3
             b.ge    printf_pad_done
@@ -298,7 +328,9 @@ printf:
             add     x4, x4, #1      ; increment counter
             b printf_pad_again
         printf_pad_done:
+        ret
 
+        printf_integer_prefix:
         ; if base is 16, add x prefix
         cmp     x6, #16
         b.ne    printf_integer_not_base10
@@ -355,11 +387,6 @@ printf:
         ldr     x1, [sp, 0x10]      ; load a
         ldr     x0, [x1], #8        ; load args[a++]
         str     x1, [sp, 0x10]      ; store a
-        b       printf_normal
-
-    printf_newline:
-        ; replace the spec w/ a newline and 'normal'
-        mov     x0, '\n'
         b       printf_normal
 
     printf_bool:
