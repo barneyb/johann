@@ -1,7 +1,40 @@
-# No files, just STDIN and STDOUT. `EOF` is any negative number.
+# No files, just `STDIN` and `STDOUT`. `EOF` is any negative number.
 #
-# * `void printf( char* format, ... )` - converts args to strings based on the null-terminated `format`, and write to STDOUT. Only seven variadic args will work.
-# * `void eprintf( char* format, ... )` - same as `printf`, but write to STDERR (without buffering). Only seven variadic args will work.
+# ### `printf` & `eprintf`
+#
+# `pub fn printf( char* format, ... );`<br />
+# `pub fn eprintf( char* format, ... );`
+#
+# I convert args to strings based on the null-terminated `format`, and write to
+# `STDOUT` or `STDERR`. _Only seven variadic args will work._ Note that
+# `eprintf` is unbuffered at the moment.
+#
+# The conversion specs are a little rough around the edges, but can generally
+# get the job done.
+#
+# |   spec    |                                                      | padding |
+# |:---------:|------------------------------------------------------|:-------:|
+# |    `%`    | literal `%`                                          |
+# |    `b`    | boolean, either `true` or `false`                    |
+# |    `c`    | character                                            |
+# | `d` / `i` | base-10 integer                                      |  space  |
+# |    `o`    | base-8 integer, w/ `0` prefix                        |  space  |
+# |    `p`    | a pointer, in hex, at least 9 digits                 |  zero   |
+# |    `s`    | a null-terminated byte string                        |
+# | `x` / `X` | base-16 integer, w/ `0x` prefix, lower or upper case |  space  |
+#
+# Only integers and pointers support a width spec, and padding goes on the left.
+# To pad integers with zeros instead of spaces, use a leading zero on the width.
+# Confusingly, the padding goes _after_ the prefix of octal/hex conversions,
+# even though the prefix is included in the "how much to pad" calculation.
+#
+# There is no support for converting a single argument multiple times, you have
+# to pass it for each conversion spec.
+#
+# ```johann
+# printf("%d %s ways%c %5d, %05d, %5x\\n", 27, "four", ':', 27, 27, 27);
+#      # "27 four ways:    27, 00027, 0x 1b"
+# ```
 
 # I consume the next character from STDIN and return it, or `EOF`.
 pub fn getchar();
