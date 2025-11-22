@@ -3,7 +3,7 @@ pub fn main() {
     char* raw = substr(s, 2, 5);
     printf("raw: '%s'\n", raw);
     free(raw);
-    char* empty = substr(s, 5, 2);
+    char* empty = substr(s, 3, 3);
     printf("empty: '%s'\n", empty);
     free(empty);
     char* berry = substr(s, 5, 99); # WAY long and wasteful

@@ -112,8 +112,12 @@ pub fn free(void* mem) {
 
 #        printf(" ; free  %x bytes at %p\n", bytes, mem);
 
-    if bytes == 0 {
-        eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
+    if bytes <= 0 {
+        if bytes == 0 {
+            eprintf("Zero-byte free at %p. First quadword of chunk: %x\n", mem, *mem);
+        } else {
+            eprintf("Negative-byte (%d) free at %p?! First quadword of chunk: %x\n", bytes, mem, *mem);
+        }
         a = mem - 0x10; # go back to last quadword of prev chunk
         eprintf("  Last quadword of prev chunk: %x\n", *a);
         exit(88);
@@ -244,6 +248,13 @@ pub fn calloc(int num, int width) {
 # pointer to it. The same pointer must be passed back to `free` at some point.
 pub fn malloc(int bytes) {
 #    printf("\n\nmalloc(%x)\n", bytes);
+    if bytes <= 0 {
+        if bytes == 0 {
+            return null;
+        }
+        eprintf("Negative-byte (%d) malloc?!\n", bytes);
+        exit(88);
+    }
 
     bytes = align(bytes, MALLOC_ALIGN);
 

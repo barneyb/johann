@@ -9,4 +9,4 @@ When a program exits without panicking, the count of `malloc` and `free` calls o
     ;      3984 chunks (0xc2700 bytes)
     ;      52 mmaps  (52 pages)
 
-A small subset of double-free errors cause a `98` panic, but most do not. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
+A small subset of alloc/free errors cause a `98` panic, but most do not. Both checks will eventually go away, once the language itself takes at least partial ownership of dynamic memory, instead of letting humans do it.
