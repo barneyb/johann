@@ -3,7 +3,7 @@
 At the moment, Johann is building up from "nothing" towards "complete". There's a _lot_ of kludge in the syntax and a host of random restrictions, all in service of "anything is better than writing assembly." As the compiler gains power, the language will gel, hopefully ending up somewhere graceful. Right now, there only two constraints:
 
 1. The current release can compile the development sources.
-2. The development sources can compile themselves.
+1. The development sources can compile themselves.
 
 This provides a backwards compatibility guarantee _for a single release_. Skipping a release may break things. For example, upgrading to `v0.20250610` introduced `==` and deprecated `=`. Support wasn't removed until the following release. 
 
