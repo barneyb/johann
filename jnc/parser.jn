@@ -678,9 +678,8 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         if op == T_STAR    { ttr = left *  right; did_it = true; }
         if op == T_SLASH   { ttr = left /  right; did_it = true; }
         if op == T_PERCENT { ttr = left %  right; did_it = true; }
-# todo: once jnc supports the bit shifts, statically eval
-#        if op == T_BIN_LSL { ttr = left << right; did_it = true; }
-#        if op == T_BIN_LSR { ttr = left >> right; did_it = true; }
+        if op == T_BIT_LSL { ttr = left << right; did_it = true; }
+        if op == T_BIT_LSR { ttr = left >> right; did_it = true; }
         if did_it {
             drop_ast(old_left);
             drop_ast(old_right);
