@@ -49,3 +49,20 @@ printf("one: %i\n", 1);
 # easiest:
 puts("one: 1");
 ```
+
+## Methods
+
+Method-like syntax is supported _directly_ off identifiers which are typed with a `struct` type, as syntactic sugar for calling a function with the type's name as an underscore-delimited prefix.
+
+Using [ArrayList](../library/arraylist.jn.md), the two `push` calls below are equivalent, due to the explicit type of `l`:
+
+```johann
+ArrayList* l = ArrayList__new(10); # declare w/ type
+
+ArrayList_push(l, "Hello, ");      # long-form
+        l.push(   "World!" );      # pseudo-method
+
+l.drop();
+```
+
+Unlike member/field dereferences, the method-like syntax _is not typechecked_. If you call an unknown function, you'll get the same error whether you use the long or method form. If you're use `--strict`, it'll be a compiler error, otherwise a linker error.
