@@ -116,9 +116,74 @@ pub fn ArrayList_set(ArrayList* self, int i, void el) {
     return old;
 }
 
-# I consume the list and return a null-terminated array of its elements. The
-# array may have unfreed capacity beyond the terminating null.
+# iterators should have a zero-arg next() method which returns a pointer to the
+# next value (or null, if exhausted). Never an actual value, always a pointer.
+
+pub struct Iter {
+    ArrayList* list,
+    int i,
+}
+
+pub fn Iter_next(Iter* self) {
+    ArrayList* list = self.list;
+    if self.i >= list.size() {
+        return null;
+    }
+    void* ptr = list.data + self.i * sizeof(void*);
+    self.i = self.i + 1;
+    return ptr;
+}
+
+pub fn ArrayList_iter(ArrayList* self) {
+    Iter* itr = malloc(sizeof(Iter));
+    itr.list = self;
+    itr.i = 0;
+    return itr;
+}
+
+# I consume the list and return a `null`-terminated array of its elements. The
+# array may have unfreed capacity beyond the terminating `null`. There's no way
+# to differentiate the terminating `null` from a `null` element in the list.
 pub fn ArrayList_into_array(ArrayList* self) {
+#    void* arr = malloc((self.size() + 1) * sizeof(void));
+#
+#    Iter* itr = self.iter();
+#    int i = 0;
+#    while true {
+#        void* el = itr.next();
+#        if el == ITERATION_DONE { done; }
+#        arr[i] = *el;
+#        i = i + 1;
+#    }
+#    arr[i] = null;
+#    free(itr);
+#    self.drop();
+#    return arr;
+#
+#
+##    Iter* itr = self.iter();
+##    int i = 0;
+##    while itr != null {
+##        void el = *itr;
+##        itr = itr.advance();
+##
+##        arr[i] = el;
+##        i = i + 1;
+##    }
+##    free(itr);
+##
+###    int i = self.size();
+###    arr[i] = null;
+###    while i > 0 {
+###        i = i - 1;
+###        void el = self.get(i);
+###
+###        arr[i] = el;
+###    }
+##
+##    self.drop();
+##    return arr;
+
     if self.data == null {
         self.capacity = 1;
     }

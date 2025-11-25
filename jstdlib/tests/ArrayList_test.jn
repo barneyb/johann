@@ -2,6 +2,7 @@ fn free(void*);
 fn itoa(int);
 
 struct ArrayList;
+struct Iter;
 
 pub fn main() {
     drop_empty();
@@ -13,6 +14,7 @@ pub fn main() {
     get_and_set();
     as_stack();
     sort_and_to_string();
+    iterate();
 }
 
 fn drop_empty() {
@@ -188,4 +190,88 @@ fn sort_and_to_string() {
     free(s);
 
     l.drop();
+}
+
+fn iterate() {
+    puts("\niterate:");
+    ArrayList* list = ArrayList__new(3);
+    list.push(1);
+    list.push(2);
+    list.push(null);
+    list.push(4);
+    list.push(null);
+    list.push(6);
+    list.push(7);
+    list.push(8);
+    list.push(null);
+    list.push(10);
+
+#    int i = 0;
+#    while i < list.size() {
+#        int el = list.get(i);
+#        i = i + 1;
+#        printf("  element: %p\n", el);
+#    }
+
+    Iter* itr = list.iter();
+    while true {
+        int* el = itr.next();
+        if el == null { done; }
+        printf("  element: %p\n", *el);
+    }
+    free(itr);
+
+#    Iter* itr = list.iter()
+#    for int el : itr {
+#        printf("  element: %p\n", el);
+#    }
+#    free(itr);
+#
+#    let itr: Iter* = list.iter() {
+#        for el: int of itr {
+#            printf("  element: %p\n", el);
+#        }
+#    }
+#
+#    let itr : list.iter() {
+#        for el of itr {
+#            printf("  element: %p\n", el);
+#        }
+#    }
+#
+#    for el of list.iter() {
+#        printf("  element: %p\n", el);
+#    }
+#
+#    for el of list {
+#        printf("  element: %p\n", el);
+#    }
+
+#    Iter* itr = list.iter();
+#    int* el;
+#    while (el = itr.next()) != null {
+#        printf("  element: %p\n", *el);
+#    }
+#    free(itr);
+
+#    for int el of (Iter) list.iter() {
+#        printf("  element: %p\n", el);
+#    }
+
+#    for Iter* itr = list.iter(); int el {
+#        printf("  element: %p\n", el);
+#    }
+
+# what type does list.iter() return?
+#    int el of list.iter() {
+#        printf("  element: %p\n", el);
+#    }
+
+# what type does list.iter() return?
+# what type does .next() return?
+#    for el : list {
+#        printf("  element: %p\n", el);
+#    }
+
+    list.drop();
 }
