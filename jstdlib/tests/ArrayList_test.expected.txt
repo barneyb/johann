@@ -69,3 +69,15 @@ sort_and_to_string:
 unsorted: [7,4,9,1,5,45,0,2,8,12,98,5,5,3]
   sorted: [0,1,2,3,4,5,5,5,7,8,9,12,45,98]
  reverse: [98,45,12,9,8,7,5,5,5,4,3,2,1,0]
+
+iterate:
+  element: 0x000000001
+  element: 0x000000002
+  element: 0x000000000
+  element: 0x000000004
+  element: 0x000000000
+  element: 0x000000006
+  element: 0x000000007
+  element: 0x000000008
+  element: 0x000000000
+  element: 0x00000000a

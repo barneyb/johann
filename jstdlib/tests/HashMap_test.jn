@@ -3,6 +3,7 @@ fn strcmp(char*, char*);
 fn strhash(char*);
 
 struct HashMap;
+struct Keys;
 struct StringBuilder;
 
 fn inthash(int i) { return i; }
@@ -18,7 +19,7 @@ pub fn main() {
 fn basics() {
     puts("\nbasics:");
     HashMap* m = HashMap__new(null, null);
-    printf("size: %d\n", m.size());
+    size(m);
     put(m, 0, "zero");
     put(m, 7, "seven");
     put(m, 15, "fifteen"); # to collide with zero
@@ -27,10 +28,11 @@ fn basics() {
     check(m, 7);
     check(m, 12);
     check(m, 15);
+    five_keys(m);
 
     puts("\nhugify");
     hugify(m);
-    printf("size: %d\n", m.size());
+    size(m);
     check(m, 0);
     check(m, 7);
     check(m, 12);
@@ -39,17 +41,19 @@ fn basics() {
 
     puts("\ndelete seven");
     delete(m, 7);
-    printf("size: %d\n", m.size());
+    size(m);
     delete(m, 7);
-    printf("size: %d\n", m.size());
+    size(m);
 
     puts("\nsmallify");
     smallify(m);
-    printf("size: %d\n", m.size());
+    size(m);
     check(m, 0);
     check(m, 12);
     check(m, 15);
     check(m, 1234);
+    five_keys(m);
+
     m.drop();
 }
 
@@ -70,11 +74,11 @@ fn delete_collisions() {
     put(m, 0, "zero");
     put(m, 7, "seven");
     put(m, 15, "fifteen"); # to collide with zero
-    delete(m, 15);;
-    delete(m, 15);;
+    delete(m, 15);
+    delete(m, 15);
     put(m, 15, "fifteen");
-    delete(m, 15);;
-    delete(m, 15);;
+    delete(m, 15);
+    delete(m, 15);
     m.drop();
 }
 
@@ -96,7 +100,7 @@ fn smallify(HashMap* m) {
 
 fn put(HashMap* m, int key, char* value) {
     m.put(key, value);
-    printf("size: %d\n", m.size());
+    size(m);
 }
 
 fn delete(HashMap* m, int key) {
@@ -153,7 +157,7 @@ fn owned_values() {
     m.put(2, strclone("two"));
     m.put(3, strclone("three"));
     m.put(4, strclone("four"));
-    printf("size: %d\n", m.size());
+    size(m);
     void* old;
     int i = 0;
     while i < 20 {
@@ -166,16 +170,41 @@ fn owned_values() {
         if old != null { free(old); }
         i = i + 1;
     }
-    printf("size: %d\n", m.size());
+    size(m);
     printf("get 0: '%s'\n", m.get(0));
     printf("get 4: '%s'\n", m.get(4));
     printf("get 32: '%s'\n", m.get(32));
     old = m.delete(2);
     printf("delete 2: '%s'\n", old);
     free(old);
-    printf("size: %d\n", m.size());
+    size(m);
     old = m.delete(2);
     printf("delete 2: %x\n", old);
-    printf("size: %d\n", m.size());
+    size(m);
     m.drop();
+}
+
+fn size(HashMap* m) {
+    int s = m.size();
+    printf("size: %d :: ", s);
+    keys(m);
+}
+
+fn five_keys(HashMap* m) {
+    printf("five ");
+    keys(m);
+}
+
+fn keys(HashMap* m) {
+    printf("keys: [");
+    int i = 0;
+    Keys* ks = m.keys();
+    while i < 5 {
+        void* k = ks.next();
+        if k == null { done; }
+        printf("%d, ", *k);
+        i = i + 1;
+    }
+    free(ks);
+    puts("]");
 }
