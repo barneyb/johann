@@ -231,6 +231,7 @@ fn find_entry(HashMap* self, void key, int idx) {
     return null;
 }
 
+# Type of `HashMap`'s key iterator.
 pub struct Keys {
     Entry** arr,
     int cap,
@@ -238,15 +239,7 @@ pub struct Keys {
     Entry* curr,
 }
 
-pub fn HashMap_keys(HashMap* self) {
-    Keys* ks = malloc(sizeof(Keys));
-    ks.arr = self.arr;
-    ks.cap = self.capacity;
-    ks.i = -1;
-    ks.curr = null;
-    return ks;
-}
-
+# I return a pointer to the next key, or `null` if exhausted.
 pub fn Keys_next(Keys* self) {
     # if arr is null, return null - no entries yet
     Entry** arr = self.arr;
@@ -276,4 +269,15 @@ pub fn Keys_next(Keys* self) {
     self.curr = ptr.next;
     # return pointer to key
     return ptr;
+}
+
+# I create a new `Keys` over this map's keys, in unspecified order. Its behavior
+# is undefined if the map is modified during iteration.
+pub fn HashMap_keys(HashMap* self) {
+    Keys* ks = malloc(sizeof(Keys));
+    ks.arr = self.arr;
+    ks.cap = self.capacity;
+    ks.i = -1;
+    ks.curr = null;
+    return ks;
 }
