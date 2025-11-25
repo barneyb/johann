@@ -1,14 +1,14 @@
 # I am a hashtable-based map/dict ADT. Keys and values are arbitrary 64-bit
 # values with pass-by-value semantics. `HashMap__new_owned` can help with
 # cleanup if the keys and/or values are pointers to owned objects. Using `null`
-# as a key works _if `hash`, `cmp`, and `drop_key` are `null`-safe_. Using `null`
-# as a value works _if `drop_value` is `null`-safe_.
+# as a key works if `hash`, `cmp`, and `drop_key` are `null`-safe. Using `null`
+# as a value works if `drop_value` is `null`-safe.
 #
 # The table implementation uses "separate chaining", even though it auto-resizes
 # based on capacity. The load factor is 0.75, and cannot be configured.
 
 struct Entry {
-    void key,
+    void key, # keys() assumes key is the first member!
     void value,
     Entry* next,
 }
@@ -229,4 +229,51 @@ fn find_entry(HashMap* self, void key, int idx) {
         e = e.next;
     }
     return null;
+}
+
+pub struct Keys {
+    Entry** arr,
+    int cap,
+    int i, # largest completed bucket
+    Entry* curr,
+}
+
+pub fn HashMap_keys(HashMap* self) {
+    Keys* ks = malloc(sizeof(Keys));
+    ks.arr = self.arr;
+    ks.cap = self.capacity;
+    ks.i = -1;
+    ks.curr = null;
+    return ks;
+}
+
+pub fn Keys_next(Keys* self) {
+    # if arr is null, return null - no entries yet
+    Entry** arr = self.arr;
+    if arr == null { return null; }
+    # if self.curr == null, look for another bucket
+    if self.curr == null {
+        int i = self.i + 1;
+        while i < self.cap {
+            if arr[i] != null {
+                # found one!
+                self.curr = arr[i];
+                done;
+            }
+            # keep looking
+            i = i + 1;
+        }
+        # done looping, self.curr rules now
+        self.i = i;
+    }
+    # if self.curr == null, return null
+    if self.curr == null {
+        return null;
+    }
+    # grab pointer to key
+    Entry* ptr = self.curr;
+    # set curr to next
+    self.curr = ptr.next;
+    # return pointer to key
+    return ptr;
 }

@@ -120,25 +120,26 @@ pub fn ArrayList_set(ArrayList* self, int i, void el) {
 # next value (or null, if exhausted). Never an actual value, always a pointer.
 
 pub struct Iter {
-    ArrayList* list,
+    void* arr,
+    int size,
     int i,
-}
-
-pub fn Iter_next(Iter* self) {
-    ArrayList* list = self.list;
-    if self.i >= list.size() {
-        return null;
-    }
-    void* ptr = list.data + self.i * sizeof(void*);
-    self.i = self.i + 1;
-    return ptr;
 }
 
 pub fn ArrayList_iter(ArrayList* self) {
     Iter* itr = malloc(sizeof(Iter));
-    itr.list = self;
+    itr.arr = self.data;
+    itr.size = self.size;
     itr.i = 0;
     return itr;
+}
+
+pub fn Iter_next(Iter* self) {
+    if self.i >= self.size {
+        return null;
+    }
+    void* ptr = self.arr + self.i * sizeof(void*);
+    self.i = self.i + 1;
+    return ptr;
 }
 
 # I consume the list and return a `null`-terminated array of its elements. The

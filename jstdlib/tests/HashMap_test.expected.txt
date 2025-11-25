@@ -1,9 +1,9 @@
 
 basics:
-size: 0
-size: 1
-size: 2
-size: 3
+size: 0 :: keys: []
+size: 1 :: keys: [0, ]
+size: 2 :: keys: [0, 7, ]
+size: 3 :: keys: [15, 0, 7, ]
 contains 0? true
      get 0: 'zero'
 contains 2? false
@@ -14,9 +14,10 @@ contains 12? false
      get 12: null
 contains 15? true
      get 15: 'fifteen'
+five keys: [15, 0, 7, ]
 
 hugify
-size: 1003
+size: 1003 :: keys: [0, 7, 15, 1000, 1001, ]
 contains 0? true
      get 0: 'zero'
 contains 7? true
@@ -31,13 +32,13 @@ contains 1234? true
 delete seven
 contains 7? true
   delete 7: 'seven'
-size: 1002
+size: 1002 :: keys: [0, 15, 1000, 1001, 1002, ]
 contains 7? false
   delete 7: null
-size: 1002
+size: 1002 :: keys: [0, 15, 1000, 1001, 1002, ]
 
 smallify
-size: 2
+size: 2 :: keys: [0, 15, ]
 contains 0? true
      get 0: 'zero'
 contains 12? false
@@ -46,28 +47,29 @@ contains 15? true
      get 15: 'fifteen'
 contains 1234? false
      get 1234: null
+five keys: [0, 15, ]
 
 delete_collisions:
-size: 1
-size: 2
-size: 3
+size: 1 :: keys: [0, ]
+size: 2 :: keys: [0, 7, ]
+size: 3 :: keys: [15, 0, 7, ]
 contains 0? true
   delete 0: 'zero'
 contains 0? false
   delete 0: null
-size: 3
+size: 3 :: keys: [0, 15, 7, ]
 contains 0? true
   delete 0: 'zero'
 contains 0? false
   delete 0: null
-size: 1
-size: 2
-size: 3
+size: 1 :: keys: [0, ]
+size: 2 :: keys: [0, 7, ]
+size: 3 :: keys: [15, 0, 7, ]
 contains 15? true
   delete 15: 'fifteen'
 contains 15? false
   delete 15: null
-size: 3
+size: 3 :: keys: [15, 0, 7, ]
 contains 15? true
   delete 15: 'fifteen'
 contains 15? false
@@ -84,12 +86,12 @@ get    'el 70': 99999
 size: 32
 
 owned_values:
-size: 4
-size: 23
+size: 4 :: keys: [1, 2, 3, 4, ]
+size: 23 :: keys: [0, 32, 1, 64, 2, ]
 get 0: 'el 0'
 get 4: 'el 1'
 get 32: 'el 8'
 delete 2: 'two'
-size: 22
+size: 22 :: keys: [0, 32, 1, 64, 3, ]
 delete 2: 0x0
-size: 22
+size: 22 :: keys: [0, 32, 1, 64, 3, ]
