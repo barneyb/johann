@@ -1,6 +1,6 @@
 # Johann's Standard Library
 
-Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`.
+Johann's standard library is minimal. Functions are grouped by the file defining them, which is currently an opaque detail. Symbols use a `__j_` prefix, so `puts` is actually exported to the linker as `__j_puts`. If you wanted to call Johan's `puts` from C, declare `void _j_puts(char*);` and link with `jstdlib.o`.
 
 If you want to use [header files](../build/index.md#header-files) for the standard library, you must build them yourself; they're not currently provided. You'll need the sources, of course, but there's nothing different from creating headers from your own sources.
 
