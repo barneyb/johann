@@ -540,7 +540,7 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
         expr = *expr;
         return Emitter_do_value_id(self, expr);
     }
-    if t == AST_CALL { # [AST_CALL, callee, args[]]
+    if t == AST_CALL { # [AST_CALL, callee, params[]]
         void* callee = expr + 0x8;  # -> callee
         callee = *callee;
         void* args = expr + 0x10;   # -> args

@@ -16,8 +16,6 @@ char* ERR_BAD_EXPRESSION     = "ERROR(%i): Bad expression %x at line %i, col %i\
 char* ERR_EXPECTED_TOKEN     = "ERROR(%i): Expected %x token at line %i, col %i\n";
 char* ERR_EXPECTED_TOKEN_CH  = "ERROR(%i): Expected '%c' token at line %i, col %i\n";
 char* ERR_UNEXPECTED_TOKEN   = "ERROR(%i): Unexpected token %x at line %i, col %i\n";
-char* ERR_TOO_MANY_ARGS      = "ERROR(%i): Only eight formal args are allowed; '%s' is a ninth at line %i, col %i\n";
-char* ERR_TOO_MANY_PARAMS    = "ERROR(%i): Only eight call params are allowed; '%s' is a ninth at line %i, col %i\n";
 char* ERR_CANT_ASSIGN        = "ERROR(%i): Can't assign to a %i node at line %i, col %i\n";
 char* ERR_MISSING_MISC_TOKEN = "ERROR(%i): Expected a token at EOF\n";
 char* ERR_MISSING_TOKEN      = "ERROR(%i): Expected token %x at EOF\n";
@@ -141,25 +139,25 @@ fn parse_function_declaration(void* lex) {
     consume_token(lex, T_KW_FN);
     Token* nameT = id_token(lex);
     ENV = Env_push(ENV);
-    void params = parse_parameter_list(lex);
+    void args = parse_formal_args(lex);
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
     void* ast; # todo: block scoping, please?
     if t == T_SEMI {
         consume_token(lex, t);
         ENV = Env_pop(ENV);
-        ast = ast4(AST_FN, nameT, params, null);
+        ast = ast4(AST_FN, nameT, args, null);
         Env_register_symbol(ENV, nameT, ast);
         return ast;
     }
     if t == T_OBRACE {
-        set_up_params_as_args(nameT, params);
+        set_up_params_as_args(nameT, args);
         # have to parse the block before counting symbols
         void* block = parse_block(lex);
         block = ast3(AST_FN_BODY,
                      Env_symbol_count(ENV),
                      block);
-        ast = ast4(AST_FN, nameT, params, block);
+        ast = ast4(AST_FN, nameT, args, block);
         ENV = Env_pop(ENV);
         Env_register_symbol(ENV, nameT, ast);
         return ast;
@@ -189,35 +187,24 @@ fn set_up_params_as_args(void* nameT, void* args) {
 }
 
 # [[AST_VARIABLE, type, nameT?]*]
-fn parse_parameter_list(void* lex) {
+fn parse_formal_args(void* lex) {
     consume_token(lex, T_OPAREN);
     if Token_type(peek_token(lex)) == T_CPAREN {
         consume_token(lex, T_CPAREN);
         return null;
     }
-    ArrayList* params = ArrayList__new(8);
-    params.push(parse_param_variable_member(lex, false));
+    ArrayList* args = ArrayList__new(8);
+    args.push(parse_param_variable_member(lex, false));
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
         tkn = peek_token(lex);
-        void* p = parse_param_variable_member(lex, false);
-        if params.size() == 8 { # todo: can't pass more than 8 for now
-            if p[2] != null {
-                # has a name!
-                tkn = p[2];
-                Token_set_type(tkn, Token_value(tkn));
-                jnc_panic(ERR_TOO_MANY_ARGS, tkn, 21);
-            }
-            Token_set_type(tkn, "{anon}");
-            jnc_panic(ERR_TOO_MANY_ARGS, tkn, 21);
-        }
-        params.push(p);
+        args.push(parse_param_variable_member(lex, false));
     }
     consume_token(lex, T_CPAREN);
-    return params.into_array();
+    return args.into_array();
 }
 
 fn parse_param_variable_member(void* lex, bool allow_init) {
@@ -770,7 +757,7 @@ fn parse_expr_postfix(void* lex) {
         if tkn == null { done; }
         int t = Token_type(tkn);
         if t == T_OPAREN {
-            expr = ast3(AST_CALL, expr, parse_arg_list(lex));
+            expr = ast3(AST_CALL, expr, parse_call_params(lex));
             again;
         }
         if t == T_DOT {
@@ -778,7 +765,7 @@ fn parse_expr_postfix(void* lex) {
             void* nameT = id_token(lex);
             if Token_type(peek_token(lex)) == T_OPAREN {
                 # this is ridiculous
-                expr = process_method(expr, nameT, parse_arg_list(lex));
+                expr = process_method(expr, nameT, parse_call_params(lex));
                 again;
             }
             expr = process_member(expr, nameT);
@@ -890,34 +877,23 @@ fn process_member(void* rcvr, Token* nameT) {
 }
 
 # expr[]
-fn parse_arg_list(void* lex) {
+fn parse_call_params(void* lex) {
     consume_token(lex, T_OPAREN);
     if Token_type(peek_token(lex)) == T_CPAREN {
         consume_token(lex, T_CPAREN);
         return null;
     }
-    void* args = ArrayList__new(4);
-    ArrayList_push(args, parse_expr(lex));
-    int i = 0;
+    ArrayList* params = ArrayList__new(4);
+    params.push(parse_expr(lex));
     while true {
         void* tkn = peek_token(lex);
         int t = Token_type(tkn);
         if t != T_COMMA { done; }
         consume_token(lex, t);
-        i = i + 1;
-        if i == 8 { # todo: can't have more than eight at the moment...
-            tkn = peek_token(lex);
-            if Token_type(tkn) == T_ID {
-                Token_set_type(tkn, Token_value(tkn));
-                jnc_panic(ERR_TOO_MANY_PARAMS, tkn, 21);
-            }
-            Token_set_type(tkn, "{expr}");
-            jnc_panic(ERR_TOO_MANY_PARAMS, tkn, 21);
-        }
-        ArrayList_push(args, parse_expr(lex));
+        params.push(parse_expr(lex));
     }
     consume_token(lex, T_CPAREN);
-    return ArrayList_into_array(args);
+    return params.into_array();
 }
 
 fn parse_expr_primary(void* lex) {

@@ -33,7 +33,7 @@ pub int AST_UNARY       = 101;
 pub int AST_BINARY      = 102;
 # [AST_ADDR_OP, op, nameT]
 pub int AST_ADDR_OP     = 103;
-# [AST_CALL, callee, args[]]
+# [AST_CALL, callee, params[]]
 pub int AST_CALL        = 104;
 # [AST_MEMBER, rcvr, offset, width]
 pub int AST_MEMBER      = 105;
@@ -47,7 +47,7 @@ pub int AST_INDEX       = 106;
 pub int AST_PROGRAM     = 301;
 # [AST_DECL, is_pub, fn_or_var]
 pub int AST_DECL        = 302;
-# [AST_FN, nameT, params[], body?]
+# [AST_FN, nameT, args[], body?]
 pub int AST_FN          = 303;
 # [AST_FN_BODY, nlocal, stmts[]]
 pub int AST_FN_BODY     = 353;
