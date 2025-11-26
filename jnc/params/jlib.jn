@@ -1,0 +1,29 @@
+pub fn print_seven_longs(int a, int b, int c, int d, int e, int f, int g) {
+    printf("J: %d, %d, %d, %d, %d, %d, and %d\n",
+                a,  b,  c,  d,  e,  f,      g);
+    flush_stdout__();
+}
+
+pub fn print_eight_longs(int a, int b, int c, int d, int e, int f, int g, int h) {
+    printf("J: %d, %d, %d, %d, %d, %d, %d",
+                a,  b,  c,  d,  e,  f,  g);
+    printf(", and %d\n",
+                   h);
+    flush_stdout__();
+}
+
+pub fn print_nine_longs(int a, int b, int c, int d, int e, int f, int g, int h, int i) {
+    printf("J: %d, %d, %d, %d, %d, %d, %d",
+                a,  b,  c,  d,  e,  f,  g);
+    printf(", %d, and %d\n",
+               h,      i);
+    flush_stdout__();
+}
+
+pub fn print_ten_longs(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
+    printf("J: %d, %d, %d, %d, %d, %d, %d",
+                a,  b,  c,  d,  e,  f,  g);
+    printf(", %d, %d, and %d\n",
+               h,  i,      j);
+    flush_stdout__();
+}
