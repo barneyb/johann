@@ -6,8 +6,7 @@
 # `pub fn eprintf( char* format, ... );`
 #
 # I convert args to strings based on the null-terminated `format`, and write to
-# `STDOUT` or `STDERR`. _Only seven variadic args will work._ Note that
-# `eprintf` is unbuffered at the moment.
+# `STDOUT` or `STDERR`. Note that `eprintf` is unbuffered at the moment.
 #
 # The conversion specs are a little rough around the edges, but can generally
 # get the job done.

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
+git restore --staged bin/jnc lib/jstdlib.o
 git restore bin/jnc lib/jstdlib.o
 make clean all
 rm bin/jnc lib/jstdlib.o

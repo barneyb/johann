@@ -155,10 +155,27 @@ printf:
     stp     x2, x3, [sp, -0x10]!
     sub     x2, sp, 0x8             ; where args[0] will end up
     stp     x2, x1, [sp, -0x10]!
-    ; sp[10] :
+    ; sp[10] : pointer to the next arg to process
     ; sp[8] : int written
     ; sp[0] : char* format (consumed)
     stp     x0, xzr, [sp, -0x10]!
+    b       printf_again
+
+    printf_next_arg:
+        ldr     x1, [sp, 0x10]      ; load a (ptr to current arg)
+        ldr     x0, [x1], #8        ; load args[a++]
+
+        ; x1 points at the next arg to use
+        ; if it points at fp[-10]
+        sub x16, fp, 0x10
+        cmp x1, x16
+        b.ne printf_next_arg_go
+            ; switch to stacked args
+            add x1, fp, 0x10
+
+        printf_next_arg_go:
+        str     x1, [sp, 0x10]      ; store a
+        ret
 
     printf_again:
         ldr     x1, [sp]            ; load i
@@ -259,9 +276,7 @@ printf:
         b       printf_integer
 
     printf_integer:
-        ldr     x1, [sp, 0x10]      ; load a
-        ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x10]      ; store a
+        bl      printf_next_arg
 
         ; x3 holds the min width
         ; x6 holds the base
@@ -384,15 +399,11 @@ printf:
 
     printf_char:
         ; replace the spec w/ the actual character and 'normal'
-        ldr     x1, [sp, 0x10]      ; load a
-        ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x10]      ; store a
+        bl      printf_next_arg
         b       printf_normal
 
     printf_bool:
-        ldr     x1, [sp, 0x10]      ; load a
-        ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x10]      ; store a
+        bl      printf_next_arg
         cmp     x0, FALSE
         b.ne    printf_bool_true
         adrp    x0, str_false@PAGE
@@ -406,9 +417,7 @@ printf:
         b       printf_string_again
 
     printf_string:
-        ldr     x1, [sp, 0x10]      ; load a
-        ldr     x0, [x1], #8        ; load args[a++]
-        str     x1, [sp, 0x10]      ; store a
+        bl      printf_next_arg
         str     x0, [sp, -0x10]!    ; store pointer -> str
         printf_string_again:
             ldr     x1, [sp]        ; load pointer -> str[i]

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
+git restore --staged bin/jnc lib/jstdlib.o
 git restore bin/jnc lib/jstdlib.o
 
 NOW="$(date +%Y%m%d-%H%M%S)"
@@ -29,6 +30,7 @@ if ! make clean test all not_quite_lisp; then
     echo
     echo "Failed to re-build"
     echo
+    git restore --staged bin/jnc lib/jstdlib.o
     git restore bin/jnc lib/jstdlib.o
     exit 1
 fi
