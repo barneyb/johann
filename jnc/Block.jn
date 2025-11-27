@@ -14,9 +14,9 @@ struct Block {
     HashMap* symbols,
 }
 
-pub int SIZEOF_BLOCK = sizeof(Block);
+pub int SIZEOF_BLOCK = sizeof(Block); # todo: remove
 
-pub fn Block_init(Block* self, int type, int id) {
+pub fn Block_init(Block* self, int type, int id) { # todo: conventions!
     self.type = type;
     self.id = id;
     self.nvars = 0;
