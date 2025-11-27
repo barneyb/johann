@@ -5,6 +5,9 @@ pub fn print_seven_longs(int a, int b, int c, int d, int e, int f, int g) {
 }
 
 pub fn print_eight_longs(int a, int b, int c, int d, int e, int f, int g, int h) {
+# once printf is implemented in Johann
+#    printf("J: %d, %d, %d, %d, %d, %d, %d, and %d\n",
+#                a,  b,  c,  d,  e,  f,  g,      h);
     printf("J: %d, %d, %d, %d, %d, %d, %d",
                 a,  b,  c,  d,  e,  f,  g);
     printf(", and %d\n",
@@ -13,6 +16,9 @@ pub fn print_eight_longs(int a, int b, int c, int d, int e, int f, int g, int h)
 }
 
 pub fn print_nine_longs(int a, int b, int c, int d, int e, int f, int g, int h, int i) {
+# once printf is implemented in Johann
+#    printf("J: %d, %d, %d, %d, %d, %d, %d, %d, and %d\n",
+#                a,  b,  c,  d,  e,  f,  g,  h,      i);
     printf("J: %d, %d, %d, %d, %d, %d, %d",
                 a,  b,  c,  d,  e,  f,  g);
     printf(", %d, and %d\n",
@@ -21,6 +27,9 @@ pub fn print_nine_longs(int a, int b, int c, int d, int e, int f, int g, int h, 
 }
 
 pub fn print_ten_longs(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) {
+# once printf is implemented in Johann
+#    printf("J: %d, %d, %d, %d, %d, %d, %d, %d, %d, and %d\n",
+#                a,  b,  c,  d,  e,  f,  g,  h,  i,      j);
     printf("J: %d, %d, %d, %d, %d, %d, %d",
                 a,  b,  c,  d,  e,  f,  g);
     printf(", %d, %d, and %d\n",
