@@ -26,9 +26,12 @@ char* TMPL_GLOBAL_NUM           = "    .data\n        __j_%s: %s %i\n    .text\n
 char* TMPL_GLOBAL_CHAR          = "    .data\n        __j_%s: %s '%c'\n    .text\n";
 char* TMPL_GLOBAL_STRING        = "    .data\n        __j_%s: .asciz %c%s%c\n    .text\n";
 
-char* TMPL_FN_ARG               = "        str     x%i, [fp, -%x]\n";
+char* TMPL_FN_REG_PARAM         = "        str     x%i, [fp, -%x]\n";
+char* TMPL_FN_STACK_PARAM       = "        ldr     x0, [sp, %x]\n        str     x0, [fp, -%x]\n";
 char* TMPL_FN_INTRO             = "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n        sub     sp, sp, %x ; fn intro\n";
 char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\n        add     sp, sp, %x ; fn outro\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
+char* TMPL_ALLOC_STACK          = "        sub     sp, sp, %x\n";
+char* TMPL_FREE_STACK           = "        add     sp, sp, %x\n";
 
 char* TMPL_RETURN               = "        b       _return_%i\n";
 
@@ -65,8 +68,10 @@ char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    ex
 char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
 
 char* TMPL_STASH                = "        str     x0, [sp, -0x10]! ; stash!\n";
-char* TMPL_UNSTASH_X1           = "        ldr     x1, [sp], 0x10 ; unstash!\n";
-char* TMPL_UNSTASH_Xi           = "        ldr     x%i, [sp], 0x10 ; targeted unstash!\n";
+char* TMPL_STASH_AT             = "        str     x0, [sp, %x] ; stash at!\n";
+char* TMPL_UNSTASH              = "        ldr     x1, [sp], 0x10 ; unstash!\n";
+char* TMPL_UNSTASH_TO           = "        ldr     x%i, [sp], 0x10 ; unstash to!\n";
+char* TMPL_UNSTASH_PAIR_TO      = "        ldp     x%d, x%d, [sp], 0x10 ; unstash pair to!\n";
 
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
 char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
@@ -300,15 +305,19 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, int lbytes, void* args) {
     introduce_fn(self, name, lbytes);
 
     if args == null { return; }
+
+    # this function's locals, plus 0x10 for the frame record
+    int callers_sp = lbytes + 0x10;
+
     int n = 0;
     while *args != null {
         int offset = (n + 1) * 0x8;
         if n < 8 {
-            printf(TMPL_FN_ARG, n, offset);
+            printf(TMPL_FN_REG_PARAM, n, offset);
         } else {
-            printf(";# arg %d comes from the stack\n", n);
-            printf("ldr     x0, [sp, %x]\n", lbytes + 0x10 + (n - 8) * 0x8);
-            printf(TMPL_FN_ARG, 0, offset);
+            printf(TMPL_FN_STACK_PARAM,
+                   callers_sp + (n - 8) * 0x8,
+                   offset);
         }
         n = n + 1;
         args = args + 0x8;
@@ -453,7 +462,7 @@ pub fn Emitter_do_assign_index(void* self, void* ast, void* rhs) {
     Emitter_get_index_with_addr_in_x0(self, rcvr, off_expr);
 
     printf(TMPL_MOV_Xi_FOR_ASSIGN_PTR, 0);
-    printf(TMPL_UNSTASH_Xi, 0);
+    printf(TMPL_UNSTASH_TO, 0);
     char* tmpl = TMPL_ASSIGN_PTR_QUAD;
     if ast[3] == 1 {
         tmpl = TMPL_ASSIGN_PTR_BYTE;
@@ -592,7 +601,7 @@ fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
     # compute the receiver
     Emitter_eval_expr(self, rcvr);
     # compute address
-    puts(TMPL_UNSTASH_X1);
+    puts(TMPL_UNSTASH);
     puts(TMPL_BIN_ADD);
 }
 
@@ -659,7 +668,6 @@ fn Emitter_check_call_for_symbol(void* self, void* nameT, void* params) {
 fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
     void* nameT = callee + 0x8;       # -> nameT
     nameT = *nameT;
-    printf("\n\n;# set up call to '%s'\n", Token_value(nameT));
     Symbol* symbol = Emitter_check_call_for_symbol(self, nameT, params);
     if symbol != null {
         # fn* setup corrupts x0, so do it before params
@@ -670,52 +678,53 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
         printf(TMPL_CALL_PTR_INTRO);
     }
 
-    puts(";# evaluate the params");
+    # how many params and where do they go?
+    int slots_for_stacking = 0;
     int param_count = 0;
     if params != null {
         param_count = arrlen(params);
     }
-    printf("; %d params\n", param_count);
-    int register_count;
-    int stacked_count;
-    if param_count > 8 {
-        register_count = 8;
-        stacked_count = param_count - 8;
-    } else {
-        register_count = param_count;
-        stacked_count = 0;
-    }
-    int slots = param_count;
-    if slots % 2 == 1 {
-        # extra slot to maintain SP's 16-byte alignment
-        slots = slots + 1;
-    }
-    int slots_for_passing = slots - 8;
-    int bytes = slots * 8;
-    printf("; allocate %d slots (%d bytes) of stack space\n", slots, bytes);
-    printf("sub sp, sp, %x\n", bytes);
+    if param_count > 0 {
+        int register_count;
+        int stacked_count;
+        if param_count > 8 {
+            register_count = 8;
+            stacked_count = param_count - 8;
+        } else {
+            register_count = param_count;
+            stacked_count = 0;
+        }
+        int slots = param_count;
+        if slots % 2 == 1 {
+            # extra slot to maintain SP's 16-byte alignment
+            slots = slots + 1;
+        }
+        slots_for_stacking = slots - 8;
+        int bytes = slots * 8;
+        printf(TMPL_ALLOC_STACK, bytes);
 
-    puts(";# evaluate all the params and store them into the stack");
-    void* it;
-    int n = 0;
-    while params != null {
-        it = *params;
-        if it == null { done; }
-        Emitter_eval_expr(self, it);
-        printf("str     x0, [sp, %x] ; stash!\n", n * 8);
-        params = params + 0x8;
-        n = n + 1;
+        # evaluate and stack all the params
+        void* it;
+        int n = 0;
+        while params != null {
+            it = *params;
+            if it == null { done; }
+            Emitter_eval_expr(self, it);
+            printf(TMPL_STASH_AT, n * 8);
+            params = params + 0x8;
+            n = n + 1;
+        }
+
+        # move the register-passed params into their homes
+        n = 0;
+        while n < register_count {
+            # go in pairs, to maintain SP's 16-byte alignment
+            printf(TMPL_UNSTASH_PAIR_TO, n, n + 1);
+            n = n + 2;
+        }
     }
 
-    puts(";# move the register-passed params back off the stack");
-    n = 0;
-    while n < register_count {
-        # go in pairs, to maintain SP's 16-byte alignment
-        printf("ldp     x%d, x%d, [sp], 0x10 ; targeted unstash!\n", n, n + 1);
-        n = n + 2;
-    }
-
-    puts(";# call the target routine");
+    # call the function
     if symbol == null {
         # anonymous - hope it's there!
         printf(TMPL_CALL, Token_value(nameT));
@@ -723,11 +732,10 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
         printf(TMPL_CALL_PTR);
     }
 
-    puts(";# free any stack space needed for passing params (register-passed space was freed already)");
-    if slots_for_passing > 0 {
-        printf("add sp, sp, %x\n", slots_for_passing * 0x8);
+    # release any stack-passed params' space
+    if slots_for_stacking > 0 {
+        printf(TMPL_FREE_STACK, slots_for_stacking * 0x8);
     }
-    puts(";# call complete\n\n");
 }
 
 # [AST_BINARY, op, left, right]
@@ -742,7 +750,7 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     Emitter_eval_expr(self, e);
 
     # restore the right operand
-    printf(TMPL_UNSTASH_X1);
+    printf(TMPL_UNSTASH);
 
     # and the operator
     int op = expr + 0x8;            # -> op
