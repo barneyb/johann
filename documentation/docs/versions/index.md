@@ -11,7 +11,9 @@ Once the last bits of hand-coded assembly are gone, a syntactic revision is next
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Functions can have any number of formal args, and calls can pass any number of params, _except printf_.
 
 ### `v0.20251122`
 

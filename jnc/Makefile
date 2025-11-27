@@ -82,6 +82,7 @@ $(LIB)/%.o: $(OUT)/%.s
 
 test: all
 	$(MAKE) -C tests all
+	$(MAKE) -C params test
 
 touch_all:
 	find . -name '*.jn' | xargs touch

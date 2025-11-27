@@ -25,7 +25,7 @@ fn add(int a, int b) {
 }
 ```
 
-Function calls have a max of eight parameters, which really only matters for [`printf`](../library/io.jn.md). A few ways to print `one: 1` to STDOUT, using the `add` function defined above and several of the standard library functions:
+A few ways to print `one: 1` to STDOUT, using the `add` function defined above and several of the standard library functions:
 
 ```johann
 # convoluted:
