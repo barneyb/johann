@@ -1,4 +1,5 @@
 struct Block;
+struct ArrayList;
 struct Token;
 struct Symbol;
 
@@ -103,26 +104,15 @@ char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
 struct Emitter {
-    int seq,        # sequence for unique label names
-    int depth,      # todo: use list.size()?
-    Block* blocks,  # array/stack of "lexical" Blocks # todo: remove
-    int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l, int m,
-    int n, int o, int p, int q, int r, int s, int t, int u, int v, int w, int x, int y, int z,
-    int aa, int ab, int ac,
-    int an, int ao, int ap, int aq, int ar, int as, int at, int au, int av, int aw, int ax, int ay, int az,
-    ArrayList* block_list, # list/stack of "lexical" Blocks
+    int seq,            # sequence for unique label names
+    ArrayList* blocks,  # list/stack of "lexical" Blocks
 }
-
-int SIZEOF_BLOCK; # todo: remove
-int BLOCKS_CAP = 10; # todo: remove
 
 pub fn Emitter__new() {
     Emitter* self = malloc(sizeof(Emitter));
     self.seq = 0;
-    self.depth = 0;
-    self.block_list = ArrayList__new(8);
-    int type = null;
-    self.enter_block(type);
+    self.blocks = ArrayList__new_owned(8, &Block_drop);
+    self.enter_block(null);
     printf(TMPL_PRELUDE, JNC_SHORT_VERSION);
     return self;
 }
@@ -130,7 +120,7 @@ pub fn Emitter__new() {
 pub fn Emitter_drop(Emitter* self) {
     Block* block = self.leave_block();
     block.drop();
-    ArrayList_drop(self.block_list);
+    ArrayList_drop(self.blocks);
     free(self);
 }
 
@@ -141,56 +131,36 @@ fn Emitter_seqnum(Emitter* self) {
 
 fn Emitter_enter_block(Emitter* self, int type) {
     int id = self.seqnum();
-    int depth = self.depth;
-    void* blocks = self + 0x10;     # -> blocks # todo: here
-    depth = depth * SIZEOF_BLOCK;
-    void* block = blocks + depth;
-    Block_init(block, type, id);
-    depth = self.depth;
-    depth = depth + 1;
-    self.depth = depth;
+    void* block = Block__new(type, id);
+    ArrayList_push(self.blocks, block);
     return block;
 }
 
 fn Emitter_current_block(Emitter* self) {
-    void* blocks = self + 0x10;     # -> blocks # todo: here
-    int depth = self.depth;
-    depth = depth - 1;
-    depth = depth * SIZEOF_BLOCK;
-    blocks = blocks + depth;
-    return blocks;
+    return ArrayList_peek(self.blocks);
 }
 
 fn Emitter_is_global(Emitter* self) {
-    return self.depth == 1;
+    return ArrayList_size(self.blocks) == 1;
 }
 
 fn Emitter_innermost_block_of(Emitter* self, int type, void* token) {
-    int depth = self.depth;
-    void* blocks = self + 0x10;     # -> blocks # todo: here
-    while depth > 0 {
-        depth = depth - 1;
-        void* block = depth * SIZEOF_BLOCK;
-        block = block + blocks;
-        int t = Block_type(block);
-        if type == t {
-            return block;
+    ArrayList* list = self.blocks;
+    int i = list.size();
+    while i > 0 {
+        i = i - 1;
+        Block* blk = list.get(i);
+        if blk.type() == type {
+            return blk;
         }
     }
 
     # out of blocks
-    char* err = ERR_INVALID_NESTING;
-    depth = 37;
-    jnc_panic(err, token, depth);
+    jnc_panic(ERR_INVALID_NESTING, token, 37);
 }
 
 fn Emitter_leave_block(Emitter* self) {
-    int depth = self.depth;
-    depth = depth - 1;
-    self.depth = depth;
-    void* blocks = self + 0x10;             # -> blocks # todo: here
-    void* block = depth * SIZEOF_BLOCK;
-    block = block + blocks;
+    void* block = ArrayList_pop(self.blocks);
     return block;
 }
 
@@ -207,12 +177,12 @@ fn Emitter_try_lookup_symbol_for(Emitter* self, void* id_token) {
 }
 
 fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, bool allow_null) {
-    int depth = self.depth;
-    void* blocks = self + 0x10; # &self.blocks; # todo: here
-    while depth > 0 {
-        depth = depth - 1;
-        Block* block = blocks + (depth * SIZEOF_BLOCK);
-        void* sym = block.get_symbol(name);
+    ArrayList* list = self.blocks;
+    int i = list.size();
+    while i > 0 {
+        i = i - 1;
+        Block* blk = list.get(i);
+        void* sym = blk.get_symbol(name);
         if sym != null {
             return sym;
         }

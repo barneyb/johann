@@ -14,7 +14,12 @@ fn make_zero(int one) {
     char* format = "n: %i\n";;;; # here too!
     printf(format, one);
     int two = one + one; printf(format, two);
-    int three = two + one; printf(format, three);
+    # this nonsense is purely to verify deep nesting works correctly
+    if true { if true { if true { if true { if true { if true { if true { if true { if true { if true {
+    if true { if true { if true { if true { if true { if true { if true { if true { if true { if true {
+        int three = two + one; printf(format, three);
+    } } } } } } } } } }
+    } } } } } } } } } }
     int four = two * two; printf(format, four);
     int seven = three + four; printf(format, seven);
     three = seven / two; printf(format, three);
