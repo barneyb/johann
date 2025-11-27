@@ -1,4 +1,5 @@
 struct Block;
+struct ArrayList;
 struct Token;
 struct Symbol;
 
@@ -103,31 +104,23 @@ char* TMPL_BYTE_AT_ADDR         = "        ldrb    w0, [x0]\n";
 char* TMPL_QUAD_AT_ADDR         = "        ldr     x0, [x0]\n";
 
 struct Emitter {
-    int seq,        # sequence for unique label names
-    int depth,
-    Block* blocks,  # array/stack of "lexical" Blocks
+    int seq,            # sequence for unique label names
+    ArrayList* blocks,  # list/stack of "lexical" Blocks
 }
 
-int SIZEOF_BLOCK;
-int BLOCKS_CAP = 10;
-
 pub fn Emitter__new() {
-    int bytes = SIZEOF_BLOCK * BLOCKS_CAP;
-    bytes = bytes + 0x10;
-    Emitter* self = malloc(bytes);
+    Emitter* self = malloc(sizeof(Emitter));
     self.seq = 0;
-    self.depth = 0;
-    int type = null;
-    Emitter_enter_block(self, type);
-    char* tmpl = TMPL_PRELUDE;
-    char* ver = JNC_SHORT_VERSION;
-    printf(tmpl, ver);
+    self.blocks = ArrayList__new_owned(8, &Block_drop);
+    self.enter_block(null);
+    printf(TMPL_PRELUDE, JNC_SHORT_VERSION);
     return self;
 }
 
-pub fn Emitter_drop(void* self) {
-    void* block = Emitter_leave_block(self);
-    Block_drop(block);
+pub fn Emitter_drop(Emitter* self) {
+    Block* block = self.leave_block();
+    block.drop();
+    ArrayList_drop(self.blocks);
     free(self);
 }
 
@@ -136,84 +129,60 @@ fn Emitter_seqnum(Emitter* self) {
     return self.seq;
 }
 
-fn Emitter_enter_block(void* self, int type) {
-    int id = Emitter_seqnum(self);
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    void* blocks = self + 0x8;
-    depth = depth * SIZEOF_BLOCK;
-    void* block = blocks + depth;
-    Block_init(block, type, id);
-    depth = *self;
-    depth = depth + 1;
-    *self = depth;
+fn Emitter_enter_block(Emitter* self, int type) {
+    int id = self.seqnum();
+    void* block = Block__new(type, id);
+    ArrayList_push(self.blocks, block);
     return block;
 }
 
-fn Emitter_current_block(void* self) {
-    void* blocks = self + 0x10;
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    depth = depth - 1;
-    depth = depth * SIZEOF_BLOCK;
-    blocks = blocks + depth;
-    return blocks;
+fn Emitter_current_block(Emitter* self) {
+    return ArrayList_peek(self.blocks);
 }
 
 fn Emitter_is_global(Emitter* self) {
-    return self.depth == 1;
+    return ArrayList_size(self.blocks) == 1;
 }
 
-fn Emitter_innermost_block_of(void* self, int type, void* token) {
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    void* blocks = self + 0x8;
-    while depth > 0 {
-        depth = depth - 1;
-        void* block = depth * SIZEOF_BLOCK;
-        block = block + blocks;
-        int t = Block_type(block);
-        if type == t {
-            return block;
+fn Emitter_innermost_block_of(Emitter* self, int type, void* token) {
+    ArrayList* list = self.blocks;
+    int i = list.size();
+    while i > 0 {
+        i = i - 1;
+        Block* blk = list.get(i);
+        if blk.type() == type {
+            return blk;
         }
     }
 
     # out of blocks
-    char* err = ERR_INVALID_NESTING;
-    depth = 37;
-    jnc_panic(err, token, depth);
+    jnc_panic(ERR_INVALID_NESTING, token, 37);
 }
 
-fn Emitter_leave_block(void* self) {
-    self = self + 0x8;             # -> depth
-    int depth = *self;
-    depth = depth - 1;
-    *self = depth;
-    self = self + 0x8;             # -> blocks
-    void* block = depth * SIZEOF_BLOCK;
-    block = block + self;
+fn Emitter_leave_block(Emitter* self) {
+    void* block = ArrayList_pop(self.blocks);
     return block;
 }
 
-fn Emitter_lookup_symbol_for(void* self, void* id_token) {
+fn Emitter_lookup_symbol_for(Emitter* self, void* id_token) {
     char* name = Token_value(id_token);
     bool allow_null = false;
-    return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
+    return self.lookup_symbol_by_name_and_token( name, id_token, allow_null);
 }
 
-fn Emitter_try_lookup_symbol_for(void* self, void* id_token) {
+fn Emitter_try_lookup_symbol_for(Emitter* self, void* id_token) {
     char* name = Token_value(id_token);
     bool allow_null = true;
-    return Emitter_lookup_symbol_by_name_and_token(self, name, id_token, allow_null);
+    return self.lookup_symbol_by_name_and_token( name, id_token, allow_null);
 }
 
 fn Emitter_lookup_symbol_by_name_and_token(Emitter* self, char* name, void* t, bool allow_null) {
-    int depth = self.depth;
-    void* blocks = self + 0x10; # &self.blocks;
-    while depth > 0 {
-        depth = depth - 1;
-        Block* block = blocks + (depth * SIZEOF_BLOCK);
-        void* sym = block.get_symbol(name);
+    ArrayList* list = self.blocks;
+    int i = list.size();
+    while i > 0 {
+        i = i - 1;
+        Block* blk = list.get(i);
+        void* sym = blk.get_symbol(name);
         if sym != null {
             return sym;
         }

@@ -13,7 +13,9 @@ Once the last bits of hand-coded assembly are gone, a syntactic revision is next
 
 ### Bleeding Edge
 
-Functions can have any number of formal args, and calls can pass any number of params, _except printf_.
+Functions can have any number of formal args, and calls can pass any number of params, _except to `printf`_.
+
+Nesting more than eight levels deep no longer causes memory corruption.
 
 ### `v0.20251122`
 

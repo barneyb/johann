@@ -14,18 +14,18 @@ struct Block {
     HashMap* symbols,
 }
 
-pub int SIZEOF_BLOCK = sizeof(Block);
-
-pub fn Block_init(Block* self, int type, int id) {
+pub fn Block__new(int type, int id) {
+    Block* self = malloc(sizeof(Block));
     self.type = type;
     self.id = id;
     self.nvars = 0;
-    self.symbols = HashMap__new_owned(&strhash, &strcmp, &free, &free);
+    self.symbols = null;
     return self;
 }
 
 pub fn Block_drop(Block* self) {
     HashMap_drop(self.symbols);
+    free(self);
 }
 
 pub fn Block_type(Block* self) {
@@ -37,22 +37,24 @@ pub fn Block_id(Block* self) {
 }
 
 pub fn Block_contains_symbol(Block* self, char* name) {
+    if self.symbols == null { return false; }
     return HashMap_contains(self.symbols, name);
 }
 
 pub fn Block_get_symbol(Block* self, char* name) {
+    if self.symbols == null { return null; }
     return HashMap_get(self.symbols, name);
 }
 
 pub fn Block_put_symbol(Block* self, char* name, void* symbol) {
+    if self.symbols == null {
+        self.symbols = HashMap__new_owned(&strhash, &strcmp, &free, &free);
+    }
     # only take ownership of the symbol, not the name
     return free(HashMap_put(self.symbols, strclone(name), symbol));
 }
 
 pub fn Block_symbol_count(Block* self) {
+    if self.symbols == null { return 0; }
     return HashMap_size(self.symbols);
-}
-
-pub fn Block_symbols(Block* self) {
-    return self.symbols;
 }
