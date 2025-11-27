@@ -27,8 +27,8 @@ char* TMPL_GLOBAL_CHAR          = "    .data\n        __j_%s: %s '%c'\n    .text
 char* TMPL_GLOBAL_STRING        = "    .data\n        __j_%s: .asciz %c%s%c\n    .text\n";
 
 char* TMPL_FN_ARG               = "        str     x%i, [fp, -%x]\n";
-char* TMPL_FN_INTRO             = "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n            sub sp, sp, %x ; fn intro\n";
-char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\n            add sp, sp, %x ; fn outro\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
+char* TMPL_FN_INTRO             = "    __j_%s:\n        stp     fp, lr, [sp, -0x10]!\n        mov     fp, sp\n        sub     sp, sp, %x ; fn intro\n";
+char* TMPL_FN_OUTRO             = "        mov      x0, #0\n        _return_%i:\n        add     sp, sp, %x ; fn outro\n        ldp     fp, lr, [sp], 0x10\n        ret\n\n\n";
 
 char* TMPL_RETURN               = "        b       _return_%i\n";
 
@@ -611,24 +611,22 @@ fn Emitter_do_read_member(void* self, void* rcvr, int offset, int width) {
     printf(TMPL_READ_MEMBER_QUAD, offset);
 }
 
-fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
-    void* nameT = callee + 0x8;       # -> nameT
-    nameT = *nameT;
-    # If ENV knows about it, it's a declared function, so check args
+fn Emitter_check_call_for_symbol(void* self, void* nameT, void* params) {
+    # If ENV knows about it, it's a declared function, so check params
     # todo: this belongs in typechecking
     void* tast = Env_opt_typeof_symbol(ENV, nameT);
     if tast != null {
         if *tast == AST_FN {
             # if tast is AST_FN, we know about the function
             int fl = 0; # assume zero-arg for now
-            tast = tast + 0x10;         # -> params
+            tast = tast + 0x10;         # -> args
             if *tast != null {
-                # if params is not null, the function has formal args
+                # the function has formal args
                 fl = arrlen(*tast);
             }
             int pl = 0;
-            if args != null {
-                pl = arrlen(args);
+            if params != null {
+                pl = arrlen(params);
             }
             if pl != fl {
                 # munge for panic
@@ -650,6 +648,14 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
             jnc_panic(ERR_UNKNOWN_FN, nameT, 100);
         } }
     } } }
+    return symbol;
+}
+
+fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
+    void* nameT = callee + 0x8;       # -> nameT
+    nameT = *nameT;
+    printf("\n\n;# set up call to '%s'\n", Token_value(nameT));
+    Symbol* symbol = Emitter_check_call_for_symbol(self, nameT, params);
     if symbol != null {
         # fn* setup corrupts x0, so do it before params
         do_address_of(self, nameT, symbol);
@@ -659,34 +665,64 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* args) {
         printf(TMPL_CALL_PTR_INTRO);
     }
 
-    call_params_but_sillier(self, args);
-
-    if symbol != null {
-        # call the function pointer
-        return printf(TMPL_CALL_PTR);
+    puts(";# evaluate the params");
+    int param_count = 0;
+    if params != null {
+        param_count = arrlen(params);
     }
-    # anonymous - hope it's there!
-    printf(TMPL_CALL, Token_value(nameT));
-}
+    printf("; %d params\n", param_count);
+    int register_count;
+    int stacked_count;
+    if param_count > 8 {
+        register_count = 8;
+        stacked_count = param_count - 8;
+    } else {
+        register_count = param_count;
+        stacked_count = 0;
+    }
+    int slots = param_count;
+    if slots % 2 == 1 {
+        # extra slot to maintain SP's 16-byte alignment
+        slots = slots + 1;
+    }
+    int slots_for_passing = slots - 8;
+    int bytes = slots * 8;
+    printf("; allocate %d slots (%d bytes) of stack space\n", slots, bytes);
+    printf("sub sp, sp, %x\n", bytes);
 
-fn call_params_but_sillier(void* self, void* args) {
-    # todo: this is a ridiculous way to do params
+    puts(";# evaluate all the params and store them into the stack");
     void* it;
-    char* tmpl = TMPL_STASH;
     int n = 0;
-    while args != null {
-        it = *args;
+    while params != null {
+        it = *params;
         if it == null { done; }
         Emitter_eval_expr(self, it);
-        printf(tmpl);
-        args = args + 0x8;
+        printf("str     x0, [sp, %x] ; stash!\n", n * 8);
+        params = params + 0x8;
         n = n + 1;
     }
-    tmpl = TMPL_UNSTASH_Xi;
-    while n > 0 {
-        n = n - 1;
-        printf(tmpl, n);
+
+    puts(";# move the register-passed params back off the stack");
+    n = 0;
+    while n < register_count {
+        # go in pairs, to maintain SP's 16-byte alignment
+        printf("ldp     x%d, x%d, [sp], 0x10 ; targeted unstash!\n", n, n + 1);
+        n = n + 2;
     }
+
+    puts(";# call the target routine");
+    if symbol == null {
+        # anonymous - hope it's there!
+        printf(TMPL_CALL, Token_value(nameT));
+    } else {
+        printf(TMPL_CALL_PTR);
+    }
+
+    puts(";# free any stack space needed for passing params (register-passed space was freed already)");
+    if slots_for_passing > 0 {
+        printf("add sp, sp, %x\n", slots_for_passing * 0x8);
+    }
+    puts(";# call complete\n\n");
 }
 
 # [AST_BINARY, op, left, right]
