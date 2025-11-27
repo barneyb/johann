@@ -76,4 +76,4 @@ while true {
 }
 ```
 
-Only eight levels of nesting are supported. If you go deeper, you'll probably run into memory corruption. Break your function into smaller, simpler pieces.
+Nesting depth is no longer constrained, but don't abuse it. Future you will thank you.
