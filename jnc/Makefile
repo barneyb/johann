@@ -91,6 +91,7 @@ clean:
 	rm -rf $(TGT)
 	$(MAKE) -C ../jstdlib clean
 	$(MAKE) -C tests clean
+	$(MAKE) -C params clean
 
 # configuration targets
 
