@@ -300,12 +300,17 @@ pub fn Emitter_do_fn_intro(void* self, void* nameT, int lbytes, void* args) {
     introduce_fn(self, name, lbytes);
 
     if args == null { return; }
-    int reg_offset = 0;
-    while true {
-        if *args == null { done; }
-        int offset = (reg_offset + 1) * 0x8;
-        printf(TMPL_FN_ARG, reg_offset, offset);
-        reg_offset = reg_offset + 1;
+    int n = 0;
+    while *args != null {
+        int offset = (n + 1) * 0x8;
+        if n < 8 {
+            printf(TMPL_FN_ARG, n, offset);
+        } else {
+            printf(";# arg %d comes from the stack\n", n);
+            printf("ldr     x0, [sp, %x]\n", lbytes + 0x10 + (n - 8) * 0x8);
+            printf(TMPL_FN_ARG, 0, offset);
+        }
+        n = n + 1;
         args = args + 0x8;
     }
 }
