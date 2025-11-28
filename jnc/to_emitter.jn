@@ -149,13 +149,13 @@ fn to_emitter_if(void* emitter, void* ast) {
         Emitter_do_if(emitter, cond);
         array_to_emitter(emitter, body);
         Emitter_do_close_block(emitter);
-        return;
-    } # ... it's funny!
-    Emitter_do_if_else(emitter, cond);
-    array_to_emitter(emitter, body);
-    Emitter_do_else(emitter);
-    array_to_emitter(emitter, ebody);
-    Emitter_do_close_block(emitter);
+    } else {
+        Emitter_do_if_else(emitter, cond);
+        array_to_emitter(emitter, body);
+        Emitter_do_else(emitter);
+        array_to_emitter(emitter, ebody);
+        Emitter_do_close_block(emitter);
+    }
 }
 
 fn to_emitter_while(void* emitter, void* ast) {

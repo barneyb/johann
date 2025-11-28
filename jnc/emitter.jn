@@ -219,8 +219,7 @@ pub fn Emitter_do_decl(void* self, Token* nameT, int type, int nptr, void* expr)
     bool global = Emitter_is_global(self);
     if global {
         block = Emitter_current_block(self);
-    }
-    if !global {
+    } else {
         # local vars have function scope, not block scope
         block = Emitter_innermost_block_of(self, T_KW_FN, nameT);
     }
@@ -261,15 +260,13 @@ fn decl_global(void* self, Token* nameT, void* expr, Symbol* symbol) {
     char* width;
     if var_width == 1 {
         width = WIDTH_BYTE;
-    }
-    if var_width != 1 {
+    } else {
         width = WIDTH_QUAD;
     }
     char* tmpl;
     if val_type == T_CHAR {
         tmpl = TMPL_GLOBAL_CHAR;
-    }
-    if val_type != T_CHAR {
+    } else {
         tmpl = TMPL_GLOBAL_NUM;
     }
     expr = Emitter_eval_const(self, expr);
@@ -404,8 +401,7 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     int width = Symbol_width(symbol);
     if width == 1 {
         tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
-    }
-    if width != 1 {
+    } else {
         tmpl = TMPL_ASSIGN_GLOBAL_QUAD;
     }
     printf(tmpl, name, name);
@@ -453,8 +449,7 @@ fn get_symbol_with_addr_in_x7(void* self, void* nameT) {
     if offset > 0 {
         # local
         printf(TMPL_GET_ADDR_LOCAL, offset * 0x8);
-    }
-    if offset <= 0 {
+    } else {
         # global
         char* name = Token_value(nameT);
         printf(TMPL_GET_ADDR_GLOBAL, name, name);
@@ -486,7 +481,7 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     v = *v;
     if t == AST_LIT_BOOL { return v; }
     if t == AST_LIT_CHAR { return v; }
-    if t == AST_LIT_INT { return v; }
+    if t == AST_LIT_INT  { return v; }
 
     char* f = "Expr type %i isn't constant.\n";
     printf(f, t);
@@ -765,10 +760,10 @@ fn Emitter_eval_expr_logical(Emitter* self, void* expr, int op) {
     e = *e;
     Emitter_eval_expr(self, e);
 
-    char* comp = null;
-    if op == T_LOG_OR  { comp = COMP_NE; }
-    if op == T_LOG_AND { comp = COMP_EQ; }
-    if comp == null {
+    char* comp;
+         if op == T_LOG_OR  { comp = COMP_NE; }
+    else if op == T_LOG_AND { comp = COMP_EQ; }
+    else {
         eprintf("Unsupported logical op %d , %x , %c\n", op, op, op % 0x100);
         exit(1);
     }
@@ -848,8 +843,7 @@ fn Emitter_do_value_integer(void* self, int i) {
     if i > 32767 {
         Emitter_do_value_integer_large(self, i);
         return null;
-    } # todo: where's my else?!
-    if i < -32767 {
+    } else if i < -32767 {
         Emitter_do_value_integer_large(self, i);
         return null;
     }
