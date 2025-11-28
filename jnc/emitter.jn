@@ -74,6 +74,9 @@ char* TMPL_UNSTASH              = "        ldr     x1, [sp], 0x10 ; unstash!\n";
 char* TMPL_UNSTASH_TO           = "        ldr     x%i, [sp], 0x10 ; unstash to!\n";
 char* TMPL_UNSTASH_PAIR_TO      = "        ldp     x%d, x%d, [sp], 0x10 ; unstash pair to!\n";
 
+char* TMPL_BIN_LOGICAL          = "        cmp     x0, #0\n        b.%s    cond_%i_short\n";
+char* TMPL_BIN_LOGICAL_SHORT    = "        cond_%i_short:\n";
+
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
 char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
 char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
@@ -709,6 +712,13 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
 
 # [AST_BINARY, op, left, right]
 fn Emitter_eval_expr_binary(void* self, void* expr) {
+    int op = expr + 0x8;            # -> op
+    op = *op;
+
+    # these need short-circuit behavior
+    if op == T_LOG_OR  { return Emitter_eval_expr_logical(self, expr, op); }
+    if op == T_LOG_AND { return Emitter_eval_expr_logical(self, expr, op); }
+
     void* e = expr + 0x18;          # -> right
     e = *e;
     Emitter_eval_expr(self, e);
@@ -721,9 +731,6 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     # restore the right operand
     printf(TMPL_UNSTASH);
 
-    # and the operator
-    int op = expr + 0x8;            # -> op
-    op = *op;
     if op == T_MINUS   { return printf(TMPL_BIN_SUB); }
     if op == T_PLUS    { return printf(TMPL_BIN_ADD); }
     if op == T_STAR    { return printf(TMPL_BIN_MUL); }
@@ -743,6 +750,29 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     printf(f, op, op);
     eprintf(f, op, op);
     panic(13);
+}
+
+# [AST_BINARY, op, left, right]
+fn Emitter_eval_expr_logical(Emitter* self, void* expr, int op) {
+    int seq = self.seqnum();
+    void* e = expr + 0x10;          # -> left
+    e = *e;
+    Emitter_eval_expr(self, e);
+
+    char* comp = null;
+    if op == T_LOG_OR  { comp = COMP_NE; }
+    if op == T_LOG_AND { comp = COMP_EQ; }
+    if comp == null {
+        eprintf("Unsupported logical op %d , %x , %c\n", op, op, op % 0x100);
+        exit(1);
+    }
+    printf(TMPL_BIN_LOGICAL, comp, seq);
+
+    e = expr + 0x18;          # -> right
+    e = *e;
+    Emitter_eval_expr(self, e);
+
+    printf(TMPL_BIN_LOGICAL_SHORT, seq);
 }
 
 # [AST_ADDR_OP, op, nameT]
