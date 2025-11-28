@@ -36,7 +36,7 @@ Compiling `main.jn` by itself succeeds:
 % ./bin/jnc < main.jn > main.s
 ```
 
-If you assemble and link, the program will even run! Which is bad. If you create and use a header file (the extra `< add.jnh` in the second command), compilation will fail and tell you why:
+If you assemble and link, the program will even run! Which is bad. If you create and use a header file (the extra `< add.jnh` in the second command below), compilation will fail and tell you why:
 
 ```
 % ./bin/jnc --header < add.jn > add.jnh

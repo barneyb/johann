@@ -46,10 +46,11 @@ fi
 cp jnc/target/bin/jnc bin
 strip bin/jnc
 cp jstdlib/target/lib/jstdlib.o lib
+cp jstdlib/target/lib/jstdlib.jnh lib
 if ! make clean test all not_quite_lisp; then
     nope 7 "Not Quite Lisp doesn't work anymore"
 fi
-git add --force bin/jnc lib/jstdlib.o
+git add --force bin/jnc lib/jstdlib.o lib/jstdlib.jnh
 
 ./johanndoc.sh
 

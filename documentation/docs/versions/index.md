@@ -11,7 +11,9 @@ Once the last bits of hand-coded assembly are gone, a syntactic revision is next
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Include `jstdlib.jnh` next to `jstdlib.o`.
 
 ### `v0.20251128`
 

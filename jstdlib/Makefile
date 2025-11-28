@@ -18,11 +18,31 @@ OBJECTS = \
 	$(LIB)/sys.jn.o \
 	$(LIB)/sys.o \
 
-all: $(LIB)/jstdlib.o
+HEADERS = \
+	$(OUT)/ArrayList.jnh \
+	$(OUT)/HashMap.jnh \
+	$(OUT)/Queue.jnh \
+	$(OUT)/StringBuilder.jnh \
+	$(OUT)/TreeMap.jnh \
+	$(OUT)/algorithm.jnh \
+	$(OUT)/allocator.jnh \
+	$(OUT)/io.jnh \
+	$(OUT)/math.jnh \
+	$(OUT)/string.jnh \
+	$(OUT)/sys.jnh \
+
+all: $(LIB)/jstdlib.o $(LIB)/jstdlib.jnh
 
 $(LIB)/jstdlib.o: $(OBJECTS)
 	@mkdir -p $(LIB)
 	gcc -o $(LIB)/jstdlib.o -nostdlib -r $(OBJECTS)
+
+$(LIB)/jstdlib.jnh: $(HEADERS)
+	@mkdir -p $(LIB)
+	cat $(HEADERS) \
+		| tee $(LIB)/jstdlib.jnh \
+		| $(JNC) --strict \
+		> /dev/null
 
 # Pattern targets
 
@@ -30,9 +50,13 @@ $(LIB)/%.o: %.s
 	@mkdir -p $(LIB)
 	gcc -o $@ -c $<
 
-$(OUT)/%.jn.s: %.jn
+$(OUT)/%.jn.s $(OUT)/%.jnh: %.jn
 	@mkdir -p $(OUT)
 	$(JNC) < $< > $@
+	$(JNC) --header < $< \
+		| tee $(OUT)/$<h \
+		| $(JNC) --strict \
+		> /dev/null
 
 $(LIB)/%.jn.o: $(OUT)/%.jn.s
 	@mkdir -p $(LIB)

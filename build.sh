@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -ex
 
-git restore --staged bin/jnc lib/jstdlib.o
-git restore bin/jnc lib/jstdlib.o
+git restore --staged bin/jnc lib/jstdlib.o lib/jstdlib.jnh
+git restore bin/jnc lib/jstdlib.o lib/jstdlib.jnh
 
 NOW="$(date +%Y%m%d-%H%M%S)"
 TAG="build-$NOW"
@@ -23,14 +23,16 @@ git tag --list 'build-*' \
     | xargs git tag -d
 
 make clean test all
+rm bin/jnc lib/jstdlib.o lib/jstdlib.jnh
 cp jnc/target/bin/jnc bin
 cp jstdlib/target/lib/jstdlib.o lib
+cp jstdlib/target/lib/jstdlib.jnh lib
 if ! make clean test all not_quite_lisp; then
     set +x
     echo
     echo "Failed to re-build"
     echo
-    git restore --staged bin/jnc lib/jstdlib.o
-    git restore bin/jnc lib/jstdlib.o
+    git restore --staged bin/jnc lib/jstdlib.o lib/jstdlib.jnh
+    git restore bin/jnc lib/jstdlib.o lib/jstdlib.jnh
     exit 1
 fi
