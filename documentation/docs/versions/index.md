@@ -23,6 +23,8 @@ A few things remain before 1.0:
 
 Include `jstdlib.jnh` next to `jstdlib.o`.
 
+Support logical `&&` and `||` operators. 
+
 ### `v0.20251128`
 
 Iterator convention, and implement for `ArrayList` and `HashMap`'s keys.

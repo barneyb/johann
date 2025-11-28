@@ -16,16 +16,17 @@
 # |    `%`    | literal `%`                                          |
 # |    `b`    | boolean, either `true` or `false`                    |
 # |    `c`    | character                                            |
-# | `d` / `i` | base-10 integer                                      |  space  |
+# | `d` , `i` | base-10 integer                                      |  space  |
 # |    `o`    | base-8 integer, w/ `0` prefix                        |  space  |
 # |    `p`    | a pointer, in hex, at least 9 digits                 |  zero   |
 # |    `s`    | a null-terminated byte string                        |
-# | `x` / `X` | base-16 integer, w/ `0x` prefix, lower or upper case |  space  |
+# | `x` , `X` | base-16 integer, w/ `0x` prefix, lower or upper case |  space  |
 #
 # Only integers and pointers support a width spec, and padding goes on the left.
 # To pad integers with zeros instead of spaces, use a leading zero on the width.
 # Confusingly, the padding goes _after_ the prefix of octal/hex conversions,
-# even though the prefix is included in the "how much to pad" calculation.
+# even though the prefix is included in the "how much to pad" calculation. Also,
+# octal/hex are treated as signed.
 #
 # There is no support for converting a single argument multiple times, you have
 # to pass it for each conversion spec.
