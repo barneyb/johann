@@ -2,17 +2,18 @@
 
 The [allocator](../library/allocator.jn.md) only uses anonymously `mmap`ed pages, which are acquired on-demand, and never `unmmap`ed. Allocations passed back to `free` are marked for recycling in a best-fit fashion, and are neither coalesced nor re-chunked more finely. Recycling is always preferred to requesting more space from the OS.
 
-Under the hood, the allocator maintains memory to recycle as a set of linked lists through the heap. There are a few for small allocations, plus one more where everything bigger goes. Each list is kept in sorted order as chunks are added, smallest first. The "small" lists only have chunks of a single size, so maintaining sorted order is trivial: adding at the head is always correct.
+Under the hood, the allocator maintains memory to recycle as a set of doubly-linked lists through the heap. There are a few for small allocations, plus one for everything larger. Each list is kept in sorted order as chunks are added, smallest first. The "small" lists only have chunks of a single size, so maintaining sorted order is trivial: adding at the head is always correct.
 
-Stats from a sample run showing the 'big' list and the six small lists' are below:
+The per-list stats from a sample run of compiling `parser.jn` from `jnc`:
 
 |        | 'big' |        16 |        32 | 48 |  64 | 80 | 96 |     total |
 |-------:|------:|----------:|----------:|---:|----:|---:|---:|----------:|
-| allocs |   190 | 2,146,192 | 2,759,003 |  2 | 969 |  1 |  0 | 4,906.357 |
-|  frees |   190 | 2,146,192 | 2,759,003 |  2 | 969 |  1 |  0 | 4,906.357 |
-| chunks |    25 |       989 |   613,721 |  2 | 837 |  1 |  0 |   615.575 |
+| allocs |   141 |      6080 |     13835 | 29 | 381 |  0 |  0 |     20466 |
+|  frees |   141 |      6080 |     13835 | 29 | 381 |  0 |  0 |     20466 |
+| chunks |    26 |      4638 |      4997 | 29 | 176 |  0 |  0 |      9866 |
 
-Separating the 16- and 32-byte lists from the rest reduced this program's runtime by over 95%!
+
+The choice of six "small" lists was arbitrary, and has served well in practice. The single 'big' list is simple, and has also served well enough. Some sort of logarithmic progression of sized buckets seems like the way out, but it hasn't mattered yet. Initially, there was just one list for everything, and performance was _terrible_.  
 
 ## Warnings
 
@@ -23,7 +24,7 @@ When a program exits without panicking, the count of `malloc` and `free` calls o
     ;      3984 chunks (0xc2700 bytes)
     ;      52 mmaps  (52 pages)
 
-STDERR will show a summary of the free lists as well. Collecting these stats cannot be disabled without modifying the source, but the cost is miniscule compared to how wasteful the compiled codes are. The columns in the table correspond to the different free lists mentioned above.
+STDERR will show a summary of the free lists as well. Collecting these stats cannot be disabled without modifying the source, but the cost is miniscule compared to how wasteful the compiled codes are.
 
 You can call the undocumented `mem_stats__(bool force)` function to force a warning to be printed while your program is running, which is occasionally helpful for debugging. 
 
