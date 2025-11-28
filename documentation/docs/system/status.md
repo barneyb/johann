@@ -15,7 +15,8 @@
 - [ ] array types
 - [ ] blocks/scopes
 - [x] unconstrained local variables
-- [ ] unconstrained parameter passing (and varargs?)
+- [x] unconstrained parameter passing
+- [ ] varargs
 - [ ] logical operators
 - [x] shift operators
 - [ ] non-shift bitwise operators
