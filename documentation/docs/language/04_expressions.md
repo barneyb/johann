@@ -11,6 +11,9 @@ Operators are mostly as in C-family languages, aside from assignment. Assignment
 | `<<` , `>>`                                            | left and right logical shift                                         | left to right     |
 | `<` , `<=` <br/> `>` , `>=`                            | less than, less than equal<br/>greater than, greater than equal      | left to right     |
 | `==` , `!=`                                            | is-equal, not-equal                                                  | left to right     |
+| `&`                                                    | bitwise AND                                                          | left to right     |
+| `^`                                                    | bitwise exclusive OR                                                 | left to right     |
+| <code>&#124;</code>                                    | bitwise (inclusive) OR                                               | left to right     |
 | `&&`                                                   | logical AND                                                          | left to right     |
 | <code>&#124;&#124;</code>                              | logical OR                                                           | left to right     |
 
@@ -38,6 +41,7 @@ A few notes:
 * The `sizeof` construct only accepts a type, not an expression to infer the type of.
 * A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs/arrays are often easier to reason about/with.
 * The shift operators work as you'd expect for reasonable operands. Be careful if you might hit over- or underflow, if either operand might be negative, or if the second operand might be greater than 63. All those cases are undefined.
+* The `&&` and `||` operators evaluate to an `int`, but _not_ always to `1` or `0`.
 
 ## Strings
 

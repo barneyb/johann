@@ -544,19 +544,57 @@ fn parse_expr_logic_and(void* lex) {
 }
 
 fn parse_expr_bit_or(void* lex) {
-# todo: skip the empty levels
-#    return parse_expr_bit_xor(lex);
-#}
-#
-#fn parse_expr_bit_xor(void* lex) {
-#    return parse_expr_bit_and(lex);
-#}
-#
-#fn parse_expr_bit_and(void* lex) {
-#    return parse_expr_eq(lex);
-#}
-#
-#fn parse_expr_eq(void* lex) {
+    void* expr = parse_expr_bit_xor(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        bool doit = false;
+        if t == T_PIPE { doit = true; }
+        if !doit { done; }
+        consume_token(lex, t);
+        right = parse_expr_bit_xor(lex);
+        expr = join_bin_op(lex, t, expr, right);
+    }
+    return expr;
+}
+
+fn parse_expr_bit_xor(void* lex) {
+    void* expr = parse_expr_bit_and(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        bool doit = false;
+        if t == T_CARET { doit = true; }
+        if !doit { done; }
+        consume_token(lex, t);
+        right = parse_expr_bit_and(lex);
+        expr = join_bin_op(lex, t, expr, right);
+    }
+    return expr;
+}
+
+fn parse_expr_bit_and(void* lex) {
+    void* expr = parse_expr_eq(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        bool doit = false;
+        if t == T_AMP  { doit = true; }
+        if !doit { done; }
+        consume_token(lex, t);
+        right = parse_expr_rel(lex);
+        expr = join_bin_op(lex, t, expr, right);
+    }
+    return expr;
+}
+
+fn parse_expr_eq(void* lex) {
     void* expr = parse_expr_rel(lex);
     void* right;
     while true {
@@ -685,6 +723,7 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         # todo: use && and || when available
         if op == T_LOG_OR  { ttr = left; if !ttr { ttr = right; } did_it = true; }
         if op == T_LOG_AND { ttr = left; if ttr { ttr = right; } did_it = true; }
+        # todo: statically eval bitwise AND, OR, XOR
         if did_it {
             drop_ast(old_left);
             drop_ast(old_right);
@@ -710,6 +749,7 @@ fn parse_expr_unary(void* lex) {
         if op == T_AMP   { return un_addr_op(lex, op); }
         if op == T_STAR  { return un_addr_op(lex, op); }
         if op == T_BANG  { return join_un_op_rtl(lex, op); }
+        if op == T_TILDE { return join_un_op_rtl(lex, op); }
         if op == T_MINUS { return join_un_op_rtl(lex, op); }
         if op == T_PLUS  { return join_un_op_rtl(lex, op); }
         if op == T_KW_SIZEOF {
@@ -751,18 +791,17 @@ fn join_un_op_rtl(void* lex, int op) {
         # a literal, evaluate
         int v = operand + 0x8;
         v = *v;
-        drop_ast(operand);
         bool did_it = false;
         if op == T_BANG  { v = !v; did_it = true; }
         if op == T_MINUS { v = -v; did_it = true; }
         if op == T_PLUS  {         did_it = true; } # for completeness
+        # todo: statically eval bitwise NOT
         if did_it {
+            drop_ast(operand);
             return ast2(tto, v);
         }
-        char* tmpl = "Can't statically eval %x (%c) with %i of %i\n";
-        printf(tmpl, op, op, operand, tto);
-        eprintf(tmpl, op, op, operand, tto);
-        panic(16);
+        eprintf("Can't statically eval %x (%c) with %i of %i\n",
+                op, op, operand, tto);
     }
 
     return ast3(AST_UNARY, op, operand);

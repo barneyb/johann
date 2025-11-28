@@ -1,0 +1,63 @@
+pub fn main() {
+    # NOTE:
+    # The expected file makes no sense, but it's because the %x conversion spec
+    # treats the value as a _signed_ integer. Squint a little. :)
+
+    or();
+    xor();
+    and();
+    not();
+}
+
+fn or() {
+    puts("\nor:");
+    printf("0xfff00 | 0x00fff: %07x\n", 0xfff00 | 0xfff);
+    int l = 0xfff00;
+    int r = 0xfff;
+    printf("%07x | %07x: %07x\n", l, r, l | r);
+    l = 0xa0; # 1010 0000
+    r = 0xf3f;# 0011 ffff
+              # 1011 ffff
+    printf("%07x | %07x: %07x\n", l, r, l | r);
+}
+
+fn xor() {
+    puts("\nxor:");
+    printf("0xfff00 ^ 0x00fff: %07x\n", 0xfff00 ^ 0xfff);
+    int l = 0xfff00;
+    int r = 0xfff;
+    printf("%07x ^ %07x: %07x\n", l, r, l ^ r);
+    l = 0xa0; # 1010 0000
+    r = 0xf3f;# 0011 ffff
+              # 1001 ffff
+    printf("%07x ^ %07x: %07x\n", l, r, l ^ r);
+}
+
+fn and() {
+    puts("\nand:");
+    printf("0xfff00 & 0x00fff: %07x\n", 0xfff00 & 0xfff);
+    int l = 0xfff00;
+    int r = 0xfff;
+    printf("%07x & %07x: %07x\n", l, r, l & r);
+    l = 0x1;
+    printf("%07x & %07x: %07x\n", l, r, l & r);
+    l = 0xa0;
+    printf("%07x & %07x: %07x\n", l, r, l & r);
+    l = 0xa0; # 1010 0000
+    r = 0xf3f;# 0011 ffff
+              # 0010 0000
+    printf("%07x & %07x: %07x\n", l, r, l & r);
+}
+
+fn not() {
+    puts("\nnot:");
+    printf("~0xfffff001: %07x\n", ~0xfffff001);
+    int v = 0xfffff001;
+    printf("~%07x: %07x\n", v, ~v);
+    v = 0;
+    printf("~%07x: %07x\n", v, ~v);
+    v = 1;
+    printf("~%07x: %07x\n", v, ~v);
+    v = -1;
+    printf("~%07x: %07x\n", v, ~v);
+}

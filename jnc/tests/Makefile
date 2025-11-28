@@ -9,6 +9,7 @@ all: \
 	$(LIB)/a_syntactic_menagerie.o \
 	$(OUT)/a_syntactic_menagerie.strict.s \
 	arrays \
+	bit_ops \
 	collatz \
 	constants \
 	control_flow \

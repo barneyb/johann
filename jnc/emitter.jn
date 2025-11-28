@@ -65,8 +65,8 @@ char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr 
 char* TMPL_READ_MEMBER_QUAD     = "        ldr     x0, [x0, %x]\n";
 char* TMPL_READ_MEMBER_BYTE     = "        ldrb    w0, [x0, %x]\n";
 
-char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
-char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
+char* TMPL_LOGICAL_NOT          = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
+char* TMPL_UN_MINUS             = "        neg     x0, x0\n";
 
 char* TMPL_STASH                = "        str     x0, [sp, -0x10]! ; stash!\n";
 char* TMPL_STASH_AT             = "        str     x0, [sp, %x] ; stash at!\n";
@@ -74,7 +74,7 @@ char* TMPL_UNSTASH              = "        ldr     x1, [sp], 0x10 ; unstash!\n";
 char* TMPL_UNSTASH_TO           = "        ldr     x%i, [sp], 0x10 ; unstash to!\n";
 char* TMPL_UNSTASH_PAIR_TO      = "        ldp     x%d, x%d, [sp], 0x10 ; unstash pair to!\n";
 
-char* TMPL_BIN_LOGICAL          = "        cmp     x0, #0\n        b.%s    cond_%i_short\n";
+char* TMPL_BIN_LOGICAL          = "        cmp     x0, FALSE\n        b.%s    cond_%i_short\n";
 char* TMPL_BIN_LOGICAL_SHORT    = "        cond_%i_short:\n";
 
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
@@ -82,8 +82,13 @@ char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
 char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
 char* TMPL_BIN_DIV              = "        sdiv    x0, x0, x1\n";
 char* TMPL_BIN_MOD              = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
-char* TMPL_BIN_LSL              = "        lsl     x0, x0, x1\n";
-char* TMPL_BIN_LSR              = "        lsr     x0, x0, x1\n";
+
+char* TMPL_BIT_AND              = "        and     x0, x0, x1\n";
+char* TMPL_BIT_LSL              = "        lsl     x0, x0, x1\n";
+char* TMPL_BIT_LSR              = "        lsr     x0, x0, x1\n";
+char* TMPL_BIT_NOT              = "        mvn     x0, x0\n";
+char* TMPL_BIT_OR               = "        orr     x0, x0, x1\n";
+char* TMPL_BIT_XOR              = "        eor     x0, x0, x1\n";
 
 char* COMP_EQ = "eq";
 char* COMP_GE = "ge";
@@ -486,8 +491,7 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     char* f = "Expr type %i isn't constant.\n";
     printf(f, t);
     eprintf(f, t);
-    t = 14;
-    panic(t);
+    exit(14);
 }
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
@@ -555,8 +559,7 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     char* f = "Can't eval expr of type %i\n";
     printf(f, t);
     eprintf(f, t);
-    t = 13;
-    panic(t);
+    exit(13);
 }
 
 fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
@@ -736,8 +739,11 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     if op == T_STAR    { return printf(TMPL_BIN_MUL); }
     if op == T_SLASH   { return printf(TMPL_BIN_DIV); }
     if op == T_PERCENT { return printf(TMPL_BIN_MOD); }
-    if op == T_BIT_LSL { return printf(TMPL_BIN_LSL); }
-    if op == T_BIT_LSR { return printf(TMPL_BIN_LSR); }
+    if op == T_BIT_LSL { return printf(TMPL_BIT_LSL); }
+    if op == T_BIT_LSR { return printf(TMPL_BIT_LSR); }
+    if op == T_AMP     { return printf(TMPL_BIT_AND); }
+    if op == T_PIPE    { return printf(TMPL_BIT_OR ); }
+    if op == T_CARET   { return printf(TMPL_BIT_XOR); }
 
     if op == T_EQ  { return do_binary_op_compare(self, COMP_EQ); }
     if op == T_GT  { return do_binary_op_compare(self, COMP_GT); }
@@ -749,7 +755,7 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    panic(13);
+    exit(13);
 }
 
 # [AST_BINARY, op, left, right]
@@ -797,8 +803,7 @@ fn Emitter_eval_expr_addr(void* self, void* expr) {
     char* f = "Can't eval address operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    op = 13;
-    panic(op);
+    exit(13);
 }
 
 # [AST_UNARY, op, operand]
@@ -812,18 +817,17 @@ fn Emitter_eval_expr_unary(void* self, void* expr) {
     op = *op;
     char* tmpl;
     if op == T_BANG {
-        op = Emitter_seqnum(self);
-        tmpl = TMPL_UN_NOT;
-        return printf(tmpl, op, op, op, op);
+        int seq = Emitter_seqnum(self);
+        return printf(TMPL_LOGICAL_NOT, seq, seq, seq, seq);
     }
-    if op == T_MINUS { tmpl = TMPL_UN_NEGATE; return printf(tmpl); }
+    if op == T_TILDE { return printf(TMPL_BIT_NOT); }
+    if op == T_MINUS { return printf(TMPL_UN_MINUS); }
     if op == T_PLUS  { return; } # no code
 
     char* f = "Can't eval unary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    op = 13;
-    panic(op);
+    exit(13);
 }
 
 fn do_binary_op_compare(void* self, char* comp) {

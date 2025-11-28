@@ -23,7 +23,7 @@ A few things remain before 1.0:
 
 Include `jstdlib.jnh` next to `jstdlib.o`.
 
-Support logical `&&` and `||` operators. 
+Support logical `&&` and `||` operators, and all four bitwise operators 
 
 ### `v0.20251128`
 
