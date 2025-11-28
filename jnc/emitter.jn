@@ -88,7 +88,7 @@ char* COMP_GT = "gt";
 char* COMP_LE = "le";
 char* COMP_LT = "lt";
 char* COMP_NE = "ne";
-char* TMPL_BIN_LOGICAL          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
+char* TMPL_BIN_COMPARE          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
 
 char* TMPL_VALUE_STRING         = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
 char* TMPL_VALUE_INT            = "        mov     x0, #%i\n";
@@ -732,12 +732,12 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     if op == T_BIT_LSL { return printf(TMPL_BIN_LSL); }
     if op == T_BIT_LSR { return printf(TMPL_BIN_LSR); }
 
-    if op == T_EQ  { return do_binary_op_logical(self, COMP_EQ); }
-    if op == T_GT  { return do_binary_op_logical(self, COMP_GT); }
-    if op == T_GTE { return do_binary_op_logical(self, COMP_GE); }
-    if op == T_LT  { return do_binary_op_logical(self, COMP_LT); }
-    if op == T_LTE { return do_binary_op_logical(self, COMP_LE); }
-    if op == T_NEQ { return do_binary_op_logical(self, COMP_NE); }
+    if op == T_EQ  { return do_binary_op_compare(self, COMP_EQ); }
+    if op == T_GT  { return do_binary_op_compare(self, COMP_GT); }
+    if op == T_GTE { return do_binary_op_compare(self, COMP_GE); }
+    if op == T_LT  { return do_binary_op_compare(self, COMP_LT); }
+    if op == T_LTE { return do_binary_op_compare(self, COMP_LE); }
+    if op == T_NEQ { return do_binary_op_compare(self, COMP_NE); }
 
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);
@@ -796,9 +796,9 @@ fn Emitter_eval_expr_unary(void* self, void* expr) {
     panic(op);
 }
 
-fn do_binary_op_logical(void* self, char* comp) {
+fn do_binary_op_compare(void* self, char* comp) {
     int seq = Emitter_seqnum(self);
-    char* tmpl = TMPL_BIN_LOGICAL;
+    char* tmpl = TMPL_BIN_COMPARE;
     printf(tmpl, comp, seq, seq, seq, seq);
 }
 
