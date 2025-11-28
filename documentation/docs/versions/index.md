@@ -11,7 +11,9 @@ Once the last bits of hand-coded assembly are gone, a syntactic revision is next
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251128`
 
 Iterator convention, and implement for `ArrayList` and `HashMap`'s keys.
 
