@@ -18,10 +18,10 @@ struct Symbol {
 pub fn Symbol__new(int type, int nptr) {
     Symbol* s = malloc(sizeof(Symbol));
     s.width = 0x8;
-    if type == T_KW_BOOL     { s.width = 0x1; }
-    if type == T_KW_CHAR     { s.width = 0x1; }
-    if type == AST_TYPE_BOOL { s.width = 0x1; }
-    if type == AST_TYPE_CHAR { s.width = 0x1; }
+         if type == T_KW_BOOL     { s.width = 0x1; }
+    else if type == T_KW_CHAR     { s.width = 0x1; }
+    else if type == AST_TYPE_BOOL { s.width = 0x1; }
+    else if type == AST_TYPE_CHAR { s.width = 0x1; }
     s.nptr = nptr;
     s.offset = 0;
     s.type = type;

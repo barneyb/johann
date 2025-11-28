@@ -501,44 +501,90 @@ fn parse_eval_or_assign(void* lex) {
 }
 
 fn parse_expr(void* lex) {
-    return parse_expr_cond(lex);
-}
-
-fn parse_expr_cond(void* lex) {
-    return parse_expr_logic_or(lex);
-}
-
-fn parse_expr_logic_or(void* lex) {
+# todo:skip the empty levels
+#    return parse_expr_cond(lex);
+#}
+#
+#fn parse_expr_cond(void* lex) {
+#    return parse_expr_logic_or(lex);
+#}
+#
+#fn parse_expr_logic_or(void* lex) {
     void* expr = parse_expr_logic_and(lex);
-#    while true {
-#        void* tkn = peek_token(lex);
-#        if tkn == null { done; }
-#        int t = Token_type(tkn);
-#        if t == T_LOG_OR {
-#            consume_token(lex, t);
-#            void* right = parse_expr_logic_and(lex);
-#            expr = join_bin_op(lex, t, expr, right);
-#            again;
-#        }
-#        done;
-#    }
+    while true {
+        Token* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = tkn.type();
+        if t == T_LOG_OR {
+            consume_token(lex, t);
+            void* right = parse_expr_logic_and(lex);
+            expr = join_bin_op(lex, t, expr, right);
+        } else { done; }
+    }
     return expr;
 }
 
 fn parse_expr_logic_and(void* lex) {
-    return parse_expr_bit_or(lex);
+    void* expr = parse_expr_bit_or(lex);
+    while true {
+        Token* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = tkn.type();
+        if t == T_LOG_AND {
+            consume_token(lex, t);
+            void* right = parse_expr_bit_or(lex);
+            expr = join_bin_op(lex, t, expr, right);
+        } else { done; }
+    }
+    return expr;
 }
 
 fn parse_expr_bit_or(void* lex) {
-    return parse_expr_bit_xor(lex);
+    void* expr = parse_expr_bit_xor(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        if t == T_PIPE {
+            consume_token(lex, t);
+            right = parse_expr_bit_xor(lex);
+            expr = join_bin_op(lex, t, expr, right);
+        } else { done; }
+    }
+    return expr;
 }
 
 fn parse_expr_bit_xor(void* lex) {
-    return parse_expr_bit_and(lex);
+    void* expr = parse_expr_bit_and(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        if t == T_CARET {
+            consume_token(lex, t);
+            right = parse_expr_bit_and(lex);
+            expr = join_bin_op(lex, t, expr, right);
+        } else { done; }
+    }
+    return expr;
 }
 
 fn parse_expr_bit_and(void* lex) {
-    return parse_expr_eq(lex);
+    void* expr = parse_expr_eq(lex);
+    void* right;
+    while true {
+        void* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = Token_type(tkn);
+        if t == T_AMP {
+            consume_token(lex, t);
+            right = parse_expr_rel(lex);
+            expr = join_bin_op(lex, t, expr, right);
+        } else { done; }
+    }
+    return expr;
 }
 
 fn parse_expr_eq(void* lex) {
@@ -548,10 +594,10 @@ fn parse_expr_eq(void* lex) {
         void* tkn = peek_token(lex);
         if tkn == null { done; }
         int t = Token_type(tkn);
-        bool doit = false;
-        if t == T_NEQ  { doit = true; }
-        if t == T_EQ   { doit = true; }
-        if !doit { done; }
+        # todo: this is pretty silly - && soon!
+             if t == T_NEQ { }
+        else if t == T_EQ  { }
+        else { done; }
         consume_token(lex, t);
         right = parse_expr_rel(lex);
         expr = join_bin_op(lex, t, expr, right);
@@ -566,12 +612,12 @@ fn parse_expr_rel(void* lex) {
         void* tkn = peek_token(lex);
         if tkn == null { done; }
         int t = Token_type(tkn);
-        bool doit = false;
-        if t == T_GT  { doit = true; }
-        if t == T_LT  { doit = true; }
-        if t == T_GTE { doit = true; }
-        if t == T_LTE { doit = true; }
-        if !doit { done; }
+        # todo: this is pretty silly - && soon!
+             if t == T_GT  { }
+        else if t == T_LT  { }
+        else if t == T_GTE { }
+        else if t == T_LTE { }
+        else { done; }
         consume_token(lex, t);
         right = parse_expr_shift(lex);
         expr = join_bin_op(lex, t, expr, right);
@@ -586,10 +632,10 @@ fn parse_expr_shift(void* lex) {
         Token* tkn = peek_token(lex);
         if tkn == null { done; }
         int t = tkn.type();
-        bool doit = false;
-        if t == T_BIT_LSL { doit = true; }
-        if t == T_BIT_LSR { doit = true; }
-        if !doit { done; }
+        # todo: this is pretty silly - && soon!
+             if t == T_BIT_LSL { }
+        else if t == T_BIT_LSR { }
+        else { done; }
         consume_token(lex, t);
         right = parse_expr_add(lex);
         expr = join_bin_op(lex, t, expr, right);
@@ -604,10 +650,10 @@ fn parse_expr_add(void* lex) {
         void* tkn = peek_token(lex);
         if tkn == null { done; }
         int t = Token_type(tkn);
-        bool doit = false;
-        if t == T_MINUS { doit = true; }
-        if t == T_PLUS  { doit = true; }
-        if !doit { done; }
+        # todo: this is pretty silly - && soon!
+             if t == T_MINUS { }
+        else if t == T_PLUS  { }
+        else { done; }
         consume_token(lex, t);
         right = parse_expr_mult(lex);
         expr = join_bin_op(lex, t, expr, right);
@@ -622,11 +668,11 @@ fn parse_expr_mult(void* lex) {
         void* tkn = peek_token(lex);
         if tkn == null { done; }
         int t = Token_type(tkn);
-        bool doit = false;
-        if t == T_PERCENT { doit = true; }
-        if t == T_SLASH   { doit = true; }
-        if t == T_STAR    { doit = true; }
-        if !doit { done; }
+        # todo: this is pretty silly - && soon!
+             if t == T_PERCENT { }
+        else if t == T_SLASH   { }
+        else if t == T_STAR    { }
+        else { done; }
         consume_token(lex, t);
         right = parse_expr_cast(lex);
         expr = join_bin_op(lex, t, expr, right);
@@ -653,29 +699,32 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         ttr = *ttr;
         void* old_right = right;
         right = ttr;
-        bool did_it = false;
-        if op == T_EQ      { ttr = left == right; did_it = true; }
-        if op == T_NEQ     { ttr = left != right; did_it = true; }
-        if op == T_GT      { ttr = left >  right; did_it = true; }
-        if op == T_LT      { ttr = left <  right; did_it = true; }
-        if op == T_GTE     { ttr = left >= right; did_it = true; }
-        if op == T_LTE     { ttr = left <= right; did_it = true; }
-        if op == T_PLUS    { ttr = left +  right; did_it = true; }
-        if op == T_MINUS   { ttr = left -  right; did_it = true; }
-        if op == T_STAR    { ttr = left *  right; did_it = true; }
-        if op == T_SLASH   { ttr = left /  right; did_it = true; }
-        if op == T_PERCENT { ttr = left %  right; did_it = true; }
-        if op == T_BIT_LSL { ttr = left << right; did_it = true; }
-        if op == T_BIT_LSR { ttr = left >> right; did_it = true; }
-        if did_it {
-            drop_ast(old_left);
-            drop_ast(old_right);
-            return ast2(ttl, ttr);
+        # todo: oh, for a switch!
+             if op == T_EQ      { ttr = left == right; }
+        else if op == T_NEQ     { ttr = left != right; }
+        else if op == T_GT      { ttr = left >  right; }
+        else if op == T_LT      { ttr = left <  right; }
+        else if op == T_GTE     { ttr = left >= right; }
+        else if op == T_LTE     { ttr = left <= right; }
+        else if op == T_PLUS    { ttr = left +  right; }
+        else if op == T_MINUS   { ttr = left -  right; }
+        else if op == T_STAR    { ttr = left *  right; }
+        else if op == T_SLASH   { ttr = left /  right; }
+        else if op == T_PERCENT { ttr = left %  right; }
+        else if op == T_BIT_LSL { ttr = left << right; }
+        else if op == T_BIT_LSR { ttr = left >> right; }
+        # todo: use && and || when available
+        else if op == T_LOG_OR  { ttr = left; if !ttr { ttr = right; } }
+        else if op == T_LOG_AND { ttr = left; if ttr { ttr = right; } }
+        # todo: statically eval bitwise AND, OR, XOR
+        else {
+            eprintf("Can't statically eval %x (%c) with %i and %i\n",
+                    op, op, left, right);
+            return ast4(AST_BINARY, op, old_left, old_right);
         }
-        eprintf("Can't statically eval %x (%c) with %i and %i\n",
-                op, op, left, right);
-        left = old_left;
-        right = old_right;
+        drop_ast(old_left);
+        drop_ast(old_right);
+        return ast2(ttl, ttr);
     } }
 
     return ast4(AST_BINARY, op, left, right);
@@ -692,6 +741,7 @@ fn parse_expr_unary(void* lex) {
         if op == T_AMP   { return un_addr_op(lex, op); }
         if op == T_STAR  { return un_addr_op(lex, op); }
         if op == T_BANG  { return join_un_op_rtl(lex, op); }
+        if op == T_TILDE { return join_un_op_rtl(lex, op); }
         if op == T_MINUS { return join_un_op_rtl(lex, op); }
         if op == T_PLUS  { return join_un_op_rtl(lex, op); }
         if op == T_KW_SIZEOF {
@@ -733,18 +783,17 @@ fn join_un_op_rtl(void* lex, int op) {
         # a literal, evaluate
         int v = operand + 0x8;
         v = *v;
-        drop_ast(operand);
-        bool did_it = false;
-        if op == T_BANG  { v = !v; did_it = true; }
-        if op == T_MINUS { v = -v; did_it = true; }
-        if op == T_PLUS  {         did_it = true; } # for completeness
-        if did_it {
-            return ast2(tto, v);
+             if op == T_BANG  { v = !v; }
+        else if op == T_MINUS { v = -v; }
+        else if op == T_PLUS  {         } # for completeness
+        # todo: statically eval bitwise NOT
+        else {
+            eprintf("Can't statically eval %x (%c) with %i of %i\n",
+                    op, op, operand, tto);
+            return ast3(AST_UNARY, op, operand);
         }
-        char* tmpl = "Can't statically eval %x (%c) with %i of %i\n";
-        printf(tmpl, op, op, operand, tto);
-        eprintf(tmpl, op, op, operand, tto);
-        panic(16);
+        drop_ast(operand);
+        return ast2(tto, v);
     }
 
     return ast3(AST_UNARY, op, operand);
@@ -900,10 +949,10 @@ fn parse_expr_primary(void* lex) {
     void* tkn = peek_token(lex);
     int t = Token_type(tkn);
 
-    if t == T_BOOL   { t = AST_LIT_BOOL;   return parse_val(lex, t); }
-    if t == T_CHAR   { t = AST_LIT_CHAR;   return parse_val(lex, t); }
-    if t == T_INT    { t = AST_LIT_INT;    return parse_val(lex, t); }
-    if t == T_STRING { t = AST_LIT_STRING; return parse_val(lex, t); }
+    if t == T_BOOL   { return parse_val(lex, AST_LIT_BOOL); }
+    if t == T_CHAR   { return parse_val(lex, AST_LIT_CHAR); }
+    if t == T_INT    { return parse_val(lex, AST_LIT_INT); }
+    if t == T_STRING { return parse_val(lex, AST_LIT_STRING); }
     if t == T_ID     { return parse_id(lex); }
     if t == T_OPAREN {
         consume_token(lex, t);

@@ -73,6 +73,7 @@ pub fn get_next_token(void* self) {
             Lexer_lex_comment(self);
             again;
         }
+        if c == T_CARET    { return new_token(self, c); }
         if c == T_CBRACE   { return new_token(self, c); }
         if c == T_CBRACKET { return new_token(self, c); }
         if c == T_COLON    { return new_token(self, c); }
@@ -84,6 +85,7 @@ pub fn get_next_token(void* self) {
         if c == T_OPAREN   { return new_token(self, c); }
         if c == T_QUESTION { return new_token(self, c); }
         if c == T_SEMI     { return new_token(self, c); }
+        if c == T_TILDE    { return new_token(self, c); }
         # ambiguous character tokens...
         if c == T_AMP      { return token_ampersand(self, c); }
         if c == T_ASSIGN   { return token_eq(self, c); }
@@ -215,7 +217,7 @@ fn token_pipe(void* self, char c) {
         next_char(self); # consume
         return tkn;
     }
-    bad_char(self, c); # solo | is illegal
+    return new_token(self, c);
 }
 
 fn token_id_ish(void* self, char c) {

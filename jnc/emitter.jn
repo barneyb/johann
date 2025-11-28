@@ -65,8 +65,8 @@ char* TMPL_CALL_PTR             = "        ldr     x16, [sp], 0x10\n        blr 
 char* TMPL_READ_MEMBER_QUAD     = "        ldr     x0, [x0, %x]\n";
 char* TMPL_READ_MEMBER_BYTE     = "        ldrb    w0, [x0, %x]\n";
 
-char* TMPL_UN_NOT               = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
-char* TMPL_UN_NEGATE            = "        neg     x0, x0\n";
+char* TMPL_LOGICAL_NOT          = "        cmp     x0, FALSE\n        b.ne    expr_%i_was_true\n        mov     x0, TRUE\n        b       expr_%i_end\n        expr_%i_was_true:\n        mov     x0, FALSE\n        expr_%i_end:\n";
+char* TMPL_UN_MINUS             = "        neg     x0, x0\n";
 
 char* TMPL_STASH                = "        str     x0, [sp, -0x10]! ; stash!\n";
 char* TMPL_STASH_AT             = "        str     x0, [sp, %x] ; stash at!\n";
@@ -74,13 +74,21 @@ char* TMPL_UNSTASH              = "        ldr     x1, [sp], 0x10 ; unstash!\n";
 char* TMPL_UNSTASH_TO           = "        ldr     x%i, [sp], 0x10 ; unstash to!\n";
 char* TMPL_UNSTASH_PAIR_TO      = "        ldp     x%d, x%d, [sp], 0x10 ; unstash pair to!\n";
 
+char* TMPL_BIN_LOGICAL          = "        cmp     x0, FALSE\n        b.%s    cond_%i_short\n";
+char* TMPL_BIN_LOGICAL_SHORT    = "        cond_%i_short:\n";
+
 char* TMPL_BIN_ADD              = "        add     x0, x0, x1\n";
 char* TMPL_BIN_SUB              = "        sub     x0, x0, x1\n";
 char* TMPL_BIN_MUL              = "        mul     x0, x0, x1\n";
 char* TMPL_BIN_DIV              = "        sdiv    x0, x0, x1\n";
 char* TMPL_BIN_MOD              = "        sdiv    x2, x0, x1\n        msub    x0, x2, x1, x0\n";
-char* TMPL_BIN_LSL              = "        lsl     x0, x0, x1\n";
-char* TMPL_BIN_LSR              = "        lsr     x0, x0, x1\n";
+
+char* TMPL_BIT_AND              = "        and     x0, x0, x1\n";
+char* TMPL_BIT_LSL              = "        lsl     x0, x0, x1\n";
+char* TMPL_BIT_LSR              = "        lsr     x0, x0, x1\n";
+char* TMPL_BIT_NOT              = "        mvn     x0, x0\n";
+char* TMPL_BIT_OR               = "        orr     x0, x0, x1\n";
+char* TMPL_BIT_XOR              = "        eor     x0, x0, x1\n";
 
 char* COMP_EQ = "eq";
 char* COMP_GE = "ge";
@@ -88,7 +96,7 @@ char* COMP_GT = "gt";
 char* COMP_LE = "le";
 char* COMP_LT = "lt";
 char* COMP_NE = "ne";
-char* TMPL_BIN_LOGICAL          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
+char* TMPL_BIN_COMPARE          = "        cmp     x0, x1\n        b.%s    expr_%i\n        mov     x0, FALSE\n        b       expr_%i_end\n        expr_%i:\n        mov     x0, TRUE\n        expr_%i_end:\n";
 
 char* TMPL_VALUE_STRING         = "        .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
 char* TMPL_VALUE_INT            = "        mov     x0, #%i\n";
@@ -211,8 +219,7 @@ pub fn Emitter_do_decl(void* self, Token* nameT, int type, int nptr, void* expr)
     bool global = Emitter_is_global(self);
     if global {
         block = Emitter_current_block(self);
-    }
-    if !global {
+    } else {
         # local vars have function scope, not block scope
         block = Emitter_innermost_block_of(self, T_KW_FN, nameT);
     }
@@ -253,15 +260,13 @@ fn decl_global(void* self, Token* nameT, void* expr, Symbol* symbol) {
     char* width;
     if var_width == 1 {
         width = WIDTH_BYTE;
-    }
-    if var_width != 1 {
+    } else {
         width = WIDTH_QUAD;
     }
     char* tmpl;
     if val_type == T_CHAR {
         tmpl = TMPL_GLOBAL_CHAR;
-    }
-    if val_type != T_CHAR {
+    } else {
         tmpl = TMPL_GLOBAL_NUM;
     }
     expr = Emitter_eval_const(self, expr);
@@ -396,8 +401,7 @@ pub fn Emitter_do_assign(void* self, void* nameT, void* expr) {
     int width = Symbol_width(symbol);
     if width == 1 {
         tmpl = TMPL_ASSIGN_GLOBAL_BYTE;
-    }
-    if width != 1 {
+    } else {
         tmpl = TMPL_ASSIGN_GLOBAL_QUAD;
     }
     printf(tmpl, name, name);
@@ -445,8 +449,7 @@ fn get_symbol_with_addr_in_x7(void* self, void* nameT) {
     if offset > 0 {
         # local
         printf(TMPL_GET_ADDR_LOCAL, offset * 0x8);
-    }
-    if offset <= 0 {
+    } else {
         # global
         char* name = Token_value(nameT);
         printf(TMPL_GET_ADDR_GLOBAL, name, name);
@@ -478,13 +481,12 @@ pub fn Emitter_eval_const(void* self, void* expr) {
     v = *v;
     if t == AST_LIT_BOOL { return v; }
     if t == AST_LIT_CHAR { return v; }
-    if t == AST_LIT_INT { return v; }
+    if t == AST_LIT_INT  { return v; }
 
     char* f = "Expr type %i isn't constant.\n";
     printf(f, t);
     eprintf(f, t);
-    t = 14;
-    panic(t);
+    exit(14);
 }
 
 pub fn Emitter_eval_expr(void* self, void* expr) {
@@ -552,8 +554,7 @@ pub fn Emitter_eval_expr(void* self, void* expr) {
     char* f = "Can't eval expr of type %i\n";
     printf(f, t);
     eprintf(f, t);
-    t = 13;
-    panic(t);
+    exit(13);
 }
 
 fn Emitter_get_index_with_addr_in_x0(void* self, void* rcvr, void* idx_expr) {
@@ -709,6 +710,13 @@ fn Emitter_do_call_but_sillier(void* self, void* callee, void* params) {
 
 # [AST_BINARY, op, left, right]
 fn Emitter_eval_expr_binary(void* self, void* expr) {
+    int op = expr + 0x8;            # -> op
+    op = *op;
+
+    # these need short-circuit behavior
+    if op == T_LOG_OR  { return Emitter_eval_expr_logical(self, expr, op); }
+    if op == T_LOG_AND { return Emitter_eval_expr_logical(self, expr, op); }
+
     void* e = expr + 0x18;          # -> right
     e = *e;
     Emitter_eval_expr(self, e);
@@ -721,28 +729,51 @@ fn Emitter_eval_expr_binary(void* self, void* expr) {
     # restore the right operand
     printf(TMPL_UNSTASH);
 
-    # and the operator
-    int op = expr + 0x8;            # -> op
-    op = *op;
     if op == T_MINUS   { return printf(TMPL_BIN_SUB); }
     if op == T_PLUS    { return printf(TMPL_BIN_ADD); }
     if op == T_STAR    { return printf(TMPL_BIN_MUL); }
     if op == T_SLASH   { return printf(TMPL_BIN_DIV); }
     if op == T_PERCENT { return printf(TMPL_BIN_MOD); }
-    if op == T_BIT_LSL { return printf(TMPL_BIN_LSL); }
-    if op == T_BIT_LSR { return printf(TMPL_BIN_LSR); }
+    if op == T_BIT_LSL { return printf(TMPL_BIT_LSL); }
+    if op == T_BIT_LSR { return printf(TMPL_BIT_LSR); }
+    if op == T_AMP     { return printf(TMPL_BIT_AND); }
+    if op == T_PIPE    { return printf(TMPL_BIT_OR ); }
+    if op == T_CARET   { return printf(TMPL_BIT_XOR); }
 
-    if op == T_EQ  { return do_binary_op_logical(self, COMP_EQ); }
-    if op == T_GT  { return do_binary_op_logical(self, COMP_GT); }
-    if op == T_GTE { return do_binary_op_logical(self, COMP_GE); }
-    if op == T_LT  { return do_binary_op_logical(self, COMP_LT); }
-    if op == T_LTE { return do_binary_op_logical(self, COMP_LE); }
-    if op == T_NEQ { return do_binary_op_logical(self, COMP_NE); }
+    if op == T_EQ  { return do_binary_op_compare(self, COMP_EQ); }
+    if op == T_GT  { return do_binary_op_compare(self, COMP_GT); }
+    if op == T_GTE { return do_binary_op_compare(self, COMP_GE); }
+    if op == T_LT  { return do_binary_op_compare(self, COMP_LT); }
+    if op == T_LTE { return do_binary_op_compare(self, COMP_LE); }
+    if op == T_NEQ { return do_binary_op_compare(self, COMP_NE); }
 
     char* f = "Can't eval binary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    panic(13);
+    exit(13);
+}
+
+# [AST_BINARY, op, left, right]
+fn Emitter_eval_expr_logical(Emitter* self, void* expr, int op) {
+    int seq = self.seqnum();
+    void* e = expr + 0x10;          # -> left
+    e = *e;
+    Emitter_eval_expr(self, e);
+
+    char* comp;
+         if op == T_LOG_OR  { comp = COMP_NE; }
+    else if op == T_LOG_AND { comp = COMP_EQ; }
+    else {
+        eprintf("Unsupported logical op %d , %x , %c\n", op, op, op % 0x100);
+        exit(1);
+    }
+    printf(TMPL_BIN_LOGICAL, comp, seq);
+
+    e = expr + 0x18;          # -> right
+    e = *e;
+    Emitter_eval_expr(self, e);
+
+    printf(TMPL_BIN_LOGICAL_SHORT, seq);
 }
 
 # [AST_ADDR_OP, op, nameT]
@@ -767,8 +798,7 @@ fn Emitter_eval_expr_addr(void* self, void* expr) {
     char* f = "Can't eval address operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    op = 13;
-    panic(op);
+    exit(13);
 }
 
 # [AST_UNARY, op, operand]
@@ -782,23 +812,22 @@ fn Emitter_eval_expr_unary(void* self, void* expr) {
     op = *op;
     char* tmpl;
     if op == T_BANG {
-        op = Emitter_seqnum(self);
-        tmpl = TMPL_UN_NOT;
-        return printf(tmpl, op, op, op, op);
+        int seq = Emitter_seqnum(self);
+        return printf(TMPL_LOGICAL_NOT, seq, seq, seq, seq);
     }
-    if op == T_MINUS { tmpl = TMPL_UN_NEGATE; return printf(tmpl); }
+    if op == T_TILDE { return printf(TMPL_BIT_NOT); }
+    if op == T_MINUS { return printf(TMPL_UN_MINUS); }
     if op == T_PLUS  { return; } # no code
 
     char* f = "Can't eval unary operator %x (%c)\n";
     printf(f, op, op);
     eprintf(f, op, op);
-    op = 13;
-    panic(op);
+    exit(13);
 }
 
-fn do_binary_op_logical(void* self, char* comp) {
+fn do_binary_op_compare(void* self, char* comp) {
     int seq = Emitter_seqnum(self);
-    char* tmpl = TMPL_BIN_LOGICAL;
+    char* tmpl = TMPL_BIN_COMPARE;
     printf(tmpl, comp, seq, seq, seq, seq);
 }
 
@@ -814,8 +843,7 @@ fn Emitter_do_value_integer(void* self, int i) {
     if i > 32767 {
         Emitter_do_value_integer_large(self, i);
         return null;
-    } # todo: where's my else?!
-    if i < -32767 {
+    } else if i < -32767 {
         Emitter_do_value_integer_large(self, i);
         return null;
     }

@@ -68,6 +68,7 @@ pub int T_GT        = '>';
 pub int T_LT        = '<';
 pub int T_MINUS     = '-';
 pub int T_PERCENT   = '%';
+pub int T_PIPE      = '|';
 pub int T_PLUS      = '+';
 pub int T_SLASH     = '/';
 pub int T_STAR      = '*';
@@ -75,6 +76,7 @@ pub int T_STAR      = '*';
 ##################################################
 # simple character tokens (ASCII)
 
+pub int T_CARET     = '^';
 pub int T_CBRACE    = '}';
 pub int T_CBRACKET  = ']';
 pub int T_COLON     = ':';
@@ -85,9 +87,9 @@ pub int T_HASH      = '#';
 pub int T_OBRACE    = '{';
 pub int T_OBRACKET  = '[';
 pub int T_OPAREN    = '(';
-pub int T_PIPE      = '|';
 pub int T_QUESTION  = '?';
 pub int T_SEMI      = ';';
+pub int T_TILDE     = '~';
 
 ##################################################
 # punctuation

@@ -1,25 +1,16 @@
-n = 1
-n = 16
-n = 15
-n = 7
-n = 7, again
 
-logical shift right:
-0x0 >> 1 := 0x0
-0x1 >> 0 := 0x1
-0x1 >> 1 := 0x0
-0x10 >> 4 := 0x1
-0x7fffffffffffffff >> 0 := 0x7fffffffffffffff
-0x7fffffffffffffff >> 1 := 0x3fffffffffffffff
--0x1 >> 0 := -0x1
--0x1 >> 1 := 0x7fffffffffffffff
+and:
+literals: true, false, false, false
+TFFF
 
-logical shift left:
-0x0 << 1 := 0x0
-0x1 << 0 := 0x1
-0x1 << 1 := 0x2
-0x1 << 4 := 0x10
-0x7fffffffffffffff << 0 := 0x7fffffffffffffff
-0x7fffffffffffffff << 1 := -0x2
--0x1 << 0 := -0x1
--0x1 << 1 := -0x2
+or:
+literals: true, true, true, false
+TTTF
+
+and_short_circuit:
+TTFelse!
+TTFelse!
+
+or_short_circuit:
+FFTif!
+FFTif!

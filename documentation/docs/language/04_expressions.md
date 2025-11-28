@@ -1,6 +1,23 @@
 # Operators / Expressions
 
-Operator precedence is as in C-family languages, including using parentheses to override things. The five standard arithmetic operators are supported: `+`, `-`, `*`, `/`, and `%`. Two bitwise operators are supported: `<<` and `>>` Six relational operators are supported: `==`, `!=`, `<`, `<=`, `>`, and `>=`. Five unary operators are supported: `!`, `+`, `-`, `*` (pointer dereference), and `&` (take address).
+Operators are mostly as in C-family languages, aside from assignment. Assignment is not an expression in Johann, it's a statement. All operators, in order of decreasing precedence:
+
+| Operator                                               | Description                                                          | Associativity     |
+|--------------------------------------------------------|----------------------------------------------------------------------|-------------------|
+| `()` <br/> `[]` <br/> `.`                              | functioncall<br/>array indexing<br/>member access                    | left to right     |
+| `&` <br/> `*` <br/> `!` <br/> `+` , `-` <br/> `sizeof` | address-of<br/>dereference<br/>logical NOT<br />unary plus and minus | **right to left** |
+| `*` , `/` , `%`                                        | multiply, divide, remainder                                          | left to right     |
+| `+` , `-`                                              | add and subtract                                                     | left to right     |
+| `<<` , `>>`                                            | left and right logical shift                                         | left to right     |
+| `<` , `<=` <br/> `>` , `>=`                            | less than, less than equal<br/>greater than, greater than equal      | left to right     |
+| `==` , `!=`                                            | is-equal, not-equal                                                  | left to right     |
+| `&`                                                    | bitwise AND                                                          | left to right     |
+| `^`                                                    | bitwise exclusive OR                                                 | left to right     |
+| <code>&#124;</code>                                    | bitwise (inclusive) OR                                               | left to right     |
+| `&&`                                                   | logical AND                                                          | left to right     |
+| <code>&#124;&#124;</code>                              | logical OR                                                           | left to right     |
+
+A ridiculous example of using many of them:
 
 ```johann
 int e = 1 << 4;     # e = 16
@@ -17,15 +34,18 @@ printf("i <%d u!\n",
 free(a);
 ```
 
-Note that unary `*` can (currently) only operate on a bare identifier, and that identifier's width - not the destination's - determines the load width. There is also the `sizeof` construct, which is either a unary operator on a parenthesized type name, or a function which accepts a single type argument, depending on your mindset.
+A few notes:
 
-A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs/arrays are often easier to reason about/with.
-
-The shift operators work as you'd expect for reasonable operands. Be careful if you might hit over- or underflow, if either operand might be negative, or if the second operand might be greater than 63. All those cases are undefined.
+* Unary `*`, `&`, `[]`, and `.` can (currently) only operate on a bare identifier, 
+* Unary `*` uses the source's width - not the destination's - determines the load width.
+* The `sizeof` construct only accepts a type, not an expression to infer the type of.
+* A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs/arrays are often easier to reason about/with.
+* The shift operators work as you'd expect for reasonable operands. Be careful if you might hit over- or underflow, if either operand might be negative, or if the second operand might be greater than 63. All those cases are undefined.
+* The `&&` and `||` operators evaluate to an `int`, but _not_ always to `1` or `0`.
 
 ## Strings
 
-Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa` (`'\n'` doesn't yet lex). Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via [`StringBuilder`](../library/stringbuilder.jn.md)) must be `free`-d when you're done with them.
+Strings are double-quoted, characters are single-quoted, and identifiers start with a letter followed by any sequence of letters, numbers, and underscore. Strings are "null-terminated byte strings" a la C. A `\n` may be used for a newline _in a string_; if you need a newline _character_ use `0xa`, as escapes aren't supported. Literals are static, so do not need to be `free`-d.  Strings constructed dynamically (e.g., via [`StringBuilder`](../library/stringbuilder.jn.md)) must be `free`-d when you're done with them.
 
 ## Integers
 

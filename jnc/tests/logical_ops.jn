@@ -1,50 +1,86 @@
-struct ArrayList;
-
 pub fn main() {
-    int n = 1;
-    printf("n = %d\n", n); # 1
-    n = n << 4;
-    printf("n = %d\n", n); # 16
-    n = n - 1;
-    printf("n = %d\n", n); # 15
-    n = n >> 1;
-    printf("n = %d\n", n); # 7
-    n = ((1 << 4) - 1) >> 1;
-    printf("n = %d, again\n", n); # 7
-
-    lsr();
-    lsl();
+    and();
+    or();
+    and_short_circuit();
+    or_short_circuit();
 }
 
-fn lsr() {
-    puts("\nlogical shift right:");
-    lsr_one(0, 1);
-    lsr_one(1, 0);
-    lsr_one(1, 1);
-    lsr_one(16, 4);
-    lsr_one(0x7fffffff_ffffffff, 0);
-    lsr_one(0x7fffffff_ffffffff, 1);
-    # hex should just format bits, not interpret them
-    lsr_one(0xffffffff_ffffffff, 0);
-    lsr_one(0xffffffff_ffffffff, 1);
+fn and() {
+    puts("\nand:");
+    printf("literals: %b, %b, %b, %b\n"
+          , true && true
+          , true && false
+          , false && true
+          , false && false);
+    int t = true;
+    int f = false;
+    if t && t { truthy(); } else { falsy(); }
+    if t && f { truthy(); } else { falsy(); }
+    if f && t { truthy(); } else { falsy(); }
+    if f && f { truthy(); } else { falsy(); }
+    puts("");
 }
 
-fn lsr_one(int n, int by) {
-    printf("%x >> %d := %x\n", n, by, n >> by);
+fn or() {
+    puts("\nor:");
+    printf("literals: %b, %b, %b, %b\n"
+          , true || true
+          , true || false
+          , false || true
+          , false || false);
+    int t = true;
+    int f = false;
+    if t || t { truthy(); } else { falsy(); }
+    if t || f { truthy(); } else { falsy(); }
+    if f || t { truthy(); } else { falsy(); }
+    if f || f { truthy(); } else { falsy(); }
+    puts("");
 }
 
-fn lsl() {
-    puts("\nlogical shift left:");
-    lsl_one(0, 1);
-    lsl_one(1, 0);
-    lsl_one(1, 1);
-    lsl_one(1, 4);
-    lsl_one(0x7fffffff_ffffffff, 0);
-    lsl_one(0x7fffffff_ffffffff, 1);
-    lsl_one(0xffffffff_ffffffff, 0);
-    lsl_one(0xffffffff_ffffffff, 1);
+fn and_short_circuit() {
+    puts("\nand_short_circuit:");
+    # final truthy() doesn't eval
+    bool doit = truthy();
+    if doit { doit = truthy(); }
+    if doit { doit = falsy(); }
+    if doit { doit = truthy(); }
+    if doit {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+    if truthy() && truthy() && falsy() && truthy() {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
 }
 
-fn lsl_one(int n, int by) {
-    printf("%x << %d := %x\n", n, by, n << by);
+fn or_short_circuit() {
+    puts("\nor_short_circuit:");
+    # final falsey() doesn't eval
+    bool doit = falsy();
+    if !doit { doit = falsy(); }
+    if !doit { doit = truthy(); }
+    if !doit { doit = falsy(); }
+    if doit {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+    if falsy() || falsy() || truthy() || falsy() {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+}
+
+fn truthy() {
+    printf("T");
+    return true;
+}
+
+fn falsy() {
+    printf("F");
+    return false;
 }

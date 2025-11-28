@@ -21,12 +21,8 @@ pub fn Token__new(int type) {
 
 pub fn Token_drop(Token* self) {
     int type = self.type;
-    if type == T_ID {
-        free(self.value);
-    }
-    if type == T_STRING {
-        free(self.value);
-    }
+         if type == T_ID     { free(self.value); }
+    else if type == T_STRING { free(self.value); }
     free(self);
 }
 

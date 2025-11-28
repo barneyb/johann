@@ -9,6 +9,7 @@ all: \
 	$(LIB)/a_syntactic_menagerie.o \
 	$(OUT)/a_syntactic_menagerie.strict.s \
 	arrays \
+	bit_ops \
 	collatz \
 	constants \
 	control_flow \
@@ -22,6 +23,7 @@ all: \
 	print_one \
 	pseudo_methods \
 	reverse \
+	shift_ops \
 	store_load \
 	strings \
 	sum \
