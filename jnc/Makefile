@@ -32,11 +32,9 @@ all: $(BIN)/jnc
 		echo -----------------------------------------------------; \
 	done
 
-$(LIB)/version.o:
+$(OUT)/version.jn $(LIB)/version.o: ./scripts/gen_version.sh
 	@mkdir -p $(OUT) $(LIB)
-	echo "pub char* JNC_SHORT_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`-`git log --oneline -n 1 | cut -d ' ' -f 1`'"'";\n\
- 	pub char* JNC_LONG_VERSION = "'"jnc 0.'`date -u '+%Y%m%d'`\\\\nbuild_time: `date -u -Iseconds`\\\\ncommit_hash: `git rev-parse HEAD`'";' \
-	> $(OUT)/version.jn
+	./scripts/gen_version.sh > $(OUT)/version.jn
 	$(JNC) < $(OUT)/version.jn | gcc -o $(LIB)/version.o -x assembler -c -
 
 $(OUT)/lexer.s: $(OUT)/token_table.jnh lexer.jn
