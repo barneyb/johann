@@ -1,0 +1,16 @@
+
+and:
+literals: true, false, false, false
+TFFF
+
+or:
+literals: true, true, true, false
+TTTF
+
+and_short_circuit:
+TTFelse!
+TTFelse!
+
+or_short_circuit:
+FFTif!
+FFTif!

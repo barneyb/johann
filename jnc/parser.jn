@@ -501,47 +501,62 @@ fn parse_eval_or_assign(void* lex) {
 }
 
 fn parse_expr(void* lex) {
-    return parse_expr_cond(lex);
-}
-
-fn parse_expr_cond(void* lex) {
-    return parse_expr_logic_or(lex);
-}
-
-fn parse_expr_logic_or(void* lex) {
+# todo:skip the empty levels
+#    return parse_expr_cond(lex);
+#}
+#
+#fn parse_expr_cond(void* lex) {
+#    return parse_expr_logic_or(lex);
+#}
+#
+#fn parse_expr_logic_or(void* lex) {
     void* expr = parse_expr_logic_and(lex);
-#    while true {
-#        void* tkn = peek_token(lex);
-#        if tkn == null { done; }
-#        int t = Token_type(tkn);
-#        if t == T_LOG_OR {
-#            consume_token(lex, t);
-#            void* right = parse_expr_logic_and(lex);
-#            expr = join_bin_op(lex, t, expr, right);
-#            again;
-#        }
-#        done;
-#    }
+    while true {
+        Token* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = tkn.type();
+        if t == T_LOG_OR {
+            consume_token(lex, t);
+            void* right = parse_expr_logic_and(lex);
+            expr = join_bin_op(lex, t, expr, right);
+            again;
+        }
+        done;
+    }
     return expr;
 }
 
 fn parse_expr_logic_and(void* lex) {
-    return parse_expr_bit_or(lex);
+    void* expr = parse_expr_bit_or(lex);
+    while true {
+        Token* tkn = peek_token(lex);
+        if tkn == null { done; }
+        int t = tkn.type();
+        if t == T_LOG_AND {
+            consume_token(lex, t);
+            void* right = parse_expr_bit_or(lex);
+            expr = join_bin_op(lex, t, expr, right);
+            again;
+        }
+        done;
+    }
+    return expr;
 }
 
 fn parse_expr_bit_or(void* lex) {
-    return parse_expr_bit_xor(lex);
-}
-
-fn parse_expr_bit_xor(void* lex) {
-    return parse_expr_bit_and(lex);
-}
-
-fn parse_expr_bit_and(void* lex) {
-    return parse_expr_eq(lex);
-}
-
-fn parse_expr_eq(void* lex) {
+# todo: skip the empty levels
+#    return parse_expr_bit_xor(lex);
+#}
+#
+#fn parse_expr_bit_xor(void* lex) {
+#    return parse_expr_bit_and(lex);
+#}
+#
+#fn parse_expr_bit_and(void* lex) {
+#    return parse_expr_eq(lex);
+#}
+#
+#fn parse_expr_eq(void* lex) {
     void* expr = parse_expr_rel(lex);
     void* right;
     while true {
@@ -667,6 +682,9 @@ fn join_bin_op(void* lex, int op, void* left, void* right) {
         if op == T_PERCENT { ttr = left %  right; did_it = true; }
         if op == T_BIT_LSL { ttr = left << right; did_it = true; }
         if op == T_BIT_LSR { ttr = left >> right; did_it = true; }
+        # todo: use && and || when available
+        if op == T_LOG_OR  { ttr = left; if !ttr { ttr = right; } did_it = true; }
+        if op == T_LOG_AND { ttr = left; if ttr { ttr = right; } did_it = true; }
         if did_it {
             drop_ast(old_left);
             drop_ast(old_right);

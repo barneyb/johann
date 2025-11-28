@@ -1,0 +1,86 @@
+pub fn main() {
+    and();
+    or();
+    and_short_circuit();
+    or_short_circuit();
+}
+
+fn and() {
+    puts("\nand:");
+    printf("literals: %b, %b, %b, %b\n"
+          , true && true
+          , true && false
+          , false && true
+          , false && false);
+    int t = true;
+    int f = false;
+    if t && t { truthy(); } else { falsy(); }
+    if t && f { truthy(); } else { falsy(); }
+    if f && t { truthy(); } else { falsy(); }
+    if f && f { truthy(); } else { falsy(); }
+    puts("");
+}
+
+fn or() {
+    puts("\nor:");
+    printf("literals: %b, %b, %b, %b\n"
+          , true || true
+          , true || false
+          , false || true
+          , false || false);
+    int t = true;
+    int f = false;
+    if t || t { truthy(); } else { falsy(); }
+    if t || f { truthy(); } else { falsy(); }
+    if f || t { truthy(); } else { falsy(); }
+    if f || f { truthy(); } else { falsy(); }
+    puts("");
+}
+
+fn and_short_circuit() {
+    puts("\nand_short_circuit:");
+    # final truthy() doesn't eval
+    bool doit = truthy();
+    if doit { doit = truthy(); }
+    if doit { doit = falsy(); }
+    if doit { doit = truthy(); }
+    if doit {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+    if truthy() && truthy() && falsy() && truthy() {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+}
+
+fn or_short_circuit() {
+    puts("\nor_short_circuit:");
+    # final falsey() doesn't eval
+    bool doit = falsy();
+    if !doit { doit = falsy(); }
+    if !doit { doit = truthy(); }
+    if !doit { doit = falsy(); }
+    if doit {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+    if falsy() || falsy() || truthy() || falsy() {
+        puts("if!");
+    } else {
+        puts("else!");
+    }
+}
+
+fn truthy() {
+    printf("T");
+    return true;
+}
+
+fn falsy() {
+    printf("F");
+    return false;
+}

@@ -17,6 +17,7 @@ all: \
 	line_client \
 	lisp \
 	literals \
+	logical_ops \
 	not_quite_lisp \
 	print_one \
 	pseudo_methods \
