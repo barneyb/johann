@@ -1,3 +1,9 @@
+# I return the absolute value of the passed `int`.
+pub fn abs(int i) {
+    if i < 0 { return -i; }
+    return i;
+}
+
 # I return the larger of my two `int` arguments.
 pub fn imax(int a, int b) {
     if a > b { return a; }
