@@ -1,0 +1,101 @@
+struct ArrayList;
+fn ArrayList__new(int);
+fn ArrayList__new_owned(int,void*);
+fn ArrayList_size(ArrayList*);
+fn ArrayList_push(ArrayList*,void);
+fn ArrayList_reserve(ArrayList*,int);
+fn ArrayList_push_all(ArrayList*,void*);
+fn ArrayList_get(ArrayList*,int);
+fn ArrayList_set(ArrayList*,int,void);
+struct Iter;
+fn Iter_next(Iter*);
+fn ArrayList_iter(ArrayList*);
+fn ArrayList_into_array(ArrayList*);
+fn ArrayList_sort(ArrayList*,void*);
+fn ArrayList_to_string(ArrayList*,void*);
+fn ArrayList_drop(ArrayList*);
+fn ArrayList_pop(ArrayList*);
+fn ArrayList_peek(ArrayList*);
+#![[jnc_restart_line_count]]
+struct HashMap;
+fn HashMap__new(void*,void*);
+fn HashMap__new_owned(void*,void*,void*,void*);
+fn HashMap_drop(HashMap*);
+fn HashMap_size(HashMap*);
+fn HashMap_contains(HashMap*,void);
+fn HashMap_get(HashMap*,void);
+fn HashMap_put(HashMap*,void,void);
+fn HashMap_delete(HashMap*,void);
+struct Keys;
+fn Keys_next(Keys*);
+fn HashMap_keys(HashMap*);
+#![[jnc_restart_line_count]]
+struct Queue;
+fn Queue__new();
+fn Queue__new_owned(void*);
+fn Queue_drop(Queue*);
+fn Queue_size(Queue*);
+fn Queue_push(Queue*,void*);
+fn Queue_peek(Queue*);
+fn Queue_remove(Queue*);
+#![[jnc_restart_line_count]]
+struct StringBuilder;
+fn StringBuilder__new(int);
+fn StringBuilder_push(StringBuilder*,char);
+fn StringBuilder_push_str(StringBuilder*,char*);
+fn StringBuilder_into_chars(StringBuilder*);
+fn StringBuilder_into_int(StringBuilder*);
+fn StringBuilder_length(StringBuilder*);
+#![[jnc_restart_line_count]]
+struct TreeMap;
+fn TreeMap__new(void*);
+fn TreeMap__new_owned(void*,void*,void*);
+fn TreeMap_drop(TreeMap*);
+fn TreeMap_is_empty(TreeMap*);
+fn TreeMap_size(TreeMap*);
+fn TreeMap_contains(TreeMap*,void);
+fn TreeMap_get(TreeMap*,void);
+fn TreeMap_put(TreeMap*,void,void);
+fn TreeMap_delete(TreeMap*,void);
+fn TreeMap_min_key(TreeMap*);
+fn TreeMap_max_key(TreeMap*);
+#![[jnc_restart_line_count]]
+fn quicksort(void*,int,int,void*);
+#![[jnc_restart_line_count]]
+fn free(void*);
+fn calloc(int,int);
+fn malloc(int);
+#![[jnc_restart_line_count]]
+fn getchar();
+fn iseof();
+fn peekchar();
+fn putchar(char);
+fn puts(char*);
+fn read_line();
+#![[jnc_restart_line_count]]
+fn abs(int);
+fn imax(int,int);
+fn imin(int,int);
+#![[jnc_restart_line_count]]
+struct ArrayList;
+fn atoi(char*);
+fn itoa(int);
+fn isdigit(char);
+fn isspace(char);
+fn isxdigit(char);
+fn memcpy(void*,void*,int);
+fn strchr(char*,char);
+fn strclone(char*);
+fn strsplit(char*,char*);
+fn strsplit_after(char*,char*);
+fn strjoin(ArrayList*,char*);
+fn strcmp(char*,char*);
+fn strhash(char*);
+fn strlen(char*);
+fn strstr(char*,char*);
+fn substr(char*,int,int);
+#![[jnc_restart_line_count]]
+fn exit(int);
+fn panic(int,char*,int);
+fn syscall(int);
+#![[jnc_restart_line_count]]

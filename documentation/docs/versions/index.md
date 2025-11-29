@@ -19,7 +19,9 @@ A few things remain before 1.0:
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20251129`
 
 Include `jstdlib.jnh` next to `jstdlib.o`.
 
