@@ -11,7 +11,7 @@ function nope() {
 
 cd "$(dirname "$0")"
 
-BRANCH="$(git name-rev --name-only --exclude 'remotes/*' HEAD)"
+BRANCH="$(git name-rev --name-only --exclude 'remotes/*' --exclude 'tags/*' HEAD)"
 if [ "${BRANCH}" != "master" ]; then
     nope 1 "You can only release from 'master', not '${BRANCH}'."
 fi
