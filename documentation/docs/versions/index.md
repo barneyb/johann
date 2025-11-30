@@ -19,7 +19,11 @@ A few things remain before 1.0:
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Add a `MAX_INTEGER` constant, and a `pow` function.
+
+Support `-2^63` as a literal value.
 
 ### `v0.20251129`
 
