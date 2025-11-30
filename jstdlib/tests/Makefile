@@ -17,6 +17,7 @@ all: \
 	isdigit \
 	isspace \
 	itoatoi \
+	math_works \
 	mem_recycling \
 	printf \
 	putchar \

@@ -1,3 +1,14 @@
+# Various mathematical utilities. Johann only speaks integers, so it's pretty
+# limited.
+
+# The maximum representable integer: `2^63 - 1`. A matching `MIN_INTEGER`
+# constant _is_ present, but you have to declare (not define) it yourself, as
+# `jnc` can't yet emit that value.
+pub int MAX_INTEGER = 0x7fffffffffffffff;
+
+# The minimum representable integer: `-2^63`.
+pub int MIN_INTEGER; # todo: move to math.jn
+
 # I return the absolute value of the passed `int`.
 pub fn abs(int i) {
     if i < 0 { return -i; }
@@ -5,13 +16,39 @@ pub fn abs(int i) {
 }
 
 # I return the larger of my two `int` arguments.
-pub fn imax(int a, int b) {
+pub fn max(int a, int b) {
     if a > b { return a; }
     return b;
 }
 
+# DEPRECATED: prefier `max`.
+pub fn imax(int a, int b) {
+    return max(a, b);
+}
+
 # I return the smaller of my two `int` arguments.
-pub fn imin(int a, int b) {
+pub fn min(int a, int b) {
     if a < b { return a; }
     return b;
+}
+
+# DEPRECATED: prefer `min`.
+pub fn imin(int a, int b) {
+    return min(a, b);
+}
+
+# I raise `a` to the power of `b`. I am exposed as a function instead of an
+# operator to avoid associativity confusion. Negative exponents make no sense
+# with integers, and so cause a panic.
+pub fn pow(int a, int b) {
+    if b < 0 {
+        eprintf("Illegal negative exponent: %d\n", b);
+        exit(1);
+    }
+    int r = 1;
+    while b > 0 {
+        r = r * a;
+        b = b - 1;
+    }
+    return r;
 }
