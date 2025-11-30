@@ -12,7 +12,7 @@ integer: [[1:      1:0000001]]
 written: 31
 integer: [[12345:  12345:0012345]]
 written: 35
-integer: [[-987:-   987:-000987]]
+integer: [[-987:   -987:-000987]]
 written: 34
 hex: [[0x0:0X0:   0x0]]
 written: 24

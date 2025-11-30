@@ -37,6 +37,9 @@
 #      # "27 four ways:    27, 00027, 0x 1b"
 # ```
 
+int MAX_INTEGER;
+int MIN_INTEGER;
+
 # I consume the next character from STDIN and return it, or `EOF`.
 pub fn getchar();
 
@@ -68,8 +71,83 @@ pub fn read_line() {
     return StringBuilder_into_chars(b);
 }
 
+pub fn printf_d__(int n,
+                  void* put_char,
+                  char conv_spec,
+                  int width,
+                  char pad) {
+    if n == MIN_INTEGER {
+        # can't do the "abs and prefix with '-'" trick
+        char* str = "-9223372036854775808";
+        int j = 0;
+        while *str != null {
+            put_char(*str);
+            str = str + 1;
+            j = j + 1;
+        }
+        return j;
+    }
+
+    # it's a 24-byte "array"!
+    char* buf0 = null;
+    char* buf1 = null;
+    char* buf2 = null;
+    char* buf = &buf0;
+    int i = 0;
+
+    bool negative = n < 0;
+    if negative {
+        n = -n;
+    }
+
+    if n == 0 {
+        buf[i] = '0';
+        i = i + 1;
+    } else {
+        # stack it up
+        while n != 0 {
+            int d = n % 10;
+            n = n / 10;
+            buf[i] = '0' + d;
+            i = i + 1;
+        }
+    }
+
+    if pad != ' ' {
+        int end = width;
+        if negative {
+            end = end - 1;
+        }
+        while i < end {
+            buf[i] = pad;
+            i = i + 1;
+        }
+    }
+
+    if negative {
+        buf[i] = '-';
+        i = i + 1;
+    }
+
+    if pad == ' ' {
+        while i < width {
+            buf[i] = ' ';
+            i = i + 1;
+        }
+    }
+
+    # and pop back off
+    int count = i;
+    while i > 0 {
+        i = i - 1;
+        put_char(buf[i]);
+    }
+
+    return count;
+}
+
 fn printf_nul_ptr(void* put_char,
-                      int width) {
+                  int width) {
     int i = 3;
     while i < width {
         put_char(' ');
@@ -86,8 +164,14 @@ pub fn printf_x__(int n,
                   char conv_spec,
                   int width,
                   char pad) {
-    if conv_spec == 'p' && n == 0 {
-        return printf_nul_ptr(put_char, width);
+    if conv_spec == 'p' {
+        # pointers have minimum width 11 (9 digits)
+        width = max(width, 11);
+        if n == 0 {
+            return printf_nul_ptr(put_char, width);
+        }
+        # non-null pointers always pad with zeros
+        pad = '0';
     }
 
     # it's a 24-byte "array"!
@@ -137,7 +221,7 @@ pub fn printf_x__(int n,
 
     if pad == ' ' {
         while i < width {
-            buf[i] = pad;
+            buf[i] = ' ';
             i = i + 1;
         }
     }

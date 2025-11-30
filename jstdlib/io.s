@@ -236,7 +236,7 @@ printf:
         cmp     x0, 'i'
         b.eq    printf_decimal
         cmp     x0, 'p'
-        b.eq    printf_pointer
+        b.eq    printf_hex
         cmp     x0, 's'
         b.eq    printf_string
         cmp     x0, 'x'
@@ -250,14 +250,13 @@ printf:
         bl      __j_panic
 
     printf_decimal:
-        mov     x6, #10
-        b       printf_integer
-    printf_pointer:
-        mov     x1, '0'             ; pointers pad with zero
-        str     x1, [fp, -0x8]
-        cmp     x3, #11             ; pointers have minimum width 11
-        b.ge    printf_hex          ; but are otherwise just 'hex'
-        mov     x3, #11
+        ldrb    w4, [fp, -0x8]      ; padding character
+        ; width is in x3
+        mov     x2, x0              ; spec
+        bl      printf_next_arg
+        ldr     x1, [fp, -0x10]     ; put_char
+        bl      __j_printf_d__
+        b       printf_after_johann
     printf_hex:
         ldrb    w4, [fp, -0x8]      ; padding character
         ; width is in x3
@@ -265,107 +264,10 @@ printf:
         bl      printf_next_arg
         ldr     x1, [fp, -0x10]     ; put_char
         bl      __j_printf_x__
+    printf_after_johann:
         ldr     x1, [sp, 0x8]       ; load written
         add     x1, x1, x0          ; written + n
         str     x1, [sp, 0x8]       ; store written
-        b       printf_again
-
-    printf_integer:
-        bl      printf_next_arg
-
-        ; x3 holds the min width
-        ; x6 holds the base
-        ; point to SP in x5, to build the value "down" from
-        mov     x5, sp
-        ; store a counter in x4
-        mov     x4, xzr
-        ; allocate at 32 bytes on the stack
-        str     xzr, [sp, -0x20]!
-        ; if x0 is zero or negative
-        cmp     x0, #0
-        b.eq    printf_integer_zero
-        b.ge    printf_integer_again
-        mov     x1, TRUE            ; negative!
-        str     x1, [sp]            ; store true at SP
-        sub     x3, x3, #1          ; leave room for the minus sign
-        neg     x0, x0              ; negate x0
-        b       printf_integer_again
-
-        printf_integer_zero:
-        mov     w2, '0'
-        ; pre-decrement and store at x5
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
-        bl      printf_integer_pad_and_return
-        b       printf_integer_was_negative
-
-        printf_integer_again:
-        ; divide by base into x1
-        sdiv    x1, x0, x6          ; x1 = x0 / x6
-        ; take mod base into x2
-        msub    x2, x1, x6, x0      ; x2 = x0 - (x1 * x6)
-                                    ; x2 = x0 % x6
-        mov     x0, x1              ; update to what's left
-        ; convert to digit
-        cmp     x2, #10
-        b.ge    printf_integer_high
-        add     w2, w2, 0x30        ; convert to decimal digit
-        b       printf_integer_digit
-        printf_integer_high:
-        add     w2, w2, w7          ; convert to high digit
-        printf_integer_digit:
-        ; pre-decrement and store at x5
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
-        cmp     x0, xzr
-        b.gt    printf_integer_again
-        bl      printf_integer_pad_and_return
-        b       printf_integer_was_negative
-
-        printf_integer_pad_and_return:
-        ; pad to min width
-        ldrb    w2, [fp, -0x8]      ; get the padding char
-        printf_pad_again:
-            cmp     x4, x3
-            b.ge    printf_pad_done
-            strb    w2, [x5, #-1]!
-            add     x4, x4, #1      ; increment counter
-            b printf_pad_again
-        printf_pad_done:
-        ret
-
-        printf_integer_was_negative:
-        ; if was negative, add minus sign
-        ldr     x0, [sp]            ; load whether was negative
-        cmp     x0, FALSE
-        b.eq    printf_integer_emit
-        ; pre-decrement and store at x5
-        mov     w2, '-'
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
-
-        printf_integer_emit:
-        ldr     x0, [sp, 0x28]      ; load written
-        add     x0, x0, x4          ; written + x4
-        str     x0, [sp, 0x28]      ; store written
-        printf_integer_emit_again:
-        ; from x5, for x4 bytes, putchar
-        cmp     x4, #0
-        b.eq    printf_integer_done
-        ldrb    w0, [x5], #1        ; load next char to emit
-        ; todo: this store/load in a tight loop is ... not ideal
-        stp     x4, x5, [sp, -0x10]!; store before call
-        ldr     x8, [fp, -0x10]
-        blr     x8
-        ldp     x4, x5, [sp], 0x10  ; load after call
-        sub     x4, x4, #1
-        b       printf_integer_emit_again
-
-        printf_integer_done:
-        add     sp, sp, 0x20        ; deallocate 'integer' stack space
         b       printf_again
 
     printf_char:
