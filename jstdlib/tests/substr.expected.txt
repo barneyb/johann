@@ -3,5 +3,5 @@ empty: ''
 berry: 'berry'
 
 from 'b': 'berry' (idx 5)
-from 'Z': '0x000000000'
+from 'Z': '        NUL'
 from null: '' (idx 10)

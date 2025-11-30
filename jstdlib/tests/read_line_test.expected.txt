@@ -5,4 +5,4 @@ Line 4: 'zxcv'
 Line 5: ''
 Line 6: ''
 EOF reached
-After EOF: 0x000000000
+After EOF:         NUL

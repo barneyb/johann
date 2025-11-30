@@ -66,14 +66,32 @@ pub fn read_line() {
     return StringBuilder_into_chars(b);
 }
 
+pub fn printf_nul_ptr(void* put_char,
+                      int width) {
+    int i = 3;
+    while i < width {
+        put_char(' ');
+        i = i + 1;
+    }
+    put_char('N');
+    put_char('U');
+    put_char('L');
+    return i;
+}
+
 pub fn printf_x__(int n,
                   void* put_char,
                   char conv_spec,
                   int width,
                   char pad) {
-    # it's a 16-byte "array"!
+    if conv_spec == 'p' && n == 0 {
+        return printf_nul_ptr(put_char, width);
+    }
+
+    # it's a 24-byte "array"!
     char* buf0 = null;
     char* buf1 = null;
+    char* buf2 = null;
     char* buf = &buf0;
     int i = 0;
 

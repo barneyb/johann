@@ -58,6 +58,11 @@ pub fn main() {
                0x929,
                0x8707);
     printf(count, n);
+    n = printf("pointer: [[%p:%4p:%14p]]\n",
+               null,
+               null,
+               null);
+    printf(count, n);
 #    n = printf("null pointer: [[%p]]\n", null);
 #    printf(count, n);
 
