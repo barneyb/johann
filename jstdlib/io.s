@@ -235,8 +235,6 @@ printf:
         b.eq    printf_decimal
         cmp     x0, 'i'
         b.eq    printf_decimal
-        cmp     x0, 'o'
-        b.eq    printf_octal
         cmp     x0, 'p'
         b.eq    printf_pointer
         cmp     x0, 's'
@@ -271,17 +269,12 @@ printf:
         add     x1, x1, x0          ; written + n
         str     x1, [sp, 0x8]       ; store written
         b       printf_again
-    printf_octal:
-        sub     x3, x3, 1           ; one char prefix
-        mov     x6, #8
-        b       printf_integer
 
     printf_integer:
         bl      printf_next_arg
 
         ; x3 holds the min width
         ; x6 holds the base
-        ; x7 points to the '0' digit for digits past 9 (e.g. 'a' - 10 for hex)
         ; point to SP in x5, to build the value "down" from
         mov     x5, sp
         ; store a counter in x4
@@ -299,16 +292,13 @@ printf:
         b       printf_integer_again
 
         printf_integer_zero:
-;        mov     w2, ' '             ; always pad zero with spaces
-;        str     x2, [fp, -0x8]
         mov     w2, '0'
         ; pre-decrement and store at x5
         strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
         bl      printf_integer_pad_and_return
-;        b       printf_integer_emit
-        b       printf_integer_prefix
+        b       printf_integer_was_negative
 
         printf_integer_again:
         ; divide by base into x1
@@ -332,7 +322,7 @@ printf:
         cmp     x0, xzr
         b.gt    printf_integer_again
         bl      printf_integer_pad_and_return
-        b       printf_integer_prefix
+        b       printf_integer_was_negative
 
         printf_integer_pad_and_return:
         ; pad to min width
@@ -345,26 +335,6 @@ printf:
             b printf_pad_again
         printf_pad_done:
         ret
-
-        printf_integer_prefix:
-        ; if base is 16, add x prefix
-        cmp     x6, #16
-        b.ne    printf_integer_not_base10
-        ; pre-decrement and store at x5
-        add     x2, x7, #33         ; x is the 33rd "digit"
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
-
-        printf_integer_not_base10:
-        ; if base is not 10, add 0 prefix
-        cmp     x6, #10
-        b.eq    printf_integer_was_negative
-        ; pre-decrement and store at x5
-        mov     w2, '0'
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
 
         printf_integer_was_negative:
         ; if was negative, add minus sign

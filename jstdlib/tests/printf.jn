@@ -24,16 +24,6 @@ pub fn main() {
     n = printf(int_fmt, -987, -987, -987);
     printf(count, n);
 
-    char* octal_fmt = "octal: [[%o:%5o:%05o]]\n";
-    n = printf(octal_fmt, 0, 0, 0);
-    printf(count, n);
-    n = printf(octal_fmt, 88, 88, 88);
-    printf(count, n);
-    n = printf(octal_fmt, 12345, 12345, 12345);
-    printf(count, n);
-    n = printf(octal_fmt, -1, -1, -1);
-    printf(count, n);
-
     char* hex_fmt = "hex: [[%x:%X:%6x]]\n";
     n = printf(hex_fmt, 0, 0, 0);
     printf(count, n);

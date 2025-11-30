@@ -14,14 +14,6 @@ integer: [[12345:  12345:0012345]]
 written: 35
 integer: [[-987:-   987:-000987]]
 written: 34
-octal: [[00:0   0:00000]]
-written: 26
-octal: [[0130:0 130:00130]]
-written: 28
-octal: [[030071:030071:030071]]
-written: 32
-octal: [[-01:-0  1:-0001]]
-written: 27
 hex: [[0x0:0X0:   0x0]]
 written: 24
 hex: [[0x7b:0X7B:  0x7b]]
