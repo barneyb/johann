@@ -1,3 +1,4 @@
+# a MIN_INTEGER by any other name...
 int ITTY_BITTY = 0x8000000000000000;
 
 pub fn main() {
