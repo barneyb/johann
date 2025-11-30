@@ -25,6 +25,8 @@ Add a `MAX_INTEGER` constant, and a `pow` function.
 
 Support `-2^63` as a literal value.
 
+Remove `%o` support from `printf`, and format the `null` pointer as `"NUL"` (not `"0x0"`).
+
 ### `v0.20251129`
 
 Include `jstdlib.jnh` next to `jstdlib.o`.
