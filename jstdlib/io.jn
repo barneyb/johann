@@ -72,7 +72,7 @@ pub fn read_line() {
 }
 
 pub fn printf_d__(int n,
-                  void* put_char,
+                  void* emit_char,
                   char conv_spec,
                   int width,
                   char pad) {
@@ -81,7 +81,7 @@ pub fn printf_d__(int n,
         char* str = "-9223372036854775808";
         return printf_s__(
             str,
-            put_char,
+            emit_char,
             's',
             width,
             pad);
@@ -139,27 +139,27 @@ pub fn printf_d__(int n,
     int count = i;
     while i > 0 {
         i = i - 1;
-        put_char(buf[i]);
+        emit_char(buf[i]);
     }
 
     return count;
 }
 
-fn printf_nul_ptr(void* put_char,
+fn printf_nul_ptr(void* emit_char,
                   int width) {
     int i = 3;
     while i < width {
-        put_char(' ');
+        emit_char(' ');
         i = i + 1;
     }
-    put_char('N');
-    put_char('U');
-    put_char('L');
+    emit_char('N');
+    emit_char('U');
+    emit_char('L');
     return i;
 }
 
 pub fn printf_x__(int n,
-                  void* put_char,
+                  void* emit_char,
                   char conv_spec,
                   int width,
                   char pad) {
@@ -167,7 +167,7 @@ pub fn printf_x__(int n,
         # pointers have minimum width 11 (9 digits)
         width = max(width, 11);
         if n == 0 {
-            return printf_nul_ptr(put_char, width);
+            return printf_nul_ptr(emit_char, width);
         }
         # non-null pointers always pad with zeros
         pad = '0';
@@ -229,39 +229,38 @@ pub fn printf_x__(int n,
     int count = i;
     while i > 0 {
         i = i - 1;
-        put_char(buf[i]);
+        emit_char(buf[i]);
     }
 
     return count;
 }
 
 pub fn printf_b__(bool value,
-                  void* put_char,
+                  void* emit_char,
                   char conv_spec,
                   int width,
                   char pad) {
-    # todo: padding
     char* str = "false";
     if value {
         str = "true";
     }
     return printf_s__(
         str,
-        put_char,
-        conv_spec,
+        emit_char,
+        's',
         width,
         pad);
 }
 
 pub fn printf_s__(char* str,
-                  void* put_char,
+                  void* emit_char,
                   char conv_spec,
                   int width,
                   char pad) {
     # todo: padding
     int i = 0;
     while *str != null {
-        put_char(*str);
+        emit_char(*str);
         str = str + 1;
         i = i + 1;
     }
