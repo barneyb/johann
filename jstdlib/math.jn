@@ -1,13 +1,11 @@
 # Various mathematical utilities. Johann only speaks integers, so it's pretty
 # limited.
 
-# The maximum representable integer: `2^63 - 1`. A matching `MIN_INTEGER`
-# constant _is_ present, but you have to declare (not define) it yourself, as
-# `jnc` can't yet emit that value.
+# The maximum representable integer: `2^63 - 1`.
 pub int MAX_INTEGER = 0x7fffffffffffffff;
 
 # The minimum representable integer: `-2^63`.
-pub int MIN_INTEGER; # todo: move to math.jn
+pub int MIN_INTEGER = 0x8000000000000000;
 
 # I return the absolute value of the passed `int`.
 pub fn abs(int i) {

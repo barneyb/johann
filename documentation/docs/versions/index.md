@@ -21,6 +21,8 @@ A few things remain before 1.0:
 
 ### Bleeding Edge
 
+Add a `MIN_INTEGER` global.
+
 Add a `MAX_INTEGER` global, and a `pow` function.
 
 Support `-2^63` as a literal value.
