@@ -76,9 +76,12 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                         DOC="$DOC${line:2}"
                         continue
                     elif [[ "$line" =~ ^pub ]]; then
-                        type=$(echo "$line" | cut -d ' ' -f 2)
-                        name=$(echo "$line" | cut -d ' ' -f 3 | cut -d '(' -f 1)
-                        line=$(echo "$line" | cut -d '{' -f 1 | cut -d '#' -f 1)
+                        type=$(echo -E "$line" | cut -d ' ' -f 2)
+                        name=$(echo -E "$line" | cut -d ' ' -f 3 | cut -d '(' -f 1)
+                        if [[ $name =~ ";$" ]]; then
+                            continue
+                        fi
+                        line=$(echo -E "$line" | cut -d '{' -f 1 | cut -d '#' -f 1)
                         if ! echo "$line" | grep -F '_(' > /dev/null; then
                             if [[ "$type" = "fn" ]]; then
                                 type="zzfn"
@@ -87,15 +90,15 @@ for DOC_FILE in `grep -lF '<!--{johanndoc:' documentation/**/*.md`; do
                             else
                                 type="var"
                             fi
-                            fn="member.$type.$(echo "$line" \
+                            fn="member.$type.$(echo -E "$line" \
                                 | cut -d '"' -f 1 \
                                 | cut -d "'" -f 1 \
                                 | tr '[:upper:]' '[:lower:]' \
                                 | sed -E -e 's/[^a-z0-9_]/-/g').txt"
                             (
-                                echo '### `'"$name"'`'
+                                echo -E '### `'"$name"'`'
                                 echo
-                                echo '`'"$line"'`'
+                                echo -E '`'"$line"'`'
                                 echo
                                 echo "$DOC"
                                 echo
