@@ -1,0 +1,117 @@
+int MAX_INTEGER;
+int MIN_INTEGER;
+
+pub fn main() {
+    eq();
+    neq();
+    lt();
+    lte();
+    gt();
+    gte();
+}
+
+fn eq() {
+    puts("\neq (==):");
+    eq1(0, 0);
+    eq1(0, 1);
+    eq1(1, 1);
+    eq1(0, -1);
+    eq1(-1, -1);
+    eq1(MIN_INTEGER, 0);
+    eq1(MAX_INTEGER, 0);
+    eq1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn eq1(int a, int b) {
+    printf("%d == %d: %b\n", a, b, a == b);
+    printf("%d == %d: %b\n", b, a, b == a);
+}
+
+fn neq() {
+    puts("\nneq (!=):");
+    neq1(0, 0);
+    neq1(0, 1);
+    neq1(1, 1);
+    neq1(0, -1);
+    neq1(-1, -1);
+    neq1(MIN_INTEGER, 0);
+    neq1(MAX_INTEGER, 0);
+    neq1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn neq1(int a, int b) {
+    printf("%d != %d: %b\n", a, b, a != b);
+    printf("%d != %d: %b\n", b, a, b != a);
+}
+
+fn lt() {
+    puts("\nlt (<):");
+    lt1(0, 1);
+    lt1(1, 1);
+    lt1(0, -1);
+    lt1(-1, -1);
+    lt1(MIN_INTEGER, 0);
+    lt1(MAX_INTEGER, 0);
+    lt1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn lt1(int a, int b) {
+    printf("%d < %d: %b\n", a, b, a < b);
+    if a != b {
+        printf("%d < %d: %b\n", b, a, b < a);
+    }
+}
+
+fn lte() {
+    puts("\nlte (<=):");
+    lte1(0, 1);
+    lte1(1, 1);
+    lte1(0, -1);
+    lte1(-1, -1);
+    lte1(MIN_INTEGER, 0);
+    lte1(MAX_INTEGER, 0);
+    lte1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn lte1(int a, int b) {
+    printf("%d <= %d: %b\n", a, b, a <= b);
+    if a != b {
+        printf("%d <= %d: %b\n", b, a, b <= a);
+    }
+}
+
+fn gt() {
+    puts("\ngt (>):");
+    gt1(0, 1);
+    gt1(1, 1);
+    gt1(0, -1);
+    gt1(-1, -1);
+    gt1(MIN_INTEGER, 0);
+    gt1(MAX_INTEGER, 0);
+    gt1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn gt1(int a, int b) {
+    printf("%d > %d: %b\n", a, b, a > b);
+    if a != b {
+        printf("%d > %d: %b\n", b, a, b > a);
+    }
+}
+
+fn gte() {
+    puts("\ngte (>=):");
+    gte1(0, 1);
+    gte1(1, 1);
+    gte1(0, -1);
+    gte1(-1, -1);
+    gte1(MIN_INTEGER, 0);
+    gte1(MAX_INTEGER, 0);
+    gte1(MIN_INTEGER, MAX_INTEGER);
+}
+
+fn gte1(int a, int b) {
+    printf("%d >= %d: %b\n", a, b, a >= b);
+    if a != b {
+        printf("%d >= %d: %b\n", b, a, b >= a);
+    }
+}
