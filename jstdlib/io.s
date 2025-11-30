@@ -227,8 +227,6 @@ printf:
         printf_width_done:
         ldp     x0, x3, [sp], 0x10  ; load and release char and width
 
-        cmp     x0, 'X'
-        b.eq    printf_HEX
         cmp     x0, 'b'
         b.eq    printf_bool
         cmp     x0, 'c'
@@ -244,6 +242,8 @@ printf:
         cmp     x0, 's'
         b.eq    printf_string
         cmp     x0, 'x'
+        b.eq    printf_hex
+        cmp     x0, 'X'
         b.eq    printf_hex
         mov     x0, #47
         adrp    x1, err_bad_format_conv@PAGE
@@ -261,15 +261,16 @@ printf:
         b.ge    printf_hex          ; but are otherwise just 'hex'
         mov     x3, #11
     printf_hex:
-        sub     x3, x3, 2           ; two char prefix
-        mov     x6, #16
-        mov     x7, #0x57           ; 10 before 'a'
-        b       printf_integer
-    printf_HEX:
-        sub     x3, x3, 2           ; two char prefix
-        mov     x6, #16
-        mov     x7, #0x37           ; 10 before 'A'
-        b       printf_integer
+        ldrb    w4, [fp, -0x8]      ; padding character
+        ; width is in x3
+        mov     x2, x0              ; spec
+        bl      printf_next_arg
+        ldr     x1, [fp, -0x10]     ; put_char
+        bl      __j_printf_x__
+        ldr     x1, [sp, 0x8]       ; load written
+        add     x1, x1, x0          ; written + n
+        str     x1, [sp, 0x8]       ; store written
+        b       printf_again
     printf_octal:
         sub     x3, x3, 1           ; one char prefix
         mov     x6, #8
@@ -378,7 +379,7 @@ printf:
 
         printf_integer_emit:
         ldr     x0, [sp, 0x28]      ; load written
-        add     x0, x0, x4          ; written++
+        add     x0, x0, x4          ; written + x4
         str     x0, [sp, 0x28]      ; store written
         printf_integer_emit_again:
         ; from x5, for x4 bytes, putchar
