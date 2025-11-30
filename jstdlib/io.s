@@ -276,37 +276,22 @@ printf:
         b       printf_normal
 
     printf_bool:
+        ldrb    w4, [fp, -0x8]      ; padding character
+        ; width is in x3
+        mov     x2, x0              ; spec
         bl      printf_next_arg
-        cmp     x0, FALSE
-        b.ne    printf_bool_true
-        adrp    x0, str_false@PAGE
-        add     x0, x0, str_false@PAGEOFF
-        b       printf_bool_done
-        printf_bool_true:
-        adrp    x0, str_true@PAGE
-        add     x0, x0, str_true@PAGEOFF
-        printf_bool_done:
-        str     x0, [sp, -0x10]!    ; store pointer -> str
-        b       printf_string_again
+        ldr     x1, [fp, -0x10]     ; put_char
+        bl      __j_printf_b__
+        b       printf_after_johann
 
     printf_string:
+        ldrb    w4, [fp, -0x8]      ; padding character
+        ; width is in x3
+        mov     x2, x0              ; spec
         bl      printf_next_arg
-        str     x0, [sp, -0x10]!    ; store pointer -> str
-        printf_string_again:
-            ldr     x1, [sp]        ; load pointer -> str[i]
-            ldrb    w0, [x1], #1    ; load str[i++]
-            str     x1, [sp]        ; store pointer -> str[i]
-            cmp     x0, NULL
-            b.eq    printf_string_done
-            ldr     x8, [fp, -0x10]
-            blr     x8
-            ldr     x0, [sp, 0x18]      ; load written
-            add     x0, x0, #1          ; written++
-            str     x0, [sp, 0x18]      ; store written
-            b       printf_string_again
-        printf_string_done:
-        add     sp, sp, 0x10        ; deallocate 'string' stack space
-        b       printf_again
+        ldr     x1, [fp, -0x10]     ; put_char
+        bl      __j_printf_s__
+        b       printf_after_johann
 
     printf_done:
     ldr     x0, [sp, 0x8]           ; load written

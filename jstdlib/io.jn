@@ -79,13 +79,12 @@ pub fn printf_d__(int n,
     if n == MIN_INTEGER {
         # can't do the "abs and prefix with '-'" trick
         char* str = "-9223372036854775808";
-        int j = 0;
-        while *str != null {
-            put_char(*str);
-            str = str + 1;
-            j = j + 1;
-        }
-        return j;
+        return printf_s__(
+            str,
+            put_char,
+            's',
+            width,
+            pad);
     }
 
     # it's a 24-byte "array"!
@@ -234,4 +233,37 @@ pub fn printf_x__(int n,
     }
 
     return count;
+}
+
+pub fn printf_b__(bool value,
+                  void* put_char,
+                  char conv_spec,
+                  int width,
+                  char pad) {
+    # todo: padding
+    char* str = "false";
+    if value {
+        str = "true";
+    }
+    return printf_s__(
+        str,
+        put_char,
+        conv_spec,
+        width,
+        pad);
+}
+
+pub fn printf_s__(char* str,
+                  void* put_char,
+                  char conv_spec,
+                  int width,
+                  char pad) {
+    # todo: padding
+    int i = 0;
+    while *str != null {
+        put_char(*str);
+        str = str + 1;
+        i = i + 1;
+    }
+    return i;
 }
