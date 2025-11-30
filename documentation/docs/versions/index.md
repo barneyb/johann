@@ -19,11 +19,11 @@ A few things remain before 1.0:
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
-
-### `v0.20251130`
+### Bleeding Edge
 
 Add a `MIN_INTEGER` global.
+
+### `v0.20251130`
 
 Add a `MAX_INTEGER` global, and a `pow` function.
 
