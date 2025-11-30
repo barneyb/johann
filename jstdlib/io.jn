@@ -65,7 +65,7 @@ pub fn read_line() {
     return StringBuilder_into_chars(b);
 }
 
-pub fn printf_nul_ptr(void* put_char,
+fn printf_nul_ptr(void* put_char,
                       int width) {
     int i = 3;
     while i < width {
