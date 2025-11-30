@@ -26,6 +26,9 @@
 # For hex, padding _spaces_ go before the `0x` (or `0X`), and padding _zeros_
 # go after.
 #
+# Pointers zero-padded hex values, with a minimum of nine digits, except the
+# `null` pointer. It formats as `NUL`, and is padded with spaces.
+#
 # There is no support for converting a single argument multiple times, you have
 # to pass it for each conversion spec.
 #
