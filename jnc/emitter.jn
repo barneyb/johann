@@ -24,8 +24,6 @@ char* TMPL_MAIN                 = "    _main:\n        bl      __j_main\n       
 char* WIDTH_BYTE   = ".byte";
 char* WIDTH_QUAD   = ".quad";
 char* TMPL_GLOBAL_NUM           = "    .data\n        __j_%s: %s %i\n    .text\n";
-# todo: this is silly - fix printf?!
-char* TMPL_GLOBAL_MIN_INTEGER   = "    .data\n        __j_%s: %s 0x8000000000000000\n    .text ; %i\n";
 char* TMPL_GLOBAL_CHAR          = "    .data\n        __j_%s: %s '%c'\n    .text\n";
 char* TMPL_GLOBAL_STRING        = "    .data\n        __j_%s: .asciz %c%s%c\n    .text\n";
 
@@ -103,9 +101,7 @@ char* TMPL_BIN_COMPARE          = "        cmp     x0, x1\n        b.%s    expr_
 char* TMPL_VALUE_STRING         = "    .data\n          _j_str_%i: .asciz %c%s%c\n        .text\n        adrp    x0, _j_str_%i@PAGE\n        add     x0, x0, _j_str_%i@PAGEOFF\n";
 char* TMPL_VALUE_INT            = "        mov     x0, #%i\n";
 char* TMPL_VALUE_Xi_INT         = "        mov     x%i, #%i\n";
-char* TMPL_VALUE_INT_LARGE      = "    .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
-# todo: this is silly - fix printf?!
-char* TMPL_VALUE_MIN_INTEGER    = "    .data\n          _j_int_%i: .quad 0x8000000000000000 ; %x / %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
+char* TMPL_VALUE_INT_LARGE      = "        .data\n          _j_int_%i: .quad %x ; %i\n        .text\n        adrp    x0, _j_int_%i@PAGE\n        add     x0, x0, _j_int_%i@PAGEOFF\n        ldr     x0, [x0]\n";
 char* TMPL_VALUE_OF_LOCAL       = "        ldr     x0, [fp, -%x]\n";
 
 # "add-a-negative" so it matches the addressing offsets
@@ -267,17 +263,14 @@ fn decl_global(void* self, Token* nameT, void* expr, Symbol* symbol) {
     } else {
         width = WIDTH_QUAD;
     }
-    void val = Emitter_eval_const(self, expr);
     char* tmpl;
     if val_type == T_CHAR {
         tmpl = TMPL_GLOBAL_CHAR;
-    } else if (val & 0x7fffffffffffffff) == 0 && val != 0 {
-        # todo: it's MIN_INTEGER, which printf can't handle - like literals
-        tmpl = TMPL_GLOBAL_MIN_INTEGER;
     } else {
         tmpl = TMPL_GLOBAL_NUM;
     }
-    printf(tmpl, name, width, val);
+    expr = Emitter_eval_const(self, expr);
+    printf(tmpl, name, width, expr);
 }
 
 pub fn Emitter_do_fn_intro(void* self, void* nameT, int lbytes, void* args) {
@@ -857,10 +850,6 @@ fn Emitter_do_value_integer(void* self, int i) {
 fn Emitter_do_value_integer_large(void* self, int i) {
     int seq = Emitter_seqnum(self);
     char* tmpl = TMPL_VALUE_INT_LARGE;
-    if (i & 0x7fffffffffffffff) == 0 && i != 0 {
-        # todo: it's MIN_INTEGER, which printf can't handle - like globals
-        tmpl = TMPL_VALUE_MIN_INTEGER;
-    }
     printf(tmpl, seq, i, i, seq, seq);
 }
 
