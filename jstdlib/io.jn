@@ -17,16 +17,14 @@
 # |    `b`    | boolean, either `true` or `false`                    |
 # |    `c`    | character                                            |
 # | `d` , `i` | base-10 integer                                      |  space  |
-# |    `o`    | base-8 integer, w/ `0` prefix                        |  space  |
 # |    `p`    | a pointer, in hex, at least 9 digits                 |  zero   |
 # |    `s`    | a null-terminated byte string                        |
 # | `x` , `X` | base-16 integer, w/ `0x` prefix, lower or upper case |  space  |
 #
 # Only integers and pointers support a width spec, and padding goes on the left.
 # To pad integers with zeros instead of spaces, use a leading zero on the width.
-# Confusingly, the padding goes _after_ the prefix of octal/hex conversions,
-# even though the prefix is included in the "how much to pad" calculation. Also,
-# octal/hex are treated as signed.
+# For hex, padding _spaces_ go before the `0x` (or `0X`), and padding _zeros_
+# go after.
 #
 # There is no support for converting a single argument multiple times, you have
 # to pass it for each conversion spec.
@@ -65,4 +63,88 @@ pub fn read_line() {
         StringBuilder_push(b, c);
     }
     return StringBuilder_into_chars(b);
+}
+
+pub fn printf_nul_ptr(void* put_char,
+                      int width) {
+    int i = 3;
+    while i < width {
+        put_char(' ');
+        i = i + 1;
+    }
+    put_char('N');
+    put_char('U');
+    put_char('L');
+    return i;
+}
+
+pub fn printf_x__(int n,
+                  void* put_char,
+                  char conv_spec,
+                  int width,
+                  char pad) {
+    if conv_spec == 'p' && n == 0 {
+        return printf_nul_ptr(put_char, width);
+    }
+
+    # it's a 24-byte "array"!
+    char* buf0 = null;
+    char* buf1 = null;
+    char* buf2 = null;
+    char* buf = &buf0;
+    int i = 0;
+
+    if n == 0 {
+        buf[i] = '0';
+        i = i + 1;
+    } else {
+        char ten_digit = 'a' - 10;
+        if conv_spec == 'X' {
+            ten_digit = 'A' - 10;
+        }
+
+        # now stack it up
+        while n != 0 {
+            int d = n & 0xf;
+            n = n >> 4;
+            char c;
+            if d < 10 { c = '0' + d; }
+            else      { c = ten_digit + d; }
+            buf[i] = c;
+            i = i + 1;
+        }
+    }
+
+    if pad != ' ' {
+        int end = width - 2;
+        while i < end {
+            buf[i] = pad;
+            i = i + 1;
+        }
+    }
+
+    if conv_spec == 'X' {
+        buf[i] = 'X';
+    } else {
+        buf[i] = 'x';
+    }
+    i = i + 1;
+    buf[i] = '0';
+    i = i + 1;
+
+    if pad == ' ' {
+        while i < width {
+            buf[i] = pad;
+            i = i + 1;
+        }
+    }
+
+    # and pop back off
+    int count = i;
+    while i > 0 {
+        i = i - 1;
+        put_char(buf[i]);
+    }
+
+    return count;
 }

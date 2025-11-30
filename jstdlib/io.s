@@ -227,8 +227,6 @@ printf:
         printf_width_done:
         ldp     x0, x3, [sp], 0x10  ; load and release char and width
 
-        cmp     x0, 'X'
-        b.eq    printf_HEX
         cmp     x0, 'b'
         b.eq    printf_bool
         cmp     x0, 'c'
@@ -237,13 +235,13 @@ printf:
         b.eq    printf_decimal
         cmp     x0, 'i'
         b.eq    printf_decimal
-        cmp     x0, 'o'
-        b.eq    printf_octal
         cmp     x0, 'p'
         b.eq    printf_pointer
         cmp     x0, 's'
         b.eq    printf_string
         cmp     x0, 'x'
+        b.eq    printf_hex
+        cmp     x0, 'X'
         b.eq    printf_hex
         mov     x0, #47
         adrp    x1, err_bad_format_conv@PAGE
@@ -261,26 +259,22 @@ printf:
         b.ge    printf_hex          ; but are otherwise just 'hex'
         mov     x3, #11
     printf_hex:
-        sub     x3, x3, 2           ; two char prefix
-        mov     x6, #16
-        mov     x7, #0x57           ; 10 before 'a'
-        b       printf_integer
-    printf_HEX:
-        sub     x3, x3, 2           ; two char prefix
-        mov     x6, #16
-        mov     x7, #0x37           ; 10 before 'A'
-        b       printf_integer
-    printf_octal:
-        sub     x3, x3, 1           ; one char prefix
-        mov     x6, #8
-        b       printf_integer
+        ldrb    w4, [fp, -0x8]      ; padding character
+        ; width is in x3
+        mov     x2, x0              ; spec
+        bl      printf_next_arg
+        ldr     x1, [fp, -0x10]     ; put_char
+        bl      __j_printf_x__
+        ldr     x1, [sp, 0x8]       ; load written
+        add     x1, x1, x0          ; written + n
+        str     x1, [sp, 0x8]       ; store written
+        b       printf_again
 
     printf_integer:
         bl      printf_next_arg
 
         ; x3 holds the min width
         ; x6 holds the base
-        ; x7 points to the '0' digit for digits past 9 (e.g. 'a' - 10 for hex)
         ; point to SP in x5, to build the value "down" from
         mov     x5, sp
         ; store a counter in x4
@@ -298,16 +292,13 @@ printf:
         b       printf_integer_again
 
         printf_integer_zero:
-;        mov     w2, ' '             ; always pad zero with spaces
-;        str     x2, [fp, -0x8]
         mov     w2, '0'
         ; pre-decrement and store at x5
         strb    w2, [x5, #-1]!
         ; increment counter in x4
         add     x4, x4, #1
         bl      printf_integer_pad_and_return
-;        b       printf_integer_emit
-        b       printf_integer_prefix
+        b       printf_integer_was_negative
 
         printf_integer_again:
         ; divide by base into x1
@@ -331,7 +322,7 @@ printf:
         cmp     x0, xzr
         b.gt    printf_integer_again
         bl      printf_integer_pad_and_return
-        b       printf_integer_prefix
+        b       printf_integer_was_negative
 
         printf_integer_pad_and_return:
         ; pad to min width
@@ -344,26 +335,6 @@ printf:
             b printf_pad_again
         printf_pad_done:
         ret
-
-        printf_integer_prefix:
-        ; if base is 16, add x prefix
-        cmp     x6, #16
-        b.ne    printf_integer_not_base10
-        ; pre-decrement and store at x5
-        add     x2, x7, #33         ; x is the 33rd "digit"
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
-
-        printf_integer_not_base10:
-        ; if base is not 10, add 0 prefix
-        cmp     x6, #10
-        b.eq    printf_integer_was_negative
-        ; pre-decrement and store at x5
-        mov     w2, '0'
-        strb    w2, [x5, #-1]!
-        ; increment counter in x4
-        add     x4, x4, #1
 
         printf_integer_was_negative:
         ; if was negative, add minus sign
@@ -378,7 +349,7 @@ printf:
 
         printf_integer_emit:
         ldr     x0, [sp, 0x28]      ; load written
-        add     x0, x0, x4          ; written++
+        add     x0, x0, x4          ; written + x4
         str     x0, [sp, 0x28]      ; store written
         printf_integer_emit_again:
         ; from x5, for x4 bytes, putchar
