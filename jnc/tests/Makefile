@@ -11,6 +11,7 @@ all: \
 	arrays \
 	bit_ops \
 	collatz \
+	comparison_ops \
 	constants \
 	control_flow \
 	function_pointers \

@@ -37,9 +37,12 @@ pub fn main() {
     printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
     free(s2);
 
+    puts("");
     s = "92345678901234567890"; # overflow
     i = atoi(s);
     s2 = itoa(i);
-    printf("string '%s' parsed is %d and formatted is '%s'\n", s, i, s2);
+    printf("string : '%s'\n", s);
+    printf("parsed :    %i\n", i);
+    printf("format :   '%s'\n", s2);
     free(s2);
 }

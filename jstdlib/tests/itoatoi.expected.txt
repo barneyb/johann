@@ -5,4 +5,7 @@ int -456 formatted is '-456' and parsed is -456
 string '' parsed is 0 and formatted is '0'
 string '-123' parsed is -123 and formatted is '-123'
 string '+123' parsed is 123 and formatted is '123'
-string '92345678901234567890' parsed is 111958532686809810 and formatted is '111958532686809810'
+
+string : '92345678901234567890'
+parsed :    111958532686809810
+format :   '111958532686809810'
