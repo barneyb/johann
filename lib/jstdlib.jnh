@@ -74,6 +74,7 @@ fn puts(char*);
 fn read_line();
 #![[jnc_restart_line_count]]
 int MAX_INTEGER;
+int MIN_INTEGER;
 fn abs(int);
 fn max(int,int);
 fn imax(int,int);
