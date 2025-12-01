@@ -12,7 +12,7 @@ Johann is a comical attempt at building a programming platform from scratch for 
 
 The only pre-existing software tools assumed are an assembler and linker. No recognizer generator (e.g., `lex` and `yacc`), no v1 compiler in an existing language (e.g., C or Rust), no compiler backend (e.g., LLVM or GCC) for codegen, and no system libraries. I suppose macOS itself, along with its command shell and text editor, are assumed as well.
 
-This is clearly a ridiculous undertaking. The nominal goal is to do this fall's [Advent of Code](https://adventofcode.com/) stars using only Johann (repo [here](https://github.com/barneyb/aoc-2025)), with a fully self-hosted compiler: zero assembly, aside from syscalls. The compiler itself already meets this requirement, but the IO subsystem doesn't yet.
+This is clearly a ridiculous undertaking. The nominal goal was to do [Advent of Code](https://adventofcode.com/) 2025 using only Johann (repo [here](https://github.com/barneyb/aoc-2025)), with a fully self-hosted compiler: zero assembly, aside from syscalls. The compiler itself met this requirement, but the IO subsystem didn't quite.
 
 ## The Short Version
 
