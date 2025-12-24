@@ -281,7 +281,8 @@ pub fn ArrayList_pop(ArrayList* self) {
 # panicking if the stack is empty.
 pub fn ArrayList_peek(ArrayList* self) {
     if self.size < 1 {
-        panic(2, "No such element\n", 16);
+        eprintf("ArrayList is empty; cannot peek\n");
+        exit(2);
     }
     void arr = self.data;
     arr = arr + (self.size - 1) * 0x8;
