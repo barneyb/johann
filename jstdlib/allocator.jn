@@ -175,6 +175,9 @@ pub fn dump_around__(void* mem) {
 pub fn free(void* mem) {
     if mem == null {
         return;
+    } else if mem % sizeof(int) != 0 {
+        eprintf("Non-aligned free at %p. First quadword of chunk: %x\n", mem, *mem);
+        exit(98);
     }
     # load the size/bytes from the header
     int a = mem - 0x8;
