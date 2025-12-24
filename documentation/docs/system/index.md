@@ -54,6 +54,8 @@ TAPI support using: Apple TAPI version 17.0.0 (tapi-1700.3.8)
 
 ## Application Binary Interface
 
-Johann-compiled code mostly conforms to (a subset of) the AArch64 PCS. There's no support for passing args on the stack or variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
+Johann-compiled code mostly conforms to (a subset of) the AArch64 PCS. There's no support for variadic routines. Johann doesn't understand floating point numbers, and uses only a tiny subset of available instructions. Some sort of FFI is not an explicit goal, but not painting it out either.
+
+Symbols use a `__j_` prefix, so `puts` is exported to the linker as `__j_puts`. If you wanted to call Johann's `puts` from C, declare `void _j_puts(char*);` and link with `jstdlib.o`. If you want to call a C function from Johann, name it `_j_xxx`, declare `fn xxx();`, and link with `xxx.o`. Only C types matching Johann's (`char`, 64-bit `long`, and pointers) will pass correctly.
 
 The linked list of frame records is only partially implemented, on its way to complete implementation where only leaf subroutines may forgo a record. Correct frames are emitted by `jnc`, but the parts of `jstdlib` still written in assembler exhibit a mixture of approaches.
