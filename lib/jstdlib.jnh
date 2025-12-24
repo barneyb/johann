@@ -9,6 +9,7 @@ fn ArrayList_get(ArrayList*,int);
 fn ArrayList_set(ArrayList*,int,void);
 struct Iter;
 fn Iter_next(Iter*);
+fn Iter_drop(Iter*);
 fn ArrayList_iter(ArrayList*);
 fn ArrayList_into_array(ArrayList*);
 fn ArrayList_sort(ArrayList*,void*);
@@ -28,6 +29,7 @@ fn HashMap_put(HashMap*,void,void);
 fn HashMap_delete(HashMap*,void);
 struct Keys;
 fn Keys_next(Keys*);
+fn Keys_drop(Keys*);
 fn HashMap_keys(HashMap*);
 #![[jnc_restart_line_count]]
 struct Queue;
@@ -41,6 +43,7 @@ fn Queue_remove(Queue*);
 #![[jnc_restart_line_count]]
 struct StringBuilder;
 fn StringBuilder__new(int);
+fn StringBuilder_drop(StringBuilder*);
 fn StringBuilder_push(StringBuilder*,char);
 fn StringBuilder_push_str(StringBuilder*,char*);
 fn StringBuilder_into_chars(StringBuilder*);
