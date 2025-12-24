@@ -1,0 +1,26 @@
+pub fn main() {
+    int n = 0;
+    int a = -43;
+    int b = -17;
+    printf("testing from %d %% %d\n", a, b);
+    while a <= 43 {
+        b = -17;
+        while b <= 17 {
+            if b != 0 {
+                mod(a, b);
+                n = n + 1;
+            }
+            b = b + 1;
+        }
+        a = a + 1;
+    }
+    printf("up to %d %% %d (%d combos)\n", a - 1, b - 1, n);
+}
+
+fn mod(int a, int b) {
+    int q = a / b;
+    int r = a % b;
+    if q * b + r != a {
+        printf("%d * %d + %d != %d?!\n", q, b, r, a);
+    }
+}

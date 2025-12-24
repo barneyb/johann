@@ -40,6 +40,7 @@ A few notes:
 * Unary `*` uses the source's width - not the destination's - determines the load width.
 * The `sizeof` construct only accepts a type, not an expression to infer the type of.
 * A `*` can also be used on the left side of an assignment to write to pointed-at memory, though structs/arrays are often easier to reason about/with.
+* The `%` operator's result may be negative. It always satisfies `(a / b) * b + a % b == a`, if the division is valid. 
 * The shift operators work as you'd expect for reasonable operands. Be careful if you might hit over- or underflow, if either operand might be negative, or if the second operand might be greater than 63. All those cases are undefined.
 * The `!`, `&&`, and `||` operators _do not_ always evaluate to `1` or `0`. Any non-zero value may be returned for `true` (per usual).
 

@@ -20,6 +20,7 @@ all: \
 	lisp \
 	literals \
 	logical_ops \
+	mod \
 	not_quite_lisp \
 	print_one \
 	pseudo_methods \
