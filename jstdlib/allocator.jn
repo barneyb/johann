@@ -191,7 +191,10 @@ pub fn free(void* mem) {
         }
         a = mem - 0x10; # go back to last quadword of prev chunk
         eprintf("  Last quadword of prev chunk: %x\n", *a);
-        exit(88);
+        exit(98);
+    } else if bytes != align(bytes, MALLOC_ALIGN) {
+        eprintf("Invalid-sized %x byte free at %p. First quadword of chunk: %x\n", bytes, mem, *mem);
+        exit(98);
     }
 
     STAT_FREE_COUNT = STAT_FREE_COUNT + 1;
@@ -327,7 +330,7 @@ pub fn malloc(int bytes) {
             return null;
         }
         eprintf("Negative-byte (%d) malloc?!\n", bytes);
-        exit(88);
+        exit(98);
     }
 
     bytes = align(bytes, MALLOC_ALIGN);
