@@ -133,6 +133,11 @@ pub fn Iter_next(Iter* self) {
     return ptr;
 }
 
+# I drop the iterator.
+pub fn Iter_drop(Iter* self) {
+    free(self);
+}
+
 # I create a new `Iter` over this list. Its behavior is undefined if the list is
 # modified during iteration.
 pub fn ArrayList_iter(ArrayList* self) {

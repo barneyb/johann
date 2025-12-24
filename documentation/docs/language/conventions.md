@@ -19,9 +19,9 @@ fn Person_drop(Person* self);
 
 ### `new` and `drop`
 
-Structs should have a `<type>__new` function which at least allocates and returns a new object of the struct type.
+Structs should have a `<type>__new` function which at least allocates a new object of the struct type and returns a pointer to it.
 
-Structs should have a `<type>_drop` function which can deallocate an object of that type.
+Structs should have a `<type>_drop` function which can deallocate an object of that type, even if it's just `free(self)`.
 
 If a struct has optionally-owned data, a `<type>__new_owned` function should accept drop functions for the owned data, treating `null` as "you don't own it".
 
@@ -31,7 +31,7 @@ An iterator protocol is defined by convention. Eventually, Johann will formally 
 
 1. The iterable "thing" should have a zero-arg 'method' named `iter` which returns a pointer to a newly-allocated struct type (the iterator).
 1. The iterator must have a zero-arg 'method' named `next` which returns a pointer to the next element being iterator over, or `null` if the iterator is exhausted.
-1. The iterator should have no owned state, so it can be `free`-ed directly (no custom drop behavior).
+1. The iterator should have a zero-arg 'method' named `iter` which returns itself.
 
 For now, the bookkeeping required to use an iterator is the programmer's responsibility. For example (`Iter_next` is the `next` method of `ArrayList`'s iterator):
 
@@ -39,13 +39,13 @@ For now, the bookkeeping required to use an iterator is the programmer's respons
 ArrayList* l = ArrayList__new(3);
 l.push(123); l.push(456); l.push(789);
 
-void* itr = l.iter();           # get an iterator
+Iter* itr = l.iter();           # get an iterator
 while true {
     int* el = Iter_next(itr);   # pointer to next element
     if el == null { done; }     # if null, done
     printf("%d\n", *el);        # use the pointer to the element
 }
-free(itr);                      # free the iterator
+itr.drop();                     # drop the iterator
 
 l.drop();
 ```

@@ -219,13 +219,13 @@ fn iterate() {
         if el == null { done; }
         printf("  element: %p\n", *el);
     }
-    free(itr);
+    itr.drop();
 
 #    Iter* itr = list.iter()
 #    for int el : itr {
 #        printf("  element: %p\n", el);
 #    }
-#    free(itr);
+#    itr.drop();
 #
 #    let itr: Iter* = list.iter() {
 #        for el: int of itr {
@@ -252,7 +252,7 @@ fn iterate() {
 #    while (el = itr.next()) != null {
 #        printf("  element: %p\n", *el);
 #    }
-#    free(itr);
+#    itr.drop();
 
 #    for int el of (Iter) list.iter() {
 #        printf("  element: %p\n", el);

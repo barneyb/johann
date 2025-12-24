@@ -156,7 +156,7 @@ for BLOCK in $(grep -HnE '^\`\`\`johann$' documentation/**/*.md | cut -d : -f 1,
     if ! grep -F 'fn ' "${ROOT}.jn" > /dev/null; then
         # need to wrap with prelude
         (
-            echo "struct ArrayList;"
+            cat ./lib/jstdlib.jnh
             echo "pub fn main() {"
             cat "${ROOT}.jn"
             echo "}"

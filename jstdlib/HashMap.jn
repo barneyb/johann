@@ -271,6 +271,11 @@ pub fn Keys_next(Keys* self) {
     return ptr;
 }
 
+# I drop the iterator.
+pub fn Keys_drop(Keys* self) {
+    free(self);
+}
+
 # I create a new `Keys` over this map's keys, in unspecified order. Its behavior
 # is undefined if the map is modified during iteration.
 pub fn HashMap_keys(HashMap* self) {

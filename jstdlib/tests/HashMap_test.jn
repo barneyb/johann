@@ -205,6 +205,6 @@ fn keys(HashMap* m) {
         printf("%d, ", *k);
         i = i + 1;
     }
-    free(ks);
+    ks.drop();
     puts("]");
 }
