@@ -19,7 +19,9 @@ A few things remain before 1.0:
 
 ## Release History
 
-[//]: # (### Bleeding Edge)
+### Bleeding Edge
+
+Numerous small bug fixes, post AoC: clarify `%`'s result's sign, better errors on mis-freed memory and from `ArrayList`, `drop` for `StringBuilder`, and add `drop` to the Iterator protocol.
 
 ### `v0.20251201`
 
