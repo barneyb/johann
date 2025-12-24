@@ -20,6 +20,12 @@ pub fn StringBuilder__new(int capacity) {
     return self;
 }
 
+# I drop the `StringBuilder`.
+pub fn StringBuilder_drop(StringBuilder* self) {
+    free(self.buf);
+    free(self);
+}
+
 # I push a single character into the buffer, which will be automatically
 # extended if the character won't fit.
 pub fn StringBuilder_push(StringBuilder* self, char c) {

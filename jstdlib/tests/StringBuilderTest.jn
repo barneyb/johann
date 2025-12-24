@@ -31,6 +31,14 @@ pub fn main() {
     char* str = sb.into_chars();
     puts(str);
     free(str);
+
+    puts("\ndrop...");
+    sb = StringBuilder__new(5);
+    sb.push_str("why ");
+    sb.push_str("hello ");
+    sb.push_str("there.");
+    printf("w/ %d length\n", sb.length());
+    sb.drop();
 }
 
 fn build_up_to(int count) {
