@@ -73,7 +73,7 @@ pub fn mem_stats__(bool force) {
     if ! force { if unfreed_count == 0 { if unfreed_size == 0 {
         return;
     } } }
-    char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %x bytes]\n";
+    char* format = "; MEM: %d allocs (%x bytes)\n;      %d frees  (%x bytes) [%d : %d bytes]\n";
     if !force {
         # if not forced, send to STDOUT too
         printf(format, STAT_ALLOC_COUNT, STAT_ALLOC_SIZE, STAT_FREE_COUNT, STAT_FREE_SIZE, unfreed_count, unfreed_size);
