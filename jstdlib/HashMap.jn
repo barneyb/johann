@@ -140,15 +140,20 @@ pub fn HashMap_delete(HashMap* self, void key) {
     Entry** arr = self.arr;
     Entry* prev = arr[idx];
     if prev == e {
+        # first in the bucket
         arr[idx] = e.next;
-    }
-    if prev != e {
+        e.next = null;
+    } else {
+        # walk the list...
         Entry* curr = prev.next;
         while curr != null {
             if curr == e {
-                prev.next = e.next;
+                prev.next = curr.next;
+                curr.next = null;
                 done;
             }
+            prev = curr;
+            curr = curr.next;
         }
     }
 
