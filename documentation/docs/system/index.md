@@ -8,11 +8,11 @@ Clone the repository, then run `make` in the root. That's it. The compiler is at
 % make
 ... snip ...
 % ./jnc/target/bin/jnc --version
-jnc 0.20251224
-build_time: 2025-12-24T21:29:22+00:00
-commit_hash: dac78ac211ed6cd367351211c924324e79d08458
+jnc 0.20260110
+build_time: 2026-01-10T19:23:07+00:00
+commit_hash: 554b4136af0309530c1f350bc01579c25fa16b11
 % echo "pub fn main(){}" | ./jnc/target/bin/jnc
-; Compiled with jnc 0.20251224-dac78ac
+; Compiled with jnc 0.20260110-554b413
     .text
     .align  3
 ... snip ...
@@ -25,7 +25,7 @@ The specific versions of the system software I have are listed below. Note that 
 <!--{systemsoftware}-->
 ```
 % uname -a
-Darwin Barneys-MacBook-Air.local 24.6.0 Darwin Kernel Version 24.6.0: Mon Aug 11 21:16:52 PDT 2025; root:xnu-11417.140.69.701.11~1/RELEASE_ARM64_T8112 arm64
+Darwin barneys-air-m4.lan 25.2.0 Darwin Kernel Version 25.2.0: Tue Nov 18 21:08:48 PST 2025; root:xnu-12377.61.12~1/RELEASE_ARM64_T8132 arm64
 %
 % make --version
 GNU Make 3.81
@@ -37,14 +37,14 @@ PARTICULAR PURPOSE.
 This program built for i386-apple-darwin11.3.0
 %
 % gcc --version
-Apple clang version 17.0.0 (clang-1700.3.19.1)
-Target: arm64-apple-darwin24.6.0
+Apple clang version 17.0.0 (clang-1700.6.3.2)
+Target: arm64-apple-darwin25.2.0
 Thread model: posix
 InstalledDir: /Library/Developer/CommandLineTools/usr/bin
 %
 % ld -v
-@(#)PROGRAM:ld PROJECT:ld-1221.4
-BUILD 16:29:08 Aug 11 2025
+@(#)PROGRAM:ld PROJECT:ld-1230.1
+BUILD 06:36:05 Dec  2 2025
 configured to support archs: armv6 armv7 armv7s arm64 arm64e arm64_32 i386 x86_64 x86_64h armv6m armv7k armv7m armv7em armv8m.main armv8.1m.main
 will use ld-classic for: armv6 armv7 armv7s i386 armv6m armv7k armv7m armv7em
 LTO support using: LLVM version 17.0.0 (static support for 29, runtime is 29)

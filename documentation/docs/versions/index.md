@@ -19,7 +19,9 @@ A few things remain before 1.0:
 
 ## Release History
 
-### Bleeding Edge
+[//]: # (### Bleeding Edge)
+
+### `v0.20260110`
 
 Fix hang deleting from HashMap after certain key collisions. 
 
