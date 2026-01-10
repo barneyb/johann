@@ -1,5 +1,5 @@
 site_name: Johann
-copyright: Copyright &copy; 2025 <a href="https://github.com/barneyb">Barney Boisvert</a>
+copyright: Copyright &copy; 2026 <a href="https://github.com/barneyb">Barney Boisvert</a>
 site_url: https://barneyb.github.io/johann
 repo_url: https://github.com/barneyb/johann
 repo_name: barneyb/johann
@@ -40,7 +40,7 @@ theme:
     logo: material/music-rest-quarter
   favicon: images/rest.png
   palette:
-    # Why primary/accept need to be declared thrice is completely unclear.
+    # Why primary/accent need to be declared thrice is completely unclear.
     - media: "(prefers-color-scheme)"
       primary: light green
       accent: light green
