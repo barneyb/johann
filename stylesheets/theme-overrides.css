@@ -1,0 +1,22 @@
+.md-copyright {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.md-search__form {
+    border-radius: .25rem;
+}
+
+.md-typeset .task-list-indicator::before {
+    background-color: var(--md-default-fg-color--lightest);
+}
+
+.md-typeset [type=checkbox]:checked + .task-list-indicator:before {
+    /*background-color: var(--md-primary-fg-color);*/
+    background-color: var(--md-default-fg-color--lighter);
+}
+
+.md-typeset table:not([class]) th {
+    min-width: unset;
+}
