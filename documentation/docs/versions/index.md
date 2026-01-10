@@ -21,6 +21,8 @@ A few things remain before 1.0:
 
 [//]: # (### Bleeding Edge)
 
+Fix hang deleting from HashMap after certain key collisions. 
+
 ### `v0.20251224`
 
 Numerous small bug fixes, post AoC: clarify `%`'s result's sign, better errors on mis-freed memory and from `ArrayList`, `drop` for `StringBuilder`, and add `drop` to the Iterator protocol.

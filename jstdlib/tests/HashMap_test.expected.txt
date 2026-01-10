@@ -95,3 +95,11 @@ delete 2: 'two'
 size: 22 :: keys: [0, 32, 1, 64, 3, ]
 delete 2: 0x0
 size: 22 :: keys: [0, 32, 1, 64, 3, ]
+
+delete_with_collisions:
+size: 1 :: keys: [0, ]
+size: 2 :: keys: [15, 0, ]
+size: 3 :: keys: [30, 15, 0, ]
+size: 4 :: keys: [45, 30, 15, 0, ]
+contains 15? true
+  delete 15: 'fifteen'

@@ -14,6 +14,7 @@ pub fn main() {
     delete_collisions();
     owned_keys();
     owned_values();
+    delete_with_collisions();
 }
 
 fn basics() {
@@ -207,4 +208,17 @@ fn keys(HashMap* m) {
     }
     ks.drop();
     puts("]");
+}
+
+fn delete_with_collisions() {
+    puts("\ndelete_with_collisions:");
+    HashMap* m = HashMap__new(null, null);
+
+    put(m, 0, "zero");
+    put(m, 15, "fifteen"); # collide with zero
+    put(m, 30, "thirty"); # again
+    put(m, 45, "forty-five"); # one more time
+    delete(m, 15);
+
+    m.drop();
 }
